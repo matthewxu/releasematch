@@ -33,8 +33,14 @@ releasematch/
 ├── docs/
 │   └── INDEX.md                       # 指向 download-resources 方案文档
 ├── schema/
-│   ├── d1_download_resources.sql      # Cloudflare D1 上线表
-│   └── mysql_download_inventory.sql   # 可选批补 MySQL 表
+│   ├── mysql_schema.sql               # MySQL 本地测试（与 D1 对齐）
+│   ├── mysql_seed_demo.sql            # MySQL 演示种子
+│   ├── d1_schema.sql                  # Cloudflare D1 完整线上模型（7 表）
+│   ├── d1_seed_demo.sql               # 设计演示页种子数据
+│   ├── d1_models.py                   # D1 Python dataclass + 模板上下文
+│   ├── d1_download_resources.sql      # 兼容入口（指向 d1_schema.sql）
+│   └── mysql_download_inventory.sql   # 兼容入口（指向 mysql_schema.sql）
+├── config.env.example                 # 环境变量模板（MySQL / D1 / 数据源）
 ├── scripts/
 │   └── poc_phase0.ps1                 # 四源 PoC 验证（Phase 0）
 ├── workflow/                          # Python 数据与 IG 管道
@@ -127,6 +133,23 @@ Release 导航站 **不依赖** 字幕站运行，但可 **只读** 复用 TMDB 
 | `RM_TMDB_DATA_MODE` | `mysql` 或 `standalone` | `standalone` |
 
 `standalone` 模式下使用 JSON 静态作品清单，无需连接字幕站数据库。
+
+### Release 业务存储（MySQL 测试 → D1 生产）
+
+| 环境变量 | 说明 | 默认 |
+|---------|------|------|
+| `RM_STORAGE_BACKEND` | `mysql`（本地）或 `d1`（生产） | `mysql` |
+| `RM_RELEASE_MYSQL_DB` | Release 专用库 | `releasematch` |
+| `RM_RELEASE_MYSQL_USER` | Release 库用户名 | — |
+
+Quick Start 与总控 CLI 见 [docs/05-存储与部署配置.md](docs/05-存储与部署配置.md)；**命令详解**见 [docs/06-run-cli使用说明.md](docs/06-run-cli使用说明.md)。
+
+```bash
+cd releasematch
+cp config.env.example .env   # 配置 RM_RELEASE_MYSQL_*
+python -m workflow.run db init --seed
+python -m workflow.run query page --page-id tv:1396:s04e06
+```
 
 ---
 

@@ -116,7 +116,7 @@ releasematch.io/about/                        About
 ## T3 交付清单（阻塞 C1）
 
 - [x] Jinja2 模板骨架（`generator/templates/`）
-- [ ] D1 binding + sync Worker
+- [ ] D1 binding + sync Worker（schema 见 `../../schema/d1_schema.sql`）
 - [ ] `generator/generate_one.py` — 读 D1 + scorer → HTML
 - [ ] 薄页门禁：magnet < 2 不生成 index 页
 - [ ] 单集页模板 v1 与演示页对齐
