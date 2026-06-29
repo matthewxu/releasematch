@@ -40,7 +40,8 @@
 
 ## 待实现（R0 脚手架阶段占位）
 
-- [ ] `generate_one.py` — 单槽位 CLI
+- [x] `render.py` — Jinja2 渲染
+- [x] `generate_one.py` — 单页/批量 CLI（`workflow.run generate`）
+- [x] `dev_server.py` — 本地开发服（`workflow.run serve`，实时读 MySQL）
 - [ ] `generate_batch.py` — 读 `priority/queue_builder.py` 队列
-- [ ] Jinja2 / 纯字符串模板渲染
-- [ ] 薄页门禁与 canonical 注入
+- [ ] 薄页门禁与 canonical 注入（生成器内置部分已完成）

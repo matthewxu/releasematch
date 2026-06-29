@@ -142,7 +142,7 @@ Release 导航站 **不依赖** 字幕站运行，但可 **只读** 复用 TMDB 
 | `RM_RELEASE_MYSQL_DB` | Release 专用库 | `releasematch` |
 | `RM_RELEASE_MYSQL_USER` | Release 库用户名 | — |
 
-Quick Start 与总控 CLI 见 [docs/05-存储与部署配置.md](docs/05-存储与部署配置.md)；**命令详解**见 [docs/06-run-cli使用说明.md](docs/06-run-cli使用说明.md)。
+Quick Start 与总控 CLI 见 [docs/05-存储与部署配置.md](docs/05-存储与部署配置.md)；**命令详解**见 [docs/06-run-cli使用说明.md](docs/06-run-cli使用说明.md)；**部署 FAQ（D1 / Pages / Worker）**见 [docs/07-部署架构解疑.md](docs/07-部署架构解疑.md)。
 
 ```bash
 cd releasematch

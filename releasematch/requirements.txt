@@ -4,6 +4,7 @@
 requests>=2.31.0
 PyMySQL>=1.1.0
 PyYAML>=6.0
+Jinja2>=3.1.0
 
 # 可选：Release 文件名解析（R1 阶段启用）
 # parse-torrent-name>=0.1.0

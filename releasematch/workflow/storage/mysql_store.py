@@ -33,6 +33,8 @@ from schema.d1_models import (
     EpisodePageContext,
     MediaCatalog,
     MediaPage,
+    MoviePageContext,
+    ShowHubPageContext,
     SlotSpeedSummary,
     build_page_id,
 )
@@ -414,6 +416,249 @@ class MySQLStore:
             speed_summary=speed,
             canonical_url=f"https://releasematch.io{page.canonical_path}",
         )
+
+    def _load_page_bundle(
+        self, page_id: str
+    ) -> Optional[tuple[MediaPage, MediaCatalog, List[DownloadResource], Optional[SlotSpeedSummary]]]:
+        """
+        加载槽位通用数据包：page + catalog + resources + speed。
+
+        @param page_id: 页面主键
+        @returns: 四元组或 None
+        """
+        conn = self._connect()
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM media_pages WHERE page_id = %s", (page_id,))
+            raw_page = cur.fetchone()
+            if not raw_page:
+                conn.close()
+                return None
+            page_row = _normalize_row(raw_page)
+            cur.execute(
+                "SELECT * FROM media_catalog WHERE catalog_id = %s",
+                (page_row["catalog_id"],),
+            )
+            catalog_row = _normalize_row(cur.fetchone())
+            cur.execute(
+                """
+                SELECT * FROM download_resources
+                WHERE page_id = %s
+                ORDER BY is_recommended DESC, match_score DESC
+                """,
+                (page_id,),
+            )
+            source_rows = [_normalize_row(r) for r in cur.fetchall()]
+            cur.execute(
+                "SELECT * FROM slot_speed_summary WHERE page_id = %s",
+                (page_id,),
+            )
+            speed_row = cur.fetchone()
+        conn.close()
+
+        page = MediaPage.from_row(page_row)
+        catalog = MediaCatalog.from_row(catalog_row)
+        sources = [DownloadResource.from_row(r) for r in source_rows]
+        speed = SlotSpeedSummary.from_row(_normalize_row(speed_row)) if speed_row else None
+        return page, catalog, sources, speed
+
+    def get_movie_page_context(self, page_id: str) -> Optional[MoviePageContext]:
+        """
+        加载电影页完整上下文。
+
+        @param page_id: 如 movie:27205
+        @returns: MoviePageContext 或 None
+        """
+        bundle = self._load_page_bundle(page_id)
+        if not bundle:
+            return None
+        page, catalog, sources, _speed = bundle
+        if page.page_type != "movie":
+            return None
+        recommended = next((s for s in sources if s.is_recommended), None)
+        return MoviePageContext(
+            catalog=catalog,
+            page=page,
+            sources=sources,
+            recommended=recommended,
+            canonical_url=f"https://releasematch.io{page.canonical_path}",
+        )
+
+    def get_show_hub_page_context(
+        self,
+        page_id: str,
+        active_season: Optional[int] = None,
+        active_episode: Optional[int] = None,
+    ) -> Optional[ShowHubPageContext]:
+        """
+        加载剧集 Hub 页上下文（含季集芯片）。
+
+        @param page_id: 如 tv:1396:hub
+        @param active_season: 高亮季号
+        @param active_episode: 高亮集号
+        @returns: ShowHubPageContext 或 None
+        """
+        conn = self._connect()
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT * FROM media_pages WHERE page_id = %s AND page_type = 'show_hub'",
+                (page_id,),
+            )
+            raw_hub = cur.fetchone()
+            if not raw_hub:
+                conn.close()
+                return None
+            hub_row = _normalize_row(raw_hub)
+            cur.execute(
+                "SELECT * FROM media_catalog WHERE catalog_id = %s",
+                (hub_row["catalog_id"],),
+            )
+            catalog_row = _normalize_row(cur.fetchone())
+            cur.execute(
+                """
+                SELECT season, episode FROM media_pages
+                WHERE catalog_id = %s AND page_type = 'episode'
+                ORDER BY season ASC, episode ASC
+                """,
+                (hub_row["catalog_id"],),
+            )
+            ep_rows = cur.fetchall()
+        conn.close()
+
+        seasons_map: Dict[int, List[Dict[str, int]]] = {}
+        for row in ep_rows:
+            s = int(row["season"])
+            e = int(row["episode"])
+            seasons_map.setdefault(s, []).append({"number": e})
+
+        seasons = [
+            {"number": s, "episodes": seasons_map[s]}
+            for s in sorted(seasons_map.keys())
+        ]
+        page = MediaPage.from_row(hub_row)
+        catalog = MediaCatalog.from_row(catalog_row)
+        return ShowHubPageContext(
+            catalog=catalog,
+            page=page,
+            seasons=seasons,
+            active_season=active_season,
+            active_episode=active_episode,
+            canonical_url=f"https://releasematch.io{page.canonical_path}",
+        )
+
+    def get_catalog_by_slug(self, slug: str) -> Optional[MediaCatalog]:
+        """
+        按 URL slug 查询作品主数据。
+
+        @param slug: 如 breaking-bad
+        @returns: MediaCatalog 或 None
+        """
+        conn = self._connect()
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM media_catalog WHERE slug = %s LIMIT 1", (slug,))
+            row = cur.fetchone()
+        conn.close()
+        if not row:
+            return None
+        return MediaCatalog.from_row(_normalize_row(row))
+
+    def list_published_page_ids(self) -> List[str]:
+        """
+        列出可生成静态页的 page_id（published 且 magnet≥2）。
+
+        @returns: page_id 列表
+        """
+        conn = self._connect()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT page_id FROM media_pages
+                WHERE page_status = 'published' AND magnet_count >= 2
+                ORDER BY catalog_id, page_type, season, episode
+                """
+            )
+            rows = cur.fetchall()
+        conn.close()
+        return [str(r["page_id"]) for r in rows]
+
+    def resolve_url_path(self, url_path: str) -> Optional[Dict[str, Any]]:
+        """
+        将 URL 路径解析为页面类型与 page_id。
+
+        @param url_path: 如 /breaking-bad/s4e6/ 或 /inception-2010/
+        @returns: 含 page_type、page_id、season、episode 的字典
+        """
+        path = url_path.split("?", 1)[0].strip()
+        if not path.startswith("/"):
+            path = f"/{path}"
+        path = path.rstrip("/") or "/"
+        if path == "/":
+            return None
+
+        ep_match = re.match(r"^/([^/]+)/s(\d+)e(\d+)$", path, re.IGNORECASE)
+        if ep_match:
+            slug, season_s, episode_s = ep_match.groups()
+            catalog = self.get_catalog_by_slug(slug)
+            if not catalog or catalog.media_kind != "tv":
+                return None
+            season, episode = int(season_s), int(episode_s)
+            page_id = build_page_id(catalog.tmdb_id, "tv", season=season, episode=episode)
+            return {
+                "page_type": "episode",
+                "page_id": page_id,
+                "slug": slug,
+                "season": season,
+                "episode": episode,
+            }
+
+        slug_match = re.match(r"^/([^/]+)$", path)
+        if not slug_match:
+            return None
+        slug = slug_match.group(1)
+        catalog = self.get_catalog_by_slug(slug)
+        if not catalog:
+            return None
+        if catalog.media_kind == "movie":
+            return {
+                "page_type": "movie",
+                "page_id": build_page_id(catalog.tmdb_id, "movie", page_type="movie"),
+                "slug": slug,
+            }
+        return {
+            "page_type": "show_hub",
+            "page_id": build_page_id(catalog.tmdb_id, "tv", page_type="show_hub"),
+            "slug": slug,
+        }
+
+    def load_page_for_url(self, url_path: str) -> Optional[Dict[str, Any]]:
+        """
+        按 URL 路径加载任意页面上下文（episode / movie / show_hub）。
+
+        @param url_path: HTTP 路径
+        @returns: 含 template、context 对象的字典
+        """
+        resolved = self.resolve_url_path(url_path)
+        if not resolved:
+            return None
+
+        page_type = resolved["page_type"]
+        page_id = resolved["page_id"]
+
+        if page_type == "episode":
+            ctx = self.get_episode_page_context(page_id)
+            if not ctx:
+                return None
+            return {"template": "episode.html", "context": ctx, "page_id": page_id}
+
+        if page_type == "movie":
+            ctx = self.get_movie_page_context(page_id)
+            if not ctx:
+                return None
+            return {"template": "movie.html", "context": ctx, "page_id": page_id}
+
+        ctx = self.get_show_hub_page_context(page_id)
+        if not ctx:
+            return None
+        return {"template": "show_hub.html", "context": ctx, "page_id": page_id}
 
     def upsert_slot_resources(
         self,

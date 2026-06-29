@@ -17,6 +17,9 @@ ReleaseMatch 工作流总控 CLI。
     run recommended — Recommended 评分 Demo
     pipeline slot — 单槽 pipeline（demo → MySQL）
     query page — 从 MySQL 读取 Jinja2 上下文
+    generate page — MySQL → 静态 HTML（portal/dist）
+    generate all  — 批量生成已发布页
+    serve         — 本地开发服（DB 动态渲染 + 静态资源）
 
   示例：
     cd releasematch && cp config.env.example .env  # 按需编辑
@@ -277,6 +280,56 @@ def cmd_query(args: argparse.Namespace) -> int:
     return 0 if result.get("ok") else 1
 
 
+def cmd_generate(args: argparse.Namespace) -> int:
+    """
+    从 MySQL 生成静态 HTML 到 portal/dist。
+
+    @param args: 含 action、page_id、path、out
+    @returns: 进程退出码
+    """
+    from pathlib import Path
+
+    from portal.generator.generate_one import (
+        DEFAULT_OUT_ROOT,
+        write_all_published,
+        write_by_url_path,
+        write_page_html,
+    )
+
+    out_root = Path(args.out) if args.out else DEFAULT_OUT_ROOT
+    action = args.action.strip().lower()
+
+    if action == "page":
+        if args.page_id:
+            result = write_page_html(args.page_id, out_root=out_root)
+        elif args.path:
+            result = write_by_url_path(args.path, out_root=out_root)
+        else:
+            print("generate page 需要 --page-id 或 --path")
+            return 1
+    elif action == "all":
+        result = write_all_published(out_root=out_root)
+    else:
+        print("未知 generate 子命令；可用: page, all")
+        return 1
+
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0 if result.get("ok") else 1
+
+
+def cmd_serve(args: argparse.Namespace) -> int:
+    """
+    启动 Portal 开发服务器（MySQL 动态渲染）。
+
+    @param args: 含 host、port
+    @returns: 进程退出码（通常阻塞至 Ctrl+C）
+    """
+    from portal.generator.dev_server import run_dev_server
+
+    run_dev_server(host=args.host, port=args.port)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """
     构建 argparse 解析器。
@@ -348,6 +401,24 @@ def build_parser() -> argparse.ArgumentParser:
     p_query_page.add_argument("--season", type=int, default=None)
     p_query_page.add_argument("--episode", type=int, default=None)
     p_query_page.set_defaults(func=cmd_query)
+
+    p_generate = sub.add_parser("generate", help="MySQL → 静态 HTML（portal/dist）")
+    gen_sub = p_generate.add_subparsers(dest="action", required=True)
+    p_gen_page = gen_sub.add_parser("page", help="生成单页")
+    p_gen_page.add_argument("--page-id", default=None, help="如 tv:1396:s04e06")
+    p_gen_page.add_argument("--path", default=None, help="URL 路径，如 /breaking-bad/s4e6/")
+    p_gen_page.add_argument(
+        "--out", default=None, help="输出根目录，默认 portal/dist"
+    )
+    p_gen_page.set_defaults(func=cmd_generate)
+    p_gen_all = gen_sub.add_parser("all", help="批量生成 published 页面")
+    p_gen_all.add_argument("--out", default=None, help="输出根目录")
+    p_gen_all.set_defaults(func=cmd_generate)
+
+    p_serve = sub.add_parser("serve", help="本地开发服（DB 动态渲染）")
+    p_serve.add_argument("--host", default="127.0.0.1")
+    p_serve.add_argument("--port", type=int, default=8080)
+    p_serve.set_defaults(func=cmd_serve)
 
     return parser
 

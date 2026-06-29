@@ -557,6 +557,14 @@ class EpisodePageContext:
         prev_path = self.page.prev_episode_path(slug)
         next_path = self.page.next_episode_path(slug)
 
+        def _nav_url(path: Optional[str]) -> Optional[str]:
+            """站内导航 URL：本地预览用相对路径，生产可传 site_origin。"""
+            if not path:
+                return None
+            if site_origin and site_origin not in ("", "/"):
+                return f"{site_origin.rstrip('/')}{path}"
+            return path
+
         return {
             "show_title": self.catalog.title,
             "show_slug": slug,
@@ -571,13 +579,13 @@ class EpisodePageContext:
             "recommended_quality": recommended.resolution if recommended else "",
             "sources": [s.to_template_dict() for s in self.sources],
             "source_count": len(self.sources),
-            "prev_episode_url": f"{site_origin}{prev_path}" if prev_path else None,
+            "prev_episode_url": _nav_url(prev_path),
             "prev_episode_label": (
                 f"S{self.page.prev_season:02d}E{self.page.prev_episode:02d}"
                 if prev_path
                 else None
             ),
-            "next_episode_url": f"{site_origin}{next_path}" if next_path else None,
+            "next_episode_url": _nav_url(next_path),
             "next_episode_label": (
                 f"S{self.page.next_season:02d}E{self.page.next_episode:02d}"
                 if next_path
@@ -599,4 +607,111 @@ class EpisodePageContext:
                 f"{self.catalog.title} 第 {self.page.season} 季第 {self.page.episode} 集 "
                 f"Release 导航：本站 Recommended Release、{len(self.sources)} 条多源对比与对版说明。"
             ),
+        }
+
+
+@dataclass
+class MoviePageContext:
+    """
+    电影页 Jinja2 完整上下文。
+
+    @var catalog: 作品主数据
+    @var page: 页面槽位
+    @var sources: All Versions 列表
+    @var recommended: Recommended release
+    @var canonical_url: canonical URL
+    """
+
+    catalog: MediaCatalog
+    page: MediaPage
+    sources: List[DownloadResource]
+    recommended: Optional[DownloadResource] = None
+    canonical_url: str = ""
+
+    def to_template_context(self, site_origin: str = "https://releasematch.io") -> Dict[str, Any]:
+        """
+        组装 movie.html 渲染上下文。
+
+        @param site_origin: 站点 origin
+        @returns: Jinja2 参数字典
+        """
+        recommended = self.recommended
+        rec_dict = recommended.to_template_dict() if recommended else None
+        runtime = (
+            f"{self.catalog.runtime_minutes} min"
+            if self.catalog.runtime_minutes
+            else ""
+        )
+        origin = site_origin.rstrip("/") if site_origin else ""
+        canonical = self.canonical_url or (
+            f"{origin}{self.page.canonical_path}" if origin else self.page.canonical_path
+        )
+        return {
+            "movie_title": self.catalog.title,
+            "year": self.catalog.year or "",
+            "runtime": runtime,
+            "movie_overview": self.page.overview or self.catalog.overview,
+            "cross_source_count": self.page.cross_source_count,
+            "cross_source_total": self.page.cross_source_total,
+            "recommended": rec_dict,
+            "recommended_quality": recommended.resolution if recommended else "",
+            "sources": [s.to_template_dict() for s in self.sources],
+            "source_count": len(self.sources),
+            "poster_url": self.catalog.poster_url(),
+            "tmdb_overview": self.page.overview or self.catalog.overview,
+            "tmdb_url": self.catalog.tmdb_url,
+            "canonical_url": canonical,
+            "robots_noindex": not self.page.is_indexable(),
+        }
+
+
+@dataclass
+class ShowHubPageContext:
+    """
+    剧集 Hub 页 Jinja2 上下文。
+
+    @var catalog: 作品主数据
+    @var page: Hub 槽位
+    @var seasons: 季/集芯片结构
+    @var active_season: 高亮季号（可选）
+    @var active_episode: 高亮集号（可选）
+    """
+
+    catalog: MediaCatalog
+    page: MediaPage
+    seasons: List[Dict[str, Any]]
+    active_season: Optional[int] = None
+    active_episode: Optional[int] = None
+    canonical_url: str = ""
+
+    def to_template_context(self, site_origin: str = "https://releasematch.io") -> Dict[str, Any]:
+        """
+        组装 show_hub.html 渲染上下文。
+
+        @param site_origin: 站点 origin
+        @returns: Jinja2 参数字典
+        """
+        seasons_out: List[Dict[str, Any]] = []
+        for season in self.seasons:
+            eps_out = []
+            for ep in season.get("episodes", []):
+                is_active = (
+                    self.active_season == season["number"]
+                    and self.active_episode == ep["number"]
+                )
+                eps_out.append({"number": ep["number"], "is_active": is_active})
+            seasons_out.append({"number": season["number"], "episodes": eps_out})
+
+        origin = site_origin.rstrip("/") if site_origin else ""
+        canonical = self.canonical_url or (
+            f"{origin}{self.page.canonical_path}" if origin else self.page.canonical_path
+        )
+        return {
+            "show_title": self.catalog.title,
+            "show_slug": self.catalog.slug,
+            "show_overview": self.page.overview or self.catalog.overview,
+            "seasons": seasons_out,
+            "poster_url": self.catalog.poster_url(),
+            "tmdb_url": self.catalog.tmdb_url,
+            "canonical_url": canonical,
         }

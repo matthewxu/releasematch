@@ -10,5 +10,6 @@
 | [04-方案全景分析与优先级重评.md](../../download-resources/04-方案全景分析与优先级重评.md) | **T0~T5 + C0~C4 双轨（v1.1，当前生效）** |
 | [05-存储与部署配置.md](./05-存储与部署配置.md) | **MySQL 本地测试 → D1 生产、环境变量、总控 CLI** |
 | [06-run-cli使用说明.md](./06-run-cli使用说明.md) | **workflow.run 总控命令完整参考** |
+| [07-部署架构解疑.md](./07-部署架构解疑.md) | **D1 / Pages / Worker generate / CI 部署 FAQ** |
 
 **隔离说明：** `03` 文档中 `tmdbpy/workflow/torrent_sources/`、`subtitle-portal` 路由等路径已废弃，以 `releasematch/` 为准。

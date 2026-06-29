@@ -77,14 +77,36 @@ portal/
 
 ### 本地预览
 
-在 `portal/` 目录启动静态服务器：
+**方式 A — 开发服（推荐，实时读 MySQL）：**
+
+```bash
+cd releasematch
+source .venv/bin/activate   # 或 pip install -r requirements.txt
+python -m workflow.run db init --seed   # 首次
+python -m workflow.run serve --port 8080
+```
+
+浏览器打开：
+
+- `http://127.0.0.1:8080/breaking-bad/s4e6/` — 单集（读 `download_resources`）
+- `http://127.0.0.1:8080/breaking-bad/` — Hub
+- `http://127.0.0.1:8080/inception-2010/` — 电影
+
+**方式 B — 生成静态 HTML 到 `portal/dist/`：**
+
+```bash
+python -m workflow.run generate page --path /breaking-bad/s4e6/
+python -m workflow.run generate all
+cd portal && python -m http.server 8080
+```
+
+**方式 C — 旧版静态演示（硬编码，不读库）：**
 
 ```bash
 cd releasematch/portal
 python -m http.server 8080
+# 打开 /breaking-bad/s4e6/index.html（演示 HTML，非 DB）
 ```
-
-浏览器打开 `http://localhost:8080/breaking-bad/s4e6/` 查看单集页设计。
 
 ---
 
