@@ -1,0 +1,158 @@
+{# 剧集单集页模板 — L3 核心页面，IG 模块完整嵌入 #}
+{# @template episode.html — T3 生成器：Recommended + All Sources + 侧边栏 #}
+{% extends "base.html" %}
+
+{% block title %}{{ show_title }} S{{ '%02d'|format(season) }}E{{ '%02d'|format(episode) }} Sources — {{ recommended_quality }} | ReleaseMatch{% endblock %}
+
+{% block meta_description %}{{ show_title }} 第 {{ season }} 季第 {{ episode }} 集 Release 导航：本站 Recommended Release、{{ source_count }} 条多源对比与对版说明。{% endblock %}
+
+{% block meta_robots %}
+  {% if robots_noindex %}
+  <meta name="robots" content="noindex,follow">
+  {% else %}
+  <meta name="robots" content="index,follow">
+  {% endif %}
+{% endblock %}
+
+{% block head_extra %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "{{ show_title }} S{{ season }}E{{ episode }} — Release-Matched Sources",
+    "description": "{{ meta_description | default('Release navigation with verified release recommendations') }}",
+    "url": "{{ canonical_url }}"
+  }
+  </script>
+{% endblock %}
+
+{% block content %}
+<div class="rm-container">
+  <nav class="rm-breadcrumb" aria-label="面包屑">
+    <a href="/">首页</a>
+    <span class="rm-breadcrumb__sep" aria-hidden="true">/</span>
+    <a href="/{{ show_slug }}/">{{ show_title }}</a>
+    <span class="rm-breadcrumb__sep" aria-hidden="true">/</span>
+    <span>S{{ '%02d'|format(season) }}E{{ '%02d'|format(episode) }}</span>
+  </nav>
+
+  <header class="rm-hero">
+    <div class="rm-hero__meta">
+      <span>第 {{ season }} 季 · 第 {{ episode }} 集</span>
+      {% if air_date %}<span>{{ air_date }}</span>{% endif %}
+      <span class="rm-badge rm-badge--cross">{{ cross_source_count }}/{{ cross_source_total }} 源验证</span>
+    </div>
+    <h1 class="rm-hero__title">{{ show_title }} S{{ '%02d'|format(season) }}E{{ '%02d'|format(episode) }} — Release-Matched Sources</h1>
+    <p class="rm-hero__subtitle">{{ episode_overview }}</p>
+  </header>
+
+  <div class="rm-main-grid rm-main-grid--with-sidebar">
+    <div class="rm-main-grid__primary">
+
+      {# 测速摘要（T2） #}
+      {% if speed_summary %}
+      <section class="rm-section" aria-labelledby="speed-heading">
+        <div class="rm-speed-bar">
+          <span class="rm-speed-bar__item" id="speed-heading">
+            测速摘要：
+            <span class="rm-speed-bar__value">{{ speed_summary.recommended_speed }}</span>
+          </span>
+          <span class="rm-speed-bar__item">可达性 <strong>{{ speed_summary.reachability }}</strong></span>
+          <span class="rm-speed-bar__item">更新于 {{ speed_summary.updated_at }}</span>
+        </div>
+      </section>
+      {% endif %}
+
+      {# ★ Recommended Release — 最高 IG 模块 #}
+      {% include 'partials/recommended_block.html' %}
+
+      {# All Sources 对比表 #}
+      <section class="rm-section all-sources" aria-labelledby="sources-heading">
+        <div class="rm-section__header">
+          <h2 id="sources-heading">All Sources（{{ sources | length }} matched）</h2>
+        </div>
+
+        <div class="rm-table-wrap">
+          <table class="rm-table rm-table--responsive">
+            <thead>
+              <tr>
+                <th>Release</th>
+                <th>Quality</th>
+                <th>Size</th>
+                <th>Seed</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in sources %}
+              <tr{% if item.is_recommended %} class="is-recommended"{% endif %}>
+                <td class="rm-table__release">{{ item.title_raw }}</td>
+                <td>{{ item.resolution }}</td>
+                <td>{{ item.size_human }}</td>
+                <td>{{ item.seeders }}</td>
+                <td><a class="rm-table__magnet" href="{{ item.magnet_uri }}" rel="nofollow">Magnet</a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {# 集间导航 #}
+      <nav class="rm-episode-nav" aria-label="同季集导航">
+        {% if prev_episode_url %}
+        <a class="rm-episode-nav__link rm-episode-nav__link--prev" href="{{ prev_episode_url }}" rel="prev">
+          <span class="rm-episode-nav__label">上一集</span>
+          <span>{{ prev_episode_label }}</span>
+        </a>
+        {% else %}
+        <span></span>
+        {% endif %}
+
+        <span class="rm-episode-nav__center">第 {{ season }} 季</span>
+
+        {% if next_episode_url %}
+        <a class="rm-episode-nav__link rm-episode-nav__link--next" href="{{ next_episode_url }}" rel="next">
+          <span class="rm-episode-nav__label">下一集</span>
+          <span>{{ next_episode_label }}</span>
+        </a>
+        {% else %}
+        <span></span>
+        {% endif %}
+      </nav>
+    </div>
+
+    {# 侧边栏：TMDB + Watch On + 字幕链 #}
+    <aside class="rm-main-grid__sidebar">
+      <section class="rm-card tmdb-card" aria-labelledby="tmdb-heading">
+        {% if poster_url %}
+        <img class="rm-card__poster" src="{{ poster_url }}" alt="{{ show_title }} 海报" width="300" height="450" loading="lazy">
+        {% endif %}
+        <h2 class="rm-card__title" id="tmdb-heading">About This Episode</h2>
+        <p class="rm-card__meta">{{ show_title }} · S{{ season }}E{{ episode }}</p>
+        <p class="rm-card__text">{{ tmdb_overview }}</p>
+        <a class="rm-btn rm-btn--secondary" href="{{ tmdb_url }}" rel="external nofollow">在 TMDB 查看</a>
+      </section>
+
+      {% if streaming_providers %}
+      <section class="rm-card rm-mt-0" aria-labelledby="watch-heading">
+        <h2 class="rm-card__title" id="watch-heading">Watch On</h2>
+        <ul class="rm-streaming-list">
+          {% for provider in streaming_providers %}
+          <li><span class="rm-streaming-list__dot" aria-hidden="true"></span>{{ provider }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      {% if subtitle_url %}
+      <section class="rm-card rm-mt-0">
+        <h2 class="rm-card__title">Matched Subtitles</h2>
+        <p class="rm-card__text">本站推荐 release 可与以下字幕页配对使用（跨站单链协同）。</p>
+        <a href="{{ subtitle_url }}">SubtitlePortal →</a>
+      </section>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+{% endblock %}

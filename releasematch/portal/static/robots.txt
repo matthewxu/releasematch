@@ -1,0 +1,8 @@
+# ReleaseMatch robots.txt（C0 占位 — C2 前勿大规模提交 sitemap）
+User-agent: *
+Allow: /
+
+# C2 前验证集未就绪时可临时禁止全站抓取（按需取消注释）
+# Disallow: /
+
+Sitemap: https://releasematch.io/sitemap.xml

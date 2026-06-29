@@ -1,0 +1,37 @@
+{# ReleaseMatch 全局页脚片段 #}
+{# @partial footer.html — Trust 链接与合规声明 #}
+<footer class="rm-footer" role="contentinfo">
+  <div class="rm-container">
+    <div class="rm-footer__grid">
+      <div class="rm-footer__brand">
+        <a class="rm-logo rm-mb-2" href="/">
+          <span class="rm-logo__mark" aria-hidden="true">RM</span>
+          <span>ReleaseMatch</span>
+        </a>
+        <p>Release 导航站：帮助你在众多压制版本中选对 release，并提供对版分析与质量说明。不托管视频，仅索引公开元数据。</p>
+      </div>
+
+      <div>
+        <div class="rm-footer__heading">Trust</div>
+        <ul class="rm-footer__links">
+          <li><a href="/trust/about/">关于我们</a></li>
+          <li><a href="/trust/how-matching-works/">对版如何工作</a></li>
+          <li><a href="/trust/privacy/">隐私政策</a></li>
+          <li><a href="/trust/dmca/">DMCA</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="rm-footer__heading">说明</div>
+        <ul class="rm-footer__links">
+          <li><a href="https://www.themoviedb.org/" rel="external nofollow">TMDB</a></li>
+          <li><span class="rm-text-muted">数据经多源交叉验证</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="rm-footer__bottom">
+      &copy; {{ year | default('2026') }} ReleaseMatch · 不托管视频内容 · Magnet 链接 rel="nofollow"
+    </div>
+  </div>
+</footer>

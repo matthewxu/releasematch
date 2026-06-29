@@ -1,0 +1,75 @@
+{# 电影页模板 — 与剧集页结构类似，无集间导航，强调多版本对比 #}
+{# @template movie.html — T3 生成器电影槽位 #}
+{% extends "base.html" %}
+
+{% block title %}{{ movie_title }} ({{ year }}) Sources — {{ recommended_quality }} | ReleaseMatch{% endblock %}
+
+{% block meta_description %}{{ movie_title }} ({{ year }}) Release 导航：Recommended Release 与 {{ source_count }} 条多版本对比。{% endblock %}
+
+{% block content %}
+<div class="rm-container">
+  <nav class="rm-breadcrumb" aria-label="面包屑">
+    <a href="/">首页</a>
+    <span class="rm-breadcrumb__sep" aria-hidden="true">/</span>
+    <span>{{ movie_title }} ({{ year }})</span>
+  </nav>
+
+  <header class="rm-hero">
+    <div class="rm-hero__meta">
+      <span>{{ year }}</span>
+      <span>{{ runtime }}</span>
+      <span class="rm-badge rm-badge--cross">{{ cross_source_count }}/{{ cross_source_total }} 源验证</span>
+    </div>
+    <h1 class="rm-hero__title">{{ movie_title }} ({{ year }}) — Release-Matched Sources</h1>
+    <p class="rm-hero__subtitle">{{ movie_overview }}</p>
+  </header>
+
+  <div class="rm-main-grid rm-main-grid--with-sidebar">
+    <div class="rm-main-grid__primary">
+      {% include 'partials/recommended_block.html' %}
+
+      <section class="rm-section all-sources" aria-labelledby="sources-heading">
+        <div class="rm-section__header">
+          <h2 id="sources-heading">All Versions（{{ sources | length }} matched）</h2>
+          <span class="rm-text-muted">电影页侧重多版本画质/音轨对比</span>
+        </div>
+        <div class="rm-table-wrap">
+          <table class="rm-table rm-table--responsive">
+            <thead>
+              <tr>
+                <th>Release</th>
+                <th>Quality</th>
+                <th>Size</th>
+                <th>Seed</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in sources %}
+              <tr{% if item.is_recommended %} class="is-recommended"{% endif %}>
+                <td class="rm-table__release">{{ item.title_raw }}</td>
+                <td>{{ item.resolution }}</td>
+                <td>{{ item.size_human }}</td>
+                <td>{{ item.seeders }}</td>
+                <td><a class="rm-table__magnet" href="{{ item.magnet_uri }}" rel="nofollow">Magnet</a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <aside class="rm-main-grid__sidebar">
+      <section class="rm-card">
+        {% if poster_url %}
+        <img class="rm-card__poster" src="{{ poster_url }}" alt="{{ movie_title }} 海报" loading="lazy">
+        {% endif %}
+        <h2 class="rm-card__title">About This Movie</h2>
+        <p class="rm-card__text">{{ tmdb_overview }}</p>
+        <a class="rm-btn rm-btn--secondary" href="{{ tmdb_url }}" rel="external nofollow">在 TMDB 查看</a>
+      </section>
+    </aside>
+  </div>
+</div>
+{% endblock %}

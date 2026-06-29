@@ -1,0 +1,47 @@
+{# 剧集 Hub 页 — 季/集索引入口 #}
+{# @template show_hub.html — 展示季选择与集列表芯片 #}
+{% extends "base.html" %}
+
+{% block title %}{{ show_title }} — 全部集数 Release 导航 | ReleaseMatch{% endblock %}
+
+{% block content %}
+<div class="rm-container">
+  <nav class="rm-breadcrumb" aria-label="面包屑">
+    <a href="/">首页</a>
+    <span class="rm-breadcrumb__sep" aria-hidden="true">/</span>
+    <span>{{ show_title }}</span>
+  </nav>
+
+  <header class="rm-hero">
+    <h1 class="rm-hero__title">{{ show_title }}</h1>
+    <p class="rm-hero__subtitle">{{ show_overview }}</p>
+  </header>
+
+  <div class="rm-main-grid rm-main-grid--with-sidebar">
+    <div>
+      {% for season in seasons %}
+      <section class="rm-section" aria-labelledby="season-{{ season.number }}-heading">
+        <h2 id="season-{{ season.number }}-heading">第 {{ season.number }} 季</h2>
+        <div class="rm-episode-grid">
+          {% for ep in season.episodes %}
+          <a
+            class="rm-episode-chip{% if ep.is_active %} rm-episode-chip--active{% endif %}"
+            href="/{{ show_slug }}/s{{ season.number }}e{{ ep.number }}/"
+          >S{{ '%02d'|format(season.number) }}E{{ '%02d'|format(ep.number) }}</a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endfor %}
+    </div>
+
+    <aside>
+      {% if poster_url %}
+      <section class="rm-card">
+        <img class="rm-card__poster" src="{{ poster_url }}" alt="{{ show_title }}" loading="lazy">
+        <a class="rm-btn rm-btn--secondary" href="{{ tmdb_url }}" rel="external nofollow">TMDB</a>
+      </section>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+{% endblock %}

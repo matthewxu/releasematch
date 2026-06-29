@@ -1,0 +1,32 @@
+{# ReleaseMatch 页面基础布局 #}
+{# @template base.html — T3 生成器共用骨架：head、header、footer、静态资源 #}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ReleaseMatch — Release 导航站{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}影视 Release 导航：Recommended Release、对版分析与多源对比。{% endblock %}">
+  {% block meta_robots %}{% endblock %}
+  <link rel="canonical" href="{% block canonical %}{{ canonical_url }}{% endblock %}">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/design-system.css">
+
+  {% block head_extra %}{% endblock %}
+</head>
+<body class="rm-page">
+  {% include 'partials/header.html' %}
+
+  <main id="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% include 'partials/footer.html' %}
+
+  <script src="/static/js/site.js" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
