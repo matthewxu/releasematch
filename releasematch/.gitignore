@@ -1,0 +1,20 @@
+# ReleaseMatch 运行时与本地凭据
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# 本地配置（含 Jackett API Key）
+workflow/torrent_sources/accounts.local.json
+workflow/torrent_sources/data/
+workflow/**/data/*.sqlite3
+workflow/**/data/*.jsonl
+
+# 环境变量文件
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/

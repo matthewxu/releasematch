@@ -1,0 +1,25 @@
+{
+  "jackett": {
+    "base_url": "http://127.0.0.1:9117",
+    "api_key": "YOUR_JACKETT_API_KEY",
+    "indexers": {
+      "tv": ["all"],
+      "movie": ["all"]
+    }
+  },
+  "eztv": {
+    "base_url": "https://eztvx.to"
+  },
+  "yts": {
+    "base_url": "https://yts.mx"
+  },
+  "nyaa": {
+    "base_url": "https://nyaa.si"
+  },
+  "rate_limit": {
+    "min_interval_sec": 2.0
+  },
+  "cache": {
+    "seeders_ttl_hours": 6
+  }
+}
