@@ -25,9 +25,15 @@ _ROOT = Path(__file__).resolve().parent.parent.parent
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
+from workflow.config import TMDB_DATA_MODE
 from workflow.metadata.external_ids import resolve_external_ids
 from workflow.torrent_sources.cache_index import CacheIndex
-from workflow.torrent_sources.config import load_accounts_config
+from workflow.torrent_sources.config import (
+    is_jackett_api_key_configured,
+    load_accounts_config,
+    probe_jackett_http,
+    resolve_accounts_config_path,
+)
 from workflow.torrent_sources.models import FetchMode, FetchRequest, FetchResult, MediaType
 
 
@@ -39,12 +45,23 @@ def cmd_status(args: argparse.Namespace) -> int:
     @returns: 退出码 0
     """
     cache = CacheIndex()
-    cfg = load_accounts_config(args.accounts)
+    cfg_path = resolve_accounts_config_path(
+        Path(args.accounts) if args.accounts else None
+    )
+    cfg = load_accounts_config(cfg_path)
+    jackett = cfg.get("jackett", {})
+    api_key = str(jackett.get("api_key") or "")
+    base_url = str(jackett.get("base_url") or "")
     summary = {
         "cache_entries": cache.count(),
-        "jackett_base_url": cfg.get("jackett", {}).get("base_url"),
-        "has_api_key": bool(cfg.get("jackett", {}).get("api_key")),
-        "implementation": "scaffold — clients 待 R0 实现",
+        "accounts_config": str(cfg_path),
+        "accounts_local_exists": cfg_path.name == "accounts.local.json",
+        "jackett_base_url": base_url,
+        "has_api_key": bool(api_key),
+        "has_valid_api_key": is_jackett_api_key_configured(api_key),
+        "jackett_probe": probe_jackett_http(base_url) if base_url else None,
+        "tmdb_data_mode": TMDB_DATA_MODE,
+        "implementation": "scaffold - clients pending R0",
     }
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     return 0

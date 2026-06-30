@@ -32,6 +32,9 @@ releasematch/
 ├── .gitignore
 ├── docs/
 │   └── INDEX.md                       # 指向 download-resources 方案文档
+├── worklogs/                          # 按日期存放的开发工作日志
+│   ├── README.md                      # 命名规范与模板
+│   └── YYYY-MM-DD/                    # 单日文件夹
 ├── schema/
 │   ├── d1_download_resources.sql      # Cloudflare D1 上线表
 │   └── mysql_download_inventory.sql   # 可选批补 MySQL 表
@@ -58,16 +61,18 @@ releasematch/
 ```powershell
 # 1. 进入目录并安装依赖
 cd releasematch
+.\scripts\setup_block_a.ps1
+# 或手动：
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 
-# 2. Phase 0：验证 Jackett / EZTV / YTS / Nyaa 连通性
-.\scripts\poc_phase0.ps1
+# 2. 配置 Jackett Key（编辑 accounts.local.json 或设置 JACKETT_API_KEY）
 
-# 3. 复制 Jackett 配置模板
-copy workflow\torrent_sources\accounts.example.json workflow\torrent_sources\accounts.local.json
-# 编辑 accounts.local.json 填入 JACKETT_API_KEY
+# 3. Phase 0：验证四源连通性（Python，跨平台）
+python scripts/poc_phase0.py
+# 逐 Jackett indexer：python scripts/poc_jackett_indexers.py
+# 海外 Jackett：见 docs/jackett-remote-linode.md
 
 # 4. 查看工作流状态
 python -m workflow.run status

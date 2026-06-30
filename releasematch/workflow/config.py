@@ -43,7 +43,7 @@ JACKETT_BASE_URL: str = os.getenv("JACKETT_BASE_URL", "http://127.0.0.1:9117")
 JACKETT_API_KEY: str = os.getenv("JACKETT_API_KEY", "")
 
 EZTV_BASE_URL: str = os.getenv("EZTV_BASE_URL", "https://eztvx.to")
-YTS_BASE_URL: str = os.getenv("YTS_BASE_URL", "https://yts.mx")
+YTS_BASE_URL: str = os.getenv("YTS_BASE_URL", "https://yts.lt")
 NYAA_BASE_URL: str = os.getenv("NYAA_BASE_URL", "https://nyaa.si")
 
 TORRENT_MIN_INTERVAL_SEC: float = float(os.getenv("TORRENT_MIN_INTERVAL_SEC", "2.0"))

@@ -1,12 +1,11 @@
-# ReleaseMatch Python 依赖
-# 在 releasematch/.venv 中安装
+# ReleaseMatch Python dependencies (install in releasematch/.venv)
 
 requests>=2.31.0
 PyMySQL>=1.1.0
 PyYAML>=6.0
 
-# 可选：Release 文件名解析（R1 阶段启用）
+# Optional R1: release filename parsing
 # parse-torrent-name>=0.1.0
 
-# 可选：测速模块（R2 阶段启用）
+# Optional R2: speedtest module
 # python-libtorrent>=2.0.0
