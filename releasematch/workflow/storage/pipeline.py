@@ -1,0 +1,233 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+ReleaseMatch 槽位处理流水线。
+
+@module workflow.storage.pipeline
+@description
+  总控 orchestration：拉取 → 评分 → 写入 MySQL →（后续）生成 HTML → sync D1。
+
+  当前阶段（R0）：
+    - demo: 使用 scorer 内置 Demo 数据写入 MySQL
+    - query: 从 MySQL 读取并输出 Jinja2 上下文
+    - fetch: 预留 torrent_sources 接入（--fetch 时调用）
+"""
+
+from __future__ import annotations
+
+import uuid
+from typing import Any, Dict, List, Optional
+
+from workflow.config import STORAGE_BACKEND, SITE_ORIGIN
+from workflow.recommended.scorer import rank_items
+from workflow.storage.mysql_store import MySQLStore
+
+
+def _demo_items_for_slot(
+    tmdb_id: int,
+    season: Optional[int],
+    episode: Optional[int],
+) -> List[Dict[str, Any]]:
+    """
+    返回与 portal 演示页一致的 Demo ResourceItem 列表。
+
+    @param tmdb_id: TMDB ID
+    @param season: 季号
+    @param episode: 集号
+    @returns: ResourceItem 字典列表
+    """
+    if tmdb_id == 1396 and season == 4 and episode == 6:
+        return [
+            {
+                "infohash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "title_raw": "Breaking.Bad.S04E06.1080p.WEB-DL.DDP5.1.H.264-NTb",
+                "release_group": "NTb",
+                "source": "WEB-DL（Amazon Prime US）",
+                "resolution": "1080p",
+                "codec": "H.264",
+                "video_spec": "H.264 1080p ~8 Mbps",
+                "audio_spec": "DDP5.1 @ 640 kbps",
+                "size_bytes": 2576980378,
+                "seeders": 24,
+                "peers": 30,
+                "magnet_uri": "magnet:?xt=urn:btih:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "indexer": "jackett",
+                "cross_source_count": 3,
+                "cross_source_confidence": 1.0,
+            },
+            {
+                "infohash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "title_raw": "Breaking.Bad.S04E06.1080p.WEB-DL.H.264-HiFi",
+                "release_group": "HiFi",
+                "source": "WEB-DL",
+                "resolution": "1080p",
+                "codec": "H.264",
+                "video_spec": "H.264 1080p",
+                "audio_spec": "DDP5.1",
+                "size_bytes": 2469606195,
+                "seeders": 18,
+                "peers": 22,
+                "magnet_uri": "magnet:?xt=urn:btih:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "indexer": "eztv",
+                "cross_source_count": 2,
+                "cross_source_confidence": 0.67,
+            },
+            {
+                "infohash": "cccccccccccccccccccccccccccccccccccccccc",
+                "title_raw": "Breaking.Bad.S04E06.720p.WEB-DL.H.264-BTN",
+                "release_group": "BTN",
+                "source": "WEB-DL",
+                "resolution": "720p",
+                "codec": "H.264",
+                "video_spec": "H.264 720p",
+                "audio_spec": "DDP5.1",
+                "size_bytes": 1181116006,
+                "seeders": 31,
+                "peers": 35,
+                "magnet_uri": "magnet:?xt=urn:btih:cccccccccccccccccccccccccccccccccccccccc",
+                "indexer": "jackett",
+                "cross_source_count": 2,
+                "cross_source_confidence": 0.67,
+            },
+            {
+                "infohash": "dddddddddddddddddddddddddddddddddddddddd",
+                "title_raw": "Breaking.Bad.S04E06.1080p.BluRay.x264-ROVERS",
+                "release_group": "ROVERS",
+                "source": "BluRay",
+                "resolution": "1080p",
+                "codec": "x264",
+                "video_spec": "x264 1080p",
+                "audio_spec": "DTS-HD MA 5.1",
+                "size_bytes": 4402341478,
+                "seeders": 9,
+                "peers": 12,
+                "magnet_uri": "magnet:?xt=urn:btih:dddddddddddddddddddddddddddddddddddddddd",
+                "indexer": "jackett",
+                "cross_source_count": 1,
+                "cross_source_confidence": 0.33,
+            },
+        ]
+    return []
+
+
+def run_slot_pipeline(
+    tmdb_id: int,
+    media_kind: str = "tv",
+    season: Optional[int] = None,
+    episode: Optional[int] = None,
+    mode: str = "demo",
+    fetch: bool = False,
+) -> Dict[str, Any]:
+    """
+    执行单槽位 pipeline：评分 → 写入存储 → 返回摘要。
+
+    @param tmdb_id: TMDB 作品 ID
+    @param media_kind: tv | movie
+    @param season: 季号（剧集必填）
+    @param episode: 集号（剧集必填）
+    @param mode: demo | live（live 需 --fetch）
+    @param fetch: 是否调用 torrent_sources 拉取（R1）
+    @returns: pipeline 结果 JSON
+    """
+    if STORAGE_BACKEND != "mysql":
+        return {
+            "ok": False,
+            "error": f"当前 STORAGE_BACKEND={STORAGE_BACKEND}；本地测试请设 RM_STORAGE_BACKEND=mysql",
+        }
+
+    store = MySQLStore()
+    ping = store.ping()
+    if not ping.get("ok"):
+        return {"ok": False, "step": "db_ping", "detail": ping}
+
+    media_type = "tv_episode" if media_kind == "tv" else "movie"
+    page_id = store.resolve_page_id(tmdb_id, media_kind, season, episode)
+
+    items: List[Dict[str, Any]] = []
+    fetch_note = ""
+
+    if fetch:
+        fetch_note = "torrent_sources 拉取尚未接入 pipeline；回退 demo 数据"
+        items = _demo_items_for_slot(tmdb_id, season, episode)
+    elif mode == "demo":
+        items = _demo_items_for_slot(tmdb_id, season, episode)
+    else:
+        return {"ok": False, "error": "live 模式需 --fetch（R1 实现 jackett 编排）"}
+
+    if not items:
+        return {
+            "ok": False,
+            "page_id": page_id,
+            "error": "无可用 items；请先 db seed 或使用已知 Demo 槽位 1396/4/6",
+        }
+
+    ranked = rank_items(items)
+    write_result = store.upsert_slot_resources(
+        page_id=page_id,
+        tmdb_id=tmdb_id,
+        media_type=media_type,
+        season=season,
+        episode=episode,
+        items=items,
+        ranked=ranked,
+    )
+
+    run_id = str(uuid.uuid4())
+    store.record_sync_run(
+        run_id=run_id,
+        source="pipeline_demo" if mode == "demo" else "pipeline_fetch",
+        slots_processed=1,
+        resources_upserted=write_result["resources_upserted"],
+        pages_published=1 if write_result["magnet_count"] >= 2 else 0,
+    )
+
+    ctx = store.get_episode_page_context(page_id)
+    template_preview = None
+    if ctx:
+        template_preview = {
+            "show_title": ctx.catalog.title,
+            "source_count": len(ctx.sources),
+            "recommended": ctx.recommended.title_raw if ctx.recommended else None,
+            "robots_noindex": not ctx.page.is_indexable(),
+        }
+
+    return {
+        "ok": True,
+        "backend": STORAGE_BACKEND,
+        "page_id": page_id,
+        "mode": mode,
+        "fetch_note": fetch_note or None,
+        "ranked_top": {
+            "title_raw": ranked[0].title_raw,
+            "score": ranked[0].score,
+            "group_tier": ranked[0].group_tier,
+        },
+        "write": write_result,
+        "sync_run_id": run_id,
+        "template_preview": template_preview,
+    }
+
+
+def query_page_context(page_id: str) -> Dict[str, Any]:
+    """
+    从 MySQL 读取页面上下文并转为 JSON（供 query CLI / 生成器调试）。
+
+    @param page_id: 如 tv:1396:s04e06
+    @returns: 含 template_context 的字典
+    """
+    if STORAGE_BACKEND != "mysql":
+        return {"ok": False, "error": f"query 当前仅支持 mysql，当前为 {STORAGE_BACKEND}"}
+
+    store = MySQLStore()
+    ctx = store.get_episode_page_context(page_id)
+    if not ctx:
+        return {"ok": False, "page_id": page_id, "error": "页面不存在或非 episode 类型"}
+
+    template = ctx.to_template_context(site_origin=SITE_ORIGIN)
+    return {
+        "ok": True,
+        "page_id": page_id,
+        "magnet_count": ctx.page.magnet_count,
+        "page_status": ctx.page.page_status,
+        "template_context": template,
+    }

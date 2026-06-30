@@ -1,5 +1,6 @@
 {# Recommended Release 卡片可复用片段 #}
 {# @partial recommended_block.html — episode / movie 共用 #}
+{% if recommended %}
 <section class="rm-section recommended-release" aria-labelledby="recommended-heading">
   <div class="rm-section__header">
     <h2 class="rm-section__title" id="recommended-heading">
@@ -44,3 +45,4 @@
     </div>
   </article>
 </section>
+{% endif %}
