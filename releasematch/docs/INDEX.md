@@ -15,5 +15,7 @@
 | [jackett-remote-linode.md](./jackett-remote-linode.md) | **海外 VPS 部署 Jackett**（日本测试机 `104.105.140.11`） |
 | [jackett-stability.md](./jackett-stability.md) | **Jackett / 拉取稳定性保障**（配置、healthcheck、验收） |
 | [nyaa-proxy-asia.md](./nyaa-proxy-asia.md) | **日韩剧 Nyaa LA 直连 + SSH SOCKS 隧道回退** |
+| [08-浏览器磁力插件评估报告.md](./08-浏览器磁力插件评估报告.md) | **扩展开发时间、市场空间、竞品分析与战略建议** |
+| [09-Stremio插件价值分析.md](./09-Stremio插件价值分析.md) | **Stremio 平台用户规模、竞品缺口、插件差异化与执行路线** |
 
 **隔离说明：** `03` 文档中 `tmdbpy/workflow/torrent_sources/`、`subtitle-portal` 路由等路径已废弃，以 `releasematch/` 为准。
