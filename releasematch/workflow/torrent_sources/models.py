@@ -82,6 +82,7 @@ class ResourceItem:
     @var magnet_uri: magnet 链接
     @var indexer: 来源 indexer 标识
     @var cross_source_count: 出现在几个数据源（跨源验证后填充）
+    @var cross_source_confidence: 跨源置信度 cross_count / total_sources
     """
 
     infohash: str
@@ -96,6 +97,7 @@ class ResourceItem:
     magnet_uri: str = ""
     indexer: str = ""
     cross_source_count: int = 1
+    cross_source_confidence: float = 0.0
 
     def to_dict(self) -> Dict[str, Any]:
         """转为可 JSON 序列化的字典。"""
@@ -112,6 +114,7 @@ class ResourceItem:
             "magnet_uri": self.magnet_uri,
             "indexer": self.indexer,
             "cross_source_count": self.cross_source_count,
+            "cross_source_confidence": self.cross_source_confidence,
         }
 
 

@@ -4,14 +4,14 @@
 多源拉取编排层。
 
 @module workflow.torrent_sources.fetch_service
-@description 缓存、EZTV/YTS/Jackett 串行拉取、infohash 去重、release 解析。
+@description 缓存、EZTV/YTS/Nyaa/Jackett 串行拉取、跨源聚合、release 解析。
 """
 
 from __future__ import annotations
 
 import json
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from workflow.metadata.external_ids import resolve_external_ids
 from workflow.torrent_sources.cache_index import CacheIndex
@@ -19,9 +19,11 @@ from workflow.torrent_sources.config import (
     is_jackett_api_key_configured,
     load_accounts_config,
 )
+from workflow.torrent_sources.cross_source import count_attempted_families, merge_by_infohash
 from workflow.torrent_sources.eztv_client import EztvClient
 from workflow.torrent_sources.jackett_client import JackettClient
 from workflow.torrent_sources.models import FetchRequest, FetchResult, MediaType, ResourceItem
+from workflow.torrent_sources.nyaa_client import NyaaClient
 from workflow.torrent_sources.release_parser import parse_release_title
 from workflow.torrent_sources.yts_client import YtsClient
 
@@ -46,6 +48,7 @@ def _item_from_dict(row: Dict[str, Any]) -> ResourceItem:
         magnet_uri=str(row.get("magnet_uri") or ""),
         indexer=str(row.get("indexer") or ""),
         cross_source_count=int(row.get("cross_source_count") or 1),
+        cross_source_confidence=float(row.get("cross_source_confidence") or 0.0),
     )
 
 
@@ -81,20 +84,12 @@ def _apply_parser(item: ResourceItem) -> ResourceItem:
 
 def dedupe_by_infohash(items: List[ResourceItem]) -> List[ResourceItem]:
     """
-    按 infohash 去重，保留 seeders 较高者。
+    兼容旧调用：按 infohash 去重（无跨源分母时默认分母为 1）。
 
     @param items: 原始列表
     @returns: 去重后列表
     """
-    best: Dict[str, ResourceItem] = {}
-    for item in items:
-        h = item.infohash.lower()
-        if len(h) != 40:
-            continue
-        existing = best.get(h)
-        if existing is None or item.seeders > existing.seeders:
-            best[h] = item
-    return list(best.values())
+    return merge_by_infohash(items, total_source_families=1)
 
 
 class FetchService:
@@ -122,6 +117,7 @@ class FetchService:
 
         eztv_cfg = self._cfg.get("eztv", {})
         yts_cfg = self._cfg.get("yts", {})
+        nyaa_cfg = self._cfg.get("nyaa", {})
         self._eztv = EztvClient(
             base_url=str(eztv_cfg.get("base_url") or "https://eztvx.to"),
             min_interval_sec=rate,
@@ -129,6 +125,12 @@ class FetchService:
         self._yts = YtsClient(
             base_url=str(yts_cfg.get("base_url") or "https://yts.lt"),
             min_interval_sec=rate,
+        )
+        self._nyaa = NyaaClient(
+            base_url=str(nyaa_cfg.get("base_url") or "https://nyaa.si"),
+            mirrors=list(nyaa_cfg.get("mirrors") or []),
+            min_interval_sec=max(rate, 3.0),
+            enabled=bool(nyaa_cfg.get("enabled", True)),
         )
         jackett_cfg = self._cfg.get("jackett", {})
         api_key = str(jackett_cfg.get("api_key") or "")
@@ -165,38 +167,66 @@ class FetchService:
                     pass
 
         try:
-            raw_items = self._fetch_from_sources(request)
+            raw_items, source_enabled = self._fetch_from_sources(request)
         except Exception as exc:  # noqa: BLE001 — 汇总到 FetchResult.error
             return FetchResult(request=request, items=[], error=str(exc))
 
-        merged = dedupe_by_infohash([_apply_parser(i) for i in raw_items])
+        parsed = [_apply_parser(item) for item in raw_items]
+        total_families = count_attempted_families(source_enabled)
+        merged = merge_by_infohash(parsed, total_source_families=total_families)
         expires = _utc_expires_iso(self._cache_ttl_hours)
         self._cache.upsert(
             cache_key=cache_key,
             tmdb_id=request.tmdb_id,
             media_type=request.media_type.value,
-            payload=[i.to_dict() for i in merged],
+            payload=[item.to_dict() for item in merged],
             expires_at=expires,
             season=request.season,
             episode=request.episode,
         )
         return FetchResult(request=request, items=merged, cached=False)
 
-    def _fetch_from_sources(self, request: FetchRequest) -> List[ResourceItem]:
+    def _fetch_from_sources(
+        self,
+        request: FetchRequest,
+    ) -> Tuple[List[ResourceItem], Dict[str, bool]]:
         """
         按媒体类型调用各 client。
 
         @param request: FetchRequest
-        @returns: 未去重的 ResourceItem 列表
+        @returns: (未去重 items, 各源族是否参与拉取)
         """
         if request.media_type == MediaType.TV:
             return self._fetch_tv(request)
         return self._fetch_movie(request)
 
-    def _fetch_tv(self, request: FetchRequest) -> List[ResourceItem]:
-        """剧集：EZTV 直连 + Jackett 聚合。"""
+    def _resolve_show_title(self, request: FetchRequest) -> Optional[str]:
+        """
+        解析剧集/作品搜索标题。
+
+        @param request: FetchRequest
+        @returns: 英文标题或 None
+        """
+        ext = resolve_external_ids(request.tmdb_id, "tv")
+        title = ext.get("title")
+        return title if isinstance(title, str) and title.strip() else None
+
+    def _fetch_tv(self, request: FetchRequest) -> Tuple[List[ResourceItem], Dict[str, bool]]:
+        """
+        剧集：EZTV + Nyaa + Jackett。
+
+        @param request: FetchRequest
+        @returns: (items, source_enabled)
+        """
         items: List[ResourceItem] = []
+        source_enabled: Dict[str, bool] = {
+            "eztv": False,
+            "nyaa": False,
+            "jackett": bool(self._jackett),
+        }
+
         if request.imdb_id and request.season is not None and request.episode is not None:
+            source_enabled["eztv"] = True
             try:
                 items.extend(
                     self._eztv.fetch_episode(
@@ -207,10 +237,26 @@ class FetchService:
                 )
             except Exception:
                 pass
-        query_title: Optional[str] = None
-        if request.tmdb_id:
-            ext = resolve_external_ids(request.tmdb_id, "tv")
-            query_title = ext.get("title") if isinstance(ext.get("title"), str) else None
+
+        show_title = self._resolve_show_title(request)
+        if (
+            self._nyaa.enabled
+            and show_title
+            and request.season is not None
+            and request.episode is not None
+        ):
+            source_enabled["nyaa"] = True
+            try:
+                items.extend(
+                    self._nyaa.fetch_episode(
+                        show_title,
+                        request.season,
+                        request.episode,
+                    )
+                )
+            except Exception:
+                pass
+
         if self._jackett and request.season is not None and request.episode is not None:
             for indexer in self._jackett_tv_indexers:
                 try:
@@ -220,21 +266,34 @@ class FetchService:
                             tvdb_id=request.tvdb_id,
                             season=request.season,
                             episode=request.episode,
-                            query_text=query_title,
+                            query_text=show_title,
                         )
                     )
                 except Exception:
                     continue
-        return items
 
-    def _fetch_movie(self, request: FetchRequest) -> List[ResourceItem]:
-        """电影：YTS 直连 + Jackett。"""
+        return items, source_enabled
+
+    def _fetch_movie(self, request: FetchRequest) -> Tuple[List[ResourceItem], Dict[str, bool]]:
+        """
+        电影：YTS + Jackett。
+
+        @param request: FetchRequest
+        @returns: (items, source_enabled)
+        """
         items: List[ResourceItem] = []
+        source_enabled: Dict[str, bool] = {
+            "yts": False,
+            "jackett": bool(self._jackett),
+        }
+
         if request.imdb_id:
+            source_enabled["yts"] = True
             try:
                 items.extend(self._yts.fetch_movie(request.imdb_id))
             except Exception:
                 pass
+
         if self._jackett and request.imdb_id:
             for indexer in self._jackett_movie_indexers:
                 try:
@@ -247,7 +306,8 @@ class FetchService:
                     )
                 except Exception:
                     continue
-        return items
+
+        return items, source_enabled
 
 
 def fetch_slot(request: FetchRequest, accounts_path: Optional[str] = None) -> FetchResult:

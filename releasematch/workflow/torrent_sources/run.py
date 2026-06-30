@@ -34,6 +34,7 @@ from workflow.torrent_sources.config import (
     probe_jackett_http,
     resolve_accounts_config_path,
 )
+from workflow.torrent_sources.batch_fetch import load_slots_from_json, run_batch_fetch, run_demo_batch
 from workflow.torrent_sources.fetch_service import FetchService
 from workflow.torrent_sources.models import FetchMode, FetchRequest, FetchResult, MediaType
 
@@ -110,6 +111,38 @@ def cmd_test(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_batch(args: argparse.Namespace) -> int:
+    """
+    批量槽位拉取。
+
+    @param args: 含 --demo、--slots、--force、--min-count
+    @returns: 退出码（有失败槽位则 1）
+    """
+    if args.slots:
+        slots_path = Path(args.slots)
+        if not slots_path.is_file():
+            print(json.dumps({"error": f"slots 文件不存在: {slots_path}"}, ensure_ascii=False))
+            return 1
+        slots = load_slots_from_json(slots_path)
+        if args.force:
+            for slot in slots:
+                slot.force = True
+        summary = run_batch_fetch(
+            slots,
+            accounts_path=args.accounts,
+            min_count=args.min_count,
+        )
+    else:
+        summary = run_demo_batch(
+            force=args.force,
+            accounts_path=args.accounts,
+            min_count=args.min_count,
+        )
+
+    print(json.dumps(summary.to_dict(), ensure_ascii=False, indent=2))
+    return 0 if summary.failed == 0 else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     """构建 CLI 解析器。"""
     parser = argparse.ArgumentParser(description="ReleaseMatch torrent 多源清单模块")
@@ -127,6 +160,13 @@ def build_parser() -> argparse.ArgumentParser:
     p_test.add_argument("--imdb-id", default=None)
     p_test.add_argument("--force", action="store_true", help="忽略缓存强制重拉")
     p_test.set_defaults(func=cmd_test)
+
+    p_batch = sub.add_parser("batch", help="批量槽位拉取")
+    p_batch.add_argument("--demo", action="store_true", help="使用内置 Demo 队列（默认）")
+    p_batch.add_argument("--slots", default=None, help="槽位 JSON 文件路径")
+    p_batch.add_argument("--force", action="store_true", help="全部槽位忽略缓存")
+    p_batch.add_argument("--min-count", type=int, default=1, help="单槽成功最少条数")
+    p_batch.set_defaults(func=cmd_batch)
 
     return parser
 

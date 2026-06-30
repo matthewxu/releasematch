@@ -14,7 +14,9 @@
     "base_url": "https://yts.lt"
   },
   "nyaa": {
-    "base_url": "https://nyaa.si"
+    "base_url": "https://nyaa.si",
+    "enabled": true,
+    "mirrors": ["https://nyaa.iss.ink"]
   },
   "rate_limit": {
     "min_interval_sec": 2.0

@@ -97,6 +97,7 @@ def _fetch_standalone(tmdb_id: int, media_type: str) -> Dict[str, Any]:
         return {
             "tmdb_id": tmdb_id,
             "media_type": entry.get("media_type", media_type),
+            "title": entry.get("title"),
             "imdb_id": entry.get("imdb_id"),
             "tvdb_id": entry.get("tvdb_id"),
             "source": "standalone_map",
@@ -104,6 +105,7 @@ def _fetch_standalone(tmdb_id: int, media_type: str) -> Dict[str, Any]:
     return {
         "tmdb_id": tmdb_id,
         "media_type": media_type,
+        "title": None,
         "imdb_id": None,
         "tvdb_id": None,
         "source": "standalone_missing",

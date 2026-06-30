@@ -112,6 +112,8 @@ def load_accounts_config(path: Path | None = None) -> Dict[str, Any]:
     data.setdefault("eztv", {}).setdefault("base_url", EZTV_BASE_URL)
     data.setdefault("yts", {}).setdefault("base_url", YTS_BASE_URL)
     data.setdefault("nyaa", {}).setdefault("base_url", NYAA_BASE_URL)
+    data.setdefault("nyaa", {}).setdefault("enabled", True)
+    data.setdefault("nyaa", {}).setdefault("mirrors", [])
     data.setdefault("rate_limit", {})["min_interval_sec"] = TORRENT_MIN_INTERVAL_SEC
     data.setdefault("cache", {})["seeders_ttl_hours"] = TORRENT_SEEDERS_TTL_HOURS
     return data
