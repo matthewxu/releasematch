@@ -147,8 +147,32 @@ def run_slot_pipeline(
     fetch_note = ""
 
     if fetch:
-        fetch_note = "torrent_sources 拉取尚未接入 pipeline；回退 demo 数据"
-        items = _demo_items_for_slot(tmdb_id, season, episode)
+        from workflow.metadata.external_ids import resolve_external_ids
+        from workflow.torrent_sources.fetch_service import FetchService
+        from workflow.torrent_sources.models import FetchMode, FetchRequest, MediaType
+
+        ext = resolve_external_ids(tmdb_id=tmdb_id, media_type=media_kind)
+        mt = MediaType.MOVIE if media_kind == "movie" else MediaType.TV
+        request = FetchRequest(
+            tmdb_id=tmdb_id,
+            media_type=mt,
+            season=season,
+            episode=episode,
+            imdb_id=ext.get("imdb_id"),
+            tvdb_id=ext.get("tvdb_id"),
+            mode=FetchMode.ON_DEMAND,
+            force=False,
+        )
+        fetch_result = FetchService().fetch_slot(request)
+        if fetch_result.error:
+            fetch_note = f"torrent 拉取失败: {fetch_result.error}；回退 demo"
+            items = _demo_items_for_slot(tmdb_id, season, episode)
+        elif not fetch_result.items:
+            fetch_note = "torrent 拉取 0 条；回退 demo"
+            items = _demo_items_for_slot(tmdb_id, season, episode)
+        else:
+            fetch_note = f"torrent 拉取 {len(fetch_result.items)} 条（cached={fetch_result.cached}）"
+            items = [i.to_dict() for i in fetch_result.items]
     elif mode == "demo":
         items = _demo_items_for_slot(tmdb_id, season, episode)
     else:

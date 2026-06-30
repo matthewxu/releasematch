@@ -1,0 +1,596 @@
+# Release Group 信誉库（T1 初版）
+# @file workflow/recommended/data/groups.yaml
+# @description scorer 引用；aliases 支持大小写不敏感匹配
+
+groups:
+  # --- L0 顶级压制组（WEB-DL / 高质量 P2P）---
+  - name: NTb
+    aliases: [NITROUS, NTb]
+    tier: L0
+    scene_compliant: true
+    notes: 顶级 P2P，WEB-DL 质量标杆
+
+  - name: CtrlHD
+    aliases: [CTRLHD, CtrlHD]
+    tier: L0
+    scene_compliant: true
+    notes: 顶级压制组
+
+  - name: FLUX
+    aliases: [FLUX]
+    tier: L0
+    scene_compliant: true
+    notes: 高质量 WEB-DL
+
+  - name: NTG
+    aliases: [NTG]
+    tier: L0
+    scene_compliant: true
+    notes: 高质量剧集 WEB
+
+  - name: CiNEPHiLES
+    aliases: [CINEPHILES, CiNEPHiLES]
+    tier: L0
+    scene_compliant: true
+    notes: 电影 WEB-DL 标杆
+
+  - name: SM737
+    aliases: [SM737]
+    tier: L0
+    scene_compliant: true
+    notes: 高质量 WEB
+
+  - name: playWEB
+    aliases: [PLAYWEB, playWEB]
+    tier: L0
+    scene_compliant: true
+    notes: 流媒体 WEB-DL
+
+  - name: HQMUX
+    aliases: [HQMUX]
+    tier: L0
+    scene_compliant: true
+    notes: 高码率 WEB
+
+  - name: D-Z0N3
+    aliases: [D-Z0N3, DZ0N3]
+    tier: L0
+    scene_compliant: true
+    notes: 高质量 P2P
+
+  - name: QxR
+    aliases: [QxR, QXR]
+    tier: L0
+    scene_compliant: true
+    notes: 4K/HDR 优质组
+
+  - name: TOMMY
+    aliases: [TOMMY]
+    tier: L0
+    scene_compliant: true
+    notes: 高质量 WEB
+
+  - name: DRACULA
+    aliases: [DRACULA]
+    tier: L0
+    scene_compliant: true
+    notes: 高质量 WEB
+
+  - name: EbMl
+    aliases: [EBML, EbMl]
+    tier: L0
+    scene_compliant: true
+    notes: 高质量压制
+
+  - name: CMCT
+    aliases: [CMCT]
+    tier: L0
+    scene_compliant: true
+    notes: 华语高质量组
+
+  - name: CHD
+    aliases: [CHD]
+    tier: L0
+    scene_compliant: true
+    notes: 华语蓝光压制
+
+  - name: WiKi
+    aliases: [WIKI, WiKi]
+    tier: L0
+    scene_compliant: true
+    notes: 华语 WEB/BluRay
+
+  - name: CREDiBLE
+    aliases: [CREDIBLE, CREDiBLE]
+    tier: L0
+    scene_compliant: true
+    notes: 高质量 WEB
+
+  - name: FLAME
+    aliases: [FLAME]
+    tier: L0
+    scene_compliant: true
+    notes: 高质量 WEB
+
+  - name: KOGi
+    aliases: [KOGI, KOGi]
+    tier: L0
+    scene_compliant: true
+    notes: 动漫高质量 WEB
+
+  - name: SEiGHT
+    aliases: [SEIGHT, SEiGHT]
+    tier: L0
+    scene_compliant: true
+    notes: 动漫 WEB
+
+  # --- L1 主流 Scene / 知名组 ---
+  - name: SPARKS
+    aliases: [SPARKS]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: KILLERS
+    aliases: [KILLERS]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: ROVERS
+    aliases: [ROVERS]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene BluRay
+
+  - name: GLHF
+    aliases: [GLHF]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: EVOLVE
+    aliases: [EVOLVE]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: DEFLATE
+    aliases: [DEFLATE]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: AMB3R
+    aliases: [AMBER, AMB3R]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: LAZLOS
+    aliases: [LAZLOS]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: TERMiNAL
+    aliases: [TERMINAL, TERMiNAL]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: AMRAP
+    aliases: [AMRAP]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: SIX
+    aliases: [SIX]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: LEGi0N
+    aliases: [LEGION, LEGi0N]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: HiFi
+    aliases: [HIFI, HiFi]
+    tier: L1
+    scene_compliant: true
+    notes: 高质量 P2P/Scene
+
+  - name: PLUTONiUM
+    aliases: [PLUTONIUM, PLUTONiUM]
+    tier: L1
+    scene_compliant: true
+    notes: 知名 WEB 组
+
+  - name: BTN
+    aliases: [BTN, BTN]
+    tier: L1
+    scene_compliant: false
+    notes: 知名 P2P 内部组
+
+  - name: CAKES
+    aliases: [CAKES]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: CM
+    aliases: [CM]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: DDP5
+    aliases: [DDP5]
+    tier: L1
+    scene_compliant: true
+    notes: 音频规格标识组（常伴优质 WEB）
+
+  - name: FGT
+    aliases: [FGT]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: HONE
+    aliases: [HONE]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: MA
+    aliases: [MA]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: NOSiViD
+    aliases: [NOSIVID, NOSiViD]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: ORPHEUS
+    aliases: [ORPHEUS]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: PTP
+    aliases: [PTP]
+    tier: L1
+    scene_compliant: false
+    notes: 知名 P2P 内部
+
+  - name: RARBG
+    aliases: [RARBG]
+    tier: L1
+    scene_compliant: false
+    notes: 聚合发布（质量参差，偏 L1 上限）
+
+  - name: SARTRE
+    aliases: [SARTRE]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: SGF
+    aliases: [SGF]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: SWAGGERNAUT
+    aliases: [SWAGGERNAUT]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: TERRA
+    aliases: [TERRA]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: VXT
+    aliases: [VXT]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: W4F
+    aliases: [W4F]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: X0r
+    aliases: [X0R, X0r]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: YOGI
+    aliases: [YOGI]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  - name: ZQ
+    aliases: [ZQ]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene
+
+  # --- L2 P2P / 社区组 ---
+  - name: ION10
+    aliases: [ION10, ION]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: TBS
+    aliases: [TBS]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: BAE
+    aliases: [BAE]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: RTF
+    aliases: [RTF]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: HOME
+    aliases: [HOME]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: LAMFiNE
+    aliases: [LAMFINE, LAMFiNE]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: AFM72
+    aliases: [AFM72]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: RMX
+    aliases: [RMX]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: ARKiFEINT
+    aliases: [ARKIFEINT, ARKiFEINT]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: PSA
+    aliases: [PSA]
+    tier: L2
+    scene_compliant: false
+    notes: 社区压缩组
+
+  - name: MkvCage
+    aliases: [MKVCAGE, MkvCage]
+    tier: L2
+    scene_compliant: false
+    notes: 社区压缩
+
+  - name: Telly
+    aliases: [TELLY, Telly]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: RUBY
+    aliases: [RUBY]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: AVS
+    aliases: [AVS]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: ETHEL
+    aliases: [ETHEL]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: FLEET
+    aliases: [FLEET]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: GALAXY
+    aliases: [GALAXY]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: JOY
+    aliases: [JOY]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: KIMCHI
+    aliases: [KIMCHI]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: L0ST
+    aliases: [LOST, L0ST]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: MEMENTO
+    aliases: [MEMENTO]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: NODLABS
+    aliases: [NODLABS]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: ORGANiC
+    aliases: [ORGANIC, ORGANiC]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: PAUL
+    aliases: [PAUL]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: SADPANDA
+    aliases: [SADPANDA]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: SH0W
+    aliases: [SHOW, SH0W]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: SNAKE
+    aliases: [SNAKE]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: STAN
+    aliases: [STAN]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: SYNCOPY
+    aliases: [SYNCOPY]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: TEPES
+    aliases: [TEPES]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: TVSmash
+    aliases: [TVSMASH, TVSmash]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: WOLF
+    aliases: [WOLF]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: ZOMBiE
+    aliases: [ZOMBIE, ZOMBiE]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  # --- L3 低质量 / 重编码 ---
+  - name: YIFY
+    aliases: [YIFY]
+    tier: L3
+    scene_compliant: false
+    notes: 低码率高压缩
+
+  - name: YTS
+    aliases: [YTS, YTS.MX, YTS.LT, YTS.AG]
+    tier: L3
+    scene_compliant: false
+    notes: YIFY 后继，小体积重编码
+
+  - name: BMOVIE
+    aliases: [BMOVIE, B-MOVIE]
+    tier: L3
+    scene_compliant: false
+    notes: 低质量重编码
+
+  - name: mSD
+    aliases: [MSD, mSD]
+    tier: L3
+    scene_compliant: false
+    notes: 低分辨率 x264
+
+  - name: ETRG
+    aliases: [ETRG]
+    tier: L3
+    scene_compliant: false
+    notes: 低质量重编码
+
+  - name: aXXo
+    aliases: [AXXO, aXXo]
+    tier: L3
+    scene_compliant: false
+    notes: 历史低质量组
+
+  - name: CM8
+    aliases: [CM8]
+    tier: L3
+    scene_compliant: false
+    notes: 低质量 CAM/TS
+
+  - name: YIFY-720p
+    aliases: [YIFY720P]
+    tier: L3
+    scene_compliant: false
+    notes: YIFY 变体
+
+  - name: RMTeam
+    aliases: [RMTEAM, RMTeam]
+    tier: L3
+    scene_compliant: false
+    notes: 低质量重编码
+
+  - name: GalaxyRG
+    aliases: [GALAXYRG, GalaxyRG]
+    tier: L3
+    scene_compliant: false
+    notes: 低质量重编码
+
+  - name: TGx
+    aliases: [TGX, TGx]
+    tier: L3
+    scene_compliant: false
+    notes: 聚合低质量

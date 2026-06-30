@@ -34,6 +34,7 @@ from workflow.torrent_sources.config import (
     probe_jackett_http,
     resolve_accounts_config_path,
 )
+from workflow.torrent_sources.fetch_service import FetchService
 from workflow.torrent_sources.models import FetchMode, FetchRequest, FetchResult, MediaType
 
 
@@ -61,7 +62,7 @@ def cmd_status(args: argparse.Namespace) -> int:
         "has_valid_api_key": is_jackett_api_key_configured(api_key),
         "jackett_probe": probe_jackett_http(base_url) if base_url else None,
         "tmdb_data_mode": TMDB_DATA_MODE,
-        "implementation": "scaffold - clients pending R0",
+        "implementation": "mvp",
     }
     print(json.dumps(summary, ensure_ascii=False, indent=2))
     return 0
@@ -89,31 +90,24 @@ def cmd_test(args: argparse.Namespace) -> int:
         imdb_id=ext.get("imdb_id") or args.imdb_id,
         tvdb_id=ext.get("tvdb_id"),
         mode=FetchMode.ON_DEMAND,
+        force=args.force,
     )
 
-    # R0 MVP：此处将接入 jackett_client / eztv_client 等
-    result = FetchResult(
-        request=request,
-        items=[],
-        cached=False,
-        error=(
-            "torrent_sources clients 尚未实现。"
-            "请先运行 scripts/poc_phase0.ps1 验证数据源，"
-            "再实现 jackett_client.py / eztv_client.py（见模块 README）。"
-        ),
+    service = FetchService(
+        accounts_path=args.accounts,
     )
+    result = service.fetch_slot(request)
 
     output = {
         "external_ids": ext,
         "fetch": result.to_dict(),
-        "next_steps": [
-            "implement workflow/torrent_sources/jackett_client.py",
-            "implement workflow/torrent_sources/eztv_client.py",
-            "implement workflow/torrent_sources/fetch_service.py",
-        ],
     }
     print(json.dumps(output, ensure_ascii=False, indent=2))
-    return 1 if result.error else 0
+    if result.error:
+        return 1
+    if len(result.items) < 2:
+        return 1
+    return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -131,6 +125,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_test.add_argument("--season", type=int, default=None)
     p_test.add_argument("--episode", type=int, default=None)
     p_test.add_argument("--imdb-id", default=None)
+    p_test.add_argument("--force", action="store_true", help="忽略缓存强制重拉")
     p_test.set_defaults(func=cmd_test)
 
     return parser

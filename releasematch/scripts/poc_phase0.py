@@ -143,7 +143,7 @@ def main(argv: list[str] | None = None) -> int:
         "eztv",
         lambda: (
             f"status="
-            f"{requests.get('https://eztvx.to/api/get-torrents?imdb_id=904747&limit=5&page=1', timeout=30).status_code}"
+            f"{requests.get('https://eztvx.to/api/get-torrents?imdb_id=0903747&limit=5&page=1', timeout=30).status_code}"
         ),
     )
     if _print_probe("", probe):

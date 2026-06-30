@@ -94,7 +94,7 @@ def cmd_status(_args: argparse.Namespace) -> int:
             "yts": YTS_BASE_URL,
         },
         "modules": {
-            "torrent_sources": "scaffold",
+            "torrent_sources": "mvp",
             "recommended": "active",
             "metadata": "scaffold",
             "priority": "scaffold",
@@ -199,21 +199,38 @@ def cmd_run(args: argparse.Namespace) -> int:
             media_type=args.media_type,
             imdb_id=args.imdb_id,
             accounts=None,
+            force=getattr(args, "force", False),
         )
         return torrent_test(ns)
 
     if step in ("recommended", "rec"):
-        from workflow.recommended.scorer import score_slot_demo
+        from workflow.recommended.scorer import score_slot, score_slot_demo
 
         if args.tmdb is None:
             print("recommended 步骤需要 --tmdb")
             return 1
-        result = score_slot_demo(
-            tmdb_id=args.tmdb,
-            season=args.season,
-            episode=args.episode,
-        )
+        if getattr(args, "demo", False):
+            result = score_slot_demo(
+                tmdb_id=args.tmdb,
+                season=args.season,
+                episode=args.episode,
+            )
+        else:
+            if args.media_type == "tv" and (args.season is None or args.episode is None):
+                print("剧集槽位需要 --season 与 --episode")
+                return 1
+            result = score_slot(
+                tmdb_id=args.tmdb,
+                media_type=args.media_type,
+                season=args.season,
+                episode=args.episode,
+                force=getattr(args, "force", False),
+            )
         print(json.dumps(result, ensure_ascii=False, indent=2))
+        if result.get("fetch", {}).get("error"):
+            return 1
+        if not result.get("ranked"):
+            return 1
         return 0
 
     print(f"未知步骤: {step}。可用: 4c, recommended")
@@ -375,6 +392,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_run.add_argument("--season", type=int, default=None)
     p_run.add_argument("--episode", type=int, default=None)
     p_run.add_argument("--imdb-id", default=None)
+    p_run.add_argument("--force", action="store_true", help="忽略 torrent 缓存")
+    p_run.add_argument("--demo", action="store_true", help="recommended 使用内置 Demo 数据")
     p_run.set_defaults(func=cmd_run)
 
     p_pipeline = sub.add_parser("pipeline", help="槽位 pipeline（评分 → 写库）")
