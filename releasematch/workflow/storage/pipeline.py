@@ -145,6 +145,8 @@ def run_slot_pipeline(
 
     items: List[Dict[str, Any]] = []
     fetch_note = ""
+    cross_source_page_count: Optional[int] = None
+    cross_source_page_total: Optional[int] = None
 
     if fetch:
         from workflow.metadata.external_ids import resolve_external_ids
@@ -164,14 +166,25 @@ def run_slot_pipeline(
             force=False,
         )
         fetch_result = FetchService().fetch_slot(request)
+        cross_source_page_count = fetch_result.cross_source_page_count
+        cross_source_page_total = fetch_result.cross_source_page_total
         if fetch_result.error:
             fetch_note = f"torrent 拉取失败: {fetch_result.error}；回退 demo"
             items = _demo_items_for_slot(tmdb_id, season, episode)
+            cross_source_page_count = None
+            cross_source_page_total = None
         elif not fetch_result.items:
             fetch_note = "torrent 拉取 0 条；回退 demo"
             items = _demo_items_for_slot(tmdb_id, season, episode)
+            cross_source_page_count = None
+            cross_source_page_total = None
         else:
-            fetch_note = f"torrent 拉取 {len(fetch_result.items)} 条（cached={fetch_result.cached}）"
+            fetch_note = (
+                f"torrent 拉取 {len(fetch_result.items)} 条"
+                f"（cached={fetch_result.cached}，"
+                f"跨源 {fetch_result.cross_source_page_count}/"
+                f"{fetch_result.cross_source_page_total}）"
+            )
             items = [i.to_dict() for i in fetch_result.items]
     elif mode == "demo":
         items = _demo_items_for_slot(tmdb_id, season, episode)
@@ -194,6 +207,8 @@ def run_slot_pipeline(
         episode=episode,
         items=items,
         ranked=ranked,
+        cross_source_page_count=cross_source_page_count,
+        cross_source_page_total=cross_source_page_total,
     )
 
     run_id = str(uuid.uuid4())
@@ -212,6 +227,8 @@ def run_slot_pipeline(
             "show_title": ctx.catalog.title,
             "source_count": len(ctx.sources),
             "recommended": ctx.recommended.title_raw if ctx.recommended else None,
+            "cross_source_count": ctx.page.cross_source_count,
+            "cross_source_total": ctx.page.cross_source_total,
             "robots_noindex": not ctx.page.is_indexable(),
         }
 

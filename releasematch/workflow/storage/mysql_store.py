@@ -670,20 +670,36 @@ class MySQLStore:
         items: List[Dict[str, Any]],
         ranked: List[Any],
         expires_hours: int = 168,
+        cross_source_page_count: Optional[int] = None,
+        cross_source_page_total: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
-        将 scorer 输出写入 download_resources，并更新 media_pages.magnet_count。
+        将 scorer 输出写入 download_resources，并更新 media_pages。
 
         @param page_id: 页面槽位 ID
         @param tmdb_id: TMDB ID
         @param media_type: tv_episode | movie
         @param season: 季号
         @param episode: 集号
-        @param items: ResourceItem 字典列表
+        @param items: ResourceItem 字典列表（含 cross_source_count/confidence）
         @param ranked: scorer.rank_items 返回的 Order 列表
         @param expires_hours: magnet TTL 小时数
+        @param cross_source_page_count: Hero badge 分子；缺省从 items 推断
+        @param cross_source_page_total: Hero badge 分母；缺省按媒体类型默认
         @returns: 写入摘要
         """
+        from workflow.torrent_sources.cross_source import compute_page_cross_source
+
+        media_kind = "movie" if media_type == "movie" else "tv"
+        if cross_source_page_count is None or cross_source_page_total is None:
+            inferred_count, inferred_total = compute_page_cross_source(
+                items,
+                media_type=media_kind,
+            )
+            if cross_source_page_count is None:
+                cross_source_page_count = inferred_count
+            if cross_source_page_total is None:
+                cross_source_page_total = inferred_total
         now = _utc_now_str()
         expires = datetime.now(timezone.utc)
         from datetime import timedelta
@@ -732,6 +748,7 @@ class MySQLStore:
                         recommend_reason=VALUES(recommend_reason),
                         group_tier=VALUES(group_tier),
                         cross_source_count=VALUES(cross_source_count),
+                        cross_source_confidence=VALUES(cross_source_confidence),
                         indexed_at=VALUES(indexed_at),
                         expires_at=VALUES(expires_at)
                     """,
@@ -774,12 +791,22 @@ class MySQLStore:
                 """
                 UPDATE media_pages
                 SET magnet_count = %s,
+                    cross_source_count = %s,
+                    cross_source_total = %s,
                     page_status = %s,
                     robots_noindex = %s,
                     updated_at = %s
                 WHERE page_id = %s
                 """,
-                (magnet_count, page_status, robots_noindex, now, page_id),
+                (
+                    magnet_count,
+                    int(cross_source_page_count),
+                    int(cross_source_page_total),
+                    page_status,
+                    robots_noindex,
+                    now,
+                    page_id,
+                ),
             )
         conn.close()
         return {
@@ -787,6 +814,8 @@ class MySQLStore:
             "resources_upserted": upserted,
             "magnet_count": magnet_count,
             "page_status": page_status,
+            "cross_source_count": int(cross_source_page_count),
+            "cross_source_total": int(cross_source_page_total),
         }
 
     def record_sync_run(

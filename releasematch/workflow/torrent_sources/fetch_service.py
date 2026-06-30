@@ -19,7 +19,11 @@ from workflow.torrent_sources.config import (
     is_jackett_api_key_configured,
     load_accounts_config,
 )
-from workflow.torrent_sources.cross_source import count_attempted_families, merge_by_infohash
+from workflow.torrent_sources.cross_source import (
+    compute_page_cross_source,
+    count_attempted_families,
+    merge_by_infohash,
+)
 from workflow.torrent_sources.eztv_client import EztvClient
 from workflow.torrent_sources.jackett_client import JackettClient
 from workflow.torrent_sources.models import FetchRequest, FetchResult, MediaType, ResourceItem
@@ -162,7 +166,17 @@ class FetchService:
                 try:
                     payload = json.loads(cached["payload_json"])
                     items = [_item_from_dict(row) for row in payload]
-                    return FetchResult(request=request, items=items, cached=True)
+                    page_count, page_total = compute_page_cross_source(
+                        items,
+                        media_type=request.media_type.value,
+                    )
+                    return FetchResult(
+                        request=request,
+                        items=items,
+                        cached=True,
+                        cross_source_page_count=page_count,
+                        cross_source_page_total=page_total,
+                    )
                 except (json.JSONDecodeError, TypeError):
                     pass
 
@@ -171,6 +185,11 @@ class FetchService:
         except Exception as exc:  # noqa: BLE001 — 汇总到 FetchResult.error
             return FetchResult(request=request, items=[], error=str(exc))
 
+        page_count, page_total = compute_page_cross_source(
+            raw_items,
+            source_enabled=source_enabled,
+            media_type=request.media_type.value,
+        )
         parsed = [_apply_parser(item) for item in raw_items]
         total_families = count_attempted_families(source_enabled)
         merged = merge_by_infohash(parsed, total_source_families=total_families)
@@ -184,7 +203,13 @@ class FetchService:
             season=request.season,
             episode=request.episode,
         )
-        return FetchResult(request=request, items=merged, cached=False)
+        return FetchResult(
+            request=request,
+            items=merged,
+            cached=False,
+            cross_source_page_count=page_count,
+            cross_source_page_total=page_total,
+        )
 
     def _fetch_from_sources(
         self,

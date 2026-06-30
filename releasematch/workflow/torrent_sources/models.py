@@ -127,12 +127,16 @@ class FetchResult:
     @var items: 归一化后的资源列表
     @var cached: 是否命中本地缓存
     @var error: 失败原因
+    @var cross_source_page_count: 页面 Hero badge 分子（有数据的源族数）
+    @var cross_source_page_total: 页面 Hero badge 分母（参与拉取的源族数）
     """
 
     request: FetchRequest
     items: List[ResourceItem] = field(default_factory=list)
     cached: bool = False
     error: Optional[str] = None
+    cross_source_page_count: int = 0
+    cross_source_page_total: int = 3
 
     def to_dict(self) -> Dict[str, Any]:
         """转为可 JSON 序列化的字典。"""
@@ -148,4 +152,6 @@ class FetchResult:
             "count": len(self.items),
             "cached": self.cached,
             "error": self.error,
+            "cross_source_page_count": self.cross_source_page_count,
+            "cross_source_page_total": self.cross_source_page_total,
         }
