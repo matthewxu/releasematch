@@ -136,50 +136,75 @@ class JackettClient:
         query_text: Optional[str] = None,
     ) -> List[ResourceItem]:
         """
-        剧集单集搜索：先 tvdbid，无结果再 q+season+ep。
+        剧集单集搜索：优先 q+season+ep（作品名精确），tvdbid 仅作补充。
 
         @param indexer: indexer id 或 all
         @param tvdb_id: TVDB ID（可选）
         @param season: 季号
         @param episode: 集号
-        @param query_text: 文本回退查询（如 Breaking Bad）
-        @returns: ResourceItem 列表
+        @param query_text: 文本查询（如 Breaking Bad）
+        @returns: ResourceItem 列表（按 infohash 去重合并）
         """
-        items: List[ResourceItem] = []
-        if tvdb_id:
+        merged: List[ResourceItem] = []
+        seen: set[str] = set()
+
+        def _merge(batch: List[ResourceItem]) -> None:
+            """合并批次结果并去重 infohash。"""
+            for item in batch:
+                if item.infohash in seen:
+                    continue
+                seen.add(item.infohash)
+                merged.append(item)
+
+        # 1) 作品名 + 季集（Torznab tvsearch）— 误匹配最少，应优先
+        if query_text:
             try:
-                items = self._search(
-                    indexer,
-                    {
-                        "t": "tvsearch",
-                        "tvdbid": str(tvdb_id),
-                        "season": str(season),
-                        "ep": str(episode),
-                        "cache": "false",
-                    },
+                _merge(
+                    self._search(
+                        indexer,
+                        {
+                            "t": "tvsearch",
+                            "q": query_text,
+                            "season": str(season),
+                            "ep": str(episode),
+                            "cache": "false",
+                        },
+                    )
                 )
             except requests.HTTPError:
-                items = []
-        if not items and query_text:
+                pass
+
+        # 2) 自由文本 search 兜底
+        if query_text:
             try:
-                items = self._search(
-                    indexer,
-                    {
-                        "t": "tvsearch",
-                        "q": query_text,
-                        "season": str(season),
-                        "ep": str(episode),
-                        "cache": "false",
-                    },
+                _merge(
+                    self.search_text(
+                        indexer,
+                        f"{query_text} S{season:02d}E{episode:02d}",
+                    )
                 )
             except requests.HTTPError:
-                items = []
-        if not items and query_text:
+                pass
+
+        # 3) tvdbid 补充（易混入同季集其他剧，仅在前两者无结果时使用）
+        if tvdb_id and not merged:
             try:
-                items = self.search_text(indexer, f"{query_text} S{season:02d}E{episode:02d}")
+                _merge(
+                    self._search(
+                        indexer,
+                        {
+                            "t": "tvsearch",
+                            "tvdbid": str(tvdb_id),
+                            "season": str(season),
+                            "ep": str(episode),
+                            "cache": "false",
+                        },
+                    )
+                )
             except requests.HTTPError:
-                items = []
-        return items
+                pass
+
+        return merged
 
     def search_movie(
         self,

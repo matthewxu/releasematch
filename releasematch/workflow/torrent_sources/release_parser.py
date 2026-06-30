@@ -56,11 +56,13 @@ def parse_release_title(title_raw: str) -> Dict[str, str]:
         else:
             result["codec"] = raw_codec
 
-    # 压制组：最后一个 - 后的 token（排除常见非组后缀）
+    # 压制组：最后一个 - 后的首段 token（排除季集/分辨率；MySQL VARCHAR(64) 上限）
     if "-" in title:
         tail = title.rsplit("-", 1)[-1].strip()
         if tail and not re.match(r"^(S\d+E\d+|\d+p)$", tail, re.I):
-            result["release_group"] = tail
+            group = re.split(r"[\s(\[]", tail, maxsplit=1)[0].strip()
+            if group:
+                result["release_group"] = group[:64]
 
     return result
 

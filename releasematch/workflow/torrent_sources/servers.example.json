@@ -1,0 +1,41 @@
+{
+  "_comment": "服务器部署模板。复制为 servers.local.json 并填入真实凭据；servers.local.json 已在 .gitignore，勿提交 Git。",
+  "jackett_vps_japan": {
+    "_comment": "海外 Jackett 测试 VPS（SSH 登录与 Docker 服务信息）",
+    "label": "日本测试服务器",
+    "host": "104.105.140.11",
+    "ssh": {
+      "user": "root",
+      "password": "Release@2026&acb",
+      "port": 22
+    },
+    "os": "Debian 12",
+    "services": {
+      "jackett": {
+        "_comment": "Torznab 聚合服务，Dashboard 与 API 端口",
+        "docker_name": "jackett",
+        "image": "linuxserver/jackett:latest",
+        "port": 9117,
+        "public_url": "http://YOUR_VPS_IP:9117",
+        "config_path": "/opt/jackett/config",
+        "network": "jackett-net"
+      },
+      "flaresolverr": {
+        "_comment": "Cloudflare 过盾；Jackett 容器内须用容器名 flaresolverr 而非 127.0.0.1",
+        "docker_name": "flaresolverr",
+        "image": "ghcr.io/flaresolverr/flaresolverr:latest",
+        "port": 8191,
+        "bind": "127.0.0.1:8191",
+        "network": "jackett-net",
+        "jackett_flaresolverr_url": "http://flaresolverr:8191/"
+      }
+    },
+    "indexers": [
+      "1337x",
+      "torrentgalaxyclone",
+      "nyaasi",
+      "thepiratebay",
+      "eztv"
+    ]
+  }
+}

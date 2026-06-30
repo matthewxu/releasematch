@@ -530,7 +530,9 @@ python -m workflow.torrent_sources.run test --tmdb 1396 --season 4 --episode 6
 
 ## 九、FlareSolverr 与 Cloudflare 站点
 
-1337x、TorrentGalaxy 等站点使用 **Cloudflare 反爬**。Jackett 单独访问可能失败，需配合 **FlareSolverr**：
+1337x、TorrentGalaxy 等站点使用 **Cloudflare 反爬**。Jackett 单独访问可能失败，需配合 **FlareSolverr**。
+
+### 9.1 本机 / 单容器（开发机）
 
 ```powershell
 docker run -d --name flaresolverr -p 8191:8191 ghcr.io/flaresolverr/flaresolverr:latest
@@ -542,11 +544,22 @@ Jackett → **System** → **FlareSolverr URL**：
 http://127.0.0.1:8191
 ```
 
-保存后重新 **Test** 对应 Indexer。
+### 9.2 海外 VPS（Jackett + FlareSolverr 双 Docker）
+
+Jackett 与 FlareSolverr 须在同一 Docker 网络（如 `jackett-net`），Jackett 内 URL **必须用容器名**：
+
+```
+http://flaresolverr:8191/
+```
+
+完整部署与日本测试机 `104.105.140.11` 运维说明见 [jackett-remote-linode.md](./jackett-remote-linode.md) §四。
+
+保存后重新 **Test** 对应 Indexer（1337x 首次可能需 30~60 秒）。
 
 | 现象 | 原因 |
 |------|------|
-| Indexer Test 失败 / 空结果 | 未配置 FlareSolverr 或 FlareSolverr 未启动 |
+| `Challenge detected but FlareSolverr is not configured` | 未填 URL，或 Docker 内误用 `127.0.0.1` 而非 `flaresolverr` |
+| Indexer Test 失败 / 空结果 | FlareSolverr 未启动或未与 Jackett 同网 |
 | FlareSolverr 日志报错 | Docker 内存不足或目标站变更 |
 
 无 FlareSolverr 时，可暂时只用 **EZTV、YTS** 等 Layer 2 直连源完成 PoC。
@@ -603,7 +616,9 @@ http://127.0.0.1:8191
 
 | 文件 | 说明 |
 |------|------|
-| `workflow/torrent_sources/accounts.local.json` | 含 API Key，勿提交 |
+| `workflow/torrent_sources/accounts.local.json` | Jackett URL + API Key，勿提交 |
+| `workflow/torrent_sources/servers.local.json` | VPS SSH 密码、API Key、Docker 详情，勿提交 |
+| `workflow/torrent_sources/servers.example.json` | 服务器配置模板，可提交 |
 | `.env` | 环境变量，勿提交 |
 | `accounts.example.json` | 仅模板，可提交 |
 
@@ -617,6 +632,9 @@ http://127.0.0.1:8191
 | `scripts/poc_phase0.ps1` | 四源连通 PoC（含 Jackett `[1/4]`） |
 | `workflow/torrent_sources/config.py` | Key 校验、`jackett_probe` |
 | `workflow/torrent_sources/accounts.example.json` | 配置模板 |
+| `workflow/torrent_sources/servers.example.json` | 海外 VPS 部署模板 |
+| `docs/jackett-remote-linode.md` | 海外 VPS 部署（含日本测试机 104.105.140.11） |
+| `docs/jackett-stability.md` | 稳定性保障（配置规范、healthcheck、验收） |
 | `worklogs/2026-06-30/A4-Jackett安装引导.md` | 块 A 验收精简版 |
 
 ---
@@ -626,3 +644,5 @@ http://127.0.0.1:8191
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | v1.0 | 2026-06-30 | 初版：概念、安装、Dashboard、Torznab、ReleaseMatch 集成、排错 |
+| v1.1 | 2026-06-30 | §九 补充 VPS 双 Docker FlareSolverr；敏感文件增加 servers.local.json |
+| v1.2 | 2026-06-30 | 附录 A 增加 jackett-stability.md 链接 |

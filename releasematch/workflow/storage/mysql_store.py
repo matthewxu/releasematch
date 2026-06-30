@@ -49,6 +49,20 @@ def _utc_now_str() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
 
 
+def _clip_str(value: object, max_len: int) -> str:
+    """
+    截断字符串以适配 MySQL VARCHAR 列宽。
+
+    @param value: 任意值（非 str 则 str()）
+    @param max_len: 最大字符数
+    @returns: 截断后的字符串
+    """
+    text = str(value or "")
+    if len(text) <= max_len:
+        return text
+    return text[:max_len]
+
+
 def _normalize_row(row: Dict[str, Any]) -> Dict[str, Any]:
     """
     将 PyMySQL 行转为 d1_models.from_row 可消费的 dict。
@@ -761,20 +775,20 @@ class MySQLStore:
                         episode,
                         infohash,
                         item.get("title_raw", ""),
-                        item.get("release_group", ""),
-                        item.get("source", ""),
-                        item.get("resolution", ""),
-                        item.get("codec", ""),
-                        item.get("video_spec", ""),
-                        item.get("audio_spec", ""),
+                        _clip_str(item.get("release_group", ""), 64),
+                        _clip_str(item.get("source", ""), 64),
+                        _clip_str(item.get("resolution", ""), 16),
+                        _clip_str(item.get("codec", ""), 32),
+                        _clip_str(item.get("video_spec", ""), 256),
+                        _clip_str(item.get("audio_spec", ""), 256),
                         int(item.get("size_bytes") or 0),
                         int(item.get("seeders") or 0),
                         int(item.get("peers") or 0),
                         item.get("magnet_uri", ""),
-                        item.get("indexer", ""),
+                        _clip_str(item.get("indexer", ""), 32),
                         is_rec,
                         score,
-                        reason,
+                        _clip_str(reason, 512),
                         tier,
                         int(item.get("cross_source_count") or 1),
                         float(item.get("cross_source_confidence") or 0.0),
@@ -784,7 +798,26 @@ class MySQLStore:
                 )
                 upserted += 1
 
-            magnet_count = len(items)
+            # 移除本槽位已不在当前拉取结果中的旧 magnet（避免页面仍显示历史误匹配条目）
+            active_hashes = [
+                str(item.get("infohash") or "")
+                for item in items
+                if len(str(item.get("infohash") or "")) == 40
+            ]
+            if active_hashes:
+                placeholders = ", ".join(["%s"] * len(active_hashes))
+                cur.execute(
+                    f"DELETE FROM download_resources WHERE page_id = %s "
+                    f"AND infohash NOT IN ({placeholders})",
+                    [page_id, *active_hashes],
+                )
+            else:
+                cur.execute(
+                    "DELETE FROM download_resources WHERE page_id = %s",
+                    (page_id,),
+                )
+
+            magnet_count = len(active_hashes)
             page_status = "published" if magnet_count >= 2 else "thin"
             robots_noindex = 0 if magnet_count >= 2 else 1
             cur.execute(

@@ -29,6 +29,7 @@ from workflow.torrent_sources.jackett_client import JackettClient
 from workflow.torrent_sources.models import FetchRequest, FetchResult, MediaType, ResourceItem
 from workflow.torrent_sources.nyaa_client import NyaaClient
 from workflow.torrent_sources.release_parser import parse_release_title
+from workflow.torrent_sources.slot_filter import filter_tv_slot_items
 from workflow.torrent_sources.yts_client import YtsClient
 
 
@@ -238,10 +239,35 @@ class FetchService:
 
     def _fetch_tv(self, request: FetchRequest) -> Tuple[List[ResourceItem], Dict[str, bool]]:
         """
-        剧集：EZTV + Nyaa + Jackett。
+        剧集：EZTV + Nyaa + Jackett（含槽位标题过滤）。
 
         @param request: FetchRequest
         @returns: (items, source_enabled)
+        """
+        items, source_enabled, show_title = self._collect_tv_items(request)
+        if (
+            show_title
+            and request.season is not None
+            and request.episode is not None
+            and items
+        ):
+            items = filter_tv_slot_items(
+                items,
+                show_title=show_title,
+                season=request.season,
+                episode=request.episode,
+            )
+        return items, source_enabled
+
+    def _collect_tv_items(
+        self,
+        request: FetchRequest,
+    ) -> Tuple[List[ResourceItem], Dict[str, bool], Optional[str]]:
+        """
+        剧集多源拉取（过滤前原始列表）。
+
+        @param request: FetchRequest
+        @returns: (items, source_enabled, show_title)
         """
         items: List[ResourceItem] = []
         source_enabled: Dict[str, bool] = {
@@ -297,7 +323,7 @@ class FetchService:
                 except Exception:
                     continue
 
-        return items, source_enabled
+        return items, source_enabled, show_title
 
     def _fetch_movie(self, request: FetchRequest) -> Tuple[List[ResourceItem], Dict[str, bool]]:
         """

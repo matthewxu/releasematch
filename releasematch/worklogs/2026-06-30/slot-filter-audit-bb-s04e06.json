@@ -1,0 +1,1064 @@
+{
+  "slot": "tv:1396:s04e06",
+  "show_title": "Breaking Bad",
+  "show_tokens": [
+    "breaking",
+    "bad"
+  ],
+  "raw_count": 175,
+  "kept_count": 1,
+  "rejected_count": 174,
+  "kept": [
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Breaking Bad S04E06 Cornered 2160p NF WEB-DL DDP5 1 H 265-XEBEC",
+      "infohash": "583d172ea1ea"
+    }
+  ],
+  "rejected": [
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "FROM S04E06 The Heart Is A Lonely Hunter 1080p AMZN WEB-DL DDP5 1 H 264-FLUX",
+      "infohash": "ce6a9cbd5f50",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "FROM S04E06 The Heart Is A Lonely Hunter 2160p AMZN WEB-DL DDP5 1 H 265-Kit",
+      "infohash": "6e39d320eb51",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Invincible.2021.S04E06.1080p.WEB.h264-ETHEL",
+      "infohash": "140cbca15ff3",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Bridgerton S04E06 1080p WEB h264-ETHEL",
+      "infohash": "d4d1c8414882",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The.Legend.of.Vox.Machina.S04E06.1080p.WEB.h264-EDITH",
+      "infohash": "ca6779f37ee7",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Succession S04E06 Living 2160p MAX WEB-DL DDP5 1 DoVi x265-NTb",
+      "infohash": "849f2c6c3a42",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "FROM S04E06 The Heart Is A Lonely Hunter 2160p AMZN WEB-DL DDP5 1 H 265-FLU",
+      "infohash": "38942bbed913",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Vampire Diaries S04E06 We All Go a Little Mad Sometimes BluRay 1080p DT",
+      "infohash": "12bb37b15d6a",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Boys S04E06 Dirty Business 1080p AMZN WEB-DL DDP5 1 H 264-ACEM",
+      "infohash": "b941277d580c",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "From.S04E06.1080p.x265-ELiTE",
+      "infohash": "da8563d89431",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Clarksons Farm S04E06 Splurging 1080p AMZN WEB-DL DDP5 1 H 264-Kitsune",
+      "infohash": "83d2683c0ef6",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Clarksons Farm S04E06 1080p WEB H264-RousingHairyBaboonOfFortitude",
+      "infohash": "1b5f590004e7",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Slow Horses S04E06 Hello Goodbye with Audio Description 1080p ATVP WEB-DL D",
+      "infohash": "1269287c0a5b",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "FROM S04E06 The Heart Is A Lonely Hunter 1080p HEVC x265-MeGusta",
+      "infohash": "b13f58dbe543",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Morning Show 2019 S04E06 1080p WEB h264-GRACE",
+      "infohash": "0cf57f4d8975",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Bridgerton S04E06 The Passing Winter 2160p NF WEB-DL DDP5 1 DV HDR H 265-NT",
+      "infohash": "b44c24423b82",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Traitors US S04E06 Planning a Coup 1080p AMZN WEB-DL DDP5 1 H 264-Kitsu",
+      "infohash": "8f017aad53ed",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Stranger Things S04E06 Chapter Six The Dive REPACK 1080p NF WEB-DL DDP5 1 A",
+      "infohash": "5b1e4b90dbfb",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[FLE] Re ZERO Starting Life in Another World - S04E06 (WEB 1080p HEVC E-AC-3) [Dual Audio] | Re: Zero Kara Hajimeru Isekai Seikatsu Season 4 Episode 6 | Re:ZERO | ReZero",
+      "infohash": "cf8b8f95fd35",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Industry.S04E06.1080p.WEB.h264-ETHEL",
+      "infohash": "1df9ce4d81e0",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Secret Lives of Mormon Wives S04E06 1080p WEB h264-EDITH",
+      "infohash": "4cadbfc34b8f",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Love on the Spectrum U S S04E06 1080p WEB h264-EDITH",
+      "infohash": "2be1d35183be",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Mayor of Kingstown S04E06 1080p WEB h264-ETHEL",
+      "infohash": "dd83dbaff78e",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "From S04E06 1080P TV WEB-DL AAC2 0 H264 TURG",
+      "infohash": "7a69179a2daa",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Witcher S04E06 1080p WEB h264-ETHEL",
+      "infohash": "99dc95420126",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The.Legend.of.Vox.Machina.S04E06.MULTI.1080p.WEB.H264-HiggsBoson",
+      "infohash": "e99d85497d9f",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "For All Mankind S04E06 1080p WEB H264-NHTFS",
+      "infohash": "d1eb41c7ec63",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Re ZERO Starting Life in Another World S04E06 Julius Juukulius 1080p CR WEB-DL DUAL AAC2.0 H 264-VARYG (Dual-Audio, Multi-Subs)",
+      "infohash": "22fd38bbb3d6",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Succession S04E06 REPACK MULTi 1080p WEB H264-AMB3R",
+      "infohash": "1fc277fe074d",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "That Time I Got Reincarnated as a Slime S04E06 The Council of the West 1080p CR WEB-DL DUAL AAC2.0 H 264-VARYG (Tensei shitara Slime Datta Ken, Dual-Audio, Multi-Subs)",
+      "infohash": "5a701d0bc0e9",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "That Time I Got Reincarnated as a Slime S04E06 VOSTFR 1080p WEB x264 AAC -Tsundere-Raws (CR) (Tensei shitara Slime Datta Ken 4th Season,That Time I Got Reincarnated as a Slime Season 4)",
+      "infohash": "8d3e17fa50f0",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The.Secret.Lives.of.Mormon.Wives.S04E06.1080p.WEB.h264-EDITH",
+      "infohash": "aed12fcebf2f",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[ToonsHub] ReZero kara Hajimeru Isekai Seikatsu S04E06 1080p AMZN WEB-DL DDP2.0 H.264 (Re:ZERO -Starting Life in Another World-)",
+      "infohash": "6df74526f30e",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Dark Winds S04E06 Shika Nidanitahaa Those Who Were Searching for Me 1080p AMZN WEB-DL DDP5 1 H 264-RAWR",
+      "infohash": "11f30c323fad",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Boys S04E06 Dirty Business 1080p Web-DL x264-OFT",
+      "infohash": "fa2db8aac2c3",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[ToonsHub] ReZERO -Starting Life in Another World- S04E06 1080p CR WEB-DL DUAL AAC2.0 H.264 (Re:Zero kara Hajimeru Isekai Seikatsu, Dual-Audio, Multi-Subs)",
+      "infohash": "a8f278b3ce72",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Shameless U S S04E06 Iron City 1080p Netflix WEB-DL DDP 5 1 H 264-HHWEB",
+      "infohash": "15c1c39e3194",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Outlander S04E06 Blood of My Blood 1080p NF WEB-DL DD 5 1 H 264-playWEB",
+      "infohash": "3400b75c93a6",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The.Boys.S04E06.Dirty.Business.1080p.AMZN.WEB-DL.DDP5.1.H.264-FL",
+      "infohash": "2639aafdc207",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Seinfeld S04E06 The Watch 1080p AMZN WEB-DL DDP2 0 H 264-NTb",
+      "infohash": "80dc211b6d51",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Stranger Things S04E06 Chapter Six The Dive with Audio Description 1080p NF",
+      "infohash": "dd636aea7bbb",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Traitors 2023 S04E06 1080p WEB h264-EDITH",
+      "infohash": "9dd4ad4c7d02",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Game of Thrones S04E06 The Laws of Gods and Men 1080p MAX WEB-DL DDP5 1 Atm",
+      "infohash": "fc4b1be08d63",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Lincoln Lawyer S04E06 1080p WEB h264-ETHEL",
+      "infohash": "16d292ff5e86",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Stranger Things S04E06 Chapter Six The Dive 1080p NF WEB-DL DDP5 1 x264-NTb",
+      "infohash": "80e4499fd96a",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Mr Robot S04E06 406 Not Acceptable 1080p AMZN WEB-DL DDP5 1 H 264-WADU",
+      "infohash": "3f952b7d8507",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[Feibanyama] ReZERO Starting Life in Another World S04E06 [IQIYI WebRip 2160p HEVC AAC Multi-Audio Multi-Subs] (Re:Zero kara Hajimeru Isekai Seikatsu)",
+      "infohash": "590567d8a9e0",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Traitors UK S04E06 1080p iP WEB-DL AAC2 0 H 264-RAWR",
+      "infohash": "3952b676ab24",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[ToonsHub] Honzuki no Gekokujou S04E06 1080p AMZN WEB-DL DDP2.0 H.264 (Ascendance of a Bookworm)",
+      "infohash": "4a63d6f55aad",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[ToonsHub] That Time I Got Reincarnated as a Slime S04E06 1080p CR WEB-DL DUAL AAC2.0 H.264 (Tensei Shitara Slime Datta Ken, Dual-Audio, Multi-Subs)",
+      "infohash": "a36ca5861b55",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Re ZERO, Starting Life in Another World S04E06 VOSTFR 1080p WEB x264 AAC -Tsundere-Raws (CR) (Re:Zero kara Hajimeru Isekai Seikatsu 4th Season,Re:ZERO -Starting Life in Another World- Season 4)",
+      "infohash": "c3c6c3704dc1",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Ascendance of a Bookworm S04E06 Harspiel Concert 1080p CR WEB-DL DUAL AAC2.0 H 264-VARYG (Honzuki no Gekokujou: Shisho ni Naru Tame ni wa Shudan wo Erandeiraremasen, Dual-Audio, Multi-Subs)",
+      "infohash": "0acb32f3cd05",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Sullivans Crossing S04E06 Falling Through The Cracks 1080p AMZN WEB-DL DDP5 1 H 264-RAWR",
+      "infohash": "1b4a90f793a7",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Invincible 2021 S04E06 YOU LOOK HORRIBLE 1080p AMZN WEB-DL DDP5 1 H 264-FLUX",
+      "infohash": "3b19627e9acf",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Righteous Gemstones S04E06 1080p WEB H264-SuccessfulCrab",
+      "infohash": "22668b4b93dc",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Mr Robot S04E06 406 Not Acceptable 1080p AMZN WEB-DL DDP5 1 H 264-FLUX",
+      "infohash": "b4f1554c2b6b",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[Yameii] That Time I Got Reincarnated as a Slime - S04E06 [English Dub] [CR WEB-DL 1080p H264 AAC] [32BC94E2] (Tensei Shitara Slime Datta Ken Season 4 | S4)",
+      "infohash": "2cac1c4aa801",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Bridgerton.S04E06.MULTI.1080p.WEB.X264-HiggsBoson",
+      "infohash": "2d9a44101bd6",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Invincible 2021 S04E06 YOU LOOK HORRIBLE 1080p AMZN WEB-DL DD 5 1 H 264-pla",
+      "infohash": "68303498159e",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Ozark S04E06 Sangre Sobre Todo 1080p NF WEB-DL DDP5 1 H 264-Kitsune",
+      "infohash": "f4f379b9c77c",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Sullivans Crossing S04E06 Falling Through The Cracks 1080p AMZN WEB-DL DDP5",
+      "infohash": "b70db1f3d2f1",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Will Trent S04E06 720p HDTV x264-SYNCOPY",
+      "infohash": "d978f193caa5",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Resident.Alien.S04E06.1080p.WEBRip.x264-BAE",
+      "infohash": "b392afa80834",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Legend of Vox Machina S04E06 We Are His Blood 720p AMZN WEB-DL H264-pla",
+      "infohash": "d717b742d1f1",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Beyond Paradise S04E06 1080p HDTV H264-ORGANiC",
+      "infohash": "ceb65c1980c3",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Welcome to Wrexham S04E06 1080p WEB H264-SuccessfulCrab",
+      "infohash": "473cff409357",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "That Time I Got Reincarnated as a Slime S04E06 MULTi AD 1080p CR WEB-DL AAC2.0 x264-Tsundere-Raws (VF, FRENCH, SUBFRENCH, VOSTFR, Tensei Shitara Slime Datta Ken, Tensei Shitara Slime Datta Ken S4)",
+      "infohash": "3fe420fddfe8",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Resident Alien S04E06 Soul Providers 1080p BluRay x264-OFT",
+      "infohash": "f67357fac3f1",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "FROM S04E06 The Heart Is A Lonely Hunter 720p AMZN WEB-DL DDP5 1 H 264-FLUX",
+      "infohash": "de596fac3b18",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Re ZERO Starting Life in Another World S04E06 Julius Juukulius 1080p CR WEB",
+      "infohash": "408d88dffa79",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Hacks S04E06 1080p WEB h264-ETHEL",
+      "infohash": "80d36535e552",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[ToonsHub] That Time I Got Reincarnated as a Slime S04E06 1080p CR WEB-DL MULTi AAC2.0 H.264 (Tensei Shitara Slime Datta Ken, Multi-Audio, Multi-Subs)",
+      "infohash": "00a40181bb17",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Celebrity.Jeopardy.S04E06.720p.WEB.h264-EDITH",
+      "infohash": "c19c48077ac9",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Ascendance of a Bookworm S04E06 VOSTFR 1080p WEB x264 AAC -Tsundere-Raws (CR) (Honzuki no Gekokujou: Shisho ni Naru Tame ni wa Shudan wo Erandeiraremasen - Ryoushu no Youjo,Ascendance of a Bookworm: Adopted Daughter of an Archduke)",
+      "infohash": "6ae82a2e4798",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[Yameii] Re:ZERO, Starting Life in Another World - S04E06 [English Dub] [CR WEB-DL 1080p H264 AAC] [EF0D625D] (Re:Zero kara Hajimeru Isekai Seikatsu Season 4 | S4)",
+      "infohash": "573ccfb747b2",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Bear S04E06 1080p WEB H264-SuccessfulCrab",
+      "infohash": "fbf405ae193a",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[ToonsHub] ReZERO -Starting Life in Another World- S04E06 1080p CR WEB-DL MULTi AAC2.0 H.264 (Re:Zero kara Hajimeru Isekai Seikatsu, Multi-Audio, Multi-Subs)",
+      "infohash": "5673856b993f",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Mythic Quest S04E06 1080p WEB H264-SuccessfulCrab",
+      "infohash": "5c6d715e93d1",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Bear S04E06 1080p DSNP WEB-DL DDP5 1 H 264-FLUX",
+      "infohash": "10eb92d138ae",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Classroom of the Elite S04E06 A Tumultuous Scramble 1080p CR WEB-DL MULTi AAC2.0 H 264-VARYG (Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e, Multi-Audio, Multi-Subs)",
+      "infohash": "eec54b23f1bd",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Fargo S04E06 2014 1080p NF WEB-DL DDP5 1 H 264-HHWEB",
+      "infohash": "e31336b4bdb2",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Yellowstone.2018.S04E06.I.Want.to.Be.Him.1080p.HEVC.x265-MeGusta",
+      "infohash": "3d152a87fed8",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Re ZERO, Starting Life in Another World S04E06 MULTi AD 1080p CR WEB-DL AAC2.0 x264-Tsundere-Raws (VF, FRENCH, SUBFRENCH, VOSTFR, ReZero kara Hajimeru Isekai Seikatsu, ReZero)",
+      "infohash": "20dcd400d630",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Classroom of the Elite S04E06 MULTi AD 1080p CR WEB-DL AAC2.0 x264-Tsundere-Raws (VF, FRENCH, SUBFRENCH, VOSTFR, Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu e, You jitsu 4th Season)",
+      "infohash": "ee909a71982b",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[GJM] Ascendance of a Bookworm (Honzuki no Gekokujou) - 42 (S04E06) (WEB 1080p) [03371936].mkv",
+      "infohash": "6c46dbfa6822",
+      "reason": "season_episode_mismatch"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "True Detective S04E06 1080p 10bit WEBRip 6CH x265 HEVC-PSA",
+      "infohash": "37e86fe6db5e",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Below Deck Down Under S04E06 1080p WEB h264-EDITH",
+      "infohash": "c6025db35593",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "For All Mankind S04E06 1080p 10bit WEBRip 6CH x265 HEVC-PSA",
+      "infohash": "640f7db307d9",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[FBI] Re:Zero Starting Life in Another World - S04E06 (CR WEB-DL 1080p AVC AAC) [Dual Audio] | Re:Zero kara Hajimeru Isekai Seikatsu Season 4 | Re Zero | ReZero",
+      "infohash": "8551b476fca6",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Invincible 2021 S04E06 YOU LOOK HORRIBLE 1080p AMZN WEB-DL DDP5 1 H 264-FLU",
+      "infohash": "bc87169f0f0d",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Bel-Air S04E06 1080p WEB h264-ETHEL",
+      "infohash": "685e81c33009",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[Judas] Re:Zero kara Hajimeru Isekai Seikatsu (Re:Zero - Starting Life in Another World) - S04E06 [1080p][HEVC x265 10bit][Dual-Audio][Multi-Subs] (Weekly)",
+      "infohash": "2d2744a19af6",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Welcome to Demon School Iruma kun S04E06 The Music Festival Showtime 1080p CR WEB-DL DUAL AAC2.0 H 264-VARYG (Mairimashita! Iruma-kun 2nd Season, Dual-Audio, Multi-Subs)",
+      "infohash": "648b25f15e28",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "That Time I Got Reincarnated as a Slime S04E06 The Council of the West 1080p CR WEB-DL AAC2.0 H 264-VARYG (Tensei shitara Slime Datta Ken, Multi-Subs)",
+      "infohash": "760f8194a791",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Welcome to Demon School Iruma-kun S04E06 VOSTFR 1080p WEB x264 AAC -Tsundere-Raws (CR) (Mairimashita! Iruma-kun 4th Season,Welcome to Demon School! Iruma-kun Season 4)",
+      "infohash": "33094d60b636",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Ascendance of a Bookworm S04E06 Harspiel Concert 1080p CR WEB-DL AAC2.0 H 264-VARYG (Honzuki no Gekokujou: Shisho ni Naru Tame ni wa Shudan wo Erandeiraremasen, Multi-Subs)",
+      "infohash": "57e378f43e7b",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[ToonsHub] That Time I Got Reincarnated as a Slime S04E06 1080p CR WEB-DL AAC2.0 H.264 (Tensei Shitara Slime Datta Ken, Multi-Subs)",
+      "infohash": "2c6410dd8457",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Bridgerton.S04E06.1080p.x265-ELiTE",
+      "infohash": "f001412bf8ad",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Good Place S04E06 A Chip Driver Mystery Extended 1080p BluRay x264-OFT",
+      "infohash": "ba05f90ed60b",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Bridgerton S04E06 1080p HEVC x265-MeGusta",
+      "infohash": "f6b12ba41739",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Traitors 2023 S04E06 1080p HEVC x265-MeGusta",
+      "infohash": "44962480d12a",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Invincible 2021 S04E06 YOU LOOK HORRIBLE 720p AMZN WEB-DL DD 5 1 H 264-play",
+      "infohash": "8b876234b40a",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[Yameii] Ascendance of a Bookworm - S04E06 [English Dub] [CR WEB-DL 1080p H264 AAC] [8153032D] (Honzuki no Gekokujou: Shisho ni Naru Tame ni wa Shudan o Erande Iraremasen - Ryoushu no Youjo | Adopted Daughter of an Archduke)",
+      "infohash": "a339bbd3a39d",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Clarksons Farm S04E06 1080p HEVC x265-MeGusta",
+      "infohash": "b1725dcb6a04",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "JoJos Bizarre Adventure S04E06 Moody Jazzs Counterattack 1080p NF WEB-DL DD",
+      "infohash": "561fc5348085",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Invincible 2021 S04E06 1080p HEVC x265-MeGusta",
+      "infohash": "e63defadffb3",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[ToonsHub] Welcome to Demon School Iruma-kun S04E06 1080p CR WEB-DL DUAL AAC2.0 H.264 (Mairimashita! Iruma-kun, Dual-Audio, Multi-Subs)",
+      "infohash": "e8596036152c",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Abbott.Elementary.S04E06.1080p.WEB.H264-SuccessfulCrab[TGx]",
+      "infohash": "8a0d29bd16c8",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Traitors UK S04E06 1080p HEVC x265-MeGusta",
+      "infohash": "cfae7df5927a",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Re ZERO Starting Life in Another World S04E06 Julius Juukulius 1080p CR WEB-DL MULTi AAC2.0 H 264-VARYG (Multi-Audio, Multi-Subs)",
+      "infohash": "772523de8869",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Make Some Noise S04E06 Josh Anna and Jiavani Make a Day Rate 720p DRPO WEB-DL AAC2 0 H 264-NTb",
+      "infohash": "d17bf5604b65",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Morning Show 2019 S04E06 1080p HEVC x265-MeGusta",
+      "infohash": "29e3679e1c70",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "That Time I Got Reincarnated as a Slime S04E06 The Council of the West 1080p CR WEB-DL MULTi AAC2.0 H 264-VARYG (Tensei shitara Slime Datta Ken, Multi-Audio, Multi-Subs)",
+      "infohash": "0f04e96773a0",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "FROM S04E06 The Heart Is A Lonely Hunter 720p HEVC x265-MeGusta",
+      "infohash": "a1a370189f4c",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[Judas] Tensei Shitara Slime Datta Ken (That Time I Got Reincarnated as a Slime) - S04E06 [1080p][HEVC x265 10bit][Multi-Subs] (Weekly)",
+      "infohash": "24361ee22cc3",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Bridgerton.S04E06.1080p.AV1.10bit-MeGusta",
+      "infohash": "58e86abd79f8",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Bridgerton S04E06 The Passing Winter 720p NF WEB-DL DDP5 1 Atmos H 264-FLUX",
+      "infohash": "1d8068117389",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Love Death and Robots S04E06 1080p WEB h264-ETHEL",
+      "infohash": "85ee9e676d34",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[ToonsHub] Ascendance of a Bookworm S04E06 1080p CR WEB-DL AAC2.0 H.264 (Honzuki no Gekokujou: Shisho ni Naru Tame ni wa Shudan wo Erandeiraremasen, Multi-Subs)",
+      "infohash": "383d7730e1c1",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Invincible.2021.S04E06.720p.HEVC.x265-MeGusta",
+      "infohash": "aaa38f874a86",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[ToonsHub] Ascendance of a Bookworm S04E06 1080p CR WEB-DL DUAL AAC2.0 H.264 (Honzuki no Gekokujou: Shisho ni Naru Tame ni wa Shudan wo Erandeiraremasen, Dual-Audio, Multi-Subs)",
+      "infohash": "45ee2a983135",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[ToonsHub] That Time I Got Reincarnated as a Slime S04E06 1080p NF WEB-DL AAC2.0 H.264 (Tensei Shitara Slime Datta Ken, Multi-Subs)",
+      "infohash": "d6795eb98f36",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Lincoln Lawyer S04E06 720p HEVC x265-MeGusta",
+      "infohash": "bea8882b37e8",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[Yameii] Welcome to Demon School! Iruma-kun - S04E06 [English Dub] [CR WEB-DL 1080p H264 AAC] [D5AE1825] (Mairimashita! Iruma-kun Season 4 | S4)",
+      "infohash": "0333878b2fca",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Industry S04E06 1080p HEVC x265-MeGusta",
+      "infohash": "9f93ba6bfaf7",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Ascendance of a Bookworm S04E06 Harspiel Concert 1080p CR WEB-DL MULTi AAC2.0 H 264-VARYG (Honzuki no Gekokujou: Shisho ni Naru Tame ni wa Shudan wo Erandeiraremasen, Multi-Audio, Multi-Subs)",
+      "infohash": "298034edfb4d",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Invincible.2021.S04E06.1080p.HEVC.x265-MeGusta",
+      "infohash": "b2ad59d870a0",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "FROM S04E06 The Heart Is A Lonely Hunter 480p x264-mSD",
+      "infohash": "78eac0c619c1",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[ToonsHub] Welcome to Demon School Iruma-kun S04E06 1080p CR WEB-DL MULTi AAC2.0 H.264 (Mairimashita! Iruma-kun, Multi-Audio, Multi-Subs)",
+      "infohash": "84ba0004159e",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Mayor of Kingstown S04E06 1080p HEVC x265-MeGusta",
+      "infohash": "3b2ee37a6993",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Bridgerton S04E06 720p HEVC x265-MeGusta",
+      "infohash": "273c38775321",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[Judas] Mairimashita! Iruma-kun (Welcome to Demon School) - S04E06 [1080p][HEVC x265 10bit][Dual-Audio][Multi-Subs] (Weekly)",
+      "infohash": "d8c300778a93",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Ace of Diamond S04E06 VOSTFR 1080p WEB x264 AAC -Tsundere-Raws (CR) (Diamond no Ace: Act II Second Season,Ace of Diamond Act II Season 2)",
+      "infohash": "17f51f616a73",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Invincible.2021.S04E06.1080p.AV1.10bit-MeGusta",
+      "infohash": "28db47cb4fe2",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Animal Control S04E06 720p HDTV x264-SYNCOPY",
+      "infohash": "450bde41a458",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[ToonsHub] ReZERO Starting Life in Another World S04E06 1080p BILI WEB-DL AAC2.0 H.265 (Re:Zero kara Hajimeru Isekai Seikatsu, Multi-Subs)",
+      "infohash": "460e697bb915",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[Yameii] That Time I Got Reincarnated as a Slime - S04E06 [English Dub] [CR WEB-DL 720p H264 AAC] [28BEBD95] (Tensei Shitara Slime Datta Ken Season 4 | S4)",
+      "infohash": "eafe2d311fc8",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[Judas] Honzuki no Gekokujou: Shisho ni Naru Tame ni wa Shudan o Erande Iraremasen (Ascendance of a Bookworm) - S04E06 [1080p][HEVC x265 10bit][Multi-Subs] (Weekly)",
+      "infohash": "5cdc41b031e9",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Dark.Winds.S04E06.720p.x264-FENiX",
+      "infohash": "b85c146c3ba6",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Invincible.S04E06.1080p.AMZN.WEBRip.AAC5.1.10bits.x265-Rapta",
+      "infohash": "e852d6ab991a",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Rick and Morty S04E06 Never Ricking Morty 1080p WEBRip 6CH x265 HEVC-PSA",
+      "infohash": "d9a0a6102b7c",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[ToonsHub] That Time I Got Reincarnated as a Slime S04E06 1080p BILI WEB-DL AAC2.0 H.265 (Tensei Shitara Slime Datta Ken, Multi-Subs)",
+      "infohash": "9ef7ab1918ea",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[Yameii] Ascendance of a Bookworm - S04E06 [English Dub] [CR WEB-DL 720p H264 AAC] [BF16B7D2] (Honzuki no Gekokujou: Shisho ni Naru Tame ni wa Shudan o Erande Iraremasen - Ryoushu no Youjo | Adopted Daughter of an Archduke)",
+      "infohash": "e4e8f36f513f",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[DKB] Re:Zero kara Hajimeru Isekai Seikatsu - S04E06 [1080p][HEVC x265 10bit][Dual-Audio][Multi-Subs][weekly]",
+      "infohash": "2a39e6ef1bdb",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "That Time I Got Reincarnated as a Slime S04E06 VOSTFR 720p WEB x264 AAC -Tsundere-Raws (CR) (Tensei shitara Slime Datta Ken 4th Season,That Time I Got Reincarnated as a Slime Season 4)",
+      "infohash": "72f0ae61fbc1",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "That Time I Got Reincarnated as a Slime S04E06 1080p NF WEB-DL AAC2.0 H 264-VARYG (Tensei shitara Slime Datta Ken, Multi-Subs)",
+      "infohash": "690b3d5cba73",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Legend of Vox Machina S04E06 1080p HEVC x265-MeGusta",
+      "infohash": "0268e64a4cd2",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[DKB] Tensei shitara Slime Datta Ken - S04E06 [1080p][HEVC x265 10bit][Multi-Subs][weekly]",
+      "infohash": "64e5741b13e6",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[Yameii] Re:ZERO, Starting Life in Another World - S04E06 [English Dub] [CR WEB-DL 720p H264 AAC] [98CF71A8] (Re:Zero kara Hajimeru Isekai Seikatsu Season 4 | S4)",
+      "infohash": "0f709f42ca00",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Welcome to Demon School Iruma kun S04E06 The Music Festival Showtime 1080p CR WEB-DL MULTi AAC2.0 H 264-VARYG (Mairimashita! Iruma-kun 2nd Season, Multi-Audio, Multi-Subs)",
+      "infohash": "953bc556f192",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Ace of the Diamond S04E06 The Unveiling 1080p CR WEB-DL AAC2.0 H 264-VARYG (Diamond no Ace, Multi-Subs)",
+      "infohash": "35427159408b",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[ToonsHub] Ace of Diamond S04E06 1080p CR WEB-DL AAC2.0 H.264 (Diamond no Ace, Multi-Subs)",
+      "infohash": "2a6659bb8d51",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[DKB] Mairimashita! Iruma-kun - S04E06 [1080p][HEVC x265 10bit][Dual-Audio][Multi-Subs][weekly]",
+      "infohash": "90382e9fe239",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[T3KASHi] Re ZERO: Starting Life in Another World S04E06 MULTi 1080p CR WEBRiP AAC 2.0 x.265 (Re:Zero kara Hajimeru Isekai Seikatsu, VF, VOSTFR)",
+      "infohash": "bb73ede123c2",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[Kakumei Subs] Honzuki no Gekokujou - S04E06 [1080p WEB HEVC AAC] [Sub. Español] | Ascendance of a Bookworm Season 4",
+      "infohash": "39a6f4190e8d",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[Ironclad] Honzuki no Gekokujou - S04E06 [WEB.1080p.AV1] | Ascendance of a Bookworm (Multi-Subs) (Weekly)",
+      "infohash": "71d5a93af57e",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[Yameii] Welcome to Demon School! Iruma-kun - S04E06 [English Dub] [CR WEB-DL 720p H264 AAC] [ED245147] (Mairimashita! Iruma-kun Season 4 | S4)",
+      "infohash": "be6c01c65581",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[Ironclad] Tensei Shitara Slime Datta Ken 4 - S04E06 [WEB.1080p.AV1] | That Time I Got Reincarnated as a Slime (Multi-Subs) (Weekly)",
+      "infohash": "a0063b154b9e",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "The Legend of Vox Machina S04E06 720p HEVC x265-MeGusta",
+      "infohash": "faaa3bc115b6",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[DKB] Honzuki no Gekokujou: Shisho ni Naru Tame ni wa Shudan wo Erandeiraremasen - S04E06 [1080p][HEVC x265 10bit][Multi-Subs][weekly]",
+      "infohash": "b48244d84999",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[ToonsHub] Welcome to Demon School Iruma-kun S04E06 1080p BILI WEB-DL AAC2.0 H.265 (Mairimashita! Iruma-kun, Multi-Subs)",
+      "infohash": "7fcb9085e2b6",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Re ZERO, Starting Life in Another World S04E06 VOSTFR 720p WEB x264 AAC -Tsundere-Raws (CR) (Re:Zero kara Hajimeru Isekai Seikatsu 4th Season,Re:ZERO -Starting Life in Another World- Season 4)",
+      "infohash": "ce3a79b8d0c5",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Ascendance of a Bookworm S04E06 VOSTFR 720p WEB x264 AAC -Tsundere-Raws (CR) (Honzuki no Gekokujou: Shisho ni Naru Tame ni wa Shudan wo Erandeiraremasen - Ryoushu no Youjo,Ascendance of a Bookworm: Adopted Daughter of an Archduke)",
+      "infohash": "7307927363e4",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[Z-A] Re Zero kara Hajimeru Isekai Seikatsu - S04E06 (WEB 1080p AAC) [Sub. Español]",
+      "infohash": "6c83e39ccf98",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Ace of Diamond S04E06 VOSTFR 720p WEB x264 AAC -Tsundere-Raws (CR) (Diamond no Ace: Act II Second Season,Ace of Diamond Act II Season 2)",
+      "infohash": "617deb3f396d",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[vools] Re ZERO Starting Life in Another World S04E06 Julius Juukulius 1080p",
+      "infohash": "bf5cc7d75160",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[T3KASHi] Classroom of the Elite Second Year First Semester S04E06 MULTi 1080p CR WEBRiP AAC 2.0 x.265 (Youkoso Jitsuryoku Shijou Shugi no Kyoushitsu, VF, VOSTFR)",
+      "infohash": "f1b5e629c750",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Welcome to Demon School Iruma-kun S04E06 VOSTFR 720p WEB x264 AAC -Tsundere-Raws (CR) (Mairimashita! Iruma-kun 4th Season,Welcome to Demon School! Iruma-kun Season 4)",
+      "infohash": "000d77e82b81",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[Judas] Dia no Ace (Ace of the Diamond) - S04E06 [1080p][HEVC x265 10bit][Multi-Subs] (Weekly)",
+      "infohash": "9e7544263480",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "That Time I Got Reincarnated as a Slime S04E06 The Council of the West 1080p BILI WEB-DL AAC2.0 H 264-VARYG (Tensei shitara Slime Datta Ken, Multi-Subs)",
+      "infohash": "efea3a266cbf",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[NanakoRaws] Re_ ZERO, Starting Life in Another World S04E06 (AT-X 1080p HEVC AAC) (Re Zero kara Hajimeru Isekai Seikatsu 4th season)",
+      "infohash": "77ebecbc40dd",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "Welcome to Demon School Iruma kun S04E06 The Music Festival Its Showtime 1080p BILI WEB-DL AAC2.0 H 264-VARYG (Mairimashita! Iruma-kun 2nd Season, Multi-Subs)",
+      "infohash": "2d331a921248",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[NanakoRaws] Ace of Diamond S04E06 (AT-X 1080p HEVC AAC) (Diamond no Ace)",
+      "infohash": "0b555c8e4807",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    },
+    {
+      "indexer": "jackett:jackett",
+      "title_raw": "[RDB] Re Zero kara Hajimeru Break Time - S04E06 [WEB 1080p H.264 AAC] [Sub. Español]",
+      "infohash": "55235f7c956d",
+      "reason": "show_title_mismatch(missing=['breaking', 'bad'])"
+    }
+  ]
+}

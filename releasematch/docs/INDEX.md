@@ -12,6 +12,7 @@
 | [05-Jackett详解与安装使用教程.md](./05-Jackett详解与安装使用教程.md) | **Jackett 概念、安装、Torznab API、ReleaseMatch 集成** |
 | [06-run-cli使用说明.md](./06-run-cli使用说明.md) | **workflow.run 总控命令完整参考** |
 | [07-部署架构解疑.md](./07-部署架构解疑.md) | **D1 / Pages / Worker generate / CI 部署 FAQ** |
-| [jackett-remote-linode.md](./jackett-remote-linode.md) | **海外 VPS（Linode）部署 Jackett** |
+| [jackett-remote-linode.md](./jackett-remote-linode.md) | **海外 VPS 部署 Jackett**（日本测试机 `104.105.140.11`） |
+| [jackett-stability.md](./jackett-stability.md) | **Jackett / 拉取稳定性保障**（配置、healthcheck、验收） |
 
 **隔离说明：** `03` 文档中 `tmdbpy/workflow/torrent_sources/`、`subtitle-portal` 路由等路径已废弃，以 `releasematch/` 为准。

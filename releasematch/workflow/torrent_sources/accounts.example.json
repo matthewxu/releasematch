@@ -1,10 +1,12 @@
 {
+  "_comment": "Jackett / 直连源配置模板。复制为 accounts.local.json 并填入真实 api_key。远程 VPS 见 docs/jackett-remote-linode.md；稳定性规范见 docs/jackett-stability.md。",
   "jackett": {
     "base_url": "http://127.0.0.1:9117",
     "api_key": "YOUR_JACKETT_API_KEY",
     "indexers": {
-      "tv": ["all"],
-      "movie": ["all"]
+      "_comment": "勿使用 all 聚合；1337x 需 VPS 上配置 FlareSolverr",
+      "tv": ["torrentgalaxyclone", "1337x", "thepiratebay", "nyaasi"],
+      "movie": ["yts", "1337x", "torrentgalaxyclone"]
     }
   },
   "eztv": {

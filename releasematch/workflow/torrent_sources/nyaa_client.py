@@ -18,6 +18,7 @@ from urllib.parse import quote
 import requests
 
 from workflow.torrent_sources.models import ResourceItem
+from workflow.torrent_sources.slot_filter import matches_season_episode
 
 _DEFAULT_HEADERS = {
     "User-Agent": (
@@ -36,11 +37,7 @@ _DEFAULT_MIRRORS: Tuple[str, ...] = (
     "https://nyaa.iss.ink",
 )
 
-# 季集匹配：S04E06 / s4e6
-_SEASON_EPISODE_RE = re.compile(
-    r"(?:^|[\s._\-])s(?:eason)?\s*0*(\d+)\s*e(?:p(?:isode)?)?\s*0*(\d+)(?:[\s._\-]|$)",
-    re.IGNORECASE,
-)
+# 季集匹配见 slot_filter.matches_season_episode
 
 
 def _parse_size_bytes(size_text: str) -> int:
@@ -193,34 +190,16 @@ class NyaaClient:
         items = self.search_rss(query, category=category, limit=100)
         filtered: List[ResourceItem] = []
         for item in items:
-            if self._matches_season_episode(item.title_raw, season, episode):
+            if matches_season_episode(item.title_raw, season, episode):
                 filtered.append(item)
         if filtered:
             return filtered
         # 回退：宽松查询仅作品名，再本地过滤
         broad = self.search_rss(title, category=category, limit=100)
         for item in broad:
-            if self._matches_season_episode(item.title_raw, season, episode):
+            if matches_season_episode(item.title_raw, season, episode):
                 filtered.append(item)
         return filtered
-
-    @staticmethod
-    def _matches_season_episode(title: str, season: int, episode: int) -> bool:
-        """
-        判断标题是否包含目标季集。
-
-        @param title: release 标题
-        @param season: 季号
-        @param episode: 集号
-        @returns: 是否匹配
-        """
-        match = _SEASON_EPISODE_RE.search(title or "")
-        if not match:
-            return False
-        try:
-            return int(match.group(1)) == season and int(match.group(2)) == episode
-        except (TypeError, ValueError):
-            return False
 
     def _parse_rss(self, content: bytes, limit: int = 50) -> List[ResourceItem]:
         """
