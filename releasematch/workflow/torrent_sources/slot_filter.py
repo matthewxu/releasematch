@@ -121,6 +121,7 @@ def matches_tv_slot(
     *,
     indexer: str = "",
     require_show_title: bool = True,
+    alt_titles: Optional[List[str]] = None,
 ) -> bool:
     """
     单条 release 是否属于目标剧集槽位。
@@ -131,6 +132,7 @@ def matches_tv_slot(
     @param episode: 集号
     @param indexer: 来源 indexer（用于 EZTV 豁免）
     @param require_show_title: 是否校验作品名 token
+    @param alt_titles: 额外搜索标题（日韩本地名等）
     @returns: 是否保留
     """
     if not matches_season_episode(title_raw, season, episode):
@@ -140,7 +142,12 @@ def matches_tv_slot(
         return True
     if not require_show_title:
         return True
-    return matches_show_title(title_raw, show_title)
+    from workflow.torrent_sources.asia_region import any_title_matches_release
+
+    candidates = [t for t in ([show_title] if show_title else []) + list(alt_titles or []) if t]
+    if not candidates:
+        return True
+    return any_title_matches_release(title_raw, candidates)
 
 
 def explain_tv_slot_rejection(
@@ -217,6 +224,7 @@ def filter_tv_slot_items(
     show_title: Optional[str],
     season: int,
     episode: int,
+    alt_titles: Optional[List[str]] = None,
 ) -> List[ResourceItem]:
     """
     过滤剧集槽位 items，剔除 Jackett 等源的误匹配。
@@ -225,6 +233,7 @@ def filter_tv_slot_items(
     @param show_title: 作品英文名
     @param season: 季号
     @param episode: 集号
+    @param alt_titles: 日韩等多语言标题
     @returns: 过滤后的新列表
     """
     kept: List[ResourceItem] = []
@@ -235,6 +244,7 @@ def filter_tv_slot_items(
             season,
             episode,
             indexer=item.indexer,
+            alt_titles=alt_titles,
         ):
             kept.append(item)
     return kept

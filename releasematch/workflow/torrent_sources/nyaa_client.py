@@ -17,6 +17,7 @@ from urllib.parse import quote
 
 import requests
 
+from workflow.torrent_sources.http_fetch import ProxySettings, http_get
 from workflow.torrent_sources.models import ResourceItem
 from workflow.torrent_sources.slot_filter import matches_season_episode
 
@@ -94,6 +95,7 @@ class NyaaClient:
     @param min_interval_sec: 请求最小间隔
     @param timeout_sec: HTTP 超时
     @param enabled: 是否启用（配置可关闭）
+    @param proxy: 直连失败时使用的 HTTP 代理（海外 VPS）
     """
 
     def __init__(
@@ -103,6 +105,7 @@ class NyaaClient:
         min_interval_sec: float = 3.0,
         timeout_sec: float = 25.0,
         enabled: bool = True,
+        proxy: Optional[ProxySettings] = None,
     ) -> None:
         primary = base_url.rstrip("/")
         extra = [m.rstrip("/") for m in (mirrors or []) if m]
@@ -116,6 +119,7 @@ class NyaaClient:
         self._min_interval_sec = min_interval_sec
         self._timeout_sec = timeout_sec
         self._enabled = enabled
+        self._proxy = proxy
         self._last_call = 0.0
 
     @property
@@ -155,12 +159,12 @@ class NyaaClient:
             url = f"{mirror}{path}"
             try:
                 self._throttle()
-                response = requests.get(
+                response = http_get(
                     url,
                     headers=_DEFAULT_HEADERS,
-                    timeout=self._timeout_sec,
+                    timeout_sec=self._timeout_sec,
+                    proxy=self._proxy,
                 )
-                response.raise_for_status()
                 return self._parse_rss(response.content, limit=limit)
             except Exception as exc:  # noqa: BLE001 — 尝试下一镜像
                 last_error = exc

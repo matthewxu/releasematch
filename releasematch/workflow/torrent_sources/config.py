@@ -114,6 +114,12 @@ def load_accounts_config(path: Path | None = None) -> Dict[str, Any]:
     data.setdefault("nyaa", {}).setdefault("base_url", NYAA_BASE_URL)
     data.setdefault("nyaa", {}).setdefault("enabled", True)
     data.setdefault("nyaa", {}).setdefault("mirrors", [])
+    data.setdefault("nyaa_live_action", {}).setdefault("enabled", True)
+    data.setdefault("nyaa_live_action", {}).setdefault("category", "4_0")
+    if not data.get("nyaa_live_action", {}).get("base_url"):
+        data.setdefault("nyaa_live_action", {})["base_url"] = data.get("nyaa", {}).get(
+            "base_url", NYAA_BASE_URL
+        )
     data.setdefault("rate_limit", {})["min_interval_sec"] = TORRENT_MIN_INTERVAL_SEC
     data.setdefault("cache", {})["seeders_ttl_hours"] = TORRENT_SEEDERS_TTL_HOURS
     return data

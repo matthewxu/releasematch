@@ -26,3 +26,20 @@ python scripts/poc_phase0.py --jackett-base-url http://YOUR_VPS:9117
 ## Jackett on overseas VPS
 
 See `docs/jackett-remote-linode.md`.
+
+### One-click remote install (from your machine)
+
+```bash
+# Uses workflow/torrent_sources/servers.local.json for host/user/password
+bash scripts/deploy_jackett_vps.sh
+
+# Or explicit host + SSHPASS
+SSHPASS='...' bash scripts/deploy_jackett_vps.sh --host YOUR_VPS_IP
+
+# Force recreate Docker containers on VPS
+FORCE_RECREATE=1 bash scripts/deploy_jackett_vps.sh
+```
+
+Remote-only script (run on VPS as root): `scripts/remote/install_jackett_stack.sh`
+
+Local Nyaa fallback (SSH SOCKS, not on VPS): `scripts/start_ssh_socks_tunnel.sh`

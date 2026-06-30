@@ -6,7 +6,7 @@
     "host": "104.105.140.11",
     "ssh": {
       "user": "root",
-      "password": "Release@2026&acb",
+      "password": "YOUR_SSH_PASSWORD",
       "port": 22
     },
     "os": "Debian 12",
@@ -28,6 +28,12 @@
         "bind": "127.0.0.1:8191",
         "network": "jackett-net",
         "jackett_flaresolverr_url": "http://flaresolverr:8191/"
+      },
+      "ssh_socks_tunnel": {
+        "_comment": "本机 ssh -D SOCKS5，Nyaa 直连失败时回退；VPS 无需 HTTP 代理",
+        "script": "scripts/start_ssh_socks_tunnel.sh",
+        "local_proxy_url": "socks5h://127.0.0.1:1080",
+        "env_var": "TORRENT_PROXY"
       }
     },
     "indexers": [
@@ -36,6 +42,11 @@
       "nyaasi",
       "thepiratebay",
       "eztv"
-    ]
-  }
-}
+    ],
+    "deploy_notes": {
+      "_comment": "一键远程安装（在本机 releasematch 目录执行）",
+      "one_click": "bash scripts/deploy_jackett_vps.sh",
+      "remote_only": "bash scripts/remote/install_jackett_stack.sh",
+      "force_recreate": "FORCE_RECREATE=1 bash scripts/deploy_jackett_vps.sh",
+      "local_socks_tunnel": "bash scripts/start_ssh_socks_tunnel.sh"
+    }

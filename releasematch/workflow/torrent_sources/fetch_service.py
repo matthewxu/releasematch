@@ -14,6 +14,10 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from workflow.metadata.external_ids import resolve_external_ids
+from workflow.torrent_sources.asia_region import (
+    build_search_titles,
+    detect_content_region,
+)
 from workflow.torrent_sources.cache_index import CacheIndex
 from workflow.torrent_sources.config import (
     is_jackett_api_key_configured,
@@ -25,9 +29,11 @@ from workflow.torrent_sources.cross_source import (
     merge_by_infohash,
 )
 from workflow.torrent_sources.eztv_client import EztvClient
+from workflow.torrent_sources.http_fetch import proxy_settings_from_config
 from workflow.torrent_sources.jackett_client import JackettClient
 from workflow.torrent_sources.models import FetchRequest, FetchResult, MediaType, ResourceItem
 from workflow.torrent_sources.nyaa_client import NyaaClient
+from workflow.torrent_sources.nyaa_live_action_client import NyaaLiveActionClient
 from workflow.torrent_sources.release_parser import parse_release_title
 from workflow.torrent_sources.slot_filter import filter_tv_slot_items
 from workflow.torrent_sources.yts_client import YtsClient
@@ -123,6 +129,8 @@ class FetchService:
         eztv_cfg = self._cfg.get("eztv", {})
         yts_cfg = self._cfg.get("yts", {})
         nyaa_cfg = self._cfg.get("nyaa", {})
+        nyaa_la_cfg = self._cfg.get("nyaa_live_action", {})
+        self._proxy = proxy_settings_from_config(self._cfg.get("proxy"))
         self._eztv = EztvClient(
             base_url=str(eztv_cfg.get("base_url") or "https://eztvx.to"),
             min_interval_sec=rate,
@@ -136,6 +144,17 @@ class FetchService:
             mirrors=list(nyaa_cfg.get("mirrors") or []),
             min_interval_sec=max(rate, 3.0),
             enabled=bool(nyaa_cfg.get("enabled", True)),
+            proxy=self._proxy,
+        )
+        la_base = str(nyaa_la_cfg.get("base_url") or nyaa_cfg.get("base_url") or "https://nyaa.si")
+        la_mirrors = list(nyaa_la_cfg.get("mirrors") or nyaa_cfg.get("mirrors") or [])
+        self._nyaa_la = NyaaLiveActionClient(
+            base_url=la_base,
+            mirrors=la_mirrors,
+            min_interval_sec=max(rate, 3.0),
+            enabled=bool(nyaa_la_cfg.get("enabled", True)),
+            proxy=self._proxy,
+            category=str(nyaa_la_cfg.get("category") or "4_0"),
         )
         jackett_cfg = self._cfg.get("jackett", {})
         api_key = str(jackett_cfg.get("api_key") or "")
@@ -146,12 +165,15 @@ class FetchService:
                 api_key=api_key,
                 min_interval_sec=rate,
             )
-        self._jackett_tv_indexers: List[str] = list(
-            jackett_cfg.get("indexers", {}).get("tv") or ["all"]
-        )
-        self._jackett_movie_indexers: List[str] = list(
-            jackett_cfg.get("indexers", {}).get("movie") or ["all"]
-        )
+        idx = jackett_cfg.get("indexers", {})
+        self._jackett_indexers: Dict[str, List[str]] = {
+            "tv": list(idx.get("tv") or ["all"]),
+            "movie": list(idx.get("movie") or ["all"]),
+            "jp_tv": list(idx.get("jp_tv") or idx.get("tv") or []),
+            "kr_tv": list(idx.get("kr_tv") or idx.get("tv") or []),
+            "jp_movie": list(idx.get("jp_movie") or idx.get("movie") or []),
+            "kr_movie": list(idx.get("kr_movie") or idx.get("movie") or []),
+        }
 
     def fetch_slot(self, request: FetchRequest) -> FetchResult:
         """
@@ -226,25 +248,66 @@ class FetchService:
             return self._fetch_tv(request)
         return self._fetch_movie(request)
 
+    def _jackett_tv_indexers_for(self, region: Optional[str]) -> List[str]:
+        """
+        按内容区域选择 Jackett 剧集 indexer 列表。
+
+        @param region: jp | kr | None
+        @returns: indexer id 列表
+        """
+        if region == "jp":
+            return self._jackett_indexers["jp_tv"]
+        if region == "kr":
+            return self._jackett_indexers["kr_tv"]
+        return self._jackett_indexers["tv"]
+
+    def _jackett_movie_indexers_for(self, region: Optional[str]) -> List[str]:
+        """
+        按内容区域选择 Jackett 电影 indexer 列表。
+
+        @param region: jp | kr | None
+        @returns: indexer id 列表
+        """
+        if region == "jp":
+            return self._jackett_indexers["jp_movie"]
+        if region == "kr":
+            return self._jackett_indexers["kr_movie"]
+        return self._jackett_indexers["movie"]
+
+    def _resolve_tv_metadata(self, request: FetchRequest) -> Dict[str, Any]:
+        """
+        解析剧集元数据（含日韩本地标题）。
+
+        @param request: FetchRequest
+        @returns: external_ids 扩展字典
+        """
+        return resolve_external_ids(request.tmdb_id, "tv")
+
     def _resolve_show_title(self, request: FetchRequest) -> Optional[str]:
         """
-        解析剧集/作品搜索标题。
+        解析剧集/作品搜索标题（英文主标题）。
 
         @param request: FetchRequest
         @returns: 英文标题或 None
         """
-        ext = resolve_external_ids(request.tmdb_id, "tv")
-        title = ext.get("title")
+        meta = self._resolve_tv_metadata(request)
+        title = meta.get("title")
         return title if isinstance(title, str) and title.strip() else None
 
     def _fetch_tv(self, request: FetchRequest) -> Tuple[List[ResourceItem], Dict[str, bool]]:
         """
-        剧集：EZTV + Nyaa + Jackett（含槽位标题过滤）。
+        剧集：欧美 EZTV + Nyaa；日韩 Nyaa LA + Jackett（含槽位标题过滤）。
 
         @param request: FetchRequest
         @returns: (items, source_enabled)
         """
-        items, source_enabled, show_title = self._collect_tv_items(request)
+        meta = self._resolve_tv_metadata(request)
+        region = detect_content_region(meta)
+        search_titles = build_search_titles(meta, region)
+        show_title = search_titles[0] if search_titles else self._resolve_show_title(request)
+        alt_titles = search_titles[1:] if len(search_titles) > 1 else None
+
+        items, source_enabled, _ = self._collect_tv_items(request, meta, region, search_titles)
         if (
             show_title
             and request.season is not None
@@ -256,27 +319,45 @@ class FetchService:
                 show_title=show_title,
                 season=request.season,
                 episode=request.episode,
+                alt_titles=alt_titles,
             )
         return items, source_enabled
 
     def _collect_tv_items(
         self,
         request: FetchRequest,
+        meta: Optional[Dict[str, Any]] = None,
+        region: Optional[str] = None,
+        search_titles: Optional[List[str]] = None,
     ) -> Tuple[List[ResourceItem], Dict[str, bool], Optional[str]]:
         """
         剧集多源拉取（过滤前原始列表）。
 
         @param request: FetchRequest
+        @param meta: 可选预解析元数据
+        @param region: jp | kr | None
+        @param search_titles: 多语言搜索词
         @returns: (items, source_enabled, show_title)
         """
+        meta = meta or self._resolve_tv_metadata(request)
+        region = region if region is not None else detect_content_region(meta)
+        search_titles = search_titles or build_search_titles(meta, region)
+        show_title = search_titles[0] if search_titles else None
+
         items: List[ResourceItem] = []
         source_enabled: Dict[str, bool] = {
             "eztv": False,
             "nyaa": False,
             "jackett": bool(self._jackett),
         }
+        is_asia = region in ("jp", "kr")
 
-        if request.imdb_id and request.season is not None and request.episode is not None:
+        if (
+            not is_asia
+            and request.imdb_id
+            and request.season is not None
+            and request.episode is not None
+        ):
             source_enabled["eztv"] = True
             try:
                 items.extend(
@@ -289,27 +370,38 @@ class FetchService:
             except Exception:
                 pass
 
-        show_title = self._resolve_show_title(request)
         if (
-            self._nyaa.enabled
-            and show_title
-            and request.season is not None
+            request.season is not None
             and request.episode is not None
+            and search_titles
         ):
-            source_enabled["nyaa"] = True
-            try:
-                items.extend(
-                    self._nyaa.fetch_episode(
-                        show_title,
-                        request.season,
-                        request.episode,
+            if is_asia and self._nyaa_la.enabled:
+                source_enabled["nyaa"] = True
+                try:
+                    items.extend(
+                        self._nyaa_la.fetch_episode_titles(
+                            search_titles,
+                            request.season,
+                            request.episode,
+                        )
                     )
-                )
-            except Exception:
-                pass
+                except Exception:
+                    pass
+            elif self._nyaa.enabled and show_title:
+                source_enabled["nyaa"] = True
+                try:
+                    items.extend(
+                        self._nyaa.fetch_episode(
+                            show_title,
+                            request.season,
+                            request.episode,
+                        )
+                    )
+                except Exception:
+                    pass
 
         if self._jackett and request.season is not None and request.episode is not None:
-            for indexer in self._jackett_tv_indexers:
+            for indexer in self._jackett_tv_indexers_for(region):
                 try:
                     items.extend(
                         self._jackett.search_tv(
@@ -327,26 +419,39 @@ class FetchService:
 
     def _fetch_movie(self, request: FetchRequest) -> Tuple[List[ResourceItem], Dict[str, bool]]:
         """
-        电影：YTS + Jackett。
+        电影：YTS + Nyaa LA（日韩）+ Jackett。
 
         @param request: FetchRequest
         @returns: (items, source_enabled)
         """
+        meta = resolve_external_ids(request.tmdb_id, "movie")
+        region = detect_content_region(meta)
+        search_titles = build_search_titles(meta, region)
+        is_asia = region in ("jp", "kr")
+
         items: List[ResourceItem] = []
         source_enabled: Dict[str, bool] = {
             "yts": False,
+            "nyaa": False,
             "jackett": bool(self._jackett),
         }
 
-        if request.imdb_id:
+        if not is_asia and request.imdb_id:
             source_enabled["yts"] = True
             try:
                 items.extend(self._yts.fetch_movie(request.imdb_id))
             except Exception:
                 pass
 
+        if is_asia and self._nyaa_la.enabled and search_titles:
+            source_enabled["nyaa"] = True
+            try:
+                items.extend(self._nyaa_la.fetch_movie_titles(search_titles))
+            except Exception:
+                pass
+
         if self._jackett and request.imdb_id:
-            for indexer in self._jackett_movie_indexers:
+            for indexer in self._jackett_movie_indexers_for(region):
                 try:
                     items.extend(
                         self._jackett.search_movie(

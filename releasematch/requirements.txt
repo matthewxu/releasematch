@@ -1,6 +1,7 @@
 # ReleaseMatch Python dependencies (install in releasematch/.venv)
 
 requests>=2.31.0
+PySocks>=1.7.1
 PyMySQL>=1.1.0
 PyYAML>=6.0
 Jinja2>=3.1.0

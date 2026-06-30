@@ -35,6 +35,34 @@ EZTV / YTS **直连 API** 仍可由本机 `eztv_client` / `yts_client` 调用；
 
 ---
 
+## 零、本机一键远程安装（推荐）
+
+在 **本机** `releasematch` 目录执行（读取 `servers.local.json` 中的 IP / SSH 凭据）：
+
+```bash
+bash scripts/deploy_jackett_vps.sh
+```
+
+指定主机或密码：
+
+```bash
+SSHPASS='your-password' bash scripts/deploy_jackett_vps.sh --host 104.105.140.11
+FORCE_RECREATE=1 bash scripts/deploy_jackett_vps.sh   # 强制重建容器
+bash scripts/deploy_jackett_vps.sh --dry-run          # 仅预览 SSH 命令
+```
+
+脚本会在 VPS 上安装：**Docker + jackett-net + FlareSolverr + Jackett**，并自动写入 `FlareSolverrUrl`。  
+**Nyaa 回退**在本机用 SSH SOCKS，无需 VPS 代理：
+
+```bash
+bash scripts/start_ssh_socks_tunnel.sh
+export TORRENT_PROXY=socks5h://127.0.0.1:1080
+```
+
+仅 VPS 内手动安装时：`bash scripts/remote/install_jackett_stack.sh`（需 root）。
+
+---
+
 ## 一、通用 Docker 部署
 
 ```bash
@@ -230,3 +258,4 @@ docker exec jackett curl -s -o /dev/null -w '%{http_code}\n' http://flaresolverr
 | 2026-06-30 | 初版：国内本机 indexer 失败后的海外 Jackett 方案 |
 | 2026-06-30 | 补充日本测试机 104.105.140.11、FlareSolverr Docker 网络、`servers.local.json` 凭据规范 |
 | 2026-06-30 | 增加 [jackett-stability.md](./jackett-stability.md) 交叉引用 |
+| 2026-06-30 | 增加本机一键脚本 `scripts/deploy_jackett_vps.sh` |

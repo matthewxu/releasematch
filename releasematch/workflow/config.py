@@ -70,6 +70,12 @@ EZTV_BASE_URL: str = os.getenv("EZTV_BASE_URL", "https://eztvx.to")
 YTS_BASE_URL: str = os.getenv("YTS_BASE_URL", "https://yts.lt")
 NYAA_BASE_URL: str = os.getenv("NYAA_BASE_URL", "https://nyaa.si")
 
+# 直连失败时回退的代理（本机 SSH SOCKS：socks5h://127.0.0.1:1080）
+TORRENT_PROXY: str = os.getenv(
+    "TORRENT_PROXY",
+    os.getenv("TORRENT_HTTP_PROXY", ""),
+)
+
 TORRENT_MIN_INTERVAL_SEC: float = float(os.getenv("TORRENT_MIN_INTERVAL_SEC", "2.0"))
 TORRENT_SEEDERS_TTL_HOURS: int = int(os.getenv("TORRENT_SEEDERS_TTL_HOURS", "6"))
 
