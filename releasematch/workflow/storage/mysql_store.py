@@ -902,6 +902,143 @@ class MySQLStore:
             )
         conn.close()
 
+    def get_recommended_resource(self, page_id: str) -> Optional[DownloadResource]:
+        """
+        读取槽位 Recommended release（is_recommended=1）。
+
+        @param page_id: 页面槽位 ID
+        @returns: DownloadResource 或 None
+        """
+        conn = self._connect()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT * FROM download_resources
+                WHERE page_id = %s AND is_recommended = 1
+                ORDER BY match_score DESC
+                LIMIT 1
+                """,
+                (page_id,),
+            )
+            row = cur.fetchone()
+        conn.close()
+        if not row:
+            return None
+        return DownloadResource.from_row(_normalize_row(row))
+
+    def insert_speedtest_result(
+        self,
+        *,
+        result_id: str,
+        infohash: str,
+        page_id: Optional[str],
+        phase: int,
+        peers_reachable: int = 0,
+        peers_total: int = 0,
+        avg_kbps: float = 0.0,
+        max_kbps: float = 0.0,
+        latency_ms: int = 0,
+        status: str = "ok",
+        tested_at: Optional[str] = None,
+    ) -> None:
+        """
+        写入单条 speedtest_results 明细。
+
+        @param result_id: 主键 UUID
+        @param infohash: magnet infohash
+        @param page_id: 关联页面；可为 None
+        @param phase: 1=连接性 2=片段测速
+        @param peers_reachable: 已连接 peer 数
+        @param peers_total: 观测 peer 总数
+        @param avg_kbps: 平均 KiB/s（Phase 2）
+        @param max_kbps: 峰值 KiB/s（Phase 2）
+        @param latency_ms: 首包延迟毫秒（Phase 2）
+        @param status: ok | timeout | error | dry_run | skipped
+        @param tested_at: 测试时间；缺省为当前 UTC
+        @returns: None
+        """
+        now = tested_at or _utc_now_str()
+        conn = self._connect()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO speedtest_results (
+                    id, infohash, page_id, phase,
+                    peers_reachable, peers_total,
+                    avg_kbps, max_kbps, latency_ms,
+                    status, tested_at
+                ) VALUES (
+                    %s, %s, %s, %s,
+                    %s, %s,
+                    %s, %s, %s,
+                    %s, %s
+                )
+                ON DUPLICATE KEY UPDATE
+                    peers_reachable=VALUES(peers_reachable),
+                    peers_total=VALUES(peers_total),
+                    avg_kbps=VALUES(avg_kbps),
+                    max_kbps=VALUES(max_kbps),
+                    latency_ms=VALUES(latency_ms),
+                    status=VALUES(status),
+                    tested_at=VALUES(tested_at)
+                """,
+                (
+                    result_id,
+                    infohash,
+                    page_id,
+                    int(phase),
+                    int(peers_reachable),
+                    int(peers_total),
+                    float(avg_kbps),
+                    float(max_kbps),
+                    int(latency_ms),
+                    _clip_str(status, 16),
+                    now,
+                ),
+            )
+        conn.close()
+
+    def upsert_slot_speed_summary(
+        self,
+        page_id: str,
+        recommended_infohash: str,
+        recommended_speed: str,
+        reachability: str,
+    ) -> None:
+        """
+        写入或更新槽位测速摘要（S-06 / S-07）。
+
+        @param page_id: 页面槽位 ID
+        @param recommended_infohash: Recommended infohash
+        @param recommended_speed: 展示速度文案，如 4.2 MB/s
+        @param reachability: 高 | 中 | 低 | 不可达
+        @returns: None
+        """
+        now = _utc_now_str()
+        conn = self._connect()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO slot_speed_summary (
+                    page_id, recommended_infohash, recommended_speed,
+                    reachability, updated_at
+                ) VALUES (%s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    recommended_infohash=VALUES(recommended_infohash),
+                    recommended_speed=VALUES(recommended_speed),
+                    reachability=VALUES(reachability),
+                    updated_at=VALUES(updated_at)
+                """,
+                (
+                    page_id,
+                    recommended_infohash,
+                    _clip_str(recommended_speed, 32),
+                    _clip_str(reachability, 16),
+                    now,
+                ),
+            )
+        conn.close()
+
     def resolve_page_id(
         self,
         tmdb_id: int,

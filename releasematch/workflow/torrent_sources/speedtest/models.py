@@ -44,6 +44,7 @@ class ConnectivityResult:
     @var status: ok | timeout | error | dry_run
     @var error: 失败时的错误信息
     @var mode: libtorrent | dry_run
+    @var phase: 固定为 1
     """
 
     infohash: str
@@ -54,7 +55,72 @@ class ConnectivityResult:
     error: Optional[str] = None
     mode: str = "dry_run"
     page_id: Optional[str] = None
+    phase: int = 1
 
     def to_dict(self) -> Dict[str, Any]:
         """转为 JSON 可序列化字典。"""
         return asdict(self)
+
+
+@dataclass
+class FragmentSpeedResult:
+    """
+    Phase 2 片段下载测速结果（S-06）。
+
+    @var infohash: 被测 infohash
+    @var avg_kbps: 平均下载速度 KiB/s
+    @var max_kbps: 峰值下载速度 KiB/s
+    @var latency_ms: 首包延迟（metadata 就绪至首字节 payload）
+    @var bytes_downloaded: 实际下载字节数
+    @var peers_reachable: 结束时已连接 peer 数
+    @var peers_total: 结束时观测 peer 总数
+    @var elapsed_ms: 总耗时毫秒
+    @var status: ok | timeout | error | dry_run
+    @var error: 失败时的错误信息
+    @var mode: libtorrent | dry_run
+    @var phase: 固定为 2
+    """
+
+    infohash: str
+    avg_kbps: float = 0.0
+    max_kbps: float = 0.0
+    latency_ms: int = 0
+    bytes_downloaded: int = 0
+    peers_reachable: int = 0
+    peers_total: int = 0
+    elapsed_ms: int = 0
+    status: str = "ok"
+    error: Optional[str] = None
+    mode: str = "dry_run"
+    page_id: Optional[str] = None
+    phase: int = 2
+
+    def to_dict(self) -> Dict[str, Any]:
+        """转为 JSON 可序列化字典。"""
+        return asdict(self)
+
+
+@dataclass
+class FullSpeedResult:
+    """
+    Phase 1 + Phase 2 组合结果，含聚合展示字段。
+
+    @var phase1: 连接性结果
+    @var phase2: 片段测速结果
+    @var recommended_speed: 页面展示速度文案（S-06）
+    @var reachability: 可达性等级（A-01）
+    """
+
+    phase1: ConnectivityResult
+    phase2: FragmentSpeedResult
+    recommended_speed: str = ""
+    reachability: str = ""
+
+    def to_dict(self) -> Dict[str, Any]:
+        """转为 JSON 可序列化字典。"""
+        return {
+            "phase1": self.phase1.to_dict(),
+            "phase2": self.phase2.to_dict(),
+            "recommended_speed": self.recommended_speed,
+            "reachability": self.reachability,
+        }

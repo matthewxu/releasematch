@@ -10,52 +10,11 @@ Phase 1：magnet peer 可达性探测。
 
 from __future__ import annotations
 
-import re
 import time
 from typing import Optional
-from urllib.parse import quote
 
+from workflow.torrent_sources.speedtest.magnet_utils import build_magnet_uri, normalize_infohash
 from workflow.torrent_sources.speedtest.models import ConnectivityResult, SpeedTestTask
-
-# infohash 格式：40 位十六进制
-_INFOHASH_RE = re.compile(r"^[0-9a-f]{40}$")
-
-
-def _normalize_infohash(infohash: str) -> str:
-    """
-    归一化 infohash 为小写 40 位。
-
-    @param infohash: 原始 hash 字符串
-    @returns: 小写 40 位 hex
-    @raises ValueError: 格式非法
-    """
-    normalized = (infohash or "").strip().lower()
-    if not _INFOHASH_RE.match(normalized):
-        raise ValueError(f"非法 infohash: {infohash!r}")
-    return normalized
-
-
-# 公共 tracker 列表（magnet 无 tr= 时补全，提高 peer 发现率）
-_DEFAULT_TRACKERS = [
-    "udp://tracker.opentrackr.org:1337/announce",
-    "udp://open.demonii.com:1337/announce",
-    "udp://open.stealth.si:80/announce",
-    "udp://tracker.torrent.eu.org:451/announce",
-]
-
-
-def _build_magnet_uri(infohash: str, magnet_uri: Optional[str] = None) -> str:
-    """
-    构造或补全 magnet URI。
-
-    @param infohash: 40 位 infohash
-    @param magnet_uri: 可选完整 magnet（含 tracker）
-    @returns: magnet URI 字符串
-    """
-    if magnet_uri and magnet_uri.strip().lower().startswith("magnet:?"):
-        return magnet_uri.strip()
-    tr_params = "".join(f"&tr={quote(tr, safe='')}" for tr in _DEFAULT_TRACKERS)
-    return f"magnet:?xt=urn:btih:{infohash}{tr_params}"
 
 
 def _test_with_libtorrent(task: SpeedTestTask, magnet_uri: Optional[str] = None) -> ConnectivityResult:
@@ -68,8 +27,8 @@ def _test_with_libtorrent(task: SpeedTestTask, magnet_uri: Optional[str] = None)
     """
     import libtorrent as lt  # type: ignore
 
-    infohash = _normalize_infohash(task.infohash)
-    magnet = _build_magnet_uri(infohash, magnet_uri)
+    infohash = normalize_infohash(task.infohash)
+    magnet = build_magnet_uri(infohash, magnet_uri)
 
     session = lt.session(
         {
@@ -127,7 +86,7 @@ def _test_dry_run(task: SpeedTestTask) -> ConnectivityResult:
     @param task: 测速任务
     @returns: ConnectivityResult（status=dry_run）
     """
-    infohash = _normalize_infohash(task.infohash)
+    infohash = normalize_infohash(task.infohash)
     return ConnectivityResult(
         infohash=infohash,
         peers_reachable=0,
@@ -175,7 +134,7 @@ def test_connectivity(
     except ImportError:
         return _test_dry_run(task)
     except Exception as exc:
-        infohash_norm = _normalize_infohash(infohash)
+        infohash_norm = normalize_infohash(infohash)
         return ConnectivityResult(
             infohash=infohash_norm,
             status="error",

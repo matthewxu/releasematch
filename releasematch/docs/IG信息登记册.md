@@ -1,9 +1,9 @@
 # IG 信息登记册
 
-> **日期：** 2026-07-01  
+> **日期：** 2026-07-01（v1.3）  
 > **范围：** 测试 / pipeline 全流程可获取字段，按 Information Gain 分级登记  
-> **分级标准：** [docs/01-分支定位与流量获取.md](../../docs/01-分支定位与流量获取.md) §5.1  
-> **关联：** [speedtest-Phase1探测.md](./speedtest-Phase1探测.md)、[今日验收清单.md](./今日验收清单.md)
+> **分级标准：** [01-分支定位与流量获取.md](./01-分支定位与流量获取.md) §5.1  
+> **关联：** [speedtest-Phase1探测.md](../worklogs/2026-07-01/speedtest-Phase1探测.md)、[今日验收清单.md](../worklogs/2026-07-01/今日验收清单.md)
 
 ---
 
@@ -31,7 +31,7 @@
 | S-03 | **跨源验证 N/M** | `cross_source_page_count/total` | 拉取 | T1 `cross_source` | FetchResult / 页面 | Hero badge「2/3 源一致」 | ✅ [§五](./IG信息登记册.md#五跨源验证-s-03--s-04计算逻辑与测试结果) |
 | S-04 | **单条跨源置信度** | `cross_source_count`、`cross_source_confidence` | 拉取 | T1 cross_source | `download_resources` | Sources 表 badge | ✅ [§五](./IG信息登记册.md#五跨源验证-s-03--s-04计算逻辑与测试结果) |
 | S-05 | **Release Group 信誉** | `group_tier`（L0~L4） | 评分 | T1 `groups.yaml` | `download_resources` | 组名旁 tier 标 | ✅ [§六](./IG信息登记册.md#六release-group-信誉-s-05--a-06计算逻辑与实现进度) |
-| S-06 | **实测下载速度** | `avg_kbps`、`max_kbps` → `recommended_speed` | 测速 P2 | T2 speedtest | `speedtest_results` → `slot_speed_summary` | 「前次测速 4.2 MB/s」 | 📋 |
+| S-06 | **实测下载速度** | `avg_kbps`、`max_kbps` → `recommended_speed` | 测速 P2 | T2 speedtest | `speedtest_results` → `slot_speed_summary` | 「前次测速 4.2 MB/s」 | 🔶 [§七](./IG信息登记册.md#七测速-s-06phase-2片段测速) |
 | S-07 | **Recommended 实测背书** | reachability + speed 绑定 `recommended_infohash` | 测速 P1+P2 | T2 聚合 | `slot_speed_summary` | 推荐块追加实测句 | 🔶 |
 | S-08 | **多地域测速** | Region Speed Map | 测速 P3 | T2 多节点 | 待建 | 地域速度表 | 📋 |
 
@@ -137,14 +137,15 @@
 | peer IP / client | B~A | 📋 需 GeoIP 才有 IG |
 | metadata 下载状态 | — | 诊断 |
 
-### 阶段 4：测速 Phase 2（规划）
+### 阶段 4：测速 Phase 2（S-06）
 
-| 字段 | 类型 | IG 等级 | 说明 |
-|------|------|---------|------|
-| `avg_kbps` | float | **S** | S-06 |
-| `max_kbps` | float | **S** | S-06 |
-| `latency_ms` | int | A | A-09 |
-| `phase` | int | — | 固定 2 |
+| 字段 | 类型 | IG 等级 | 已实现 | 说明 |
+|------|------|---------|--------|------|
+| `avg_kbps` | float | **S** | ✅ | S-06 |
+| `max_kbps` | float | **S** | ✅ | S-06 |
+| `latency_ms` | int | A | ✅ | A-09 |
+| `bytes_downloaded` | int | — | ✅ | 运维 |
+| `phase` | int | — | ✅ | 固定 2 |
 
 ### 阶段 5：聚合 → 页面（T2 待建 + T3 生成器）
 
@@ -275,7 +276,7 @@ cross_source_confidence = min(count / M, 1.0)   # 保留 3 位小数
 
 ### 5.6 测试结果 — Pipeline 基准（2026-06-30，7 槽 `--force`）
 
-来源：[slot-pipeline-benchmark.json](../2026-06-30/slot-pipeline-benchmark.json)
+来源：[slot-pipeline-benchmark.json](../worklogs/2026-06-30/slot-pipeline-benchmark.json)
 
 | 槽位 | magnets | 页面 N/M | 备注 |
 |------|---------|----------|------|
@@ -308,7 +309,7 @@ cross_source_confidence = min(count / M, 1.0)   # 保留 3 位小数
 
 ### 5.8 测试结果 — 缓存路径（2026-07-01，无 `--force`）
 
-来源：[cache-path-benchmark.json](./cache-path-benchmark.json)
+来源：[cache-path-benchmark.json](../worklogs/2026-07-01/cache-path-benchmark.json)
 
 | 槽位 | N/M | 与冷拉取一致 |
 |------|-----|-------------|
@@ -338,7 +339,7 @@ cross_source_confidence = min(count / M, 1.0)   # 保留 3 位小数
 1. **N/M** 衡量「几个源**有响应**」—— 当前多数槽位 **1/3**，S04E03~05 为 **2/3**。
 2. **单条 confidence** 衡量「同一 hash **被几个源族同时索引**」—— 真实数据目前 **全部为 1**，confidence **0.333**（剧）或 **0.5**（电影）。
 3. **瓶颈在数据而非算法：** EZTV 与 Jackett 极少报相同 infohash；Nyaa 在 BB 测试路径基本未贡献。
-4. 提升单条 confidence 需更多源返回重叠 hash，或后续实现 title/fuzzy 对齐（P1，见 §九）。
+4. 提升单条 confidence 需更多源返回重叠 hash，或后续实现 title/fuzzy 对齐（P1，见 §十）。
 
 ---
 
@@ -359,7 +360,7 @@ cross_source_confidence = min(count / M, 1.0)   # 保留 3 位小数
 | **L3** | 低质量 / 重编码 | YIFY, YTS, mSD | Low Quality（l3） |
 | **L4** | 未知 / 未收录 | 解析失败、库外组名 | Unverified（l4） |
 
-设计文档：[docs/01-分支定位与流量获取.md](../../docs/01-分支定位与流量获取.md) §5.4.3。
+设计文档：[01-分支定位与流量获取.md](./01-分支定位与流量获取.md) §5.4.3。
 
 ### 6.2 端到端数据流
 
@@ -509,11 +510,85 @@ cross_w:  min(cross_source_count / 3, 1.0)
 
 1. **当前是静态手工分档**（yaml），非动态统计信誉。
 2. **评分链路完整**，但真实数据 tier 分布偏 L4，S-05 的页面 IG 尚未充分体现。
-3. 优先 **补 groups.yaml** 与 **改进组名解析**，比 cron 统计更紧迫（见 §九 P1）。
+3. 优先 **补 groups.yaml** 与 **改进组名解析**，比 cron 统计更紧迫（见 §十 P1）。
 
 ---
 
-## 七、索引 seeders vs 实测 peer（对照登记）
+## 七、测速 S-06（Phase 2 片段测速）
+
+> **代码：** `speedtest/phase2_speed.py`、`full_speed.py`、`store_service.py`  
+> **CLI：** `python -m workflow.torrent_sources.speedtest.run speed|full|slot`
+
+### 7.1 能力说明
+
+| 字段 | 来源 | 存储 |
+|------|------|------|
+| `avg_kbps` / `max_kbps` | libtorrent 下载 target_bytes（默认 1MB） | `speedtest_results` phase=2 |
+| `latency_ms` | 首字节 payload 延迟 | 同上 |
+| `recommended_speed` | `format_recommended_speed(avg_kbps)` | `slot_speed_summary` |
+| `reachability` | Phase1/2 peers → 高/中/低 | `slot_speed_summary` |
+
+### 7.2 CLI 用法
+
+```bash
+# Phase 2 单条
+python -m workflow.torrent_sources.speedtest.run speed \
+  --infohash <40hex> --page-id tv:1396:s04e06 --timeout 45
+
+# Phase 1 + 2 + 写 MySQL
+python -m workflow.torrent_sources.speedtest.run full \
+  --infohash <40hex> --page-id tv:1396:s04e06 --write
+
+# 槽位 Recommended（推荐）
+python -m workflow.torrent_sources.speedtest.run slot \
+  --page-id tv:1396:s04e06 --write --target-bytes 262144
+```
+
+### 7.3 实测（2026-07-01，BB S04E06 Recommended）
+
+来源：[speedtest-phase2-benchmark.json](../worklogs/2026-07-01/speedtest-phase2-benchmark.json)
+
+| 模式 | target | elapsed | avg_kbps | max_kbps | peers | recommended_speed |
+|------|--------|---------|----------|----------|-------|-------------------|
+| Phase 1 | — | **6.0s** | — | — | **30** | — |
+| Phase 2 | 256 KB | **8.1s** | **22.2** | **87.3** | 46 | 22 KB/s |
+| Phase 2 | 1 MB | **18.0s** | **50.2** | **239.0** | 37 | 50 KB/s |
+| slot + write | 256 KB | P1+P2 **~30s** | **21.9** | **77.9** | 46 | → MySQL |
+
+**索引 vs 实测：** 索引 seeders **50** → 实测 peers **30–46**、速度 **22–50 KB/s**（2160p WEB-DL）。
+
+### 7.4 批量时间成本（综合评估）
+
+> 完整推导见 [speedtest-Phase1探测.md §五](../worklogs/2026-07-01/speedtest-Phase1探测.md#五速度与批量时间成本综合评估)
+
+**规划取值（+20% buffer）：**
+
+| 策略 | 单槽 | 7 槽 | 100 页（串行） | 100 页（5 Worker） |
+|------|------|------|----------------|-------------------|
+| A0 仅 Phase 1 | 12s | 1.4 min | 20 min | 4 min |
+| **A2 slot @256KB（默认）** | **25s** | **2.9 min** | **42 min** | **~8 min** |
+| A3 slot @1MB | 35s | 4.1 min | 58 min | ~12 min |
+| C 全量 15 条/槽 | 6.3 min | 44 min | 6.3 h | 不可行 |
+
+**cron 推荐：** `slot --write --target-bytes 262144`；重点页升 1MB。
+
+**与 pipeline 对比（7 槽）：** 冷拉取 **507s** vs 测速 A2 **~175s** — 可独立异步跑。
+
+### 7.5 实现状态
+
+| 模块 | 状态 |
+|------|------|
+| Phase 2 libtorrent 测速 | ✅ |
+| 写 `speedtest_results` | ✅ |
+| 聚合 `slot_speed_summary` | ✅ |
+| 生成器 speed bar 渲染 | 📋 T3 |
+| 批量 cron Worker | 📋 |
+
+**登记 🔶：** 后端链路已通；页面静态 bake 待 T3 生成器。
+
+---
+
+## 八、索引 seeders vs 实测 peer（对照登记）
 
 | 维度 | 索引 seeders（B-02） | 实测 peers（A-02） |
 |------|----------------------|---------------------|
@@ -525,7 +600,7 @@ cross_w:  min(cross_source_count / 3, 1.0)
 
 ---
 
-## 八、IG 组合与页面分数估算
+## 九、IG 组合与页面分数估算
 
 | 组合 | 含 IG-ID | 页面 IG 估分 |
 |------|----------|--------------|
@@ -538,16 +613,17 @@ cross_w:  min(cross_source_count / 3, 1.0)
 
 ---
 
-## 九、实现缺口（登记 → 开发）
+## 十、实现缺口（登记 → 开发）
 
 | 优先级 | IG-ID | 缺口 | 负责 |
 |--------|-------|------|------|
-| P0 | A-01, A-03, S-07 | 写 MySQL + 聚合 `slot_speed_summary` | T2 |
+| P0 | A-01, A-03, S-07 | 生成器渲染 `slot_speed_summary` speed bar | T2 + T3 |
 | P0 | A-07 | timeout 条目不展示 / 降权 | T2 + 生成器 |
 | P1 | S-05 | 补 `groups.yaml`（IMMERSE/XEBEC/FQM 等 BB 高频组） | T1 |
 | P1 | S-05 | yaml → MySQL `release_groups` 同步脚本 | T1 |
 | P1 | S-05 | Sources 表 `group_tier` badge | T3 生成器 |
-| P1 | S-06, A-09 | Phase 2 片段测速 | T2 |
+| P1 | S-06 | 批量 `slot` cron + 增量测速 TTL | T2 |
+| P1 | A-09 | Phase 2 首包延迟页面展示 | T3 |
 | P1 | S-04 | title/fuzzy 对齐提升 hash 级跨源重叠 | T1 |
 | P1 | A-10 | 索引 vs 实测对比文案模板 | T3 生成器 |
 | P2 | S-05 | cron 统计 + `scene_compliant` 入推荐理由 | T1 |
@@ -556,10 +632,12 @@ cross_w:  min(cross_source_count / 3, 1.0)
 
 ---
 
-## 十、变更记录
+## 十一、变更记录
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | v1.0 | 2026-07-01 | 初版：按 IG 等级 + 测试阶段 + 页面区块登记 |
 | v1.1 | 2026-07-01 | §五 跨源 S-03/S-04 计算逻辑 + 基准/MySQL/缓存测试结果 |
 | v1.2 | 2026-07-01 | §六 Release Group S-05/A-06 计算逻辑 + 实现进度 + MySQL 实测 |
+| v1.3 | 2026-07-01 | §七 S-06 Phase 2 + 批量成本综合评估 + benchmark JSON |
+| v1.4 | 2026-07-01 | 迁移至 `docs/IG信息登记册.md`（正式文档） |

@@ -1,0 +1,67 @@
+{
+  "date": "2026-07-01",
+  "environment": "macOS 本机 + libtorrent 2.0.13",
+  "slot": "tv:1396:s04e06",
+  "infohash": "583d172ea1eaf082f6b73627c1a56b1299f92ba7",
+  "title": "Breaking Bad S04E06 Cornered 2160p NF WEB-DL … XEBEC",
+  "index_seeders": 50,
+  "runs": [
+    {
+      "mode": "phase1",
+      "timeout_sec": 20,
+      "elapsed_ms": 6020,
+      "wall_sec": 9.0,
+      "peers_total": 30,
+      "status": "ok"
+    },
+    {
+      "mode": "phase2",
+      "target_bytes": 262144,
+      "timeout_sec": 45,
+      "elapsed_ms": 8115,
+      "wall_sec": 9.9,
+      "avg_kbps": 22.19,
+      "max_kbps": 87.25,
+      "bytes_downloaded": 284544,
+      "latency_ms": 1770,
+      "peers_total": 46,
+      "status": "ok"
+    },
+    {
+      "mode": "phase2",
+      "target_bytes": 1048576,
+      "timeout_sec": 60,
+      "elapsed_ms": 18026,
+      "wall_sec": 19.1,
+      "avg_kbps": 50.19,
+      "max_kbps": 239.04,
+      "bytes_downloaded": 1053629,
+      "latency_ms": 21831,
+      "peers_total": 37,
+      "status": "ok"
+    },
+    {
+      "mode": "slot_full_write",
+      "target_bytes": 262144,
+      "phase1_timeout_sec": 20,
+      "phase2_timeout_sec": 45,
+      "phase1_elapsed_ms": 20068,
+      "phase2_elapsed_ms": 8106,
+      "wall_sec": 29.9,
+      "avg_kbps": 21.92,
+      "max_kbps": 77.89,
+      "recommended_speed": "22 KB/s",
+      "reachability": "高",
+      "mysql_written": true,
+      "note": "首次 slot 写库；Phase1 超时但 Phase2 有 peers，reachability 取 max(peers)"
+    }
+  ],
+  "planning_assumptions": {
+    "phase1_typical_sec": 12,
+    "phase1_timeout_sec": 20,
+    "phase2_256k_typical_sec": 10,
+    "phase2_1mb_typical_sec": 20,
+    "slot_full_256k_plan_sec": 25,
+    "slot_full_1mb_plan_sec": 35
+  }
+}
