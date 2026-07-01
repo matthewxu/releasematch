@@ -28,9 +28,9 @@
 |-------|----------|-------------|----------|----------|------|----------|------|
 | S-01 | **Recommended Release** | `is_recommended=1` + 完整 release 元数据 | 评分 | T1 `scorer.py` | `download_resources` | Hero 推荐块 | ✅ |
 | S-02 | **推荐理由** | `recommend_reason` | 评分 | T1 scorer | `download_resources` | Recommended 下方文案 | ✅ |
-| S-03 | **跨源验证 N/M** | `cross_source_page_count/total` | 拉取 | T1 `cross_source` | FetchResult / 页面 | Hero badge「2/3 源一致」 | ✅ |
-| S-04 | **单条跨源置信度** | `cross_source_count`、`cross_source_confidence` | 拉取 | T1 cross_source | `download_resources` | Sources 表 badge | ✅ |
-| S-05 | **Release Group 信誉** | `group_tier`（L0~L4） | 评分 | T1 `groups.yaml` | `download_resources` | 组名旁 tier 标 | ✅ |
+| S-03 | **跨源验证 N/M** | `cross_source_page_count/total` | 拉取 | T1 `cross_source` | FetchResult / 页面 | Hero badge「2/3 源一致」 | ✅ [§五](./IG信息登记册.md#五跨源验证-s-03--s-04计算逻辑与测试结果) |
+| S-04 | **单条跨源置信度** | `cross_source_count`、`cross_source_confidence` | 拉取 | T1 cross_source | `download_resources` | Sources 表 badge | ✅ [§五](./IG信息登记册.md#五跨源验证-s-03--s-04计算逻辑与测试结果) |
+| S-05 | **Release Group 信誉** | `group_tier`（L0~L4） | 评分 | T1 `groups.yaml` | `download_resources` | 组名旁 tier 标 | ✅ [§六](./IG信息登记册.md#六release-group-信誉-s-05--a-06计算逻辑与实现进度) |
 | S-06 | **实测下载速度** | `avg_kbps`、`max_kbps` → `recommended_speed` | 测速 P2 | T2 speedtest | `speedtest_results` → `slot_speed_summary` | 「前次测速 4.2 MB/s」 | 📋 |
 | S-07 | **Recommended 实测背书** | reachability + speed 绑定 `recommended_infohash` | 测速 P1+P2 | T2 聚合 | `slot_speed_summary` | 推荐块追加实测句 | 🔶 |
 | S-08 | **多地域测速** | Region Speed Map | 测速 P3 | T2 多节点 | 待建 | 地域速度表 | 📋 |
@@ -44,7 +44,7 @@
 | A-03 | **测速 freshness** | `tested_at` / `updated_at` | 测速 | T2 | `speedtest_results` | 「UTC 2026-07-01 更新」 | 🔶 |
 | A-04 | **对版匹配说明** | scorer 规则命中说明 | 评分 | T1 scorer | `recommend_reason` 内 | 对版段落 | ✅ |
 | A-05 | **Release 质量解析** | `resolution`、`codec`、`source` | 拉取+解析 | T0 parser | `download_resources` | Sources 表列 | ✅ |
-| A-06 | **压制组名** | `release_group` | 拉取+解析 | T0 parser | `download_resources` | 标题 / 组 badge | ✅ |
+| A-06 | **压制组名** | `release_group` | 拉取+解析 | T0 parser | `download_resources` | 标题 / 组 badge | ✅ [§六](./IG信息登记册.md#六release-group-信誉-s-05--a-06计算逻辑与实现进度) |
 | A-07 | **死链过滤标记** | `status=timeout/error` | 测速 P1 | T2 | `speedtest_results` | 隐藏或灰显不可达项 | 🔶 |
 | A-08 | **匹配排序分** | `match_score` | 评分 | T1 scorer | `download_resources` | 内部排序（可不展示） | ✅ |
 | A-09 | **首包延迟** | `latency_ms` | 测速 P2 | T2 | `speedtest_results` | 高级区 | 📋 |
@@ -163,7 +163,8 @@
 
 | 页面区块 | 需要的 IG-ID | 最低 IG 等级 |
 |----------|--------------|--------------|
-| Hero Recommended | S-01, S-02, S-07 | S |
+| Hero Recommended | S-01, S-02, S-05, S-07 | S |
+| Hero Group tier badge | S-05 | S |
 | Hero 跨源 badge | S-03 | S |
 | Speed 摘要条 | A-01, A-03, S-06（P2） | A |
 | All Sources 表 | A-05, A-06, S-04, B-01 | A + B |
@@ -174,7 +175,345 @@
 
 ---
 
-## 五、索引 seeders vs 实测 peer（对照登记）
+## 五、跨源验证（S-03 / S-04）— 计算逻辑与测试结果
+
+> **代码：** `workflow/torrent_sources/cross_source.py`  
+> **调用链：** `fetch_service.fetch_slot` → `compute_page_cross_source`（页面 N/M）→ `merge_by_infohash`（单条 confidence）
+
+### 5.1 两套指标的区别（必读）
+
+| 指标 | IG-ID | 字段 | 回答的问题 |
+|------|-------|------|------------|
+| **页面 N/M** | S-03 | `cross_source_page_count` / `cross_source_page_total` | 本次拉取中，**有几个源族至少返回了 1 条 magnet** |
+| **单条置信度** | S-04 | `cross_source_count` / `cross_source_confidence` | **同一个 infohash** 被几个源族同时索引到 |
+
+二者相关但**不等价**：页面可以是 **2/3**，而所有单条 confidence 仍全是 **0.333**（见 §5.5 实测）。
+
+### 5.2 源族（Family）归一化
+
+`indexer` 先映射为源族，再参与统计（`normalize_source_family`）：
+
+| indexer 示例 | 源族 |
+|--------------|------|
+| `eztv` | eztv |
+| `yts` | yts |
+| `nyaa` / `nyaa:…` | nyaa |
+| `jackett:thepiratebay` / `jackett:nyaasi` | **jackett**（多个 Jackett indexer 仍算 **1 族**） |
+
+**注意：** 同一 infohash 若同时出现在 `jackett:thepiratebay` 与 `jackett:nyaasi`，`cross_source_count` 仍为 **1**（同属 jackett 族，不重复计数）。
+
+**剧集默认参与源族：** eztv、nyaa、jackett → 分母 **M = 3**  
+**电影默认参与源族：** yts、jackett → 分母 **M = 2**
+
+实际分母以 `fetch_service` 中 `source_enabled`（本次真正发起请求的源族）为准：
+
+```python
+# 剧集 _fetch_tv 初始
+source_enabled = {"eztv": False, "nyaa": False, "jackett": bool(jackett_client)}
+# 欧美剧：eztv=True；nyaa 按配置尝试；jackett 有 VPS 则为 True
+```
+
+### 5.3 页面级 N/M（S-03）
+
+**函数：** `compute_page_cross_source(items, source_enabled, media_type)`
+
+**公式：**
+
+```
+N = |{ 源族 f : source_enabled[f]=True 且 items 中至少 1 条来自 f }|
+M = |{ 源族 f : source_enabled[f]=True }|
+```
+
+**写入：**
+
+- `FetchResult.cross_source_page_count` / `cross_source_page_total`
+- `media_pages.cross_source_count` / `cross_source_total`
+- pipeline 日志：`跨源 N/M`
+
+**缓存路径差异：** `cached=True` 时无 `source_enabled`，从 items 推断 N，M 用默认值 3（剧）/ 2（电影）。
+
+### 5.4 单条跨源置信度（S-04）
+
+**函数：** `merge_by_infohash(items, total_source_families=M)`
+
+**步骤：**
+
+1. 按 `infohash`（40 位小写）分桶  
+2. 每桶统计 **不同源族** 集合 `families`  
+3. 保留 **seeders 最高**（同分比 `size_bytes`）的一条作为代表  
+4. 写入：
+
+```
+cross_source_count     = len(families)          # 1 ~ M
+cross_source_confidence = min(count / M, 1.0)   # 保留 3 位小数
+```
+
+**示例（剧集 M=3）：**
+
+| 场景 | count | confidence |
+|------|-------|------------|
+| 仅 Jackett 命中该 hash | 1 | **0.333** |
+| EZTV + Jackett 同一 hash | 2 | **0.667** |
+| 三族同一 hash | 3 | **1.000** |
+
+**N/M 与 confidence 对照：**
+
+| 场景 | 页面 N/M | 单条 confidence |
+|------|----------|-----------------|
+| EZTV 1 条 + Jackett 13 条，**无相同 hash** | **2/3** | 全部 **0.333** |
+| 某 hash 在 EZTV + Jackett 均出现 | 2/3 | 该条 **0.667** |
+| 三族均有数据且某 hash 三族都有 | 3/3 | 该条 **1.000** |
+
+### 5.5 下游消费（scorer / 页面）
+
+| 用途 | 逻辑 |
+|------|------|
+| 排序 tie-break | seeders → 1080p → **`cross_source_count`** → group tier |
+| `recommend_reason` | `cross_source_count > 1` 时追加「跨 N 个数据源交叉验证」 |
+| Hero badge | 展示页面 **N/M**，不直接展示单条 confidence |
+| Sources 表 | 可展示 `cross_source_count` badge（待生成器模板） |
+
+### 5.6 测试结果 — Pipeline 基准（2026-06-30，7 槽 `--force`）
+
+来源：[slot-pipeline-benchmark.json](../2026-06-30/slot-pipeline-benchmark.json)
+
+| 槽位 | magnets | 页面 N/M | 备注 |
+|------|---------|----------|------|
+| BB S04E01 | 14 | **1/3** | 仅 Jackett 有数据 |
+| BB S04E02 | 20 | **1/3** | 同上 |
+| BB S04E04 | 14 | **2/3** | EZTV + Jackett 均有返回 |
+| BB S04E06 | 12 | **1/3** | 仅 Jackett |
+| BB S04E07 | 14 | **1/3** | 仅 Jackett |
+| BB S04E08 | 12 | **1/3** | 仅 Jackett |
+| Inception | 3 | **1/2** | 仅 YTS |
+
+### 5.7 测试结果 — MySQL 当前数据
+
+**页面级（`media_pages`）：**
+
+| page_id | N/M |
+|---------|-----|
+| tv:1396:s04e01、s04e02、s04e06~08 | **1/3** |
+| tv:1396:s04e03、s04e04、s04e05 | **2/3** |
+| movie:27205 | **1/2** |
+
+**单条级（`download_resources`，live 拉取）：**
+
+| page_id | 条数 | cross_source_count | confidence |
+|---------|------|-------------------|------------|
+| 各 BB 集 | 12~20 | **全部为 1** | **0.333** |
+| Inception | 3 | **全部为 1** | **0.5** |
+
+**解读：** 当前环境 **尚无真实 magnet 的 `cross_source_count > 1`**。S04E04 页面虽为 **2/3**（两族有响应），但 14 条 hash **互不重复**，故每条 confidence 仍为 **0.333**。
+
+### 5.8 测试结果 — 缓存路径（2026-07-01，无 `--force`）
+
+来源：[cache-path-benchmark.json](./cache-path-benchmark.json)
+
+| 槽位 | N/M | 与冷拉取一致 |
+|------|-----|-------------|
+| BB S04E06 | 1/3 | ✅ |
+| Inception | 1/2 | ✅ |
+
+### 5.9 Demo 预期形态（`pipeline.py` demo，非真实数据）
+
+| infohash | 源 | count | confidence |
+|----------|-----|-------|------------|
+| `aaaa…` | 模拟三族 | 3 | **1.0** |
+| `bbbb…` | eztv | 2 | **0.67** |
+| `cccc…` | jackett | 2 | **0.67** |
+| `dddd…` | jackett | 1 | **0.33** |
+
+### 5.10 现状瓶颈与改进方向
+
+| 现象 | 原因 | 改进方向 |
+|------|------|----------|
+| 页面多为 1/3 | Nyaa 未贡献数据；EZTV 常空 | 修复 Nyaa SOCKS；EZTV 稳定性 |
+| 单条 confidence 全为 0.333 | 同一 hash 极少跨 EZTV/Jackett 重复 | 正常：release 命名/索引范围不同 |
+| N/M=2/3 但 confidence 仍低 | **N/M 衡量「有响应」**，confidence 衡量 **hash 重叠** | 页面文案需区分两种含义 |
+| 未来提升 IG | 需 hash 级交叉验证 | 可选：title/fuzzy 对齐（未实现） |
+
+**现状小结：**
+
+1. **N/M** 衡量「几个源**有响应**」—— 当前多数槽位 **1/3**，S04E03~05 为 **2/3**。
+2. **单条 confidence** 衡量「同一 hash **被几个源族同时索引**」—— 真实数据目前 **全部为 1**，confidence **0.333**（剧）或 **0.5**（电影）。
+3. **瓶颈在数据而非算法：** EZTV 与 Jackett 极少报相同 infohash；Nyaa 在 BB 测试路径基本未贡献。
+4. 提升单条 confidence 需更多源返回重叠 hash，或后续实现 title/fuzzy 对齐（P1，见 §九）。
+
+---
+
+## 六、Release Group 信誉（S-05 / A-06）— 计算逻辑与实现进度
+
+> **代码：** `workflow/recommended/groups_registry.py`、`scorer.py`  
+> **数据：** `workflow/recommended/data/groups.yaml`（98 组）  
+> **组名输入：** `workflow/torrent_sources/release_parser.py`（A-06）  
+> **调用链：** `title_raw` → `release_group` → `lookup_group` → `group_tier` → `rank_items` → MySQL / 页面
+
+### 6.1 Tier 体系（L0~L4）
+
+| Tier | 含义 | 示例 | 页面 Badge |
+|------|------|------|------------|
+| **L0** | 顶级压制组 | NTb, CtrlHD, QxR | Gold（`rm-badge--tier-l0`） |
+| **L1** | 主流 Scene 组 | SPARKS, ROVERS | Verified（l1） |
+| **L2** | P2P / 内部组 | ION10, TBS | Community（l2） |
+| **L3** | 低质量 / 重编码 | YIFY, YTS, mSD | Low Quality（l3） |
+| **L4** | 未知 / 未收录 | 解析失败、库外组名 | Unverified（l4） |
+
+设计文档：[docs/01-分支定位与流量获取.md](../../docs/01-分支定位与流量获取.md) §5.4.3。
+
+### 6.2 端到端数据流
+
+```
+title_raw
+  → release_parser.parse_release_title()     # A-06：正则取最后一个 - 后 token
+  → ResourceItem.release_group
+  → groups_registry.lookup_group()           # yaml 查 canonical + tier
+  → scorer.score_item() / rank_items()       # 50% 权重 + tie-break
+  → mysql_store.upsert_slot_resources()      # download_resources.group_tier 冗余
+  → recommended_block.html                   # Hero Group Badge
+```
+
+**权威数据源（当前）：** 本地 `groups.yaml`，运行时直读；**非** MySQL `release_groups` 表。
+
+### 6.3 组名解析（A-06）
+
+**模块：** `release_parser.py`（T0 正则版，非 PTN）
+
+规则：取 `title_raw` 最后一个 `-` 后的首段 token；排除 `S04E06`、`1080p` 等；截断至 64 字符。
+
+**局限：**
+
+| 情况 | 结果 |
+|------|------|
+| 标题无 `-` 或格式非标准 | `release_group=''` → tier **L4** |
+| 尾部带扩展名 | 如 `Cosumez.avi`、`TB.mkv` → 误解析为组名 |
+| indexer 标记混入 | 部分需 `groups_registry` 的 `_STRIP_SUFFIXES` 过滤 |
+
+### 6.4 查表逻辑（groups_registry）
+
+**文件：** `data/groups.yaml` — **98 组**（L0:20 / L1:34 / L2:33 / L3:11；**无 L4 条目**，未命中运行时默认 L4）
+
+**匹配顺序：**
+
+1. 整串精确匹配（含 `aliases`，大小写不敏感）
+2. 按 `[\s._\-]+` 拆 token，**优先较长 token**
+3. 过滤 eztv / yts / rarbg 等 indexer 后缀
+4. 未命中 → canonical `""`，tier **L4**
+
+**示例：**
+
+| release_group | canonical | tier |
+|---------------|-----------|------|
+| NTb | NTb | **L0** |
+| SPARKS | SPARKS | **L1** |
+| YTS | YTS | **L3** |
+| mSD | mSD | **L3** |
+| IMMERSE / XEBEC / FQM | — | **L4**（未入 yaml） |
+
+### 6.5 评分公式与 tie-break（scorer v1）
+
+**主分（0~100）：**
+
+```
+score = tier_w × 50 + seeder_w × 30 + cross_w × 20
+
+tier_w:   L0=1.0, L1=0.85, L2=0.6, L3=0.3, L4=0.1
+seeder_w: min(seeders / 50, 1.0)
+cross_w:  min(cross_source_count / 3, 1.0)
+```
+
+**Group tier 占 50% 权重**，但在当前 BB 测试集多数条目为 L4 时，**seeders 往往决定 Recommended**。
+
+**同分 tie-break（降序）：** seeders → 1080p → `cross_source_count` → tier
+
+### 6.6 推荐理由与页面展示
+
+| tier | `recommend_reason` 文案 |
+|------|-------------------------|
+| L0 / L1 | `Verified Group {name}（Lx 档信誉）` |
+| L2 | `Community Group {name}（L2 档）` |
+| L3 / L4 | 不追加 Verified 前缀；仍可有 resolution / seeders 等 |
+
+**页面：**
+
+| 位置 | 状态 | 模板 |
+|------|------|------|
+| Recommended Hero Group Badge | ✅ | `partials/recommended_block.html` |
+| Sources 表逐条 tier | ❌ 未做 | 待 T3 生成器 |
+| `scene_compliant` / 合规率 | ❌ yaml 有字段，scorer **不读取** | 规划 |
+
+### 6.7 groups.yaml 规模（2026-07-01）
+
+| 统计 | 值 |
+|------|-----|
+| 总组数 | **98** |
+| L0 | 20 |
+| L1 | 34 |
+| L2 | 33 |
+| L3 | 11 |
+| 维护方式 | 手工整理（T1-G1 验收） |
+
+路径：`workflow/recommended/data/groups.yaml`
+
+### 6.8 实现进度对照
+
+| 模块 | 状态 | 说明 |
+|------|------|------|
+| `groups.yaml` + `groups_registry.py` | ✅ | T1-G1；别名 + token 匹配 |
+| `scorer.py` 评分 / tie-break | ✅ | 已接真实 FetchService |
+| `pipeline --fetch` 写 `group_tier` | ✅ | 冗余至 `download_resources` |
+| `workflow.run recommended` | ✅ | 单槽调试 |
+| Hero Group Badge 模板 + CSS | ✅ | tier-l0~l4 色板 |
+| Sources 表 tier badge | ❌ | 仅 Recommended 卡片 |
+| MySQL `release_groups` 表 | 🔶 | schema 有；**仅 4 条 demo seed**，未从 yaml 同步 |
+| `scene_compliant` / `compliance_rate` | ❌ | yaml 字段存在，运行时未用 |
+| cron 自动统计更新 | ❌ | 设计文档 §5.4.3 规划 |
+| PTN / mediainfo 组名提取 | ❌ | 仍 T0 正则 |
+| 生成器批量出页接 DB | 🔶 | T3 待完整 |
+
+**登记含义：** S-05 标 ✅ = **评分链路已通**；距「信誉数据库 + 自动更新 + 合规率展示」仍有缺口。
+
+### 6.9 测试结果 — MySQL 当前数据
+
+**Recommended 行（`is_recommended=1`）：**
+
+| page_id | release_group | group_tier | match_score | 说明 |
+|---------|---------------|------------|-------------|------|
+| tv:1396:s04e01~02, s04e04, s04e06~08 | XEBEC | **L4** | ~41 | 未入 yaml |
+| movie:27205 | YTS | **L3** | ~52 | yaml 命中 |
+
+**全库 group 分布（摘录）：**
+
+| release_group | group_tier | 条数 | 备注 |
+|---------------|------------|------|------|
+| ``（空） | L4 | 25 | 解析失败 |
+| FQM | L4 | 11 | 未入 yaml |
+| mSD | L3 | 7 | yaml 命中 |
+| ASAP | L4 | 6 | 未入 yaml |
+| XEBEC | L4 | 6 | **当前 BB 推荐组** |
+| YTS | L3 | 2 | 电影 |
+
+**解读：** BB S04 测试集 **几乎没有 L0/L1 组被推荐**；Group 信誉对排序的实际 IG 贡献有限，主要靠 seeders 与 cross_source 拉分。
+
+### 6.10 现状瓶颈与改进方向
+
+| 现象 | 原因 | 改进方向 |
+|------|------|----------|
+| 多数条目 tier=L4 | 库外组名 + 解析失败 | 补 yaml：IMMERSE、XEBEC、FQM、ASAP 等 |
+| 25 条空 `release_group` | T0 正则局限 | PTN 或更强 parser |
+| Recommended 为 L4 组 | 池内无高 tier 竞争 | 扩源 + 补组库 |
+| `release_groups` 表空壳 | 未做 yaml 同步 | 同步脚本 + 以表为权威（远期） |
+| 合规率未展示 | scorer 不读 `scene_compliant` | 写入 `recommend_reason`（远期） |
+
+**现状小结：**
+
+1. **当前是静态手工分档**（yaml），非动态统计信誉。
+2. **评分链路完整**，但真实数据 tier 分布偏 L4，S-05 的页面 IG 尚未充分体现。
+3. 优先 **补 groups.yaml** 与 **改进组名解析**，比 cron 统计更紧迫（见 §九 P1）。
+
+---
+
+## 七、索引 seeders vs 实测 peer（对照登记）
 
 | 维度 | 索引 seeders（B-02） | 实测 peers（A-02） |
 |------|----------------------|---------------------|
@@ -186,7 +525,7 @@
 
 ---
 
-## 六、IG 组合与页面分数估算
+## 八、IG 组合与页面分数估算
 
 | 组合 | 含 IG-ID | 页面 IG 估分 |
 |------|----------|--------------|
@@ -199,20 +538,28 @@
 
 ---
 
-## 七、实现缺口（登记 → 开发）
+## 九、实现缺口（登记 → 开发）
 
 | 优先级 | IG-ID | 缺口 | 负责 |
 |--------|-------|------|------|
 | P0 | A-01, A-03, S-07 | 写 MySQL + 聚合 `slot_speed_summary` | T2 |
 | P0 | A-07 | timeout 条目不展示 / 降权 | T2 + 生成器 |
+| P1 | S-05 | 补 `groups.yaml`（IMMERSE/XEBEC/FQM 等 BB 高频组） | T1 |
+| P1 | S-05 | yaml → MySQL `release_groups` 同步脚本 | T1 |
+| P1 | S-05 | Sources 表 `group_tier` badge | T3 生成器 |
 | P1 | S-06, A-09 | Phase 2 片段测速 | T2 |
+| P1 | S-04 | title/fuzzy 对齐提升 hash 级跨源重叠 | T1 |
 | P1 | A-10 | 索引 vs 实测对比文案模板 | T3 生成器 |
+| P2 | S-05 | cron 统计 + `scene_compliant` 入推荐理由 | T1 |
+| P2 | S-05 | PTN / mediainfo 组名提取 | T0 |
 | P2 | S-08 | 多节点 Worker | T2+ |
 
 ---
 
-## 八、变更记录
+## 十、变更记录
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | v1.0 | 2026-07-01 | 初版：按 IG 等级 + 测试阶段 + 页面区块登记 |
+| v1.1 | 2026-07-01 | §五 跨源 S-03/S-04 计算逻辑 + 基准/MySQL/缓存测试结果 |
+| v1.2 | 2026-07-01 | §六 Release Group S-05/A-06 计算逻辑 + 实现进度 + MySQL 实测 |
