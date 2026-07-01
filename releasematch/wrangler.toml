@@ -1,0 +1,20 @@
+# =============================================================================
+# Cloudflare Pages / Workers Static Assets 部署配置
+#
+# @file wrangler.toml
+# @description
+#   托管 portal/dist 静态站点。部署前须先：
+#     bash scripts/deploy_cf_pages.sh --prepare-only
+#   或直接：
+#     bash scripts/deploy_cf_pages.sh
+#
+# 认证：wrangler login 或 CLOUDFLARE_API_TOKEN 环境变量
+# =============================================================================
+
+name = "releasematch"
+compatibility_date = "2026-06-29"
+
+[assets]
+directory = "./portal/dist"
+html_handling = "force-trailing-slash"
+not_found_handling = "404-page"

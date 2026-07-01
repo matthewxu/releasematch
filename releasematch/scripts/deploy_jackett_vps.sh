@@ -140,12 +140,19 @@ parse_args() {
 
 resolve_connection() {
   # 从 JSON 补全未指定的连接参数（CLI / 环境变量优先）
-  if [[ -z "${VPS_HOST}" && -f "${SERVERS_JSON}" ]]; then
+  if [[ -f "${SERVERS_JSON}" ]]; then
     local loaded
     loaded="$(load_servers_json "${SERVERS_JSON}" 2>/dev/null || true)"
     if [[ -n "${loaded}" ]]; then
+      # 先加载 JSON 默认值，再保留 CLI/环境变量已设置的项
+      local saved_host="${VPS_HOST}"
+      local saved_user="${VPS_USER}"
+      local saved_port="${VPS_PORT}"
       # shellcheck disable=SC1090
       eval "${loaded}"
+      [[ -n "${saved_host}" ]] && VPS_HOST="${saved_host}"
+      [[ -n "${saved_user}" ]] && VPS_USER="${saved_user}"
+      [[ -n "${saved_port}" ]] && VPS_PORT="${saved_port}"
     fi
   fi
 

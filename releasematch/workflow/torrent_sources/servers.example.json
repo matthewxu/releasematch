@@ -3,7 +3,7 @@
   "jackett_vps_japan": {
     "_comment": "海外 Jackett 测试 VPS（SSH 登录与 Docker 服务信息）",
     "label": "日本测试服务器",
-    "host": "104.105.140.11",
+    "host": "YOUR_VPS_IP",
     "ssh": {
       "user": "root",
       "password": "YOUR_SSH_PASSWORD",

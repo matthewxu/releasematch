@@ -9,5 +9,5 @@ Jinja2>=3.1.0
 # Optional R1: release filename parsing
 # parse-torrent-name>=0.1.0
 
-# Optional R2: speedtest module
-# python-libtorrent>=2.0.0
+# Optional T2: speedtest module (libtorrent Phase 1 peer connectivity)
+libtorrent==2.0.13; python_version >= "3.8"
