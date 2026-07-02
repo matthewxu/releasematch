@@ -11,6 +11,7 @@
     speed    — 单条 infohash Phase 2 片段测速（S-06）
     full     — Phase 1 + Phase 2 组合
     slot     — 对 MySQL 槽位 Recommended 测速（可选 --write）
+    batch    — 多 page_id / slots-json 批量测速（策略 A2）
     dry-run  — 同 test --dry-run（兼容别名）
 """
 
@@ -19,8 +20,15 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
+from workflow.torrent_sources.speedtest.batch_service import (
+    DEFAULT_BATCH_TARGET_BYTES,
+    DEFAULT_SPEEDTEST_TTL_HOURS,
+    load_batch_targets,
+    run_batch_speedtest,
+    write_batch_report,
+)
 from workflow.torrent_sources.speedtest.full_speed import run_full_speedtest
 from workflow.torrent_sources.speedtest.phase1_connectivity import test_connectivity
 from workflow.torrent_sources.speedtest.phase2_speed import DEFAULT_TARGET_BYTES, test_fragment_speed
@@ -146,6 +154,43 @@ def cmd_slot(args: argparse.Namespace) -> int:
     return 0 if phase2_status in ("ok", "dry_run", "timeout", "skipped") else 1
 
 
+def cmd_batch(args: argparse.Namespace) -> int:
+    """
+    批量槽位测速（策略 A2），可选写 MySQL 与 JSON 报告。
+
+    @param args: CLI 参数
+    @returns: 任一 error 状态则 1，否则 0
+    """
+    page_ids: Optional[List[str]] = None
+    if args.page_ids:
+        page_ids = [p.strip() for p in args.page_ids.split(",") if p.strip()]
+
+    try:
+        targets = load_batch_targets(page_ids=page_ids, slots_json=args.slots_json)
+    except ValueError as exc:
+        print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False))
+        return 1
+
+    report = run_batch_speedtest(
+        targets,
+        phase1_timeout_sec=args.phase1_timeout,
+        phase2_timeout_sec=args.timeout,
+        target_bytes=args.target_bytes,
+        force_dry_run=args.dry_run,
+        write_mysql=args.write,
+        ttl_hours=args.ttl_hours,
+        force=args.force,
+        workers=args.workers,
+    )
+
+    if args.report:
+        path = write_batch_report(report, args.report)
+        report.setdefault("meta", {})["report_file"] = str(path)
+
+    print(json.dumps(report, indent=2, ensure_ascii=False))
+    return 0 if report.get("summary", {}).get("errors", 0) == 0 else 1
+
+
 def _add_common_speed_args(parser: argparse.ArgumentParser, *, include_page_id: bool = True) -> None:
     """
     为 speed / full / slot 子命令添加共用参数。
@@ -179,6 +224,17 @@ def _add_common_speed_args(parser: argparse.ArgumentParser, *, include_page_id: 
         "--write",
         action="store_true",
         help="写入 MySQL speedtest_results + slot_speed_summary",
+    )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="忽略 TTL，强制重测",
+    )
+    parser.add_argument(
+        "--ttl-hours",
+        type=int,
+        default=DEFAULT_SPEEDTEST_TTL_HOURS,
+        help=f"TTL 内跳过已测 hash（默认 {DEFAULT_SPEEDTEST_TTL_HOURS}h）",
     )
 
 
@@ -223,6 +279,52 @@ def build_parser() -> argparse.ArgumentParser:
     p_slot.add_argument("--page-id", required=True, help="如 tv:1396:s04e06")
     _add_common_speed_args(p_slot, include_page_id=False)
     p_slot.set_defaults(func=cmd_slot)
+
+    p_batch = sub.add_parser("batch", help="多槽位批量测速（策略 A2）")
+    p_batch.add_argument(
+        "--page-ids",
+        default=None,
+        help="逗号分隔 page_id，如 tv:1396:s04e06,movie:27205",
+    )
+    p_batch.add_argument(
+        "--slots-json",
+        default=None,
+        help="benchmark 槽位 JSON 文件路径",
+    )
+    p_batch.add_argument(
+        "--report",
+        default=None,
+        help="批量报告 JSON 输出路径",
+    )
+    p_batch.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="并发进程数（默认 1 串行；cron 推荐 5）",
+    )
+    p_batch.add_argument(
+        "--target-bytes",
+        type=int,
+        default=DEFAULT_BATCH_TARGET_BYTES,
+        help=f"Phase 2 目标字节（默认 {DEFAULT_BATCH_TARGET_BYTES}）",
+    )
+    p_batch.add_argument("--timeout", type=int, default=30, help="Phase 2 超时秒数")
+    p_batch.add_argument(
+        "--phase1-timeout",
+        type=int,
+        default=20,
+        help="Phase 1 超时秒数",
+    )
+    p_batch.add_argument("--dry-run", action="store_true", help="不联网 dry-run")
+    p_batch.add_argument("--write", action="store_true", help="批量写 MySQL")
+    p_batch.add_argument("--force", action="store_true", help="忽略 TTL 强制重测")
+    p_batch.add_argument(
+        "--ttl-hours",
+        type=int,
+        default=DEFAULT_SPEEDTEST_TTL_HOURS,
+        help=f"TTL 跳过小时数（默认 {DEFAULT_SPEEDTEST_TTL_HOURS}）",
+    )
+    p_batch.set_defaults(func=cmd_batch)
 
     return parser
 

@@ -46,15 +46,26 @@ def _build_jinja_env() -> Environment:
 def context_to_template_vars(
     ctx: PageContext,
     site_origin: str = "",
+    *,
+    show_ig_debug: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """
     将页面上下文 dataclass 转为模板变量 dict。
 
     @param ctx: 页面上下文对象
     @param site_origin: 站点 origin；本地预览传 http://localhost:8080 或空串
+    @param show_ig_debug: 覆盖 RM_SHOW_IG_DEBUG；None 时读配置
     @returns: Jinja2 render 参数字典
     """
-    return ctx.to_template_context(site_origin=site_origin)
+    from workflow.config import SHOW_IG_DEBUG
+
+    from portal.generator.ig_debug import build_ig_debug_panel
+
+    variables = ctx.to_template_context(site_origin=site_origin)
+    enabled = SHOW_IG_DEBUG if show_ig_debug is None else show_ig_debug
+    variables["show_ig_debug"] = enabled
+    variables["ig_debug"] = build_ig_debug_panel(ctx, variables) if enabled else None
+    return variables
 
 
 def render_html(
@@ -76,17 +87,22 @@ def render_html(
 def render_page_context(
     page_bundle: Dict[str, Any],
     site_origin: str = "",
+    *,
+    show_ig_debug: Optional[bool] = None,
 ) -> str:
     """
     从 mysql_store.load_page_for_url 返回的 bundle 渲染 HTML。
 
     @param page_bundle: 含 template、context 的字典
     @param site_origin: 站点 origin
+    @param show_ig_debug: 覆盖 RM_SHOW_IG_DEBUG
     @returns: HTML 字符串
     """
     ctx = page_bundle["context"]
     template_name = page_bundle["template"]
-    variables = context_to_template_vars(ctx, site_origin=site_origin)
+    variables = context_to_template_vars(
+        ctx, site_origin=site_origin, show_ig_debug=show_ig_debug
+    )
     return render_html(template_name, variables)
 
 
@@ -94,6 +110,8 @@ def render_by_page_id(
     store: Any,
     page_id: str,
     site_origin: str = "",
+    *,
+    show_ig_debug: Optional[bool] = None,
 ) -> Optional[Dict[str, Any]]:
     """
     按 page_id 从 MySQL 加载并渲染。
@@ -101,6 +119,7 @@ def render_by_page_id(
     @param store: MySQLStore 实例
     @param page_id: 页面主键
     @param site_origin: 站点 origin
+    @param show_ig_debug: 覆盖 RM_SHOW_IG_DEBUG
     @returns: 含 html、template、output_path 的字典；失败返回 None
     """
     bundle = _load_bundle_by_page_id(store, page_id)
@@ -109,7 +128,9 @@ def render_by_page_id(
 
     ctx = bundle["context"]
     page = ctx.page
-    variables = context_to_template_vars(ctx, site_origin=site_origin)
+    variables = context_to_template_vars(
+        ctx, site_origin=site_origin, show_ig_debug=show_ig_debug
+    )
     html = render_html(bundle["template"], variables)
     return {
         "page_id": page_id,

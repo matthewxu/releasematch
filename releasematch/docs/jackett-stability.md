@@ -1,7 +1,7 @@
 # Jackett 与种子拉取稳定性保障
 
 > **适用：** 海外 VPS Jackett + FlareSolverr + 本机 ReleaseMatch workflow  
-> **测试环境：** 日本 VPS `104.105.140.11`（见 [jackett-remote-linode.md](./jackett-remote-linode.md)）  
+> **测试环境：** 日本 VPS `172.238.15.236`（见 [jackett-remote-linode.md](./jackett-remote-linode.md)）  
 > **日期：** 2026-06-30
 
 ---
@@ -96,7 +96,7 @@
 ### 4.1 容器架构
 
 ```
-日本 VPS 104.105.140.11
+日本 VPS 172.238.15.236
 ├── docker network: jackett-net
 ├── jackett        → 0.0.0.0:9117（Torznab + Dashboard）
 ├── flaresolverr   → 127.0.0.1:8191（仅本机，Jackett 容器内用 flaresolverr:8191）

@@ -36,6 +36,8 @@ from schema.d1_models import (
     MoviePageContext,
     ShowHubPageContext,
     SlotSpeedSummary,
+    SpeedEvidenceContext,
+    SpeedTestResult,
     build_page_id,
 )
 
@@ -422,12 +424,31 @@ class MySQLStore:
         recommended = next((s for s in sources if s.is_recommended), None)
         speed = SlotSpeedSummary.from_row(_normalize_row(speed_row)) if speed_row else None
 
+        speed_evidence: Optional[SpeedEvidenceContext] = None
+        if speed:
+            infohash = speed.recommended_infohash or (
+                recommended.infohash if recommended else ""
+            )
+            phase1 = self.get_latest_speedtest_result(
+                page_id, phase=1, infohash=infohash or None
+            )
+            phase2 = self.get_latest_speedtest_result(
+                page_id, phase=2, infohash=infohash or None
+            )
+            speed_evidence = SpeedEvidenceContext.from_parts(
+                speed,
+                phase1,
+                phase2,
+                indexed_seeders=recommended.seeders if recommended else 0,
+            )
+
         return EpisodePageContext(
             catalog=catalog,
             page=page,
             sources=sources,
             recommended=recommended,
             speed_summary=speed,
+            speed_evidence=speed_evidence,
             canonical_url=f"https://releasematch.io{page.canonical_path}",
         )
 
@@ -925,6 +946,68 @@ class MySQLStore:
         if not row:
             return None
         return DownloadResource.from_row(_normalize_row(row))
+
+    def get_slot_speed_summary(self, page_id: str) -> Optional[SlotSpeedSummary]:
+        """
+        读取槽位测速摘要行。
+
+        @param page_id: 页面主键
+        @returns: SlotSpeedSummary 或 None
+        """
+        conn = self._connect()
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT * FROM slot_speed_summary WHERE page_id = %s",
+                (page_id,),
+            )
+            row = cur.fetchone()
+        conn.close()
+        if not row:
+            return None
+        return SlotSpeedSummary.from_row(_normalize_row(row))
+
+    def get_latest_speedtest_result(
+        self,
+        page_id: str,
+        *,
+        phase: int,
+        infohash: Optional[str] = None,
+    ) -> Optional[SpeedTestResult]:
+        """
+        读取某 page_id 最近一条测速明细（按 tested_at 降序）。
+
+        @param page_id: 页面槽位 ID
+        @param phase: 1=连接性 2=片段测速
+        @param infohash: 可选；限定 Recommended infohash
+        @returns: SpeedTestResult 或 None
+        """
+        conn = self._connect()
+        with conn.cursor() as cur:
+            if infohash:
+                cur.execute(
+                    """
+                    SELECT * FROM speedtest_results
+                    WHERE page_id = %s AND phase = %s AND infohash = %s
+                    ORDER BY tested_at DESC
+                    LIMIT 1
+                    """,
+                    (page_id, int(phase), infohash.lower()),
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT * FROM speedtest_results
+                    WHERE page_id = %s AND phase = %s
+                    ORDER BY tested_at DESC
+                    LIMIT 1
+                    """,
+                    (page_id, int(phase)),
+                )
+            row = cur.fetchone()
+        conn.close()
+        if not row:
+            return None
+        return SpeedTestResult.from_row(_normalize_row(row))
 
     def insert_speedtest_result(
         self,

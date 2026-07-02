@@ -517,6 +517,405 @@ class SpeedTestResult:
         )
 
 
+def _format_kbps_display(kbps: float) -> str:
+    """
+    将 KiB/s 格式化为带单位的展示文本。
+
+    @param kbps: 千字节/秒
+    @returns: 如 29 KB/s 或 1.2 MB/s
+    """
+    if kbps <= 0:
+        return "—"
+    mb_per_sec = kbps / 1024.0
+    if mb_per_sec >= 1.0:
+        return f"{mb_per_sec:.1f} MB/s"
+    return f"{int(round(kbps))} KB/s"
+
+
+def _format_latency_display(latency_ms: int) -> str:
+    """
+    将首包延迟毫秒格式化为可读文案（A-09）。
+
+    @param latency_ms: 毫秒
+    @returns: 如 21.8 s 或 850 ms
+    """
+    if latency_ms <= 0:
+        return "—"
+    if latency_ms >= 1000:
+        return f"{latency_ms / 1000:.1f} s"
+    return f"{latency_ms} ms"
+
+
+def _reachability_css_class(reachability: str) -> str:
+    """
+    可达性等级 → CSS 修饰类名。
+
+    @param reachability: 高/中/低/不可达
+    @returns: high | medium | low | unreachable
+    """
+    mapping = {"高": "high", "中": "medium", "低": "low", "不可达": "unreachable"}
+    return mapping.get(reachability, "unknown")
+
+
+def _format_datetime_utc_display(ts: str) -> str:
+    """
+    将 MySQL DATETIME 格式化为 UTC 展示（A-03）。
+
+    @param ts: 如 2026-07-02 09:57:10.217
+    @returns: 如 2026-07-02 09:57 UTC
+    """
+    text = (ts or "").strip()
+    if not text:
+        return ""
+    # 去掉毫秒，标注 UTC
+    base = text.split(".")[0] if "." in text else text
+    if len(base) >= 16:
+        return f"{base[:16].replace('T', ' ')} UTC"
+    return f"{base} UTC"
+
+
+def _parse_mysql_utc_datetime(ts: str) -> Optional[datetime]:
+    """
+    解析 MySQL DATETIME 为 UTC aware datetime。
+
+    @param ts: 时间字符串
+    @returns: datetime 或 None
+    """
+    from datetime import datetime, timezone
+
+    text = (ts or "").strip()
+    if not text:
+        return None
+    for fmt in ("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"):
+        try:
+            dt = datetime.strptime(text[:26], fmt)
+            return dt.replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+    return None
+
+
+def _format_age_display(age_hours: float) -> str:
+    """
+    将距现在的小时数格式化为中文相对时间。
+
+    @param age_hours: 小时数
+    @returns: 如「35 分钟前」「2.5 小时前」
+    """
+    if age_hours < 0:
+        age_hours = 0.0
+    if age_hours < 1.0:
+        minutes = max(1, int(round(age_hours * 60)))
+        return f"{minutes} 分钟前"
+    if age_hours < 48:
+        return f"{age_hours:.1f} 小时前".replace(".0 小时", " 小时")
+    days = age_hours / 24.0
+    return f"{days:.1f} 天前".replace(".0 天", " 天")
+
+
+def compute_test_freshness(
+    tested_at_raw: str,
+    *,
+    ttl_hours: int = 6,
+) -> Dict[str, Any]:
+    """
+    根据测速时间计算有效性等级（A-03），供页面与 debug 展示。
+
+    @param tested_at_raw: MySQL tested_at / updated_at 原始值
+    @param ttl_hours: cron 增量 TTL（默认 6h，与 batch 策略一致）
+    @returns: freshness_class、freshness_label、age_display、freshness_note 等
+    """
+    from datetime import datetime, timezone
+
+    parsed = _parse_mysql_utc_datetime(tested_at_raw)
+    if not parsed:
+        return {
+            "freshness_class": "unknown",
+            "freshness_label": "未测速",
+            "validity_level": "未知",
+            "age_hours": None,
+            "age_display": "—",
+            "freshness_note": "尚无 libtorrent 实测记录，以下速度不可作为 IG 背书。",
+            "tested_at_iso": "",
+            "ttl_hours": ttl_hours,
+        }
+
+    now = datetime.now(timezone.utc)
+    age_sec = max(0.0, (now - parsed).total_seconds())
+    age_hours = age_sec / 3600.0
+    age_display = _format_age_display(age_hours)
+    tested_at_iso = parsed.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    if age_hours <= ttl_hours:
+        freshness_class = "fresh"
+        freshness_label = "新鲜"
+        validity_level = "高"
+        freshness_note = (
+            f"距测速 {age_display}，在 {ttl_hours}h TTL 内；数据可直接用于 Recommended 实测背书（S-07）。"
+        )
+    elif age_hours <= 24:
+        freshness_class = "valid"
+        freshness_label = "有效"
+        validity_level = "中"
+        freshness_note = (
+            f"距测速 {age_display}，已超过 {ttl_hours}h cron 窗口但仍 <24h；建议参考，生产环境可安排复测。"
+        )
+    elif age_hours <= 72:
+        freshness_class = "stale"
+        freshness_label = "陈旧"
+        validity_level = "低"
+        freshness_note = (
+            f"距测速 {age_display}（>24h）；peer/速度可能已变化，IG 背书效力降低，应优先复测。"
+        )
+    else:
+        freshness_class = "expired"
+        freshness_label = "过期"
+        validity_level = "无效"
+        freshness_note = (
+            f"距测速 {age_display}（>72h）；不应再作为页面实测背书，请重新执行 slot/batch 测速。"
+        )
+
+    return {
+        "freshness_class": freshness_class,
+        "freshness_label": freshness_label,
+        "validity_level": validity_level,
+        "age_hours": round(age_hours, 2),
+        "age_display": age_display,
+        "freshness_note": freshness_note,
+        "tested_at_iso": tested_at_iso,
+        "ttl_hours": ttl_hours,
+    }
+
+
+@dataclass
+class SpeedEvidenceContext:
+    """
+    页面测速 IG 证据面板上下文（S-06 / S-07 / A-01~A-03 / A-09 / A-10）。
+
+    @var summary: slot_speed_summary 聚合行
+    @var phase1: 最近一次 Phase 1 明细（可选）
+    @var phase2: 最近一次 Phase 2 明细（可选）
+    @var indexed_seeders: Recommended 在索引侧的 seeders（A-10 对照）
+    @var target_bytes_label: 片段测速大小说明
+    """
+
+    summary: SlotSpeedSummary
+    phase1: Optional[SpeedTestResult] = None
+    phase2: Optional[SpeedTestResult] = None
+    indexed_seeders: int = 0
+    target_bytes_label: str = "256 KB"
+
+    @classmethod
+    def from_parts(
+        cls,
+        summary: SlotSpeedSummary,
+        phase1: Optional[SpeedTestResult] = None,
+        phase2: Optional[SpeedTestResult] = None,
+        *,
+        indexed_seeders: int = 0,
+        target_bytes_label: str = "256 KB",
+    ) -> "SpeedEvidenceContext":
+        """
+        由摘要 + Phase 明细 + 索引 seeders 组装证据上下文。
+
+        @param summary: 槽位测速摘要
+        @param phase1: Phase 1 结果
+        @param phase2: Phase 2 结果
+        @param indexed_seeders: 索引 seeders
+        @param target_bytes_label: 片段大小文案
+        @returns: SpeedEvidenceContext 实例
+        """
+        return cls(
+            summary=summary,
+            phase1=phase1,
+            phase2=phase2,
+            indexed_seeders=indexed_seeders,
+            target_bytes_label=target_bytes_label,
+        )
+
+    def build_endorsement_sentence(self, release_title: str = "") -> str:
+        """
+        生成 S-07 Recommended 实测背书句。
+
+        @param release_title: Recommended release 标题
+        @returns: 完整背书文案
+        """
+        from workflow.torrent_sources.speedtest.reachability import (
+            format_reachability_display,
+            format_speed_pair_display,
+        )
+
+        peers = (
+            self.phase2.peers_total
+            if self.phase2 and self.phase2.peers_total
+            else (self.phase1.peers_total if self.phase1 else 0)
+        )
+        peers_reachable = (
+            self.phase2.peers_reachable
+            if self.phase2 and self.phase2.peers_reachable
+            else (self.phase1.peers_reachable if self.phase1 else 0)
+        )
+        status = (self.phase2.status if self.phase2 else "") or (self.phase1.status if self.phase1 else "ok")
+        speed_pair = format_speed_pair_display(
+            self.phase2.avg_kbps if self.phase2 else 0.0,
+            self.phase2.max_kbps if self.phase2 else 0.0,
+        )
+        reach = format_reachability_display(
+            self.summary.reachability or "—",
+            peers_total=peers,
+            peers_reachable=peers_reachable,
+            status=status,
+        )
+        title_part = f"「{release_title}」" if release_title else "本站 Recommended release"
+        freshness = compute_test_freshness(
+            (self.phase2.tested_at if self.phase2 else "")
+            or (self.phase1.tested_at if self.phase1 else "")
+            or self.summary.updated_at
+        )
+        time_part = ""
+        if freshness.get("tested_at_iso"):
+            tested_display = _format_datetime_utc_display(
+                (self.phase2.tested_at if self.phase2 else "")
+                or (self.phase1.tested_at if self.phase1 else "")
+                or self.summary.updated_at
+            )
+            time_part = (
+                f"测速于 {tested_display}（{freshness['age_display']}，"
+                f"有效性 {freshness['validity_level']}·{freshness['freshness_label']}）。"
+            )
+        return (
+            f"以下数据绑定 {title_part}（infohash …{self.summary.recommended_infohash[:8]}），"
+            f"libtorrent 片段实测 {speed_pair['speed_pair_display']}，"
+            f"Peer 可达性 {reach['reachability_display']}。"
+            f"{time_part}"
+        )
+
+    def build_index_vs_measured_text(self) -> str:
+        """
+        生成 A-10 索引 seeders vs 实测 peers 对照句。
+
+        @returns: 对照文案；缺数据时空串
+        """
+        peers = 0
+        if self.phase2 and self.phase2.peers_total:
+            peers = self.phase2.peers_total
+        elif self.phase1 and self.phase1.peers_total:
+            peers = self.phase1.peers_total
+        if self.indexed_seeders <= 0 and peers <= 0:
+            return ""
+        if self.indexed_seeders <= 0:
+            return f"索引 seeders 未记录；libtorrent 实测 {peers} peers（A-02）。"
+        return (
+            f"索引 seeders {self.indexed_seeders}（B-02 参考） vs "
+            f"libtorrent 实测 {peers} peers（A-02）— 以实测为准。"
+        )
+
+    def to_template_dict(self) -> Dict[str, Any]:
+        """
+        转为 episode.html 测速证据面板变量。
+
+        @returns: Jinja2 渲染字典
+        """
+        p2 = self.phase2
+        p1 = self.phase1
+        avg_kbps = p2.avg_kbps if p2 else 0.0
+        max_kbps = p2.max_kbps if p2 else 0.0
+        peers_total = (p2.peers_total if p2 else 0) or (p1.peers_total if p1 else 0)
+        peers_reachable = (p2.peers_reachable if p2 else 0) or (p1.peers_reachable if p1 else 0)
+        latency_ms = p2.latency_ms if p2 else 0
+        tested_at_raw = (p2.tested_at if p2 else "") or (p1.tested_at if p1 else "") or self.summary.updated_at
+        tested_at = _format_datetime_utc_display(tested_at_raw)
+        reachability = self.summary.reachability or "—"
+
+        from workflow.config import TORRENT_SEEDERS_TTL_HOURS
+
+        freshness = compute_test_freshness(
+            tested_at_raw,
+            ttl_hours=TORRENT_SEEDERS_TTL_HOURS,
+        )
+
+        ig_badges = ["S-06", "S-07", "A-01", "A-02", "A-03"]
+        if latency_ms > 0:
+            ig_badges.append("A-09")
+        if self.indexed_seeders > 0 and peers_total > 0:
+            ig_badges.append("A-10")
+
+        from workflow.torrent_sources.speedtest.reachability import (
+            format_peers_summary_display,
+            format_reachability_display,
+            format_speed_pair_display,
+        )
+
+        status = (p2.status if p2 else "") or (p1.status if p1 else "ok")
+        speed_pair = format_speed_pair_display(avg_kbps, max_kbps)
+        peers_summary = format_peers_summary_display(peers_total, peers_reachable)
+        reach = format_reachability_display(
+            reachability,
+            peers_total=peers_total,
+            peers_reachable=peers_reachable,
+            status=status,
+        )
+
+        from workflow.torrent_sources.speedtest.grab_index import compute_grab_index
+
+        grab = compute_grab_index(
+            avg_kbps=avg_kbps,
+            max_kbps=max_kbps,
+            reachability=reachability if reachability not in ("—", "") else "",
+            peers_total=peers_total,
+            peers_reachable=peers_reachable,
+            status=status,
+            freshness_class=freshness.get("freshness_class", "unknown"),
+            validity_level=freshness.get("validity_level", ""),
+        )
+
+        return {
+            "recommended_speed": self.summary.recommended_speed or speed_pair["avg_speed"],
+            "avg_speed": speed_pair["avg_speed"],
+            "max_speed": speed_pair["max_speed"],
+            "speed_pair_display": speed_pair["speed_pair_display"],
+            "speed_spread_display": speed_pair["speed_spread_display"],
+            "avg_kbps": round(avg_kbps, 2) if avg_kbps else 0,
+            "max_kbps": round(max_kbps, 2) if max_kbps else 0,
+            "reachability": reachability,
+            "reachability_display": reach["reachability_display"],
+            "reachability_detail": reach["reachability_detail"],
+            "reachability_rule": reach["reachability_rule"],
+            "connect_rate_display": peers_summary["connect_rate_display"],
+            "connect_rate_pct": peers_summary["connect_rate_pct"],
+            "peers_pair_display": peers_summary["peers_pair_display"],
+            "peers_total_display": peers_summary["peers_total_display"],
+            "peers_reachable_display": peers_summary["peers_reachable_display"],
+            "reachability_class": _reachability_css_class(reachability),
+            "peers_total": peers_total,
+            "peers_reachable": peers_reachable,
+            "latency_ms": latency_ms,
+            "latency_display": _format_latency_display(latency_ms),
+            "updated_at": _format_datetime_utc_display(self.summary.updated_at),
+            "tested_at": tested_at,
+            "tested_at_raw": tested_at_raw,
+            "tested_at_iso": freshness.get("tested_at_iso", ""),
+            "freshness_class": freshness.get("freshness_class", "unknown"),
+            "freshness_label": freshness.get("freshness_label", "未知"),
+            "validity_level": freshness.get("validity_level", "未知"),
+            "age_hours": freshness.get("age_hours"),
+            "age_display": freshness.get("age_display", "—"),
+            "freshness_note": freshness.get("freshness_note", ""),
+            "ttl_hours": freshness.get("ttl_hours", 6),
+            "infohash_short": (
+                self.summary.recommended_infohash[:8]
+                if self.summary.recommended_infohash
+                else ""
+            ),
+            "indexed_seeders": self.indexed_seeders,
+            "index_vs_measured": self.build_index_vs_measured_text(),
+            "method_note": f"libtorrent 片段下载（{self.target_bytes_label}，策略 A2）",
+            "ig_badges": ig_badges,
+            "status": (p2.status if p2 else "") or (p1.status if p1 else "ok"),
+            **grab,
+        }
+
+
 @dataclass
 class EpisodePageContext:
     """
@@ -526,7 +925,8 @@ class EpisodePageContext:
     @var page: 页面槽位
     @var sources: All Sources 列表（含 recommended）
     @var recommended: Recommended release（sources 中 is_recommended=1）
-    @var speed_summary: 测速摘要条（可选）
+    @var speed_summary: 测速摘要条（可选，兼容旧模板）
+    @var speed_evidence: 测速 IG 证据面板（S-06 / S-07 / A 级字段）
     @var canonical_url: 完整 canonical URL
     """
 
@@ -535,6 +935,7 @@ class EpisodePageContext:
     sources: List[DownloadResource]
     recommended: Optional[DownloadResource] = None
     speed_summary: Optional[SlotSpeedSummary] = None
+    speed_evidence: Optional[SpeedEvidenceContext] = None
     canonical_url: str = ""
 
     def to_template_context(self, site_origin: str = "https://releasematch.io") -> Dict[str, Any]:
@@ -546,13 +947,50 @@ class EpisodePageContext:
         """
         slug = self.catalog.slug
         recommended = self.recommended
-        if recommended and self.speed_summary and self.speed_summary.recommended_speed:
+        rec_dict = None
+        if recommended:
             rec_dict = recommended.to_template_dict()
-            rec_dict["speed"] = self.speed_summary.recommended_speed
-        elif recommended:
-            rec_dict = recommended.to_template_dict()
-        else:
-            rec_dict = None
+            if self.speed_evidence:
+                speed_ctx = self.speed_evidence.to_template_dict()
+                rec_dict["speed"] = self.speed_evidence.summary.recommended_speed or speed_ctx["avg_speed"]
+                rec_dict["speed_max"] = speed_ctx["max_speed"]
+                rec_dict["speed_test"] = {
+                    "tested_at": speed_ctx["tested_at"],
+                    "tested_at_iso": speed_ctx["tested_at_iso"],
+                    "age_display": speed_ctx["age_display"],
+                    "freshness_label": speed_ctx["freshness_label"],
+                    "freshness_class": speed_ctx["freshness_class"],
+                    "validity_level": speed_ctx["validity_level"],
+                    "avg_speed": speed_ctx["avg_speed"],
+                    "max_speed": speed_ctx["max_speed"],
+                    "avg_kbps": speed_ctx["avg_kbps"],
+                    "max_kbps": speed_ctx["max_kbps"],
+                    "peers_total": speed_ctx["peers_total"],
+                    "peers_reachable": speed_ctx["peers_reachable"],
+                    "peers_total_display": speed_ctx["peers_total_display"],
+                    "peers_reachable_display": speed_ctx["peers_reachable_display"],
+                    "connect_rate_pct": speed_ctx["connect_rate_pct"],
+                    "connect_rate_display": speed_ctx["connect_rate_display"],
+                    "peers_pair_display": speed_ctx["peers_pair_display"],
+                    "reachability": speed_ctx["reachability"],
+                }
+                rec_dict["grab_index"] = {
+                    "grab_index_name": speed_ctx["grab_index_name"],
+                    "grab_index_tagline": speed_ctx["grab_index_tagline"],
+                    "grab_index_score": speed_ctx["grab_index_score"],
+                    "grab_index_display": speed_ctx["grab_index_display"],
+                    "grab_index_tier": speed_ctx["grab_index_tier"],
+                    "grab_index_tier_label": speed_ctx["grab_index_tier_label"],
+                    "grab_index_tier_class": speed_ctx["grab_index_tier_class"],
+                    "grab_index_summary": speed_ctx["grab_index_summary"],
+                    "grab_index_breakdown": speed_ctx["grab_index_breakdown"],
+                    "grab_index_has_data": speed_ctx["grab_index_has_data"],
+                }
+                rec_dict["speed_endorsement"] = self.speed_evidence.build_endorsement_sentence(
+                    recommended.title_raw
+                )
+            elif self.speed_summary and self.speed_summary.recommended_speed:
+                rec_dict["speed"] = self.speed_summary.recommended_speed
 
         prev_path = self.page.prev_episode_path(slug)
         next_path = self.page.next_episode_path(slug)
@@ -575,6 +1013,7 @@ class EpisodePageContext:
             "cross_source_count": self.page.cross_source_count,
             "cross_source_total": self.page.cross_source_total,
             "speed_summary": self.speed_summary.to_template_dict() if self.speed_summary else None,
+            "speed_evidence": self.speed_evidence.to_template_dict() if self.speed_evidence else None,
             "recommended": rec_dict,
             "recommended_quality": recommended.resolution if recommended else "",
             "sources": [s.to_template_dict() for s in self.sources],

@@ -49,19 +49,8 @@
   <div class="rm-main-grid rm-main-grid--with-sidebar">
     <div class="rm-main-grid__primary">
 
-      {# 测速摘要（T2） #}
-      {% if speed_summary %}
-      <section class="rm-section" aria-labelledby="speed-heading">
-        <div class="rm-speed-bar">
-          <span class="rm-speed-bar__item" id="speed-heading">
-            测速摘要：
-            <span class="rm-speed-bar__value">{{ speed_summary.recommended_speed }}</span>
-          </span>
-          <span class="rm-speed-bar__item">可达性 <strong>{{ speed_summary.reachability }}</strong></span>
-          <span class="rm-speed-bar__item">更新于 {{ speed_summary.updated_at }}</span>
-        </div>
-      </section>
-      {% endif %}
+      {# 测速 IG 证据面板（S-06 / S-07 / A 级） #}
+      {% include 'partials/speed_evidence_panel.html' %}
 
       {# ★ Recommended Release — 最高 IG 模块 #}
       {% include 'partials/recommended_block.html' %}

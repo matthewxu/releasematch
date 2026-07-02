@@ -60,7 +60,7 @@ usage() {
 
 示例:
   bash scripts/deploy_jackett_vps.sh
-  SSHPASS='secret' bash scripts/deploy_jackett_vps.sh --host 104.105.140.11
+  SSHPASS='secret' bash scripts/deploy_jackett_vps.sh --host 172.238.15.236
 EOF
 }
 

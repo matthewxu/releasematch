@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Optional
 from urllib.parse import unquote
 
-from workflow.config import PROJECT_ROOT
+from workflow.config import PROJECT_ROOT, SHOW_IG_DEBUG
 from workflow.storage.mysql_store import MySQLStore
 
 from portal.generator.render import render_page_context
@@ -85,7 +85,11 @@ class PortalDevHandler(BaseHTTPRequestHandler):
             return False
 
         origin = f"http://{self.headers.get('Host', '127.0.0.1:8080')}"
-        html = render_page_context(bundle, site_origin=origin)
+        html = render_page_context(
+            bundle,
+            site_origin=origin,
+            show_ig_debug=SHOW_IG_DEBUG,
+        )
         body = html.encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -145,6 +149,7 @@ def run_dev_server(host: str = "127.0.0.1", port: int = 8080) -> None:
     print(f"ReleaseMatch Portal 开发服：http://{host}:{port}/")
     print("  DB 页面：/breaking-bad/  /breaking-bad/s4e6/  /inception-2010/")
     print("  静态资源：/static/  /trust/  /index.html")
+    print(f"  IG debug 面板：{'开启' if SHOW_IG_DEBUG else '关闭'}（RM_SHOW_IG_DEBUG）")
     print("  Ctrl+C 停止")
     try:
         server.serve_forever()

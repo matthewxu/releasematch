@@ -1,0 +1,161 @@
+{
+  "meta": {
+    "strategy": "A2",
+    "target_bytes": 262144,
+    "phase1_timeout_sec": 20,
+    "phase2_timeout_sec": 30,
+    "workers": 5,
+    "write_mysql": true,
+    "ttl_hours": 6,
+    "force": false,
+    "started_at": "2026-07-02T09:58:05.984554+00:00",
+    "finished_at": "2026-07-02T09:58:45.113581+00:00",
+    "total_wall_sec": 39.129,
+    "slot_count": 7,
+    "estimated_serial_a2_sec": 175
+  },
+  "summary": {
+    "succeeded": 7,
+    "errors": 0,
+    "skipped_ttl": 1
+  },
+  "results": [
+    {
+      "page_id": "tv:1396:s04e01",
+      "label": "BB S04E01",
+      "status": "ok",
+      "elapsed_sec": 13.369,
+      "phase1_elapsed_ms": 2012,
+      "phase2_elapsed_ms": 5844,
+      "peers_total": 37,
+      "avg_kbps": 26.09,
+      "max_kbps": 116.63,
+      "recommended_speed": "26 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "tv:1396:s04e01",
+        "phase1_result_id": "bdd1da68-50a9-4d14-80c1-b5c519dd22f3",
+        "phase2_result_id": "fb0ef41a-3700-405c-b355-7c133896b979",
+        "recommended_speed": "26 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:1396:s04e02",
+      "label": "BB S04E02",
+      "status": "ok",
+      "elapsed_sec": 33.618,
+      "phase1_elapsed_ms": 12045,
+      "phase2_elapsed_ms": 13945,
+      "peers_total": 31,
+      "avg_kbps": 43.63,
+      "max_kbps": 355.51,
+      "recommended_speed": "44 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "tv:1396:s04e02",
+        "phase1_result_id": "7d99c83d-1921-4452-a9a0-f45b098ee3a9",
+        "phase2_result_id": "f2d439a7-8cf9-43a4-a5cf-51f14d3baea2",
+        "recommended_speed": "44 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:1396:s04e04",
+      "label": "BB S04E04",
+      "status": "ok",
+      "elapsed_sec": 38.966,
+      "phase1_elapsed_ms": 12048,
+      "phase2_elapsed_ms": 19302,
+      "peers_total": 28,
+      "avg_kbps": 19.6,
+      "max_kbps": 60.34,
+      "recommended_speed": "20 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "tv:1396:s04e04",
+        "phase1_result_id": "62fcada5-be5e-4199-b3b5-428febb28345",
+        "phase2_result_id": "d535e594-22a4-4dbc-b495-296ac12abfb9",
+        "recommended_speed": "20 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:1396:s04e06",
+      "label": "BB S04E06",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "29 KB/s",
+      "reachability": "高",
+      "summary_updated_at": "2026-07-02 09:57:10.217",
+      "recommended_infohash": "583d172ea1eaf082f6b73627c1a56b1299f92ba7"
+    },
+    {
+      "page_id": "tv:1396:s04e07",
+      "label": "BB S04E07",
+      "status": "ok",
+      "elapsed_sec": 32.336,
+      "phase1_elapsed_ms": 12048,
+      "phase2_elapsed_ms": 17020,
+      "peers_total": 27,
+      "avg_kbps": 25.42,
+      "max_kbps": 132.99,
+      "recommended_speed": "25 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "tv:1396:s04e07",
+        "phase1_result_id": "fd22e38c-d881-4abd-97b8-af098d09d1a7",
+        "phase2_result_id": "008dfe36-8c2d-40d6-8359-e977d84f90f9",
+        "recommended_speed": "25 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:1396:s04e08",
+      "label": "BB S04E08",
+      "status": "ok",
+      "elapsed_sec": 22.731,
+      "phase1_elapsed_ms": 12045,
+      "phase2_elapsed_ms": 7363,
+      "peers_total": 35,
+      "avg_kbps": 25.71,
+      "max_kbps": 99.19,
+      "recommended_speed": "26 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "tv:1396:s04e08",
+        "phase1_result_id": "b03e4123-fd45-4b11-a107-cc7cf32e0330",
+        "phase2_result_id": "812ca722-d6f6-40f5-87e9-c3aa4eea2a36",
+        "recommended_speed": "26 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:27205",
+      "label": "Inception",
+      "status": "ok",
+      "elapsed_sec": 23.292,
+      "phase1_elapsed_ms": 12049,
+      "phase2_elapsed_ms": 6117,
+      "peers_total": 93,
+      "avg_kbps": 20.4,
+      "max_kbps": 156.72,
+      "recommended_speed": "20 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "movie:27205",
+        "phase1_result_id": "3342c2ca-1a93-4bf1-ae60-761d71fa808d",
+        "phase2_result_id": "dcb0d92e-8337-439a-baee-d78f8b7d60ec",
+        "recommended_speed": "20 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    }
+  ]
+}

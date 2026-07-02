@@ -67,7 +67,7 @@ export TORRENT_PROXY=socks5h://127.0.0.1:1080
 bash scripts/start_ssh_socks_tunnel.sh
 
 # 方式 2：手动
-ssh -N -D 127.0.0.1:1080 root@104.105.140.11
+ssh -N -D 127.0.0.1:1080 root@172.238.15.236
 export TORRENT_PROXY=socks5h://127.0.0.1:1080
 ```
 

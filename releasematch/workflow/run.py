@@ -35,6 +35,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import Optional
 
 # 确保 releasematch 根目录在 sys.path
 _ROOT = Path(__file__).resolve().parent.parent
@@ -316,16 +317,30 @@ def cmd_generate(args: argparse.Namespace) -> int:
     out_root = Path(args.out) if args.out else DEFAULT_OUT_ROOT
     action = args.action.strip().lower()
 
+    show_ig_debug: Optional[bool] = None
+    if getattr(args, "show_ig_debug", False):
+        show_ig_debug = True
+    elif getattr(args, "no_ig_debug", False):
+        show_ig_debug = False
+
     if action == "page":
         if args.page_id:
-            result = write_page_html(args.page_id, out_root=out_root)
+            result = write_page_html(
+                args.page_id,
+                out_root=out_root,
+                show_ig_debug=show_ig_debug,
+            )
         elif args.path:
-            result = write_by_url_path(args.path, out_root=out_root)
+            result = write_by_url_path(
+                args.path,
+                out_root=out_root,
+                show_ig_debug=show_ig_debug,
+            )
         else:
             print("generate page 需要 --page-id 或 --path")
             return 1
     elif action == "all":
-        result = write_all_published(out_root=out_root)
+        result = write_all_published(out_root=out_root, show_ig_debug=show_ig_debug)
     else:
         print("未知 generate 子命令；可用: page, all")
         return 1
@@ -429,9 +444,29 @@ def build_parser() -> argparse.ArgumentParser:
     p_gen_page.add_argument(
         "--out", default=None, help="输出根目录，默认 portal/dist"
     )
+    p_gen_page.add_argument(
+        "--show-ig-debug",
+        action="store_true",
+        help="页面嵌入 IG debug 面板（覆盖 RM_SHOW_IG_DEBUG）",
+    )
+    p_gen_page.add_argument(
+        "--no-ig-debug",
+        action="store_true",
+        help="强制关闭 IG debug 面板",
+    )
     p_gen_page.set_defaults(func=cmd_generate)
     p_gen_all = gen_sub.add_parser("all", help="批量生成 published 页面")
     p_gen_all.add_argument("--out", default=None, help="输出根目录")
+    p_gen_all.add_argument(
+        "--show-ig-debug",
+        action="store_true",
+        help="页面嵌入 IG debug 面板",
+    )
+    p_gen_all.add_argument(
+        "--no-ig-debug",
+        action="store_true",
+        help="强制关闭 IG debug 面板",
+    )
     p_gen_all.set_defaults(func=cmd_generate)
 
     p_serve = sub.add_parser("serve", help="本地开发服（DB 动态渲染）")

@@ -13,7 +13,8 @@
 | [05-Jackett详解与安装使用教程.md](./05-Jackett详解与安装使用教程.md) | **Jackett 概念、安装、Torznab API、ReleaseMatch 集成** |
 | [06-run-cli使用说明.md](./06-run-cli使用说明.md) | **workflow.run 总控命令完整参考** |
 | [07-部署架构解疑.md](./07-部署架构解疑.md) | **D1 / Pages / Worker generate / CI 部署 FAQ** |
-| [jackett-remote-linode.md](./jackett-remote-linode.md) | **海外 VPS 部署 Jackett**（日本测试机 `104.105.140.11`） |
+| [jackett-remote-linode.md](./jackett-remote-linode.md) | **海外 VPS 部署 Jackett**（通用流程；历史 IP `104.105.140.11`） |
+| [**VPS迁移与部署.md**](./VPS迁移与部署.md) | **当前生产 VPS** `172.238.15.236` 迁移与验收 |
 | [jackett-stability.md](./jackett-stability.md) | **Jackett / 拉取稳定性保障**（配置、healthcheck、验收） |
 | [nyaa-proxy-asia.md](./nyaa-proxy-asia.md) | **日韩剧 Nyaa LA 直连 + SSH SOCKS 隧道回退** |
 | [09-Stremio插件价值分析.md](./09-Stremio插件价值分析.md) | **Stremio 平台用户规模、竞品缺口、插件差异化与执行路线** |

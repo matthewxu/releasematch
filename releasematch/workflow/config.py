@@ -106,6 +106,24 @@ D1_SEED_DEMO_FILE: Path = SCHEMA_DIR / "d1_seed_demo.sql"
 SITE_ORIGIN: str = os.getenv("RM_SITE_ORIGIN", "https://releasematch.io")
 
 
+def _env_bool(name: str, default: bool = False) -> bool:
+    """
+    解析布尔型环境变量。
+
+    @param name: 变量名
+    @param default: 未设置时的默认值
+    @returns: True 当值为 1/true/yes/on（不区分大小写）
+    """
+    raw = os.getenv(name, "").strip().lower()
+    if not raw:
+        return default
+    return raw in ("1", "true", "yes", "on")
+
+
+# 生成器 / dev server：页面底部展示 IG 分级 debug 面板（仅本地测试，生产应关闭）
+SHOW_IG_DEBUG: bool = _env_bool("RM_SHOW_IG_DEBUG", False)
+
+
 def release_mysql_configured() -> bool:
     """
     检查 Release MySQL 连接参数是否已配置。

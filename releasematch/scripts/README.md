@@ -43,3 +43,15 @@ FORCE_RECREATE=1 bash scripts/deploy_jackett_vps.sh
 Remote-only script (run on VPS as root): `scripts/remote/install_jackett_stack.sh`
 
 Local Nyaa fallback (SSH SOCKS, not on VPS): `scripts/start_ssh_socks_tunnel.sh`
+
+### Batch speedtest Worker (cron)
+
+```bash
+# 5 concurrent workers, strategy A2 (256KB), write MySQL
+python scripts/speedtest_batch_worker.py \
+  --slots-json worklogs/2026-06-30/benchmark-slots.json \
+  --write --workers 5 \
+  --report worklogs/2026-07-02/speedtest-batch-benchmark.json
+```
+
+See `docs/VPS迁移与部署.md` for crontab / systemd timer examples.

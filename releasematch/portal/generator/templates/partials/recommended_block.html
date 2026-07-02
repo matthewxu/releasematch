@@ -9,20 +9,46 @@
   </div>
 
   <article class="rm-release-card rm-release-card--recommended">
+    {% if recommended.grab_index %}
+    {% with grab=recommended.grab_index, variant='card' %}
+    {% include 'partials/grab_index_hero.html' %}
+    {% endwith %}
+    {% endif %}
+
     <div class="rm-release-card__header">
       <div class="rm-release-card__badges">
+        {% if recommended.grab_index and recommended.grab_index.grab_index_has_data %}
+        <span class="rm-badge rm-badge--grab" title="{{ recommended.grab_index.grab_index_tagline }}">
+          {{ recommended.grab_index.grab_index_name }} {{ recommended.grab_index.grab_index_score }} · {{ recommended.grab_index.grab_index_tier_label }}
+        </span>
+        {% endif %}
         <span class="rm-badge rm-badge--recommended">本站推荐</span>
         <span class="rm-badge rm-badge--tier-{{ recommended.group_tier | lower }}">Group {{ recommended.group_tier }}</span>
         <span class="rm-badge rm-badge--quality">{{ recommended.resolution }}</span>
-        {% if recommended.speed %}<span class="rm-badge rm-badge--speed">{{ recommended.speed }}</span>{% endif %}
+        {% if recommended.speed %}<span class="rm-badge rm-badge--speed" title="均速 / 峰值">{% if recommended.speed_max %}{{ recommended.speed }} / {{ recommended.speed_max }}{% else %}{{ recommended.speed }}{% endif %}</span>{% endif %}
       </div>
     </div>
 
     <h3 class="rm-release-card__title">{{ recommended.title_raw }}</h3>
 
+    {% if recommended.speed_test %}
+    <div class="rm-release-card__speed-facts-wrap">
+      <p class="rm-release-card__speed-facts-title">libtorrent 片段实测（S-06 / A-02 / A-03）</p>
+      {% with facts=recommended.speed_test, variant='card' %}
+      {% include 'partials/speed_test_facts.html' %}
+      {% endwith %}
+    </div>
+    {% endif %}
+
     <div class="rm-release-card__reason">
       <strong>推荐理由：</strong>{{ recommended.recommend_reason }}
     </div>
+
+    {% if recommended.speed_endorsement %}
+    <div class="rm-release-card__speed-endorsement">
+      <strong>实测背书（S-07）：</strong>{{ recommended.speed_endorsement }}
+    </div>
+    {% endif %}
 
     <div class="rm-release-card__grid">
       <dl>

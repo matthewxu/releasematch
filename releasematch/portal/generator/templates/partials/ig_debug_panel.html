@@ -1,0 +1,56 @@
+{# IG 分级 Debug 面板 — 仅 RM_SHOW_IG_DEBUG=1 或 --show-ig-debug 时渲染 #}
+{# @partial ig_debug_panel.html — 对照 IG信息登记册，测试字段落点与等级 #}
+{% if show_ig_debug and ig_debug %}
+<aside class="rm-ig-debug" aria-label="IG 分级 Debug 面板" data-rm-ig-debug>
+  <details class="rm-ig-debug__details" open>
+    <summary class="rm-ig-debug__summary">
+      <span class="rm-ig-debug__title">IG Debug</span>
+      <span class="rm-ig-debug__meta">{{ ig_debug.page_id }} · {{ ig_debug.page_type }} · 估分 {{ ig_debug.ig_estimate }}</span>
+      <span class="rm-ig-debug__counts">
+        S {{ ig_debug.tier_counts.S }} · A {{ ig_debug.tier_counts.A }} · B {{ ig_debug.tier_counts.B }}
+        {% if ig_debug.tier_counts.C %} · C {{ ig_debug.tier_counts.C }}{% endif %}
+      </span>
+    </summary>
+
+    <div class="rm-ig-debug__body">
+      <p class="rm-ig-debug__hint">
+        配置开关：<code>{{ ig_debug.config_env }}</code> ·
+        已呈现 {{ ig_debug.present_count }}/{{ ig_debug.entry_count }} 条 ·
+        生产环境请关闭（自动 <code>noindex</code>）
+      </p>
+
+      {% for block_name, block_rows in ig_debug.by_block.items() %}
+      <section class="rm-ig-debug__block">
+        <h3 class="rm-ig-debug__block-title">{{ block_name }}</h3>
+        <div class="rm-ig-debug__table-wrap">
+          <table class="rm-ig-debug__table">
+            <thead>
+              <tr>
+                <th scope="col">IG-ID</th>
+                <th scope="col">等级</th>
+                <th scope="col">信息名称</th>
+                <th scope="col">字段</th>
+                <th scope="col">页面取值</th>
+                <th scope="col">呈现</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in block_rows %}
+              <tr class="rm-ig-debug__row rm-ig-debug__row--tier-{{ row.tier | lower }}{% if not row.present %} rm-ig-debug__row--missing{% endif %}">
+                <td><code>{{ row.ig_id }}</code></td>
+                <td><span class="rm-ig-debug__tier rm-ig-debug__tier--{{ row.tier | lower }}">{{ row.tier }}</span></td>
+                <td>{{ row.name }}</td>
+                <td><code class="rm-ig-debug__field">{{ row.field }}</code></td>
+                <td class="rm-ig-debug__value">{{ row.value }}</td>
+                <td>{% if row.present %}✓{% else %}—{% endif %}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+      {% endfor %}
+    </div>
+  </details>
+</aside>
+{% endif %}
