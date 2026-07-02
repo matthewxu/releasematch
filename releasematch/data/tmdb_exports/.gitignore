@@ -1,0 +1,2 @@
+# TMDB Daily Export 体积大（~30MB），本地缓存不提交
+*.json.gz
