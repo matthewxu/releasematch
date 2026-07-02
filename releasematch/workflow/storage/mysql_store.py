@@ -424,23 +424,9 @@ class MySQLStore:
         recommended = next((s for s in sources if s.is_recommended), None)
         speed = SlotSpeedSummary.from_row(_normalize_row(speed_row)) if speed_row else None
 
-        speed_evidence: Optional[SpeedEvidenceContext] = None
-        if speed:
-            infohash = speed.recommended_infohash or (
-                recommended.infohash if recommended else ""
-            )
-            phase1 = self.get_latest_speedtest_result(
-                page_id, phase=1, infohash=infohash or None
-            )
-            phase2 = self.get_latest_speedtest_result(
-                page_id, phase=2, infohash=infohash or None
-            )
-            speed_evidence = SpeedEvidenceContext.from_parts(
-                speed,
-                phase1,
-                phase2,
-                indexed_seeders=recommended.seeders if recommended else 0,
-            )
+        speed_evidence = self._build_speed_evidence_context(
+            page_id, speed, recommended
+        )
 
         return EpisodePageContext(
             catalog=catalog,
@@ -496,6 +482,38 @@ class MySQLStore:
         speed = SlotSpeedSummary.from_row(_normalize_row(speed_row)) if speed_row else None
         return page, catalog, sources, speed
 
+    def _build_speed_evidence_context(
+        self,
+        page_id: str,
+        speed: Optional[SlotSpeedSummary],
+        recommended: Optional[DownloadResource],
+    ) -> Optional[SpeedEvidenceContext]:
+        """
+        由 slot_speed_summary + Phase1/2 明细组装测速 IG 证据上下文。
+
+        @param page_id: 页面主键
+        @param speed: 槽位测速摘要
+        @param recommended: Recommended release（取 infohash / seeders）
+        @returns: SpeedEvidenceContext 或 None
+        """
+        if not speed:
+            return None
+        infohash = speed.recommended_infohash or (
+            recommended.infohash if recommended else ""
+        )
+        phase1 = self.get_latest_speedtest_result(
+            page_id, phase=1, infohash=infohash or None
+        )
+        phase2 = self.get_latest_speedtest_result(
+            page_id, phase=2, infohash=infohash or None
+        )
+        return SpeedEvidenceContext.from_parts(
+            speed,
+            phase1,
+            phase2,
+            indexed_seeders=recommended.seeders if recommended else 0,
+        )
+
     def get_movie_page_context(self, page_id: str) -> Optional[MoviePageContext]:
         """
         加载电影页完整上下文。
@@ -506,15 +524,20 @@ class MySQLStore:
         bundle = self._load_page_bundle(page_id)
         if not bundle:
             return None
-        page, catalog, sources, _speed = bundle
+        page, catalog, sources, speed = bundle
         if page.page_type != "movie":
             return None
         recommended = next((s for s in sources if s.is_recommended), None)
+        speed_evidence = self._build_speed_evidence_context(
+            page_id, speed, recommended
+        )
         return MoviePageContext(
             catalog=catalog,
             page=page,
             sources=sources,
             recommended=recommended,
+            speed_summary=speed,
+            speed_evidence=speed_evidence,
             canonical_url=f"https://releasematch.io{page.canonical_path}",
         )
 

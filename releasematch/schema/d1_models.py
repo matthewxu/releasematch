@@ -916,6 +916,63 @@ class SpeedEvidenceContext:
         }
 
 
+def _enrich_recommended_with_speed(
+    rec_dict: Dict[str, Any],
+    speed_evidence: Optional[SpeedEvidenceContext],
+    speed_summary: Optional[SlotSpeedSummary],
+    release_title: str,
+) -> None:
+    """
+    就地写入 Recommended 模板的测速、Grab 指数与 S-07 背书字段。
+
+    @param rec_dict: recommended.to_template_dict() 结果（会被修改）
+    @param speed_evidence: 测速 IG 证据上下文
+    @param speed_summary: 测速摘要（无明细时的回退）
+    @param release_title: release 标题，用于背书句
+    """
+    if speed_evidence:
+        speed_ctx = speed_evidence.to_template_dict()
+        rec_dict["speed"] = speed_evidence.summary.recommended_speed or speed_ctx["avg_speed"]
+        rec_dict["speed_max"] = speed_ctx["max_speed"]
+        rec_dict["speed_test"] = {
+            "tested_at": speed_ctx["tested_at"],
+            "tested_at_iso": speed_ctx["tested_at_iso"],
+            "age_display": speed_ctx["age_display"],
+            "freshness_label": speed_ctx["freshness_label"],
+            "freshness_class": speed_ctx["freshness_class"],
+            "validity_level": speed_ctx["validity_level"],
+            "avg_speed": speed_ctx["avg_speed"],
+            "max_speed": speed_ctx["max_speed"],
+            "avg_kbps": speed_ctx["avg_kbps"],
+            "max_kbps": speed_ctx["max_kbps"],
+            "peers_total": speed_ctx["peers_total"],
+            "peers_reachable": speed_ctx["peers_reachable"],
+            "peers_total_display": speed_ctx["peers_total_display"],
+            "peers_reachable_display": speed_ctx["peers_reachable_display"],
+            "connect_rate_pct": speed_ctx["connect_rate_pct"],
+            "connect_rate_display": speed_ctx["connect_rate_display"],
+            "peers_pair_display": speed_ctx["peers_pair_display"],
+            "reachability": speed_ctx["reachability"],
+        }
+        rec_dict["grab_index"] = {
+            "grab_index_name": speed_ctx["grab_index_name"],
+            "grab_index_tagline": speed_ctx["grab_index_tagline"],
+            "grab_index_score": speed_ctx["grab_index_score"],
+            "grab_index_display": speed_ctx["grab_index_display"],
+            "grab_index_tier": speed_ctx["grab_index_tier"],
+            "grab_index_tier_label": speed_ctx["grab_index_tier_label"],
+            "grab_index_tier_class": speed_ctx["grab_index_tier_class"],
+            "grab_index_summary": speed_ctx["grab_index_summary"],
+            "grab_index_breakdown": speed_ctx["grab_index_breakdown"],
+            "grab_index_has_data": speed_ctx["grab_index_has_data"],
+        }
+        rec_dict["speed_endorsement"] = speed_evidence.build_endorsement_sentence(
+            release_title
+        )
+    elif speed_summary and speed_summary.recommended_speed:
+        rec_dict["speed"] = speed_summary.recommended_speed
+
+
 @dataclass
 class EpisodePageContext:
     """
@@ -950,47 +1007,12 @@ class EpisodePageContext:
         rec_dict = None
         if recommended:
             rec_dict = recommended.to_template_dict()
-            if self.speed_evidence:
-                speed_ctx = self.speed_evidence.to_template_dict()
-                rec_dict["speed"] = self.speed_evidence.summary.recommended_speed or speed_ctx["avg_speed"]
-                rec_dict["speed_max"] = speed_ctx["max_speed"]
-                rec_dict["speed_test"] = {
-                    "tested_at": speed_ctx["tested_at"],
-                    "tested_at_iso": speed_ctx["tested_at_iso"],
-                    "age_display": speed_ctx["age_display"],
-                    "freshness_label": speed_ctx["freshness_label"],
-                    "freshness_class": speed_ctx["freshness_class"],
-                    "validity_level": speed_ctx["validity_level"],
-                    "avg_speed": speed_ctx["avg_speed"],
-                    "max_speed": speed_ctx["max_speed"],
-                    "avg_kbps": speed_ctx["avg_kbps"],
-                    "max_kbps": speed_ctx["max_kbps"],
-                    "peers_total": speed_ctx["peers_total"],
-                    "peers_reachable": speed_ctx["peers_reachable"],
-                    "peers_total_display": speed_ctx["peers_total_display"],
-                    "peers_reachable_display": speed_ctx["peers_reachable_display"],
-                    "connect_rate_pct": speed_ctx["connect_rate_pct"],
-                    "connect_rate_display": speed_ctx["connect_rate_display"],
-                    "peers_pair_display": speed_ctx["peers_pair_display"],
-                    "reachability": speed_ctx["reachability"],
-                }
-                rec_dict["grab_index"] = {
-                    "grab_index_name": speed_ctx["grab_index_name"],
-                    "grab_index_tagline": speed_ctx["grab_index_tagline"],
-                    "grab_index_score": speed_ctx["grab_index_score"],
-                    "grab_index_display": speed_ctx["grab_index_display"],
-                    "grab_index_tier": speed_ctx["grab_index_tier"],
-                    "grab_index_tier_label": speed_ctx["grab_index_tier_label"],
-                    "grab_index_tier_class": speed_ctx["grab_index_tier_class"],
-                    "grab_index_summary": speed_ctx["grab_index_summary"],
-                    "grab_index_breakdown": speed_ctx["grab_index_breakdown"],
-                    "grab_index_has_data": speed_ctx["grab_index_has_data"],
-                }
-                rec_dict["speed_endorsement"] = self.speed_evidence.build_endorsement_sentence(
-                    recommended.title_raw
-                )
-            elif self.speed_summary and self.speed_summary.recommended_speed:
-                rec_dict["speed"] = self.speed_summary.recommended_speed
+            _enrich_recommended_with_speed(
+                rec_dict,
+                self.speed_evidence,
+                self.speed_summary,
+                recommended.title_raw,
+            )
 
         prev_path = self.page.prev_episode_path(slug)
         next_path = self.page.next_episode_path(slug)
@@ -1058,6 +1080,8 @@ class MoviePageContext:
     @var page: 页面槽位
     @var sources: All Versions 列表
     @var recommended: Recommended release
+    @var speed_summary: 测速摘要条（可选）
+    @var speed_evidence: 测速 IG 证据面板（S-06 / S-07 / A 级字段）
     @var canonical_url: canonical URL
     """
 
@@ -1065,6 +1089,8 @@ class MoviePageContext:
     page: MediaPage
     sources: List[DownloadResource]
     recommended: Optional[DownloadResource] = None
+    speed_summary: Optional[SlotSpeedSummary] = None
+    speed_evidence: Optional[SpeedEvidenceContext] = None
     canonical_url: str = ""
 
     def to_template_context(self, site_origin: str = "https://releasematch.io") -> Dict[str, Any]:
@@ -1075,7 +1101,15 @@ class MoviePageContext:
         @returns: Jinja2 参数字典
         """
         recommended = self.recommended
-        rec_dict = recommended.to_template_dict() if recommended else None
+        rec_dict = None
+        if recommended:
+            rec_dict = recommended.to_template_dict()
+            _enrich_recommended_with_speed(
+                rec_dict,
+                self.speed_evidence,
+                self.speed_summary,
+                recommended.title_raw,
+            )
         runtime = (
             f"{self.catalog.runtime_minutes} min"
             if self.catalog.runtime_minutes
@@ -1092,6 +1126,8 @@ class MoviePageContext:
             "movie_overview": self.page.overview or self.catalog.overview,
             "cross_source_count": self.page.cross_source_count,
             "cross_source_total": self.page.cross_source_total,
+            "speed_summary": self.speed_summary.to_template_dict() if self.speed_summary else None,
+            "speed_evidence": self.speed_evidence.to_template_dict() if self.speed_evidence else None,
             "recommended": rec_dict,
             "recommended_quality": recommended.resolution if recommended else "",
             "sources": [s.to_template_dict() for s in self.sources],

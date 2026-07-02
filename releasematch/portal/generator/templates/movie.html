@@ -6,6 +6,14 @@
 
 {% block meta_description %}{{ movie_title }} ({{ year }}) Release 导航：Recommended Release 与 {{ source_count }} 条多版本对比。{% endblock %}
 
+{% block meta_robots %}
+  {% if robots_noindex %}
+  <meta name="robots" content="noindex,follow">
+  {% else %}
+  <meta name="robots" content="index,follow">
+  {% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="rm-container">
   <nav class="rm-breadcrumb" aria-label="面包屑">
@@ -26,6 +34,9 @@
 
   <div class="rm-main-grid rm-main-grid--with-sidebar">
     <div class="rm-main-grid__primary">
+      {# 测速 IG 证据面板（与 episode 页共用） #}
+      {% include 'partials/speed_evidence_panel.html' %}
+
       {% include 'partials/recommended_block.html' %}
 
       <section class="rm-section all-sources" aria-labelledby="sources-heading">

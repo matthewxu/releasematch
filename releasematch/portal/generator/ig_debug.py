@@ -402,6 +402,8 @@ def build_ig_debug_panel(
             entries.extend(
                 _entries_for_resource(ctx.recommended, block="Recommended Release", is_hero=True)
             )
+        speed_evidence = template_vars.get("speed_evidence")
+        entries.extend(_entries_for_speed_evidence(speed_evidence or {}))
         entries.append(
             _ig_entry(
                 ig_id="B-06",
