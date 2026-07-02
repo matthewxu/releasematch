@@ -692,6 +692,11 @@ dd:last-child {
   font-weight: 600;
 }
 
+.rm-table .rm-badge {
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
 /* 移动端：表格行转为卡片（由 JS 添加 data-label 或纯 CSS 可选） */
 @media (max-width: 640px) {
   .rm-table--responsive thead {
@@ -1518,6 +1523,15 @@ dd:last-child {
   aspect-ratio: 2 / 3;
   object-fit: cover;
   background: var(--rm-bg-elevated);
+}
+
+.rm-show-card__img--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: var(--rm-text-muted);
 }
 
 .rm-show-card__body {

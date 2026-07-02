@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional
 from workflow.config import PROJECT_ROOT, SHOW_IG_DEBUG, SITE_ORIGIN
 from workflow.storage.mysql_store import MySQLStore
 
-from portal.generator.render import render_by_page_id
+from portal.generator.render import render_by_page_id, render_home_page
 
 # 默认输出根目录
 DEFAULT_OUT_ROOT = PROJECT_ROOT / "portal" / "dist"
@@ -67,7 +67,7 @@ def write_all_published(
     show_ig_debug: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """
-    批量生成所有 published 且 magnet≥2 的页面。
+    批量生成所有 published 且 magnet≥2 的页面，并写入 DB 驱动的首页目录 index.html。
 
     @param out_root: 输出根目录
     @param site_origin: canonical origin
@@ -97,6 +97,34 @@ def write_all_published(
         "out_root": str(out_root),
         "pages": results,
         "errors": errors,
+        "home": write_home_page(out_root=out_root, site_origin=site_origin, show_ig_debug=show_ig_debug),
+    }
+
+
+def write_home_page(
+    out_root: Path = DEFAULT_OUT_ROOT,
+    site_origin: str = SITE_ORIGIN,
+    *,
+    show_ig_debug: Optional[bool] = None,
+) -> Dict[str, Any]:
+    """
+    生成首页 index.html（DB 驱动的全部作品目录）。
+
+    @param out_root: 输出根目录
+    @param site_origin: canonical origin
+    @param show_ig_debug: 覆盖 RM_SHOW_IG_DEBUG
+    @returns: 生成摘要
+    """
+    store = MySQLStore()
+    html = render_home_page(store, site_origin=site_origin, show_ig_debug=show_ig_debug)
+    out_file = out_root / "index.html"
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    out_file.write_text(html, encoding="utf-8")
+    entries = store.list_home_catalog_entries()
+    return {
+        "ok": True,
+        "output_file": str(out_file),
+        "catalog_count": len(entries),
     }
 
 

@@ -1,0 +1,11 @@
+[
+  {"label": "Inception", "page_id": "movie:27205", "canonical_path": "/inception-2010/"},
+  {"label": "BB S04E01", "page_id": "tv:1396:s04e01", "canonical_path": "/breaking-bad/s4e1/"},
+  {"label": "BB S04E02", "page_id": "tv:1396:s04e02", "canonical_path": "/breaking-bad/s4e2/"},
+  {"label": "BB S04E03", "page_id": "tv:1396:s04e03", "canonical_path": "/breaking-bad/s4e3/"},
+  {"label": "BB S04E04", "page_id": "tv:1396:s04e04", "canonical_path": "/breaking-bad/s4e4/"},
+  {"label": "BB S04E05", "page_id": "tv:1396:s04e05", "canonical_path": "/breaking-bad/s4e5/"},
+  {"label": "BB S04E06", "page_id": "tv:1396:s04e06", "canonical_path": "/breaking-bad/s4e6/"},
+  {"label": "BB S04E07", "page_id": "tv:1396:s04e07", "canonical_path": "/breaking-bad/s4e7/"},
+  {"label": "BB S04E08", "page_id": "tv:1396:s04e08", "canonical_path": "/breaking-bad/s4e8/"}
+]

@@ -15,7 +15,9 @@ ReleaseMatch 槽位处理流水线。
 
 from __future__ import annotations
 
+import json
 import uuid
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from workflow.config import STORAGE_BACKEND, SITE_ORIGIN
@@ -117,6 +119,7 @@ def run_slot_pipeline(
     episode: Optional[int] = None,
     mode: str = "demo",
     fetch: bool = False,
+    title: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     执行单槽位 pipeline：评分 → 写入存储 → 返回摘要。
@@ -127,6 +130,7 @@ def run_slot_pipeline(
     @param episode: 集号（剧集必填）
     @param mode: demo | live（live 需 --fetch）
     @param fetch: 是否调用 torrent_sources 拉取（R1）
+    @param title: 可选 slot 标题（扩槽时来自 TMDB 导出）
     @returns: pipeline 结果 JSON
     """
     if STORAGE_BACKEND != "mysql":
@@ -142,6 +146,9 @@ def run_slot_pipeline(
 
     media_type = "tv_episode" if media_kind == "tv" else "movie"
     page_id = store.resolve_page_id(tmdb_id, media_kind, season, episode)
+    ensure_result = store.ensure_slot_page(
+        tmdb_id, media_kind, season, episode, title=title
+    )
 
     items: List[Dict[str, Any]] = []
     fetch_note = ""
@@ -149,11 +156,11 @@ def run_slot_pipeline(
     cross_source_page_total: Optional[int] = None
 
     if fetch:
-        from workflow.metadata.external_ids import resolve_external_ids
+        from workflow.metadata.tmdb_api import enrich_external_ids
         from workflow.torrent_sources.fetch_service import FetchService
         from workflow.torrent_sources.models import FetchMode, FetchRequest, MediaType
 
-        ext = resolve_external_ids(tmdb_id=tmdb_id, media_type=media_kind)
+        ext = enrich_external_ids(tmdb_id, media_kind, title=title)
         mt = MediaType.MOVIE if media_kind == "movie" else MediaType.TV
         request = FetchRequest(
             tmdb_id=tmdb_id,
@@ -162,6 +169,7 @@ def run_slot_pipeline(
             episode=episode,
             imdb_id=ext.get("imdb_id"),
             tvdb_id=ext.get("tvdb_id"),
+            title=title or ext.get("title"),
             mode=FetchMode.ON_DEMAND,
             force=False,
         )
@@ -236,6 +244,7 @@ def run_slot_pipeline(
         "ok": True,
         "backend": STORAGE_BACKEND,
         "page_id": page_id,
+        "ensure": ensure_result,
         "mode": mode,
         "fetch_note": fetch_note or None,
         "ranked_top": {
@@ -247,6 +256,126 @@ def run_slot_pipeline(
         "sync_run_id": run_id,
         "template_preview": template_preview,
     }
+
+
+def run_batch_slot_pipeline(
+    slots: List[Dict[str, Any]],
+    *,
+    mode: str = "live",
+    fetch: bool = True,
+    skip_existing: bool = True,
+    warm_tmdb: bool = True,
+) -> Dict[str, Any]:
+    """
+    批量执行 slot pipeline（扩槽 benchmark 清单）。
+
+    @param slots: 每项含 tmdb_id、media_type、可选 season/episode、label
+    @param mode: demo | live
+    @param fetch: 是否拉取 torrent
+    @param skip_existing: 跳过已有 >=2 magnet 的页面
+    @param warm_tmdb: 批量前预热 TMDB external_ids 缓存
+    @returns: 批次摘要 JSON
+    """
+    if STORAGE_BACKEND != "mysql":
+        return {
+            "ok": False,
+            "error": f"当前 STORAGE_BACKEND={STORAGE_BACKEND}；请设 RM_STORAGE_BACKEND=mysql",
+        }
+
+    store = MySQLStore()
+    ping = store.ping()
+    if not ping.get("ok"):
+        return {"ok": False, "step": "db_ping", "detail": ping}
+
+    tmdb_warm: Optional[Dict[str, Any]] = None
+    if warm_tmdb and fetch:
+        from workflow.metadata.tmdb_api import warm_external_ids_cache
+
+        tmdb_warm = warm_external_ids_cache(slots)
+
+    results: List[Dict[str, Any]] = []
+    ok_count = 0
+    skip_count = 0
+    fail_count = 0
+
+    for slot in slots:
+        label = str(slot.get("label") or "")
+        tmdb_id = int(slot["tmdb_id"])
+        media_kind = str(slot.get("media_type") or slot.get("media_kind") or "tv")
+        season = slot.get("season")
+        episode = slot.get("episode")
+        page_id = store.resolve_page_id(
+            tmdb_id,
+            media_kind,
+            int(season) if season is not None else None,
+            int(episode) if episode is not None else None,
+        )
+
+        if skip_existing and store.page_has_resources(page_id):
+            skip_count += 1
+            results.append({"label": label, "page_id": page_id, "status": "skipped_existing"})
+            continue
+
+        one = run_slot_pipeline(
+            tmdb_id=tmdb_id,
+            media_kind=media_kind,
+            season=int(season) if season is not None else None,
+            episode=int(episode) if episode is not None else None,
+            mode=mode,
+            fetch=fetch,
+            title=slot.get("title") or slot.get("label"),
+        )
+        entry = {
+            "label": label,
+            "page_id": page_id,
+            "status": "ok" if one.get("ok") else "failed",
+            "result": one,
+        }
+        results.append(entry)
+        if one.get("ok"):
+            ok_count += 1
+        else:
+            fail_count += 1
+
+    run_id = str(uuid.uuid4())
+    store.record_sync_run(
+        run_id=run_id,
+        source="pipeline_batch",
+        slots_processed=len(slots),
+        resources_upserted=sum(
+            int(r.get("result", {}).get("write", {}).get("resources_upserted") or 0)
+            for r in results
+            if r.get("status") == "ok"
+        ),
+        pages_published=ok_count,
+    )
+
+    report = {
+        "ok": fail_count == 0,
+        "total": len(slots),
+        "ok_count": ok_count,
+        "skip_count": skip_count,
+        "fail_count": fail_count,
+        "sync_run_id": run_id,
+        "tmdb_warm": tmdb_warm,
+        "results": results,
+    }
+    return report
+
+
+def load_slots_json(path: Path) -> List[Dict[str, Any]]:
+    """
+    从 benchmark slot JSON 加载槽位列表。
+
+    @param path: tmdb-benchmark-slots.json 路径
+    @returns: slot 字典列表
+    """
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(data, dict) and "slots" in data:
+        return list(data["slots"])
+    if isinstance(data, list):
+        return data
+    raise ValueError(f"无法解析 slot JSON: {path}")
 
 
 def query_page_context(page_id: str) -> Dict[str, Any]:

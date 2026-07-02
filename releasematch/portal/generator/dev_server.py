@@ -22,7 +22,7 @@ from urllib.parse import unquote
 from workflow.config import PROJECT_ROOT, SHOW_IG_DEBUG
 from workflow.storage.mysql_store import MySQLStore
 
-from portal.generator.render import render_page_context
+from portal.generator.render import render_home_page, render_page_context
 
 # portal 根目录（静态资源）
 PORTAL_ROOT = PROJECT_ROOT / "portal"
@@ -73,7 +73,7 @@ class PortalDevHandler(BaseHTTPRequestHandler):
 
         normalized = path.rstrip("/")
         if normalized in ("", "/index.html"):
-            return False
+            return self._try_render_home()
 
         if normalized.endswith(".html"):
             return False
@@ -96,6 +96,24 @@ class PortalDevHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.send_header("X-RM-Source", "mysql")
         self.send_header("X-RM-Page-Id", bundle.get("page_id", ""))
+        self.end_headers()
+        self.wfile.write(body)
+        return True
+
+    def _try_render_home(self) -> bool:
+        """
+        渲染 DB 驱动的首页目录。
+
+        @returns: 是否已响应
+        """
+        store = self.store or MySQLStore()
+        origin = f"http://{self.headers.get('Host', '127.0.0.1:8080')}"
+        html = render_home_page(store, site_origin=origin, show_ig_debug=SHOW_IG_DEBUG)
+        body = html.encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("X-RM-Source", "mysql-home")
         self.end_headers()
         self.wfile.write(body)
         return True

@@ -36,6 +36,90 @@ _STANDALONE_MAP: Dict[int, Dict[str, Any]] = {
         "imdb_id": "tt0133093",
         "tvdb_id": None,
     },
+    155: {
+        "tmdb_id": 155,
+        "media_type": "movie",
+        "title": "The Dark Knight",
+        "imdb_id": "tt0468569",
+        "tvdb_id": None,
+    },
+    157336: {
+        "tmdb_id": 157336,
+        "media_type": "movie",
+        "title": "Interstellar",
+        "imdb_id": "tt0816692",
+        "tvdb_id": None,
+    },
+    550: {
+        "tmdb_id": 550,
+        "media_type": "movie",
+        "title": "Fight Club",
+        "imdb_id": "tt0137523",
+        "tvdb_id": None,
+    },
+    680: {
+        "tmdb_id": 680,
+        "media_type": "movie",
+        "title": "Pulp Fiction",
+        "imdb_id": "tt0110912",
+        "tvdb_id": None,
+    },
+    122: {
+        "tmdb_id": 122,
+        "media_type": "movie",
+        "title": "The Lord of the Rings: The Return of the King",
+        "imdb_id": "tt0167260",
+        "tvdb_id": None,
+    },
+    120: {
+        "tmdb_id": 120,
+        "media_type": "movie",
+        "title": "The Lord of the Rings: The Fellowship of the Ring",
+        "imdb_id": "tt0120737",
+        "tvdb_id": None,
+    },
+    1399: {
+        "tmdb_id": 1399,
+        "media_type": "tv",
+        "title": "Game of Thrones",
+        "imdb_id": "tt0944947",
+        "tvdb_id": 121361,
+    },
+    66732: {
+        "tmdb_id": 66732,
+        "media_type": "tv",
+        "title": "Stranger Things",
+        "imdb_id": "tt4574334",
+        "tvdb_id": 305288,
+    },
+    82856: {
+        "tmdb_id": 82856,
+        "media_type": "tv",
+        "title": "The Mandalorian",
+        "imdb_id": "tt8111088",
+        "tvdb_id": 361753,
+    },
+    94997: {
+        "tmdb_id": 94997,
+        "media_type": "tv",
+        "title": "House of the Dragon",
+        "imdb_id": "tt11198330",
+        "tvdb_id": 371572,
+    },
+    4604: {
+        "tmdb_id": 4604,
+        "media_type": "tv",
+        "title": "Smallville",
+        "imdb_id": "tt0279600",
+        "tvdb_id": 72248,
+    },
+    1408: {
+        "tmdb_id": 1408,
+        "media_type": "tv",
+        "title": "House",
+        "imdb_id": "tt0412142",
+        "tvdb_id": 73255,
+    },
     27205: {
         "tmdb_id": 27205,
         "media_type": "movie",
@@ -78,6 +162,7 @@ def resolve_external_ids(
     tmdb_id: int,
     media_type: str = "tv",
     imdb_id: Optional[str] = None,
+    title: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     解析作品的 IMDb / TVDB 外部 ID。
@@ -85,23 +170,34 @@ def resolve_external_ids(
     @param tmdb_id: TMDB 作品 ID
     @param media_type: movie 或 tv
     @param imdb_id: 可选，调用方已知的 IMDb ID（优先使用）
+    @param title: 可选，slot 导出标题（standalone 缺失时供搜索）
     @returns: 含 tmdb_id、imdb_id、tvdb_id、source 的字典
     """
     if imdb_id:
-        return {
+        row = {
             "tmdb_id": tmdb_id,
             "media_type": media_type,
             "imdb_id": imdb_id,
             "tvdb_id": _lookup_tvdb_standalone(tmdb_id),
             "source": "caller",
         }
+        if title:
+            row["title"] = title
+        return row
 
     if TMDB_DATA_MODE == "mysql" and MYSQL_USER:
         row = _fetch_from_mysql(tmdb_id, media_type)
         if row:
+            if title and not row.get("title"):
+                row["title"] = title
             return row
 
-    return _fetch_standalone(tmdb_id, media_type)
+    row = _fetch_standalone(tmdb_id, media_type)
+    if title and not row.get("title"):
+        row["title"] = title
+        if row.get("source") == "standalone_missing":
+            row["source"] = "slot_title"
+    return row
 
 
 def _lookup_tvdb_standalone(tmdb_id: int) -> Optional[int]:

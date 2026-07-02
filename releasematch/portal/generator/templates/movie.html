@@ -50,6 +50,7 @@
               <tr>
                 <th>Release</th>
                 <th>Quality</th>
+                <th>Group</th>
                 <th>Size</th>
                 <th>Seed</th>
                 <th>操作</th>
@@ -58,11 +59,18 @@
             <tbody>
               {% for item in sources %}
               <tr{% if item.is_recommended %} class="is-recommended"{% endif %}>
-                <td class="rm-table__release">{{ item.title_raw }}</td>
-                <td>{{ item.resolution }}</td>
-                <td>{{ item.size_human }}</td>
-                <td>{{ item.seeders }}</td>
-                <td><a class="rm-table__magnet" href="{{ item.magnet_uri }}" rel="nofollow">Magnet</a></td>
+                <td class="rm-table__release" data-label="Release">{{ item.title_raw }}</td>
+                <td data-label="Quality">{{ item.resolution }}</td>
+                <td data-label="Group">
+                  {% if item.release_group %}
+                  <span class="rm-badge rm-badge--tier-{{ item.group_tier | lower }}" title="Release Group 信誉 {{ item.group_tier }}">{{ item.release_group }} · {{ item.group_tier }}</span>
+                  {% else %}
+                  <span class="rm-text-muted">—</span>
+                  {% endif %}
+                </td>
+                <td data-label="Size">{{ item.size_human }}</td>
+                <td data-label="Seed">{{ item.seeders }}</td>
+                <td data-label="操作"><a class="rm-table__magnet" href="{{ item.magnet_uri }}" rel="nofollow">Magnet</a></td>
               </tr>
               {% endfor %}
             </tbody>

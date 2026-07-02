@@ -11,6 +11,8 @@ workflow/torrent_sources/servers.local.json
 workflow/torrent_sources/data/
 workflow/**/data/*.sqlite3
 workflow/**/data/*.jsonl
+data/tmdb_exports/*.json.gz
+data/tmdb_exports/external_ids_cache.json
 
 # 环境变量文件
 .env

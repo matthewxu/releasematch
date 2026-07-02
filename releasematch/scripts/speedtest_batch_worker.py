@@ -61,6 +61,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="benchmark 槽位 JSON",
     )
     parser.add_argument(
+        "--all-published",
+        action="store_true",
+        help="测速 MySQL 全部 published 页",
+    )
+    parser.add_argument(
         "--report",
         default=None,
         help="报告 JSON 路径",
@@ -105,7 +110,11 @@ def main(argv: list[str] | None = None) -> int:
         page_ids = [p.strip() for p in args.page_ids.split(",") if p.strip()]
 
     try:
-        targets = load_batch_targets(page_ids=page_ids, slots_json=args.slots_json)
+        targets = load_batch_targets(
+            page_ids=page_ids,
+            slots_json=args.slots_json,
+            all_published=args.all_published,
+        )
     except ValueError as exc:
         print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False))
         return 1

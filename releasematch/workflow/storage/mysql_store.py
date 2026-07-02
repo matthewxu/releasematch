@@ -38,6 +38,7 @@ from schema.d1_models import (
     SlotSpeedSummary,
     SpeedEvidenceContext,
     SpeedTestResult,
+    build_catalog_id,
     build_page_id,
 )
 
@@ -638,6 +639,97 @@ class MySQLStore:
         conn.close()
         return [str(r["page_id"]) for r in rows]
 
+    def list_home_catalog_entries(self) -> List[Dict[str, Any]]:
+        """
+        聚合 published 页面为首页目录卡片（按作品 catalog 分组）。
+
+        @returns: 含 title、href、meta、poster_url、media_kind 的列表
+        """
+        from schema.d1_models import poster_url_from_path
+
+        conn = self._connect()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT p.page_id, p.page_type, p.canonical_path, p.season, p.episode,
+                       c.catalog_id, c.slug, c.title, c.media_kind, c.year, c.poster_path
+                FROM media_pages p
+                JOIN media_catalog c ON p.catalog_id = c.catalog_id
+                WHERE p.page_status = 'published' AND p.magnet_count >= 2
+                  AND p.page_type IN ('episode', 'movie')
+                ORDER BY c.title, p.season, p.episode
+                """
+            )
+            rows = cur.fetchall()
+            cur.execute(
+                """
+                SELECT catalog_id, canonical_path FROM media_pages
+                WHERE page_type = 'show_hub'
+                """
+            )
+            hub_rows = cur.fetchall()
+        conn.close()
+
+        hub_by_catalog = {str(r["catalog_id"]): str(r["canonical_path"]) for r in hub_rows}
+        grouped: Dict[str, Dict[str, Any]] = {}
+
+        for row in rows:
+            catalog_id = str(row["catalog_id"])
+            media_kind = str(row["media_kind"])
+            if catalog_id not in grouped:
+                grouped[catalog_id] = {
+                    "catalog_id": catalog_id,
+                    "title": str(row["title"] or ""),
+                    "slug": str(row["slug"] or ""),
+                    "media_kind": media_kind,
+                    "year": row.get("year"),
+                    "poster_url": poster_url_from_path(str(row.get("poster_path") or "")),
+                    "pages": [],
+                }
+            grouped[catalog_id]["pages"].append(
+                {
+                    "page_id": str(row["page_id"]),
+                    "canonical_path": str(row["canonical_path"]),
+                    "season": row.get("season"),
+                    "episode": row.get("episode"),
+                }
+            )
+
+        entries: List[Dict[str, Any]] = []
+        for item in sorted(grouped.values(), key=lambda x: x["title"].lower()):
+            pages = item["pages"]
+            media_kind = item["media_kind"]
+            hub_path = hub_by_catalog.get(item["catalog_id"])
+
+            if media_kind == "movie":
+                href = pages[0]["canonical_path"]
+                year = item.get("year")
+                meta = f"电影 · {year}" if year else "电影"
+            elif hub_path and len(pages) > 1:
+                href = hub_path
+                meta = f"剧集 · {len(pages)} 集"
+            elif len(pages) == 1:
+                pg = pages[0]
+                href = pg["canonical_path"]
+                season = int(pg["season"] or 1)
+                episode = int(pg["episode"] or 1)
+                meta = f"剧集 · S{season:02d}E{episode:02d}"
+            else:
+                href = pages[0]["canonical_path"]
+                meta = f"剧集 · {len(pages)} 集"
+
+            entries.append(
+                {
+                    "title": item["title"],
+                    "href": href,
+                    "meta": meta,
+                    "poster_url": item["poster_url"],
+                    "media_kind": media_kind,
+                    "page_count": len(pages),
+                }
+            )
+        return entries
+
     def resolve_url_path(self, url_path: str) -> Optional[Dict[str, Any]]:
         """
         将 URL 路径解析为页面类型与 page_id。
@@ -1164,3 +1256,132 @@ class MySQLStore:
         if media_kind == "movie":
             return build_page_id(tmdb_id, "movie", page_type="movie")
         return build_page_id(tmdb_id, "tv", season=season, episode=episode)
+
+    def ensure_slot_page(
+        self,
+        tmdb_id: int,
+        media_kind: str,
+        season: Optional[int] = None,
+        episode: Optional[int] = None,
+        title: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        确保 media_catalog / media_pages 占位行存在（扩槽 pipeline 前置）。
+
+        @param tmdb_id: TMDB 作品 ID
+        @param media_kind: tv | movie
+        @param season: 季号（剧集）
+        @param episode: 集号（剧集）
+        @param title: 可选 slot 标题（无 catalog 元数据时生成 slug）
+        @returns: catalog_id、page_id 及是否新建
+        """
+        from workflow.metadata.external_ids import resolve_external_ids
+        from workflow.metadata.slot_catalog import (
+            canonical_path_for_slot,
+            get_slot_catalog_meta,
+            slugify_title,
+        )
+
+        catalog_id = build_catalog_id(tmdb_id, media_kind)
+        page_id = self.resolve_page_id(tmdb_id, media_kind, season, episode)
+        slot_meta = get_slot_catalog_meta(tmdb_id) or {}
+        ext = resolve_external_ids(tmdb_id, media_kind, title=title)
+        resolved_title = slot_meta.get("title") or ext.get("title") or title or f"TMDB {tmdb_id}"
+        slug = slot_meta.get("slug") or slugify_title(
+            str(resolved_title), year=slot_meta.get("year")
+        )
+        year = slot_meta.get("year")
+        tmdb_path = "movie" if media_kind == "movie" else "tv"
+        tmdb_url = f"https://www.themoviedb.org/{tmdb_path}/{tmdb_id}"
+        path_meta = {"slug": slug, "media_kind": media_kind}
+        if media_kind == "movie":
+            canonical = canonical_path_for_slot(path_meta)
+            page_type = "movie"
+        else:
+            canonical = canonical_path_for_slot(path_meta, season=season, episode=episode)
+            page_type = "episode"
+
+        now = _utc_now_str()
+        conn = self._connect()
+        created_catalog = False
+        created_page = False
+        year = slot_meta.get("year")
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT catalog_id FROM media_catalog WHERE catalog_id = %s LIMIT 1",
+                (catalog_id,),
+            )
+            if not cur.fetchone():
+                cur.execute(
+                    """
+                    INSERT INTO media_catalog (
+                        catalog_id, tmdb_id, media_kind, slug, title, overview, year,
+                        runtime_minutes, poster_path, tmdb_url, streaming_providers,
+                        subtitle_url_pattern, updated_at
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s,
+                        NULL, '', %s, '[]', '', %s
+                    )
+                    """,
+                    (
+                        catalog_id,
+                        tmdb_id,
+                        media_kind,
+                        slug,
+                        resolved_title,
+                        "",
+                        year,
+                        tmdb_url,
+                        now,
+                    ),
+                )
+                created_catalog = True
+
+            cur.execute(
+                "SELECT page_id FROM media_pages WHERE page_id = %s LIMIT 1",
+                (page_id,),
+            )
+            if not cur.fetchone():
+                cur.execute(
+                    """
+                    INSERT INTO media_pages (
+                        page_id, catalog_id, page_type, season, episode, episode_title,
+                        air_date, overview, cross_source_count, cross_source_total,
+                        prev_season, prev_episode, next_season, next_episode,
+                        magnet_count, page_status, robots_noindex, canonical_path,
+                        subtitle_url, generated_at, updated_at
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, '', NULL, '', 0, 3,
+                        NULL, NULL, NULL, NULL, 0, 'draft', 1, %s, '', NULL, %s
+                    )
+                    """,
+                    (page_id, catalog_id, page_type, season, episode, canonical, now),
+                )
+                created_page = True
+        conn.close()
+        return {
+            "catalog_id": catalog_id,
+            "page_id": page_id,
+            "created_catalog": created_catalog,
+            "created_page": created_page,
+        }
+
+    def page_has_resources(self, page_id: str, min_magnets: int = 2) -> bool:
+        """
+        判断页面是否已有足够 magnet（可跳过重复拉取）。
+
+        @param page_id: 页面 ID
+        @param min_magnets: 最少 magnet 数
+        @returns: True 表示可跳过
+        """
+        conn = self._connect()
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT magnet_count, page_status FROM media_pages WHERE page_id = %s LIMIT 1",
+                (page_id,),
+            )
+            row = cur.fetchone()
+        conn.close()
+        if not row:
+            return False
+        return int(row.get("magnet_count") or 0) >= min_magnets

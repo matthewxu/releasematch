@@ -60,20 +60,38 @@ def resolve_page_id_from_slot(slot: Dict[str, Any]) -> str:
     return build_page_id(tmdb_id, "tv", season=season, episode=episode)
 
 
+def load_published_page_targets() -> List[Dict[str, Any]]:
+    """
+    从 MySQL 加载所有可发布页（published 且 magnet≥2）作为 batch 目标。
+
+    @returns: 含 label、page_id 的字典列表
+    """
+    from workflow.storage.mysql_store import MySQLStore
+
+    store = MySQLStore()
+    page_ids = store.list_published_page_ids()
+    return [{"label": pid, "page_id": pid} for pid in page_ids]
+
+
 def load_batch_targets(
     *,
     page_ids: Optional[List[str]] = None,
     slots_json: Optional[str] = None,
+    all_published: bool = False,
 ) -> List[Dict[str, Any]]:
     """
     加载批量测速目标列表。
 
     @param page_ids: 直接指定的 page_id 列表
     @param slots_json: benchmark 槽位 JSON 文件路径
+    @param all_published: True 时从 MySQL 拉取全部 published 页
     @returns: 含 label、page_id 的字典列表
-    @raises ValueError: 输入无效或两者皆空
+    @raises ValueError: 输入无效或三者皆空
     """
     targets: List[Dict[str, Any]] = []
+
+    if all_published:
+        targets.extend(load_published_page_targets())
 
     if page_ids:
         for pid in page_ids:
@@ -100,7 +118,7 @@ def load_batch_targets(
             )
 
     if not targets:
-        raise ValueError("请指定 --page-ids 或 --slots-json")
+        raise ValueError("请指定 --page-ids、--slots-json 或 --all-published")
 
     # 去重，保留首次出现顺序
     seen: set[str] = set()

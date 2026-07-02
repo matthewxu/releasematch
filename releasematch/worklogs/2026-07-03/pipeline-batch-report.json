@@ -1,0 +1,516 @@
+{
+  "ok": true,
+  "total": 20,
+  "ok_count": 13,
+  "skip_count": 7,
+  "fail_count": 0,
+  "sync_run_id": "2b95924f-e1c3-4cb1-897b-0dc27136fb23",
+  "results": [
+    {
+      "label": "BB S04E01",
+      "page_id": "tv:1396:s04e01",
+      "status": "skipped_existing"
+    },
+    {
+      "label": "BB S04E02",
+      "page_id": "tv:1396:s04e02",
+      "status": "skipped_existing"
+    },
+    {
+      "label": "BB S04E04",
+      "page_id": "tv:1396:s04e04",
+      "status": "skipped_existing"
+    },
+    {
+      "label": "BB S04E06",
+      "page_id": "tv:1396:s04e06",
+      "status": "skipped_existing"
+    },
+    {
+      "label": "BB S04E07",
+      "page_id": "tv:1396:s04e07",
+      "status": "skipped_existing"
+    },
+    {
+      "label": "BB S04E08",
+      "page_id": "tv:1396:s04e08",
+      "status": "skipped_existing"
+    },
+    {
+      "label": "Inception",
+      "page_id": "movie:27205",
+      "status": "skipped_existing"
+    },
+    {
+      "label": "The Matrix",
+      "page_id": "movie:603",
+      "status": "ok",
+      "result": {
+        "ok": true,
+        "backend": "mysql",
+        "page_id": "movie:603",
+        "ensure": {
+          "catalog_id": "movie:603",
+          "page_id": "movie:603",
+          "created_catalog": true,
+          "created_page": true
+        },
+        "mode": "live",
+        "fetch_note": "torrent 拉取 3 条（cached=True，跨源 1/2）",
+        "ranked_top": {
+          "title_raw": "The Matrix.2160p.bluray-YTS",
+          "score": 51.67,
+          "group_tier": "L3"
+        },
+        "write": {
+          "page_id": "movie:603",
+          "resources_upserted": 3,
+          "magnet_count": 3,
+          "page_status": "published",
+          "cross_source_count": 1,
+          "cross_source_total": 2
+        },
+        "sync_run_id": "4a7c0d90-60d5-458d-a1f4-cdba80199b83",
+        "template_preview": null
+      }
+    },
+    {
+      "label": "The Dark Knight",
+      "page_id": "movie:155",
+      "status": "ok",
+      "result": {
+        "ok": true,
+        "backend": "mysql",
+        "page_id": "movie:155",
+        "ensure": {
+          "catalog_id": "movie:155",
+          "page_id": "movie:155",
+          "created_catalog": true,
+          "created_page": true
+        },
+        "mode": "live",
+        "fetch_note": "torrent 拉取 3 条（cached=False，跨源 1/2）",
+        "ranked_top": {
+          "title_raw": "The Dark Knight.720p.bluray-YTS",
+          "score": 44.47,
+          "group_tier": "L3"
+        },
+        "write": {
+          "page_id": "movie:155",
+          "resources_upserted": 3,
+          "magnet_count": 3,
+          "page_status": "published",
+          "cross_source_count": 1,
+          "cross_source_total": 2
+        },
+        "sync_run_id": "af15b883-5225-43f3-a2a7-aa2268994068",
+        "template_preview": null
+      }
+    },
+    {
+      "label": "Interstellar",
+      "page_id": "movie:157336",
+      "status": "ok",
+      "result": {
+        "ok": true,
+        "backend": "mysql",
+        "page_id": "movie:157336",
+        "ensure": {
+          "catalog_id": "movie:157336",
+          "page_id": "movie:157336",
+          "created_catalog": true,
+          "created_page": true
+        },
+        "mode": "live",
+        "fetch_note": "torrent 拉取 3 条（cached=False，跨源 1/2）",
+        "ranked_top": {
+          "title_raw": "Interstellar.1080p.bluray-YTS",
+          "score": 21.67,
+          "group_tier": "L3"
+        },
+        "write": {
+          "page_id": "movie:157336",
+          "resources_upserted": 3,
+          "magnet_count": 3,
+          "page_status": "published",
+          "cross_source_count": 1,
+          "cross_source_total": 2
+        },
+        "sync_run_id": "9f838ce5-4413-457e-8e93-51e502f99fc5",
+        "template_preview": null
+      }
+    },
+    {
+      "label": "Fight Club",
+      "page_id": "movie:550",
+      "status": "ok",
+      "result": {
+        "ok": true,
+        "backend": "mysql",
+        "page_id": "movie:550",
+        "ensure": {
+          "catalog_id": "movie:550",
+          "page_id": "movie:550",
+          "created_catalog": true,
+          "created_page": true
+        },
+        "mode": "live",
+        "fetch_note": "torrent 拉取 2 条（cached=False，跨源 1/2）",
+        "ranked_top": {
+          "title_raw": "Fight Club.1080p.bluray-YTS",
+          "score": 51.67,
+          "group_tier": "L3"
+        },
+        "write": {
+          "page_id": "movie:550",
+          "resources_upserted": 2,
+          "magnet_count": 2,
+          "page_status": "published",
+          "cross_source_count": 1,
+          "cross_source_total": 2
+        },
+        "sync_run_id": "eac3a78b-eb4d-49cf-a015-d227da1eaaf7",
+        "template_preview": null
+      }
+    },
+    {
+      "label": "Pulp Fiction",
+      "page_id": "movie:680",
+      "status": "ok",
+      "result": {
+        "ok": true,
+        "backend": "mysql",
+        "page_id": "movie:680",
+        "ensure": {
+          "catalog_id": "movie:680",
+          "page_id": "movie:680",
+          "created_catalog": true,
+          "created_page": true
+        },
+        "mode": "live",
+        "fetch_note": "torrent 拉取 3 条（cached=False，跨源 1/2）",
+        "ranked_top": {
+          "title_raw": "Pulp Fiction.1080p.bluray-YTS",
+          "score": 21.67,
+          "group_tier": "L3"
+        },
+        "write": {
+          "page_id": "movie:680",
+          "resources_upserted": 3,
+          "magnet_count": 3,
+          "page_status": "published",
+          "cross_source_count": 1,
+          "cross_source_total": 2
+        },
+        "sync_run_id": "9dd55fea-d113-4f97-98bb-7ceee508be1e",
+        "template_preview": null
+      }
+    },
+    {
+      "label": "The Lord of the Rings: The Retu…",
+      "page_id": "movie:122",
+      "status": "ok",
+      "result": {
+        "ok": true,
+        "backend": "mysql",
+        "page_id": "movie:122",
+        "ensure": {
+          "catalog_id": "movie:122",
+          "page_id": "movie:122",
+          "created_catalog": true,
+          "created_page": true
+        },
+        "mode": "live",
+        "fetch_note": "torrent 拉取 3 条（cached=False，跨源 1/2）",
+        "ranked_top": {
+          "title_raw": "The Lord of the Rings: The Return of the King.1080p.bluray-YTS",
+          "score": 21.67,
+          "group_tier": "L3"
+        },
+        "write": {
+          "page_id": "movie:122",
+          "resources_upserted": 3,
+          "magnet_count": 3,
+          "page_status": "published",
+          "cross_source_count": 1,
+          "cross_source_total": 2
+        },
+        "sync_run_id": "4394cdde-f080-42e4-8d81-4e10bbecc95f",
+        "template_preview": null
+      }
+    },
+    {
+      "label": "The Lord of the Rings: The Fell…",
+      "page_id": "movie:120",
+      "status": "ok",
+      "result": {
+        "ok": true,
+        "backend": "mysql",
+        "page_id": "movie:120",
+        "ensure": {
+          "catalog_id": "movie:120",
+          "page_id": "movie:120",
+          "created_catalog": true,
+          "created_page": true
+        },
+        "mode": "live",
+        "fetch_note": "torrent 拉取 3 条（cached=False，跨源 1/2）",
+        "ranked_top": {
+          "title_raw": "The Lord of the Rings: The Fellowship of the Ring.1080p.bluray-YTS",
+          "score": 21.67,
+          "group_tier": "L3"
+        },
+        "write": {
+          "page_id": "movie:120",
+          "resources_upserted": 3,
+          "magnet_count": 3,
+          "page_status": "published",
+          "cross_source_count": 1,
+          "cross_source_total": 2
+        },
+        "sync_run_id": "68e1d644-6497-4063-9623-f66021703be5",
+        "template_preview": null
+      }
+    },
+    {
+      "label": "Game of Thrones S01E01",
+      "page_id": "tv:1399:s01e01",
+      "status": "ok",
+      "result": {
+        "ok": true,
+        "backend": "mysql",
+        "page_id": "tv:1399:s01e01",
+        "ensure": {
+          "catalog_id": "tv:1399",
+          "page_id": "tv:1399:s01e01",
+          "created_catalog": true,
+          "created_page": true
+        },
+        "mode": "live",
+        "fetch_note": "torrent 拉取 47 条（cached=False，跨源 1/3）",
+        "ranked_top": {
+          "title_raw": "Game of Thrones S01E01 Winter Is Coming 1080p BluRay x264-OFT",
+          "score": 31.47,
+          "group_tier": "L4"
+        },
+        "write": {
+          "page_id": "tv:1399:s01e01",
+          "resources_upserted": 47,
+          "magnet_count": 47,
+          "page_status": "published",
+          "cross_source_count": 1,
+          "cross_source_total": 3
+        },
+        "sync_run_id": "168612a5-cefa-4e9f-b2d5-2faac05c5a87",
+        "template_preview": {
+          "show_title": "Game of Thrones",
+          "source_count": 47,
+          "recommended": "Game of Thrones S01E01 Winter Is Coming 1080p BluRay x264-OFT",
+          "cross_source_count": 1,
+          "cross_source_total": 3,
+          "robots_noindex": false
+        }
+      }
+    },
+    {
+      "label": "Stranger Things S01E01",
+      "page_id": "tv:66732:s01e01",
+      "status": "ok",
+      "result": {
+        "ok": true,
+        "backend": "mysql",
+        "page_id": "tv:66732:s01e01",
+        "ensure": {
+          "catalog_id": "tv:66732",
+          "page_id": "tv:66732:s01e01",
+          "created_catalog": true,
+          "created_page": true
+        },
+        "mode": "live",
+        "fetch_note": "torrent 拉取 39 条（cached=False，跨源 1/3）",
+        "ranked_top": {
+          "title_raw": "Stranger.Things.Tales.from.85.S01E01.1080p.WEB.h264-GRACE",
+          "score": 41.67,
+          "group_tier": "L4"
+        },
+        "write": {
+          "page_id": "tv:66732:s01e01",
+          "resources_upserted": 39,
+          "magnet_count": 39,
+          "page_status": "published",
+          "cross_source_count": 1,
+          "cross_source_total": 3
+        },
+        "sync_run_id": "eb2fb47b-f0cb-4c7d-8806-c5bc3b79c122",
+        "template_preview": {
+          "show_title": "Stranger Things",
+          "source_count": 39,
+          "recommended": "Stranger.Things.Tales.from.85.S01E01.1080p.WEB.h264-GRACE",
+          "cross_source_count": 1,
+          "cross_source_total": 3,
+          "robots_noindex": false
+        }
+      }
+    },
+    {
+      "label": "The Mandalorian S01E01",
+      "page_id": "tv:82856:s01e01",
+      "status": "ok",
+      "result": {
+        "ok": true,
+        "backend": "mysql",
+        "page_id": "tv:82856:s01e01",
+        "ensure": {
+          "catalog_id": "tv:82856",
+          "page_id": "tv:82856:s01e01",
+          "created_catalog": true,
+          "created_page": true
+        },
+        "mode": "live",
+        "fetch_note": "torrent 拉取 24 条（cached=False，跨源 1/3）",
+        "ranked_top": {
+          "title_raw": "The.Mandalorian.S01E01.POLISH.WEBRip.x264-FLAME[TGx]",
+          "score": 56.67,
+          "group_tier": "L0"
+        },
+        "write": {
+          "page_id": "tv:82856:s01e01",
+          "resources_upserted": 24,
+          "magnet_count": 24,
+          "page_status": "published",
+          "cross_source_count": 1,
+          "cross_source_total": 3
+        },
+        "sync_run_id": "86f782d1-d55a-4c6d-83ad-746688e12885",
+        "template_preview": {
+          "show_title": "The Mandalorian",
+          "source_count": 24,
+          "recommended": "The.Mandalorian.S01E01.POLISH.WEBRip.x264-FLAME[TGx]",
+          "cross_source_count": 1,
+          "cross_source_total": 3,
+          "robots_noindex": false
+        }
+      }
+    },
+    {
+      "label": "House of the Dragon S01E01",
+      "page_id": "tv:94997:s01e01",
+      "status": "ok",
+      "result": {
+        "ok": true,
+        "backend": "mysql",
+        "page_id": "tv:94997:s01e01",
+        "ensure": {
+          "catalog_id": "tv:94997",
+          "page_id": "tv:94997:s01e01",
+          "created_catalog": true,
+          "created_page": true
+        },
+        "mode": "live",
+        "fetch_note": "torrent 拉取 51 条（cached=False，跨源 1/3）",
+        "ranked_top": {
+          "title_raw": "House.of.the.Dragon.S01E01.720p.WEB.h264-KOGi[TGx]",
+          "score": 57.27,
+          "group_tier": "L0"
+        },
+        "write": {
+          "page_id": "tv:94997:s01e01",
+          "resources_upserted": 51,
+          "magnet_count": 51,
+          "page_status": "published",
+          "cross_source_count": 1,
+          "cross_source_total": 3
+        },
+        "sync_run_id": "67c90358-dce5-48e9-9549-96454b9834a4",
+        "template_preview": {
+          "show_title": "House of the Dragon",
+          "source_count": 51,
+          "recommended": "House.of.the.Dragon.S01E01.720p.WEB.h264-KOGi[TGx]",
+          "cross_source_count": 1,
+          "cross_source_total": 3,
+          "robots_noindex": false
+        }
+      }
+    },
+    {
+      "label": "Smallville S01E01",
+      "page_id": "tv:4604:s01e01",
+      "status": "ok",
+      "result": {
+        "ok": true,
+        "backend": "mysql",
+        "page_id": "tv:4604:s01e01",
+        "ensure": {
+          "catalog_id": "tv:4604",
+          "page_id": "tv:4604:s01e01",
+          "created_catalog": true,
+          "created_page": true
+        },
+        "mode": "live",
+        "fetch_note": "torrent 拉取 4 条（cached=False，跨源 1/3）",
+        "ranked_top": {
+          "title_raw": "Smallville.S01E01.MULTi.1080p.HDTV.x264-HYBRiS",
+          "score": 11.67,
+          "group_tier": "L4"
+        },
+        "write": {
+          "page_id": "tv:4604:s01e01",
+          "resources_upserted": 4,
+          "magnet_count": 4,
+          "page_status": "published",
+          "cross_source_count": 1,
+          "cross_source_total": 3
+        },
+        "sync_run_id": "20f62951-4a65-4ae2-b308-368de32f8f56",
+        "template_preview": {
+          "show_title": "Smallville",
+          "source_count": 4,
+          "recommended": "Smallville.S01E01.MULTi.1080p.HDTV.x264-HYBRiS",
+          "cross_source_count": 1,
+          "cross_source_total": 3,
+          "robots_noindex": false
+        }
+      }
+    },
+    {
+      "label": "House S01E01",
+      "page_id": "tv:1408:s01e01",
+      "status": "ok",
+      "result": {
+        "ok": true,
+        "backend": "mysql",
+        "page_id": "tv:1408:s01e01",
+        "ensure": {
+          "catalog_id": "tv:1408",
+          "page_id": "tv:1408:s01e01",
+          "created_catalog": true,
+          "created_page": true
+        },
+        "mode": "live",
+        "fetch_note": "torrent 拉取 115 条（cached=False，跨源 1/3）",
+        "ranked_top": {
+          "title_raw": "Spartacus House of Ashur S01E01 DOMINUS 1080p AMZN WEB-DL DDP5 1 H 264-FLUX",
+          "score": 86.67,
+          "group_tier": "L0"
+        },
+        "write": {
+          "page_id": "tv:1408:s01e01",
+          "resources_upserted": 115,
+          "magnet_count": 115,
+          "page_status": "published",
+          "cross_source_count": 1,
+          "cross_source_total": 3
+        },
+        "sync_run_id": "80a6e8a9-1fbb-428d-ba0a-d0c9774d08e6",
+        "template_preview": {
+          "show_title": "House",
+          "source_count": 102,
+          "recommended": "Spartacus House of Ashur S01E01 DOMINUS 1080p AMZN WEB-DL DDP5 1 H 264-FLUX",
+          "cross_source_count": 1,
+          "cross_source_total": 3,
+          "robots_noindex": false
+        }
+      }
+    }
+  ]
+}

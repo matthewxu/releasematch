@@ -39,6 +39,7 @@ class FetchRequest:
     @var episode: 集号（电影为 None）
     @var imdb_id: IMDb ID
     @var tvdb_id: TVDB ID（剧集 Jackett 搜索）
+    @var title: 可选 slot 标题（无 IMDb 时 Jackett 文本搜索）
     @var mode: batch 或 on_demand
     @var force: 忽略缓存强制重爬
     """
@@ -49,6 +50,7 @@ class FetchRequest:
     episode: Optional[int] = None
     imdb_id: Optional[str] = None
     tvdb_id: Optional[int] = None
+    title: Optional[str] = None
     mode: FetchMode = FetchMode.ON_DEMAND
     force: bool = False
 

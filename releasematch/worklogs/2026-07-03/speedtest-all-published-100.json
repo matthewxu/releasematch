@@ -1,0 +1,1690 @@
+{
+  "meta": {
+    "strategy": "A2",
+    "target_bytes": 262144,
+    "phase1_timeout_sec": 20,
+    "phase2_timeout_sec": 30,
+    "workers": 5,
+    "write_mysql": true,
+    "ttl_hours": 6,
+    "force": false,
+    "started_at": "2026-07-02T12:46:27.949909+00:00",
+    "finished_at": "2026-07-02T12:55:59.111156+00:00",
+    "total_wall_sec": 571.159,
+    "slot_count": 102,
+    "estimated_serial_a2_sec": 2550
+  },
+  "summary": {
+    "succeeded": 102,
+    "errors": 0,
+    "skipped_ttl": 21
+  },
+  "results": [
+    {
+      "page_id": "movie:1122573",
+      "label": "movie:1122573",
+      "status": "ok",
+      "elapsed_sec": 49.86,
+      "phase1_elapsed_ms": 12033,
+      "phase2_elapsed_ms": 30206,
+      "peers_total": 1,
+      "avg_kbps": 3.04,
+      "max_kbps": 16.23,
+      "recommended_speed": "3 KB/s",
+      "reachability": "低",
+      "write": {
+        "page_id": "movie:1122573",
+        "phase1_result_id": "7176c137-33b2-4d1d-9f49-b7892b2cafaf",
+        "phase2_result_id": "af40baa1-5b56-4ca1-a2b6-3a295dd030e5",
+        "recommended_speed": "3 KB/s",
+        "reachability": "低",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:120",
+      "label": "movie:120",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "",
+      "reachability": "高",
+      "summary_updated_at": "2026-07-02 11:28:53.104",
+      "recommended_infohash": "02259bfc5e0e9e87a54e398125244503098aedcb"
+    },
+    {
+      "page_id": "movie:1202033",
+      "label": "movie:1202033",
+      "status": "timeout",
+      "elapsed_sec": 41.967,
+      "phase1_elapsed_ms": 20072,
+      "phase2_elapsed_ms": 19294,
+      "peers_total": 51,
+      "avg_kbps": 20.71,
+      "max_kbps": 180.12,
+      "recommended_speed": "21 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "movie:1202033",
+        "phase1_result_id": "fd89dd8b-2588-4b2c-a4ae-23b0e481a2c5",
+        "phase2_result_id": "c9e14633-b2f2-40ea-b0cf-3fb952175acd",
+        "recommended_speed": "21 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:1217584",
+      "label": "movie:1217584",
+      "status": "ok",
+      "elapsed_sec": 35.405,
+      "phase1_elapsed_ms": 2002,
+      "phase2_elapsed_ms": 30243,
+      "peers_total": 24,
+      "avg_kbps": 1.08,
+      "max_kbps": 12.11,
+      "recommended_speed": "1 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "movie:1217584",
+        "phase1_result_id": "5f2d4732-2973-43d1-b475-231e4da4e51c",
+        "phase2_result_id": "485db031-330f-4d2d-92ac-93303c684305",
+        "recommended_speed": "1 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:122",
+      "label": "movie:122",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "",
+      "reachability": "不可达",
+      "summary_updated_at": "2026-07-02 11:28:59.015",
+      "recommended_infohash": "3ead96919c431871ec68cfb14fed4a5aa2b636f2"
+    },
+    {
+      "page_id": "movie:1228710",
+      "label": "movie:1228710",
+      "status": "skipped",
+      "reason": "no_recommended",
+      "elapsed_sec": 0.0
+    },
+    {
+      "page_id": "movie:1239134",
+      "label": "movie:1239134",
+      "status": "skipped",
+      "reason": "no_recommended",
+      "elapsed_sec": 0.0
+    },
+    {
+      "page_id": "movie:1241752",
+      "label": "movie:1241752",
+      "status": "timeout",
+      "elapsed_sec": 56.6,
+      "phase1_elapsed_ms": 20080,
+      "phase2_elapsed_ms": 30199,
+      "peers_total": 0,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "不可达",
+      "write": {
+        "page_id": "movie:1241752",
+        "phase1_result_id": "f7a277bd-a892-4935-8cf8-13cb8bd4dfbe",
+        "phase2_result_id": "06b31555-7b11-4c59-ab3e-3f7d5b57b385",
+        "recommended_speed": "",
+        "reachability": "不可达",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:1280738",
+      "label": "movie:1280738",
+      "status": "skipped",
+      "reason": "no_recommended",
+      "elapsed_sec": 0.0
+    },
+    {
+      "page_id": "movie:1288341",
+      "label": "movie:1288341",
+      "status": "timeout",
+      "elapsed_sec": 44.977,
+      "phase1_elapsed_ms": 20072,
+      "phase2_elapsed_ms": 23356,
+      "peers_total": 29,
+      "avg_kbps": 14.55,
+      "max_kbps": 102.49,
+      "recommended_speed": "15 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "movie:1288341",
+        "phase1_result_id": "268d3b7c-acbe-4ec8-9532-5406e37a6287",
+        "phase2_result_id": "c4210bb6-bbe7-4e4f-8660-5ba961b9c005",
+        "recommended_speed": "15 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:1297842",
+      "label": "movie:1297842",
+      "status": "ok",
+      "elapsed_sec": 24.778,
+      "phase1_elapsed_ms": 11038,
+      "phase2_elapsed_ms": 9908,
+      "peers_total": 52,
+      "avg_kbps": 21.45,
+      "max_kbps": 125.58,
+      "recommended_speed": "21 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "movie:1297842",
+        "phase1_result_id": "089a2074-c657-47be-acc2-9bb9d01cde43",
+        "phase2_result_id": "758ddf16-a1aa-4450-be06-111f7ac65280",
+        "recommended_speed": "21 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:13",
+      "label": "movie:13",
+      "status": "ok",
+      "elapsed_sec": 44.785,
+      "phase1_elapsed_ms": 11044,
+      "phase2_elapsed_ms": 30209,
+      "peers_total": 30,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "高",
+      "write": {
+        "page_id": "movie:13",
+        "phase1_result_id": "ae70eaf8-35bb-4c8f-97c5-aff987e85ac4",
+        "phase2_result_id": "00c8d3ea-68ad-4a7e-8a9d-7d8c5dda81aa",
+        "recommended_speed": "",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:1304313",
+      "label": "movie:1304313",
+      "status": "ok",
+      "elapsed_sec": 43.916,
+      "phase1_elapsed_ms": 11029,
+      "phase2_elapsed_ms": 26651,
+      "peers_total": 99,
+      "avg_kbps": 29.28,
+      "max_kbps": 126.92,
+      "recommended_speed": "29 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "movie:1304313",
+        "phase1_result_id": "e66374f1-8613-4605-bc1e-74bdc608213f",
+        "phase2_result_id": "5de08cec-f9fd-439f-9a27-6bd24ebf2809",
+        "recommended_speed": "29 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:1311031",
+      "label": "movie:1311031",
+      "status": "skipped",
+      "reason": "no_recommended",
+      "elapsed_sec": 0.0
+    },
+    {
+      "page_id": "movie:1315772",
+      "label": "movie:1315772",
+      "status": "ok",
+      "elapsed_sec": 45.075,
+      "phase1_elapsed_ms": 11040,
+      "phase2_elapsed_ms": 30218,
+      "peers_total": 37,
+      "avg_kbps": 9.5,
+      "max_kbps": 107.53,
+      "recommended_speed": "10 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "movie:1315772",
+        "phase1_result_id": "677d17c3-f101-4081-aa9b-b72d5f84f8fa",
+        "phase2_result_id": "f4f76f1e-8e8d-43d6-82dc-f121ef84cd25",
+        "recommended_speed": "10 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:1327819",
+      "label": "movie:1327819",
+      "status": "ok",
+      "elapsed_sec": 45.236,
+      "phase1_elapsed_ms": 11045,
+      "phase2_elapsed_ms": 30236,
+      "peers_total": 5,
+      "avg_kbps": 0.18,
+      "max_kbps": 1.35,
+      "recommended_speed": "0 KB/s",
+      "reachability": "中",
+      "write": {
+        "page_id": "movie:1327819",
+        "phase1_result_id": "22067fd2-82af-4164-9797-fe4558e6aeab",
+        "phase2_result_id": "15cb056d-7571-4e0b-9867-5e0961bd24eb",
+        "recommended_speed": "0 KB/s",
+        "reachability": "中",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:1359685",
+      "label": "movie:1359685",
+      "status": "timeout",
+      "elapsed_sec": 55.864,
+      "phase1_elapsed_ms": 20076,
+      "phase2_elapsed_ms": 30209,
+      "peers_total": 2,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "不可达",
+      "write": {
+        "page_id": "movie:1359685",
+        "phase1_result_id": "ea545e20-bfef-4912-be9f-40cfcc4991d4",
+        "phase2_result_id": "6883571b-0b2d-4196-8a56-a8bd85939ae2",
+        "recommended_speed": "",
+        "reachability": "不可达",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:1367220",
+      "label": "movie:1367220",
+      "status": "skipped",
+      "reason": "no_recommended",
+      "elapsed_sec": 0.0
+    },
+    {
+      "page_id": "movie:137051",
+      "label": "movie:137051",
+      "status": "timeout",
+      "elapsed_sec": 55.868,
+      "phase1_elapsed_ms": 20081,
+      "phase2_elapsed_ms": 30211,
+      "peers_total": 0,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "不可达",
+      "write": {
+        "page_id": "movie:137051",
+        "phase1_result_id": "b4ccfd39-02e7-4501-8a5f-f027bf12c78a",
+        "phase2_result_id": "5671da65-ddf8-4185-b4a3-cb57f667eaed",
+        "recommended_speed": "",
+        "reachability": "不可达",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:1392469",
+      "label": "movie:1392469",
+      "status": "ok",
+      "elapsed_sec": 19.035,
+      "phase1_elapsed_ms": 1005,
+      "phase2_elapsed_ms": 12188,
+      "peers_total": 171,
+      "avg_kbps": 17.14,
+      "max_kbps": 184.96,
+      "recommended_speed": "17 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "movie:1392469",
+        "phase1_result_id": "3ada9d98-d735-4dea-bdba-c358c2bf1cec",
+        "phase2_result_id": "6144bfaa-25a1-4981-9c47-d6f276786199",
+        "recommended_speed": "17 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:1419406",
+      "label": "movie:1419406",
+      "status": "skipped",
+      "reason": "no_recommended",
+      "elapsed_sec": 0.0
+    },
+    {
+      "page_id": "movie:1439930",
+      "label": "movie:1439930",
+      "status": "skipped",
+      "reason": "no_recommended",
+      "elapsed_sec": 0.0
+    },
+    {
+      "page_id": "movie:1477317",
+      "label": "movie:1477317",
+      "status": "timeout",
+      "elapsed_sec": 55.86,
+      "phase1_elapsed_ms": 20080,
+      "phase2_elapsed_ms": 30212,
+      "peers_total": 27,
+      "avg_kbps": 0.01,
+      "max_kbps": 0.04,
+      "recommended_speed": "0 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "movie:1477317",
+        "phase1_result_id": "8929f7e1-01a7-42ee-9c9c-539d097cef29",
+        "phase2_result_id": "9433c94e-13b5-4028-a6a7-8a1ad73bb3f7",
+        "recommended_speed": "0 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:1515729",
+      "label": "movie:1515729",
+      "status": "timeout",
+      "elapsed_sec": 55.821,
+      "phase1_elapsed_ms": 20071,
+      "phase2_elapsed_ms": 30203,
+      "peers_total": 1,
+      "avg_kbps": 4.93,
+      "max_kbps": 54.17,
+      "recommended_speed": "5 KB/s",
+      "reachability": "低",
+      "write": {
+        "page_id": "movie:1515729",
+        "phase1_result_id": "82fd7135-4ab9-4495-9ad9-79eaac05d207",
+        "phase2_result_id": "ead8446e-f664-4756-b80f-7fdef5c7be22",
+        "recommended_speed": "5 KB/s",
+        "reachability": "低",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:1522333",
+      "label": "movie:1522333",
+      "status": "ok",
+      "elapsed_sec": 49.773,
+      "phase1_elapsed_ms": 12042,
+      "phase2_elapsed_ms": 30187,
+      "peers_total": 2,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "低",
+      "write": {
+        "page_id": "movie:1522333",
+        "phase1_result_id": "50da7a0b-edf0-4a5e-9cf6-d7be184c650e",
+        "phase2_result_id": "994da6ca-bcd5-48e1-bf40-01957ac9bead",
+        "recommended_speed": "",
+        "reachability": "低",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:155",
+      "label": "movie:155",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "",
+      "reachability": "高",
+      "summary_updated_at": "2026-07-02 11:28:57.185",
+      "recommended_infohash": "f5d61bf3d57082ba2ee1305da5df8dcd10d34539"
+    },
+    {
+      "page_id": "movie:157336",
+      "label": "movie:157336",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "11 KB/s",
+      "reachability": "高",
+      "summary_updated_at": "2026-07-02 11:28:57.059",
+      "recommended_infohash": "89599bf4dc369a3a8eca26411c5ccf922d78b486"
+    },
+    {
+      "page_id": "movie:1694978",
+      "label": "movie:1694978",
+      "status": "timeout",
+      "elapsed_sec": 55.826,
+      "phase1_elapsed_ms": 20083,
+      "phase2_elapsed_ms": 30236,
+      "peers_total": 0,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "不可达",
+      "write": {
+        "page_id": "movie:1694978",
+        "phase1_result_id": "7ed8afaa-e615-4adb-b735-1ae10d07187d",
+        "phase2_result_id": "2c28ff1c-1861-491d-91a4-3e2adbd7c6f9",
+        "recommended_speed": "",
+        "reachability": "不可达",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:238",
+      "label": "movie:238",
+      "status": "ok",
+      "elapsed_sec": 31.368,
+      "phase1_elapsed_ms": 11030,
+      "phase2_elapsed_ms": 16519,
+      "peers_total": 32,
+      "avg_kbps": 26.99,
+      "max_kbps": 113.22,
+      "recommended_speed": "27 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "movie:238",
+        "phase1_result_id": "bf127685-35a5-45da-9b22-ab4b694767b0",
+        "phase2_result_id": "2611fe36-a682-439f-a58e-a666474e7769",
+        "recommended_speed": "27 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:27205",
+      "label": "movie:27205",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "20 KB/s",
+      "reachability": "高",
+      "summary_updated_at": "2026-07-02 09:58:42.774",
+      "recommended_infohash": "224bf45881252643dfc2e71abc7b2660a21c68c4"
+    },
+    {
+      "page_id": "movie:28322",
+      "label": "movie:28322",
+      "status": "ok",
+      "elapsed_sec": 49.368,
+      "phase1_elapsed_ms": 11047,
+      "phase2_elapsed_ms": 30175,
+      "peers_total": 1,
+      "avg_kbps": 9.8,
+      "max_kbps": 63.79,
+      "recommended_speed": "10 KB/s",
+      "reachability": "中",
+      "write": {
+        "page_id": "movie:28322",
+        "phase1_result_id": "42920ca2-843e-41ae-9dc0-eebe0af3deaa",
+        "phase2_result_id": "b5c8d3a8-212f-4a66-84aa-af407370ff7d",
+        "recommended_speed": "10 KB/s",
+        "reachability": "中",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:301528",
+      "label": "movie:301528",
+      "status": "ok",
+      "elapsed_sec": 27.273,
+      "phase1_elapsed_ms": 12059,
+      "phase2_elapsed_ms": 11697,
+      "peers_total": 115,
+      "avg_kbps": 12.52,
+      "max_kbps": 267.31,
+      "recommended_speed": "13 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "movie:301528",
+        "phase1_result_id": "171144d8-5a68-4a55-ad05-b9decf272da1",
+        "phase2_result_id": "bd4d3d22-ba30-4eef-ab4e-630bba4daa82",
+        "recommended_speed": "13 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:404574",
+      "label": "movie:404574",
+      "status": "skipped",
+      "reason": "no_recommended",
+      "elapsed_sec": 0.0
+    },
+    {
+      "page_id": "movie:405871",
+      "label": "movie:405871",
+      "status": "skipped",
+      "reason": "no_recommended",
+      "elapsed_sec": 0.0
+    },
+    {
+      "page_id": "movie:454639",
+      "label": "movie:454639",
+      "status": "ok",
+      "elapsed_sec": 39.427,
+      "phase1_elapsed_ms": 1005,
+      "phase2_elapsed_ms": 30194,
+      "peers_total": 2,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "低",
+      "write": {
+        "page_id": "movie:454639",
+        "phase1_result_id": "1447f9f6-201a-4c9f-8fb8-ebe344e981ae",
+        "phase2_result_id": "5615cff2-e451-4913-97df-78541bff65b5",
+        "recommended_speed": "",
+        "reachability": "低",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:47612",
+      "label": "movie:47612",
+      "status": "timeout",
+      "elapsed_sec": 55.917,
+      "phase1_elapsed_ms": 20063,
+      "phase2_elapsed_ms": 30183,
+      "peers_total": 0,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "不可达",
+      "write": {
+        "page_id": "movie:47612",
+        "phase1_result_id": "2f9bbd07-0ce9-480d-afd8-ab7023e776d3",
+        "phase2_result_id": "af353e92-8628-4838-ae1e-5a26f86c1ac0",
+        "recommended_speed": "",
+        "reachability": "不可达",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:479787",
+      "label": "movie:479787",
+      "status": "skipped",
+      "reason": "no_recommended",
+      "elapsed_sec": 0.0
+    },
+    {
+      "page_id": "movie:550",
+      "label": "movie:550",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "22 KB/s",
+      "reachability": "高",
+      "summary_updated_at": "2026-07-02 11:28:38.948",
+      "recommended_infohash": "74a582111d327666ebcef3a5f904b06f8dafb3d8"
+    },
+    {
+      "page_id": "movie:603",
+      "label": "movie:603",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "22 KB/s",
+      "reachability": "高",
+      "summary_updated_at": "2026-07-02 11:29:01.785",
+      "recommended_infohash": "28dec3ac8cc8c5758730a334d98705dd698f7bc1"
+    },
+    {
+      "page_id": "movie:614945",
+      "label": "movie:614945",
+      "status": "ok",
+      "elapsed_sec": 49.656,
+      "phase1_elapsed_ms": 12046,
+      "phase2_elapsed_ms": 30185,
+      "peers_total": 4,
+      "avg_kbps": 4.02,
+      "max_kbps": 33.4,
+      "recommended_speed": "4 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "movie:614945",
+        "phase1_result_id": "56e8ea44-b9ea-46a6-85f1-cad7acb2f06e",
+        "phase2_result_id": "943dac29-e82a-422d-9725-e3e22ca7ddbb",
+        "recommended_speed": "4 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:680",
+      "label": "movie:680",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "29 KB/s",
+      "reachability": "高",
+      "summary_updated_at": "2026-07-02 11:29:28.231",
+      "recommended_infohash": "3f8f219568b8b229581dddd7bc5a5e889e906a9b"
+    },
+    {
+      "page_id": "movie:769",
+      "label": "movie:769",
+      "status": "ok",
+      "elapsed_sec": 49.364,
+      "phase1_elapsed_ms": 11045,
+      "phase2_elapsed_ms": 30180,
+      "peers_total": 2,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "低",
+      "write": {
+        "page_id": "movie:769",
+        "phase1_result_id": "62a80f74-04d9-45b5-8be4-df3615b8d679",
+        "phase2_result_id": "7008c816-2399-4893-ba91-b1a3741fe9e3",
+        "recommended_speed": "",
+        "reachability": "低",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:83533",
+      "label": "movie:83533",
+      "status": "ok",
+      "elapsed_sec": 49.751,
+      "phase1_elapsed_ms": 12045,
+      "phase2_elapsed_ms": 30173,
+      "peers_total": 29,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "高",
+      "write": {
+        "page_id": "movie:83533",
+        "phase1_result_id": "798dbb45-4857-46ee-8799-3a12a27dd0c8",
+        "phase2_result_id": "9a641e1f-9b89-4551-8dd2-0678ce58e9d2",
+        "recommended_speed": "",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:840464",
+      "label": "movie:840464",
+      "status": "ok",
+      "elapsed_sec": 27.448,
+      "phase1_elapsed_ms": 12046,
+      "phase2_elapsed_ms": 9899,
+      "peers_total": 151,
+      "avg_kbps": 17.43,
+      "max_kbps": 94.62,
+      "recommended_speed": "17 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "movie:840464",
+        "phase1_result_id": "f4b19c01-1653-411b-89de-2148a665681a",
+        "phase2_result_id": "e24863d6-798a-401f-b0aa-cf68a16a806b",
+        "recommended_speed": "17 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:862",
+      "label": "movie:862",
+      "status": "skipped",
+      "reason": "no_recommended",
+      "elapsed_sec": 0.0
+    },
+    {
+      "page_id": "movie:911345",
+      "label": "movie:911345",
+      "status": "timeout",
+      "elapsed_sec": 46.652,
+      "phase1_elapsed_ms": 20080,
+      "phase2_elapsed_ms": 21046,
+      "peers_total": 23,
+      "avg_kbps": 17.86,
+      "max_kbps": 70.51,
+      "recommended_speed": "18 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "movie:911345",
+        "phase1_result_id": "3890172f-766b-49e0-9600-eaa64879d1fb",
+        "phase2_result_id": "8511df22-1018-43cf-9b61-0aab4bc6dfae",
+        "recommended_speed": "18 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:949536",
+      "label": "movie:949536",
+      "status": "ok",
+      "elapsed_sec": 30.887,
+      "phase1_elapsed_ms": 1002,
+      "phase2_elapsed_ms": 24142,
+      "peers_total": 151,
+      "avg_kbps": 8.69,
+      "max_kbps": 95.3,
+      "recommended_speed": "9 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "movie:949536",
+        "phase1_result_id": "d3bf4ef3-f5e3-4f08-b02c-4653b521e8e6",
+        "phase2_result_id": "63493049-3248-4ee8-a6b0-83bdbeed0a11",
+        "recommended_speed": "9 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:969681",
+      "label": "movie:969681",
+      "status": "ok",
+      "elapsed_sec": 47.656,
+      "phase1_elapsed_ms": 12047,
+      "phase2_elapsed_ms": 28164,
+      "peers_total": 7,
+      "avg_kbps": 15.07,
+      "max_kbps": 86.03,
+      "recommended_speed": "15 KB/s",
+      "reachability": "中",
+      "write": {
+        "page_id": "movie:969681",
+        "phase1_result_id": "afb17a00-dc56-40e5-ba8c-7f11af0c93b1",
+        "phase2_result_id": "f231c9b2-1271-4996-ab72-cd2c17f49ddf",
+        "recommended_speed": "15 KB/s",
+        "reachability": "中",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:976912",
+      "label": "movie:976912",
+      "status": "ok",
+      "elapsed_sec": 52.456,
+      "phase1_elapsed_ms": 12037,
+      "phase2_elapsed_ms": 30227,
+      "peers_total": 2,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "低",
+      "write": {
+        "page_id": "movie:976912",
+        "phase1_result_id": "840ec0db-e6f8-4d3e-8144-1b04262bb8e7",
+        "phase2_result_id": "45ee3426-17da-4595-9931-9ae1c1f120c3",
+        "recommended_speed": "",
+        "reachability": "低",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "movie:980431",
+      "label": "movie:980431",
+      "status": "timeout",
+      "elapsed_sec": 55.797,
+      "phase1_elapsed_ms": 20069,
+      "phase2_elapsed_ms": 30208,
+      "peers_total": 1,
+      "avg_kbps": 2.0,
+      "max_kbps": 17.45,
+      "recommended_speed": "2 KB/s",
+      "reachability": "低",
+      "write": {
+        "page_id": "movie:980431",
+        "phase1_result_id": "5699eac7-3475-4f7b-ae94-17495f224a94",
+        "phase2_result_id": "cb3c0bad-f899-4805-91f2-76bcfaa856e8",
+        "recommended_speed": "2 KB/s",
+        "reachability": "低",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:124364:s01e01",
+      "label": "tv:124364:s01e01",
+      "status": "ok",
+      "elapsed_sec": 39.376,
+      "phase1_elapsed_ms": 1002,
+      "phase2_elapsed_ms": 30242,
+      "peers_total": 1,
+      "avg_kbps": 0.46,
+      "max_kbps": 5.72,
+      "recommended_speed": "0 KB/s",
+      "reachability": "中",
+      "write": {
+        "page_id": "tv:124364:s01e01",
+        "phase1_result_id": "ba4a4c66-50c6-4b82-a120-42613b19606d",
+        "phase2_result_id": "f8d82dea-1986-4fa3-9b90-3f22f8031a97",
+        "recommended_speed": "0 KB/s",
+        "reachability": "中",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:1396:s04e01",
+      "label": "tv:1396:s04e01",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "26 KB/s",
+      "reachability": "高",
+      "summary_updated_at": "2026-07-02 09:58:19.477",
+      "recommended_infohash": "cf33d8ede2db6c449cc880c312bf69fa21050f5c"
+    },
+    {
+      "page_id": "tv:1396:s04e02",
+      "label": "tv:1396:s04e02",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "44 KB/s",
+      "reachability": "高",
+      "summary_updated_at": "2026-07-02 09:58:39.732",
+      "recommended_infohash": "d8a2230f2adca0a8443f460be0daf85e114f1b51"
+    },
+    {
+      "page_id": "tv:1396:s04e03",
+      "label": "tv:1396:s04e03",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "18 KB/s",
+      "reachability": "高",
+      "summary_updated_at": "2026-07-02 11:29:23.118",
+      "recommended_infohash": "ca4082d1129ed05371463104027c087d9443b446"
+    },
+    {
+      "page_id": "tv:1396:s04e04",
+      "label": "tv:1396:s04e04",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "20 KB/s",
+      "reachability": "高",
+      "summary_updated_at": "2026-07-02 09:58:45.086",
+      "recommended_infohash": "d8ce9a093b2f2afbc697468d822ddc38d89ee11e"
+    },
+    {
+      "page_id": "tv:1396:s04e05",
+      "label": "tv:1396:s04e05",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "2 KB/s",
+      "reachability": "高",
+      "summary_updated_at": "2026-07-02 11:29:42.244",
+      "recommended_infohash": "00da66125292573f9a766c1342f37b581f84dafd"
+    },
+    {
+      "page_id": "tv:1396:s04e06",
+      "label": "tv:1396:s04e06",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "29 KB/s",
+      "reachability": "高",
+      "summary_updated_at": "2026-07-02 09:57:10.217",
+      "recommended_infohash": "583d172ea1eaf082f6b73627c1a56b1299f92ba7"
+    },
+    {
+      "page_id": "tv:1396:s04e07",
+      "label": "tv:1396:s04e07",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "25 KB/s",
+      "reachability": "高",
+      "summary_updated_at": "2026-07-02 09:58:38.461",
+      "recommended_infohash": "9aa2327cb6a7444ae6eb6499d2536508a0eaac52"
+    },
+    {
+      "page_id": "tv:1396:s04e08",
+      "label": "tv:1396:s04e08",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "26 KB/s",
+      "reachability": "高",
+      "summary_updated_at": "2026-07-02 09:58:28.901",
+      "recommended_infohash": "b554139cb127cb8b06fbb9c9c3f86a000eb7fe51"
+    },
+    {
+      "page_id": "tv:1399:s01e01",
+      "label": "tv:1399:s01e01",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "12 KB/s",
+      "reachability": "高",
+      "summary_updated_at": "2026-07-02 11:29:27.803",
+      "recommended_infohash": "4f1a4b7ad7d93f9bb991185c012d7964d7c696e1"
+    },
+    {
+      "page_id": "tv:1408:s01e01",
+      "label": "tv:1408:s01e01",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "20 KB/s",
+      "reachability": "高",
+      "summary_updated_at": "2026-07-02 11:29:40.519",
+      "recommended_infohash": "5aa77bcf5f6690f38a7c98e518ee3a1ff0fd2200"
+    },
+    {
+      "page_id": "tv:1412:s01e01",
+      "label": "tv:1412:s01e01",
+      "status": "timeout",
+      "elapsed_sec": 55.813,
+      "phase1_elapsed_ms": 20079,
+      "phase2_elapsed_ms": 30235,
+      "peers_total": 1,
+      "avg_kbps": 0.87,
+      "max_kbps": 12.77,
+      "recommended_speed": "1 KB/s",
+      "reachability": "低",
+      "write": {
+        "page_id": "tv:1412:s01e01",
+        "phase1_result_id": "3d3bdc18-af18-453a-9a22-77dff83980b7",
+        "phase2_result_id": "7df45c77-f0f2-43b5-a987-99bf2ce74f3e",
+        "recommended_speed": "1 KB/s",
+        "reachability": "低",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:1418:s01e01",
+      "label": "tv:1418:s01e01",
+      "status": "ok",
+      "elapsed_sec": 49.439,
+      "phase1_elapsed_ms": 11040,
+      "phase2_elapsed_ms": 30236,
+      "peers_total": 1,
+      "avg_kbps": 0.04,
+      "max_kbps": 0.22,
+      "recommended_speed": "0 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "tv:1418:s01e01",
+        "phase1_result_id": "4e479e4f-6217-4f26-b4da-c52937c96a47",
+        "phase2_result_id": "7bd3204a-9f04-49d4-a35a-feea27f3c302",
+        "recommended_speed": "0 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:1431:s01e01",
+      "label": "tv:1431:s01e01",
+      "status": "ok",
+      "elapsed_sec": 39.448,
+      "phase1_elapsed_ms": 1004,
+      "phase2_elapsed_ms": 30202,
+      "peers_total": 1,
+      "avg_kbps": 8.72,
+      "max_kbps": 30.83,
+      "recommended_speed": "9 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "tv:1431:s01e01",
+        "phase1_result_id": "67128e7c-b97f-4024-8b02-2b0ce2dd5939",
+        "phase2_result_id": "b1154183-cceb-4d32-b028-594f51d972c8",
+        "recommended_speed": "9 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:1433:s01e01",
+      "label": "tv:1433:s01e01",
+      "status": "ok",
+      "elapsed_sec": 16.045,
+      "phase1_elapsed_ms": 1005,
+      "phase2_elapsed_ms": 6857,
+      "peers_total": 39,
+      "avg_kbps": 15.13,
+      "max_kbps": 181.49,
+      "recommended_speed": "15 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "tv:1433:s01e01",
+        "phase1_result_id": "4d31e57b-2483-40f7-9a4b-78dd27f1a071",
+        "phase2_result_id": "23c8a0ea-a4f0-4d8e-a78c-198286234e2e",
+        "recommended_speed": "15 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:1434:s01e01",
+      "label": "tv:1434:s01e01",
+      "status": "ok",
+      "elapsed_sec": 40.669,
+      "phase1_elapsed_ms": 12050,
+      "phase2_elapsed_ms": 25114,
+      "peers_total": 28,
+      "avg_kbps": 14.45,
+      "max_kbps": 56.5,
+      "recommended_speed": "14 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "tv:1434:s01e01",
+        "phase1_result_id": "d48714e0-a355-4a7b-9847-06db861002f4",
+        "phase2_result_id": "cff8d8b4-f60c-44ca-8eca-9c724f89e9ef",
+        "recommended_speed": "14 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:1622:s01e01",
+      "label": "tv:1622:s01e01",
+      "status": "ok",
+      "elapsed_sec": 39.335,
+      "phase1_elapsed_ms": 1005,
+      "phase2_elapsed_ms": 30168,
+      "peers_total": 2,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "低",
+      "write": {
+        "page_id": "tv:1622:s01e01",
+        "phase1_result_id": "d61cbd09-47ae-4976-a7c8-26ba33ef68f2",
+        "phase2_result_id": "70952ef2-0e94-4235-a6cb-07627b48922d",
+        "recommended_speed": "",
+        "reachability": "低",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:1911:s01e01",
+      "label": "tv:1911:s01e01",
+      "status": "ok",
+      "elapsed_sec": 39.272,
+      "phase1_elapsed_ms": 1005,
+      "phase2_elapsed_ms": 30014,
+      "peers_total": 13,
+      "avg_kbps": 8.45,
+      "max_kbps": 57.75,
+      "recommended_speed": "8 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "tv:1911:s01e01",
+        "phase1_result_id": "81f3bfae-1a97-4a82-b9f6-b52010ce41ab",
+        "phase2_result_id": "92e0fd2e-afac-40da-b7a7-d5af69bc7b12",
+        "recommended_speed": "8 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:2288:s01e01",
+      "label": "tv:2288:s01e01",
+      "status": "ok",
+      "elapsed_sec": 49.762,
+      "phase1_elapsed_ms": 12044,
+      "phase2_elapsed_ms": 30170,
+      "peers_total": 6,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "中",
+      "write": {
+        "page_id": "tv:2288:s01e01",
+        "phase1_result_id": "60eaee71-9c3c-4ff6-8faf-4b97a8698d37",
+        "phase2_result_id": "54a768e4-584e-4405-81ab-94d8ea9e55c5",
+        "recommended_speed": "",
+        "reachability": "中",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:232393:s01e01",
+      "label": "tv:232393:s01e01",
+      "status": "timeout",
+      "elapsed_sec": 55.761,
+      "phase1_elapsed_ms": 20086,
+      "phase2_elapsed_ms": 30175,
+      "peers_total": 0,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "不可达",
+      "write": {
+        "page_id": "tv:232393:s01e01",
+        "phase1_result_id": "bdbbaedf-e966-42f5-ae0a-efbb8ce8c2fc",
+        "phase2_result_id": "48ddceaf-ff44-459a-a14f-7eb9b8cb5e26",
+        "recommended_speed": "",
+        "reachability": "不可达",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:273240:s01e01",
+      "label": "tv:273240:s01e01",
+      "status": "skipped",
+      "reason": "no_recommended",
+      "elapsed_sec": 0.0
+    },
+    {
+      "page_id": "tv:2734:s01e01",
+      "label": "tv:2734:s01e01",
+      "status": "skipped",
+      "reason": "no_recommended",
+      "elapsed_sec": 0.0
+    },
+    {
+      "page_id": "tv:278178:s01e01",
+      "label": "tv:278178:s01e01",
+      "status": "ok",
+      "elapsed_sec": 30.896,
+      "phase1_elapsed_ms": 11038,
+      "phase2_elapsed_ms": 13726,
+      "peers_total": 180,
+      "avg_kbps": 14.48,
+      "max_kbps": 72.47,
+      "recommended_speed": "14 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "tv:278178:s01e01",
+        "phase1_result_id": "26f6d909-40da-4c3e-9a38-7ce6cecadeea",
+        "phase2_result_id": "2ce38ee3-0502-4647-9458-007ecec01852",
+        "recommended_speed": "14 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:284631:s01e01",
+      "label": "tv:284631:s01e01",
+      "status": "skipped",
+      "reason": "no_recommended",
+      "elapsed_sec": 0.0
+    },
+    {
+      "page_id": "tv:290138:s01e01",
+      "label": "tv:290138:s01e01",
+      "status": "skipped",
+      "reason": "no_recommended",
+      "elapsed_sec": 0.0
+    },
+    {
+      "page_id": "tv:299167:s01e01",
+      "label": "tv:299167:s01e01",
+      "status": "ok",
+      "elapsed_sec": 49.363,
+      "phase1_elapsed_ms": 11040,
+      "phase2_elapsed_ms": 30178,
+      "peers_total": 2,
+      "avg_kbps": 3.71,
+      "max_kbps": 32.51,
+      "recommended_speed": "4 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "tv:299167:s01e01",
+        "phase1_result_id": "5ef045a3-bd51-454a-ae3d-83098cfe7941",
+        "phase2_result_id": "a61d6d94-b9b4-402e-b69a-a6d2995792a5",
+        "recommended_speed": "4 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:303493:s01e01",
+      "label": "tv:303493:s01e01",
+      "status": "ok",
+      "elapsed_sec": 35.921,
+      "phase1_elapsed_ms": 11040,
+      "phase2_elapsed_ms": 20564,
+      "peers_total": 32,
+      "avg_kbps": 16.43,
+      "max_kbps": 75.79,
+      "recommended_speed": "16 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "tv:303493:s01e01",
+        "phase1_result_id": "5a97f714-740e-4010-b5d2-971ec1880880",
+        "phase2_result_id": "166dc058-52d4-47a8-bff0-7283962097e4",
+        "recommended_speed": "16 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:322430:s01e01",
+      "label": "tv:322430:s01e01",
+      "status": "timeout",
+      "elapsed_sec": 55.844,
+      "phase1_elapsed_ms": 20077,
+      "phase2_elapsed_ms": 30219,
+      "peers_total": 24,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "不可达",
+      "write": {
+        "page_id": "tv:322430:s01e01",
+        "phase1_result_id": "17064554-d09b-4398-8723-95818b3e5efd",
+        "phase2_result_id": "666324f0-4062-4225-9e94-82629f7f963a",
+        "recommended_speed": "",
+        "reachability": "不可达",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:37680:s01e01",
+      "label": "tv:37680:s01e01",
+      "status": "ok",
+      "elapsed_sec": 49.766,
+      "phase1_elapsed_ms": 12040,
+      "phase2_elapsed_ms": 30175,
+      "peers_total": 4,
+      "avg_kbps": 0.01,
+      "max_kbps": 0.02,
+      "recommended_speed": "0 KB/s",
+      "reachability": "中",
+      "write": {
+        "page_id": "tv:37680:s01e01",
+        "phase1_result_id": "f0c1dcd9-1763-4093-98ff-259c2c072fb3",
+        "phase2_result_id": "83619a31-07a4-43b6-80f4-314835d7d8a8",
+        "recommended_speed": "0 KB/s",
+        "reachability": "中",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:4057:s01e01",
+      "label": "tv:4057:s01e01",
+      "status": "timeout",
+      "elapsed_sec": 51.119,
+      "phase1_elapsed_ms": 20074,
+      "phase2_elapsed_ms": 30192,
+      "peers_total": 0,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "不可达",
+      "write": {
+        "page_id": "tv:4057:s01e01",
+        "phase1_result_id": "de6dd806-cb44-4cb3-bbd0-1f3320118d91",
+        "phase2_result_id": "3c4ed33b-0565-4538-921f-f6991aa29c7a",
+        "recommended_speed": "",
+        "reachability": "不可达",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:44217:s01e01",
+      "label": "tv:44217:s01e01",
+      "status": "ok",
+      "elapsed_sec": 49.804,
+      "phase1_elapsed_ms": 12037,
+      "phase2_elapsed_ms": 30232,
+      "peers_total": 2,
+      "avg_kbps": 0.06,
+      "max_kbps": 0.17,
+      "recommended_speed": "0 KB/s",
+      "reachability": "中",
+      "write": {
+        "page_id": "tv:44217:s01e01",
+        "phase1_result_id": "df576c36-083e-4f17-9792-dad72657791c",
+        "phase2_result_id": "44a9f36c-c09a-463a-a3d4-728e15e2bb01",
+        "recommended_speed": "0 KB/s",
+        "reachability": "中",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:456:s01e01",
+      "label": "tv:456:s01e01",
+      "status": "ok",
+      "elapsed_sec": 39.622,
+      "phase1_elapsed_ms": 2004,
+      "phase2_elapsed_ms": 30175,
+      "peers_total": 4,
+      "avg_kbps": 0.01,
+      "max_kbps": 0.02,
+      "recommended_speed": "0 KB/s",
+      "reachability": "中",
+      "write": {
+        "page_id": "tv:456:s01e01",
+        "phase1_result_id": "d69e535f-987c-4f3b-925b-179f47f1d8e1",
+        "phase2_result_id": "e7d019f9-8c73-4161-9e22-1cd7a22d202e",
+        "recommended_speed": "0 KB/s",
+        "reachability": "中",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:45952:s01e01",
+      "label": "tv:45952:s01e01",
+      "status": "ok",
+      "elapsed_sec": 39.342,
+      "phase1_elapsed_ms": 1005,
+      "phase2_elapsed_ms": 30196,
+      "peers_total": 1,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "低",
+      "write": {
+        "page_id": "tv:45952:s01e01",
+        "phase1_result_id": "3055bd83-4cc0-47ed-b400-7589128ba816",
+        "phase2_result_id": "edd32f22-4861-4ce8-9e59-007736b9ad89",
+        "recommended_speed": "",
+        "reachability": "低",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:4604:s01e01",
+      "label": "tv:4604:s01e01",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "",
+      "reachability": "不可达",
+      "summary_updated_at": "2026-07-02 11:30:18.822",
+      "recommended_infohash": "05110f4efa3c344ea93791f79bdcb711ccffec9a"
+    },
+    {
+      "page_id": "tv:4614:s01e01",
+      "label": "tv:4614:s01e01",
+      "status": "ok",
+      "elapsed_sec": 39.415,
+      "phase1_elapsed_ms": 1003,
+      "phase2_elapsed_ms": 30176,
+      "peers_total": 8,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "中",
+      "write": {
+        "page_id": "tv:4614:s01e01",
+        "phase1_result_id": "e75c6b8c-2f88-473a-bd6c-cd5a42bfe3f5",
+        "phase2_result_id": "80751ea7-0bd9-4a20-a648-649a39b3e598",
+        "recommended_speed": "",
+        "reachability": "中",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:46952:s01e01",
+      "label": "tv:46952:s01e01",
+      "status": "ok",
+      "elapsed_sec": 39.421,
+      "phase1_elapsed_ms": 1004,
+      "phase2_elapsed_ms": 30178,
+      "peers_total": 1,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "低",
+      "write": {
+        "page_id": "tv:46952:s01e01",
+        "phase1_result_id": "f529c486-fa06-4550-9386-fe02cac574fb",
+        "phase2_result_id": "6edd3556-6ad7-47a1-9350-7b306d6c8fc7",
+        "recommended_speed": "",
+        "reachability": "低",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:502:s01e01",
+      "label": "tv:502:s01e01",
+      "status": "timeout",
+      "elapsed_sec": 55.813,
+      "phase1_elapsed_ms": 20076,
+      "phase2_elapsed_ms": 30189,
+      "peers_total": 0,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "不可达",
+      "write": {
+        "page_id": "tv:502:s01e01",
+        "phase1_result_id": "6716b4db-4d31-4032-b3f4-4cd5aa7519ae",
+        "phase2_result_id": "8e06ac7f-aad1-4916-8f21-3298107aeaac",
+        "recommended_speed": "",
+        "reachability": "不可达",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:549:s01e01",
+      "label": "tv:549:s01e01",
+      "status": "timeout",
+      "elapsed_sec": 55.727,
+      "phase1_elapsed_ms": 20063,
+      "phase2_elapsed_ms": 30155,
+      "peers_total": 0,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "不可达",
+      "write": {
+        "page_id": "tv:549:s01e01",
+        "phase1_result_id": "82cb3d92-a6be-4997-b00b-fe84f4b13bff",
+        "phase2_result_id": "bdaed5b3-3041-47cb-b34f-4d44530198e1",
+        "recommended_speed": "",
+        "reachability": "不可达",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:5920:s01e01",
+      "label": "tv:5920:s01e01",
+      "status": "ok",
+      "elapsed_sec": 50.171,
+      "phase1_elapsed_ms": 12047,
+      "phase2_elapsed_ms": 30200,
+      "peers_total": 1,
+      "avg_kbps": 1.74,
+      "max_kbps": 14.79,
+      "recommended_speed": "2 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "tv:5920:s01e01",
+        "phase1_result_id": "dade468d-e3bd-430f-a7bc-00420f04bb81",
+        "phase2_result_id": "1a62076d-4253-4a75-a3f3-3ff74fa858d3",
+        "recommended_speed": "2 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:60625:s01e01",
+      "label": "tv:60625:s01e01",
+      "status": "ok",
+      "elapsed_sec": 35.608,
+      "phase1_elapsed_ms": 2011,
+      "phase2_elapsed_ms": 30195,
+      "peers_total": 2,
+      "avg_kbps": 6.2,
+      "max_kbps": 45.02,
+      "recommended_speed": "6 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "tv:60625:s01e01",
+        "phase1_result_id": "e5cc2c24-d87a-4568-8793-b7d3fcade491",
+        "phase2_result_id": "0df24549-3162-4da9-817d-857ea329bffa",
+        "recommended_speed": "6 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:60735:s01e01",
+      "label": "tv:60735:s01e01",
+      "status": "timeout",
+      "elapsed_sec": 55.612,
+      "phase1_elapsed_ms": 20068,
+      "phase2_elapsed_ms": 30016,
+      "peers_total": 0,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "不可达",
+      "write": {
+        "page_id": "tv:60735:s01e01",
+        "phase1_result_id": "bf87fee6-503c-4202-bec7-da3991757f44",
+        "phase2_result_id": "1367a8f8-0f6b-4d4e-ae23-1b7cfc5e9d5c",
+        "recommended_speed": "",
+        "reachability": "不可达",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:63174:s01e01",
+      "label": "tv:63174:s01e01",
+      "status": "ok",
+      "elapsed_sec": 45.078,
+      "phase1_elapsed_ms": 11035,
+      "phase2_elapsed_ms": 23879,
+      "peers_total": 1,
+      "avg_kbps": 12.8,
+      "max_kbps": 54.14,
+      "recommended_speed": "13 KB/s",
+      "reachability": "中",
+      "write": {
+        "page_id": "tv:63174:s01e01",
+        "phase1_result_id": "66972ad3-c68e-4577-8c23-1ed5feef490a",
+        "phase2_result_id": "80a0a6e5-2190-469e-866c-e1910bc278d6",
+        "recommended_speed": "13 KB/s",
+        "reachability": "中",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:66732:s01e01",
+      "label": "tv:66732:s01e01",
+      "status": "skipped",
+      "reason": "no_recommended",
+      "elapsed_sec": 0.0
+    },
+    {
+      "page_id": "tv:71790:s01e01",
+      "label": "tv:71790:s01e01",
+      "status": "skipped",
+      "reason": "no_recommended",
+      "elapsed_sec": 0.0
+    },
+    {
+      "page_id": "tv:71912:s01e01",
+      "label": "tv:71912:s01e01",
+      "status": "timeout",
+      "elapsed_sec": 55.803,
+      "phase1_elapsed_ms": 20082,
+      "phase2_elapsed_ms": 30213,
+      "peers_total": 2,
+      "avg_kbps": 5.19,
+      "max_kbps": 36.78,
+      "recommended_speed": "5 KB/s",
+      "reachability": "低",
+      "write": {
+        "page_id": "tv:71912:s01e01",
+        "phase1_result_id": "67b2b70d-69a8-47c6-bbc7-ec50b90ae13c",
+        "phase2_result_id": "deeac6a8-a5aa-4f35-8441-25dea0ba32e2",
+        "recommended_speed": "5 KB/s",
+        "reachability": "低",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:73586:s01e01",
+      "label": "tv:73586:s01e01",
+      "status": "timeout",
+      "elapsed_sec": 51.638,
+      "phase1_elapsed_ms": 20072,
+      "phase2_elapsed_ms": 30200,
+      "peers_total": 0,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "不可达",
+      "write": {
+        "page_id": "tv:73586:s01e01",
+        "phase1_result_id": "7b9dd477-b869-4241-afe0-4521314ee2b5",
+        "phase2_result_id": "5ef095d2-1301-4826-b634-7a6bec80bade",
+        "recommended_speed": "",
+        "reachability": "不可达",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:764:s01e01",
+      "label": "tv:764:s01e01",
+      "status": "timeout",
+      "elapsed_sec": 55.826,
+      "phase1_elapsed_ms": 20076,
+      "phase2_elapsed_ms": 30218,
+      "peers_total": 0,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "不可达",
+      "write": {
+        "page_id": "tv:764:s01e01",
+        "phase1_result_id": "a60cae2b-d8ef-40ef-9b36-65841f990785",
+        "phase2_result_id": "8dcc5a7a-b72f-46e9-a3fc-1f4278a3a868",
+        "recommended_speed": "",
+        "reachability": "不可达",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:76479:s01e01",
+      "label": "tv:76479:s01e01",
+      "status": "ok",
+      "elapsed_sec": 39.376,
+      "phase1_elapsed_ms": 1005,
+      "phase2_elapsed_ms": 30222,
+      "peers_total": 4,
+      "avg_kbps": 11.4,
+      "max_kbps": 45.24,
+      "recommended_speed": "11 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "tv:76479:s01e01",
+        "phase1_result_id": "3f6c5afb-1ce4-4ec7-ba9c-e190e65a0344",
+        "phase2_result_id": "5aaaae40-b815-4ccb-a528-5c756463c28b",
+        "recommended_speed": "11 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true
+      }
+    },
+    {
+      "page_id": "tv:79744:s01e01",
+      "label": "tv:79744:s01e01",
+      "status": "skipped",
+      "reason": "no_recommended",
+      "elapsed_sec": 0.0
+    },
+    {
+      "page_id": "tv:82452:s01e01",
+      "label": "tv:82452:s01e01",
+      "status": "skipped",
+      "reason": "no_recommended",
+      "elapsed_sec": 0.0
+    },
+    {
+      "page_id": "tv:82856:s01e01",
+      "label": "tv:82856:s01e01",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "",
+      "reachability": "不可达",
+      "summary_updated_at": "2026-07-02 11:30:24.009",
+      "recommended_infohash": "53e3b0076a73ee40d8dbd0232ec0748d04a35aec"
+    },
+    {
+      "page_id": "tv:94997:s01e01",
+      "label": "tv:94997:s01e01",
+      "status": "skipped_ttl",
+      "reason": "fresh_within_6h",
+      "elapsed_sec": 0.0,
+      "recommended_speed": "",
+      "reachability": "不可达",
+      "summary_updated_at": "2026-07-02 11:30:36.276",
+      "recommended_infohash": "27f22c9ddec434f03277b2fa7d22142373730692"
+    }
+  ]
+}

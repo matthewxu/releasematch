@@ -55,6 +55,24 @@ SCHEMA_DIR: Path = PROJECT_ROOT / "schema"
 # mysql: 只读连接 TMDB 元数据库（与字幕站共享 MySQL 实例时可启用）
 TMDB_DATA_MODE: str = os.getenv("RM_TMDB_DATA_MODE", "standalone")
 
+# TMDB v3 API Key（扩槽 batch 解析 imdb_id / tvdb_id；可选）
+TMDB_API_KEY: str = os.getenv("RM_TMDB_API_KEY", os.getenv("TMDB_API_KEY", ""))
+
+# TMDB CORS Proxy（参考 tmdbpy crawler_tmdb/api_config.py — Cloudflare Workers）
+TMDB_CORS_PROXY_URL: str = os.getenv(
+    "RM_TMDB_CORS_PROXY",
+    os.getenv("TMDB_CORS_PROXY_URL", "https://api.weidaohang.org/cp/"),
+)
+TMDB_API_BASE: str = os.getenv(
+    "RM_TMDB_API_BASE",
+    os.getenv("TMDB_API_BASE", "https://api.themoviedb.org/3"),
+)
+# (connect_sec, read_sec) — 对齐 crawler_tmdb TIME_OUT (6, 12)
+TMDB_API_TIMEOUT: tuple[int, int] = (
+    int(os.getenv("RM_TMDB_API_CONNECT_TIMEOUT", "6")),
+    int(os.getenv("RM_TMDB_API_READ_TIMEOUT", "12")),
+)
+
 MYSQL_HOST: str = os.getenv("RM_MYSQL_HOST", "127.0.0.1")
 MYSQL_PORT: int = int(os.getenv("RM_MYSQL_PORT", "3306"))
 MYSQL_DB: str = os.getenv("RM_MYSQL_DB", "test")

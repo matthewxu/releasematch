@@ -166,7 +166,11 @@ def cmd_batch(args: argparse.Namespace) -> int:
         page_ids = [p.strip() for p in args.page_ids.split(",") if p.strip()]
 
     try:
-        targets = load_batch_targets(page_ids=page_ids, slots_json=args.slots_json)
+        targets = load_batch_targets(
+            page_ids=page_ids,
+            slots_json=args.slots_json,
+            all_published=getattr(args, "all_published", False),
+        )
     except ValueError as exc:
         print(json.dumps({"ok": False, "error": str(exc)}, ensure_ascii=False))
         return 1
@@ -290,6 +294,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--slots-json",
         default=None,
         help="benchmark 槽位 JSON 文件路径",
+    )
+    p_batch.add_argument(
+        "--all-published",
+        action="store_true",
+        help="测速 MySQL 中全部 published 且 magnet≥2 的页面",
     )
     p_batch.add_argument(
         "--report",

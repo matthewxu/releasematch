@@ -76,9 +76,20 @@ python scripts/speedtest_batch_worker.py \
   --slots-json worklogs/2026-06-30/benchmark-slots.json \
   --write --workers 5 --target-bytes 262144 \
   --report worklogs/2026-07-02/speedtest-batch-benchmark.json
+
+# 全部 published 页（生产推荐：随槽位增长自动覆盖）
+python scripts/speedtest_batch_worker.py \
+  --all-published --write --workers 5 --target-bytes 262144 \
+  --report worklogs/2026-07-03/speedtest-all-published-benchmark.json
 ```
 
-**crontab 示例（每 6 小时，TTL 内自动跳过）：**
+**crontab 示例（每 6 小时，TTL 内自动跳过；推荐 `--all-published`）：**
+
+```cron
+0 */6 * * * cd /opt/releasematch/releasematch && .venv/bin/python scripts/speedtest_batch_worker.py --all-published --write --workers 5 --report /var/log/releasematch/speedtest-batch.json >> /var/log/releasematch/speedtest-cron.log 2>&1
+```
+
+**固定 7 槽 crontab（开发期）：**
 
 ```cron
 0 */6 * * * cd /opt/releasematch/releasematch && .venv/bin/python scripts/speedtest_batch_worker.py --slots-json worklogs/2026-06-30/benchmark-slots.json --write --workers 5 --report /var/log/releasematch/speedtest-batch.json >> /var/log/releasematch/speedtest-cron.log 2>&1
@@ -94,7 +105,7 @@ After=network-online.target
 [Service]
 Type=oneshot
 WorkingDirectory=/opt/releasematch/releasematch
-ExecStart=/opt/releasematch/releasematch/.venv/bin/python scripts/speedtest_batch_worker.py --slots-json worklogs/2026-06-30/benchmark-slots.json --write --workers 5 --report /var/log/releasematch/speedtest-batch.json
+ExecStart=/opt/releasematch/releasematch/.venv/bin/python scripts/speedtest_batch_worker.py --all-published --write --workers 5 --report /var/log/releasematch/speedtest-batch.json
 User=root
 ```
 

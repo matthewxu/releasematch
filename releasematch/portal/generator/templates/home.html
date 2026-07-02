@@ -1,0 +1,69 @@
+{# 首页目录 — 从 MySQL published 槽位动态生成 #}
+{# @template home.html — 全部作品入口网格 #}
+{% extends "base.html" %}
+
+{% block title %}ReleaseMatch — Release 导航站{% endblock %}
+
+{% block meta_description %}影视 Release 导航：102+ 验证集槽位，Recommended Release、对版分析与多源 magnet 对比。{% endblock %}
+
+{% block content %}
+<div class="rm-container">
+  <header class="rm-hero rm-hero--home">
+    <p class="rm-badge rm-badge--recommended rm-mb-2">Release 导航站 · 非下载托管</p>
+    <h1 class="rm-hero__title">选对 Release，而不只是找到 Magnet</h1>
+    <p class="rm-hero__subtitle">
+      我们为每一槽位聚合多源 torrent 元数据，给出 <strong>Recommended Release</strong>、对版说明、Group 信誉与测速摘要。
+    </p>
+    <div style="margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center;">
+      <a class="rm-btn rm-btn--primary" href="#catalog-heading">浏览全部作品（{{ catalog_count }}）</a>
+      <a class="rm-btn rm-btn--ghost" href="/trust/how-matching-works/">了解对版如何工作</a>
+    </div>
+  </header>
+
+  <section class="rm-features" aria-labelledby="features-heading">
+    <h2 id="features-heading" class="rm-sr-only">核心能力</h2>
+    <article class="rm-feature">
+      <div class="rm-feature__icon" aria-hidden="true">⭐</div>
+      <h3 class="rm-feature__title">Recommended Release</h3>
+      <p class="rm-feature__text">综合 Group 信誉、跨源验证与做种情况，推荐最优 release 并给出可索引的推荐理由。</p>
+    </article>
+    <article class="rm-feature">
+      <div class="rm-feature__icon" aria-hidden="true">🔍</div>
+      <h3 class="rm-feature__title">多源交叉验证</h3>
+      <p class="rm-feature__text">Jackett、EZTV、YTS、Nyaa 等源聚合去重，标注跨源一致等高置信度信号。</p>
+    </article>
+    <article class="rm-feature">
+      <div class="rm-feature__icon" aria-hidden="true">⚡</div>
+      <h3 class="rm-feature__title">测速与可用性</h3>
+      <p class="rm-feature__text">连接性测试与 seeders 日更，将实测摘要嵌入页面。</p>
+    </article>
+  </section>
+
+  <section class="rm-section" aria-labelledby="catalog-heading">
+    <div class="rm-section__header">
+      <h2 id="catalog-heading">全部作品</h2>
+      <span class="rm-text-muted">{{ movie_count }} 电影 · {{ tv_count }} 剧集 · {{ catalog_count }} 入口</span>
+    </div>
+
+    {% if catalog_entries %}
+    <div class="rm-show-grid">
+      {% for entry in catalog_entries %}
+      <a class="rm-show-card" href="{{ entry.href }}">
+        {% if entry.poster_url %}
+        <img class="rm-show-card__img" src="{{ entry.poster_url }}" alt="{{ entry.title }}" width="342" height="513" loading="lazy">
+        {% else %}
+        <div class="rm-show-card__img rm-show-card__img--placeholder" aria-hidden="true">{{ entry.title[:1] }}</div>
+        {% endif %}
+        <div class="rm-show-card__body">
+          <h3 class="rm-show-card__title">{{ entry.title }}</h3>
+          <p class="rm-show-card__meta">{{ entry.meta }}</p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="rm-text-muted">暂无 published 页面；请先运行 pipeline 扩槽与 generate all。</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

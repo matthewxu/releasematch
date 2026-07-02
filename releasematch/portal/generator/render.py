@@ -106,6 +106,41 @@ def render_page_context(
     return render_html(template_name, variables)
 
 
+def render_home_page(
+    store: Any,
+    site_origin: str = "",
+    *,
+    show_ig_debug: Optional[bool] = None,
+) -> str:
+    """
+    渲染首页目录（全部 published 槽位入口）。
+
+    @param store: MySQLStore 实例
+    @param site_origin: 站点 origin
+    @param show_ig_debug: 覆盖 RM_SHOW_IG_DEBUG
+    @returns: 完整 HTML 字符串
+    """
+    from datetime import datetime, timezone
+
+    from workflow.config import SHOW_IG_DEBUG
+
+    entries = store.list_home_catalog_entries()
+    movie_count = sum(1 for e in entries if e.get("media_kind") == "movie")
+    tv_count = sum(1 for e in entries if e.get("media_kind") == "tv")
+    context = {
+        "nav_active": "home",
+        "canonical_url": f"{site_origin.rstrip('/')}/" if site_origin else "https://releasematch.io/",
+        "catalog_entries": entries,
+        "catalog_count": len(entries),
+        "movie_count": movie_count,
+        "tv_count": tv_count,
+        "year": str(datetime.now(timezone.utc).year),
+        "show_ig_debug": SHOW_IG_DEBUG if show_ig_debug is None else show_ig_debug,
+        "ig_debug": None,
+    }
+    return render_html("home.html", context)
+
+
 def render_by_page_id(
     store: Any,
     page_id: str,

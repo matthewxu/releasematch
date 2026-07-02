@@ -188,18 +188,21 @@ class FetchService:
             if cached and cached.get("payload_json"):
                 try:
                     payload = json.loads(cached["payload_json"])
-                    items = [_item_from_dict(row) for row in payload]
-                    page_count, page_total = compute_page_cross_source(
-                        items,
-                        media_type=request.media_type.value,
-                    )
-                    return FetchResult(
-                        request=request,
-                        items=items,
-                        cached=True,
-                        cross_source_page_count=page_count,
-                        cross_source_page_total=page_total,
-                    )
+                    if not payload:
+                        pass
+                    else:
+                        items = [_item_from_dict(row) for row in payload]
+                        page_count, page_total = compute_page_cross_source(
+                            items,
+                            media_type=request.media_type.value,
+                        )
+                        return FetchResult(
+                            request=request,
+                            items=items,
+                            cached=True,
+                            cross_source_page_count=page_count,
+                            cross_source_page_total=page_total,
+                        )
                 except (json.JSONDecodeError, TypeError):
                     pass
 
@@ -216,16 +219,17 @@ class FetchService:
         parsed = [_apply_parser(item) for item in raw_items]
         total_families = count_attempted_families(source_enabled)
         merged = merge_by_infohash(parsed, total_source_families=total_families)
-        expires = _utc_expires_iso(self._cache_ttl_hours)
-        self._cache.upsert(
-            cache_key=cache_key,
-            tmdb_id=request.tmdb_id,
-            media_type=request.media_type.value,
-            payload=[item.to_dict() for item in merged],
-            expires_at=expires,
-            season=request.season,
-            episode=request.episode,
-        )
+        if merged:
+            expires = _utc_expires_iso(self._cache_ttl_hours)
+            self._cache.upsert(
+                cache_key=cache_key,
+                tmdb_id=request.tmdb_id,
+                media_type=request.media_type.value,
+                payload=[item.to_dict() for item in merged],
+                expires_at=expires,
+                season=request.season,
+                episode=request.episode,
+            )
         return FetchResult(
             request=request,
             items=merged,
@@ -281,7 +285,36 @@ class FetchService:
         @param request: FetchRequest
         @returns: external_ids 扩展字典
         """
-        return resolve_external_ids(request.tmdb_id, "tv")
+        from workflow.metadata.tmdb_api import enrich_external_ids
+
+        return enrich_external_ids(
+            request.tmdb_id,
+            "tv",
+            title=request.title,
+            base={
+                "imdb_id": request.imdb_id,
+                "tvdb_id": request.tvdb_id,
+            },
+        )
+
+    def _resolve_movie_metadata(self, request: FetchRequest) -> Dict[str, Any]:
+        """
+        解析电影元数据（含 slot 标题与 TMDB API 补全 IMDb）。
+
+        @param request: FetchRequest
+        @returns: external_ids 扩展字典
+        """
+        from workflow.metadata.tmdb_api import enrich_external_ids
+
+        return enrich_external_ids(
+            request.tmdb_id,
+            "movie",
+            title=request.title,
+            base={
+                "imdb_id": request.imdb_id,
+                "tvdb_id": request.tvdb_id,
+            },
+        )
 
     def _resolve_show_title(self, request: FetchRequest) -> Optional[str]:
         """
@@ -424,10 +457,11 @@ class FetchService:
         @param request: FetchRequest
         @returns: (items, source_enabled)
         """
-        meta = resolve_external_ids(request.tmdb_id, "movie")
+        meta = self._resolve_movie_metadata(request)
         region = detect_content_region(meta)
         search_titles = build_search_titles(meta, region)
         is_asia = region in ("jp", "kr")
+        imdb_id = request.imdb_id or meta.get("imdb_id")
 
         items: List[ResourceItem] = []
         source_enabled: Dict[str, bool] = {
@@ -436,10 +470,10 @@ class FetchService:
             "jackett": bool(self._jackett),
         }
 
-        if not is_asia and request.imdb_id:
+        if not is_asia and imdb_id:
             source_enabled["yts"] = True
             try:
-                items.extend(self._yts.fetch_movie(request.imdb_id))
+                items.extend(self._yts.fetch_movie(imdb_id))
             except Exception:
                 pass
 
@@ -450,18 +484,28 @@ class FetchService:
             except Exception:
                 pass
 
-        if self._jackett and request.imdb_id:
+        if self._jackett and imdb_id:
             for indexer in self._jackett_movie_indexers_for(region):
                 try:
                     items.extend(
                         self._jackett.search_movie(
                             indexer=indexer,
-                            imdb_id=request.imdb_id,
+                            imdb_id=imdb_id,
                             tmdb_id=request.tmdb_id,
                         )
                     )
                 except Exception:
                     continue
+
+        if self._jackett and not items and search_titles:
+            for indexer in self._jackett_movie_indexers_for(region):
+                for query in search_titles[:2]:
+                    try:
+                        items.extend(self._jackett.search_text(indexer, query))
+                    except Exception:
+                        continue
+                if items:
+                    break
 
         return items, source_enabled
 

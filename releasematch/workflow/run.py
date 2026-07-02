@@ -242,12 +242,32 @@ def cmd_pipeline(args: argparse.Namespace) -> int:
     """
     执行 pipeline 子命令。
 
-    @param args: 含 action、tmdb、season、episode、mode、fetch
+    @param args: 含 action、tmdb、season、episode、mode、fetch、slots_json
     @returns: 进程退出码
     """
     action = args.action.strip().lower()
+
+    if action == "batch":
+        from pathlib import Path
+
+        from workflow.storage.pipeline import load_slots_json, run_batch_slot_pipeline
+
+        slots_path = Path(args.slots_json)
+        if not slots_path.is_file():
+            print(f"slots JSON 不存在: {slots_path}")
+            return 1
+        slots = load_slots_json(slots_path)
+        result = run_batch_slot_pipeline(
+            slots,
+            mode=args.mode,
+            fetch=args.fetch,
+            skip_existing=args.skip_existing,
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0 if result.get("ok") else 1
+
     if action != "slot":
-        print("当前仅支持: pipeline slot")
+        print("当前支持: pipeline slot | pipeline batch")
         return 1
 
     if args.tmdb is None:
@@ -425,6 +445,25 @@ def build_parser() -> argparse.ArgumentParser:
         "--fetch", action="store_true", help="调用 torrent_sources（R1，当前回退 demo）"
     )
     p_pipe_slot.set_defaults(func=cmd_pipeline)
+
+    p_pipe_batch = pipe_sub.add_parser("batch", help="批量处理 benchmark slot JSON")
+    p_pipe_batch.add_argument(
+        "--slots-json",
+        default="worklogs/2026-07-03/tmdb-benchmark-slots.json",
+        help="slot 清单 JSON",
+    )
+    p_pipe_batch.add_argument(
+        "--mode", default="live", choices=("demo", "live"), help="demo=内置数据 live=需 fetch"
+    )
+    p_pipe_batch.add_argument("--fetch", action="store_true", default=True, help="拉取 torrent（默认）")
+    p_pipe_batch.add_argument("--no-fetch", action="store_false", dest="fetch")
+    p_pipe_batch.add_argument(
+        "--no-skip-existing",
+        action="store_false",
+        dest="skip_existing",
+        help="不跳过已有 >=2 magnet 的页面",
+    )
+    p_pipe_batch.set_defaults(func=cmd_pipeline, skip_existing=True)
 
     p_query = sub.add_parser("query", help="从 MySQL 读取页面数据")
     query_sub = p_query.add_subparsers(dest="query_action", required=True)
