@@ -19,5 +19,6 @@
 | [nyaa-proxy-asia.md](./nyaa-proxy-asia.md) | **日韩剧 Nyaa LA 直连 + SSH SOCKS 隧道回退** |
 | [09-Stremio插件价值分析.md](./09-Stremio插件价值分析.md) | **Stremio 平台用户规模、竞品缺口、插件差异化与执行路线** |
 | [**10-稀缺槽与用户求片通知方案.md**](./10-稀缺槽与用户求片通知方案.md) | **稀缺槽产品化 + 用户求片 / 定时爬取 / 通知（规划稿，暂不开发）** |
+| [**11-CN华语影视资源方案.md**](./11-CN华语影视资源方案.md) | **华语影视**：全球市场摘要、DMHy Layer 2F、`cn` 路由、渠道矩阵、PoC |
 
 **隔离说明：** `03` 文档中 `tmdbpy/workflow/torrent_sources/`、`subtitle-portal` 路由等路径已废弃，以 `releasematch/` 为准。

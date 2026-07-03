@@ -87,6 +87,8 @@ JACKETT_API_KEY: str = os.getenv("JACKETT_API_KEY", "")
 EZTV_BASE_URL: str = os.getenv("EZTV_BASE_URL", "https://eztvx.to")
 YTS_BASE_URL: str = os.getenv("YTS_BASE_URL", "https://yts.lt")
 NYAA_BASE_URL: str = os.getenv("NYAA_BASE_URL", "https://nyaa.si")
+# 动漫花园（中文动漫/部分剧集 magnet RSS 第一手源）
+DMHY_BASE_URL: str = os.getenv("DMHY_BASE_URL", "https://share.dmhy.org")
 
 # 直连失败时回退的代理（本机 SSH SOCKS：socks5h://127.0.0.1:1080）
 TORRENT_PROXY: str = os.getenv(

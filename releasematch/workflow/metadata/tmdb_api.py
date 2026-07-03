@@ -188,21 +188,30 @@ class TmdbApiClient:
 
         if media_type == "movie":
             title = str(data.get("title") or data.get("original_title") or "")
+            original_title = str(data.get("original_title") or "")
             year = _parse_year(data.get("release_date"))
+            origin_country = data.get("origin_country") or []
         else:
             title = str(data.get("name") or data.get("original_name") or "")
+            original_title = str(data.get("original_name") or "")
             year = _parse_year(data.get("first_air_date"))
+            origin_country = data.get("origin_country") or []
 
-        return {
+        row: Dict[str, Any] = {
             "tmdb_id": tmdb_id,
             "media_type": media_type,
             "imdb_id": imdb_id,
             "tvdb_id": tvdb_id,
             "title": title or None,
             "original_language": data.get("original_language"),
+            "origin_country": origin_country if isinstance(origin_country, list) else [],
             "year": year,
             "source": "tmdb_api",
         }
+        if str(data.get("original_language") or "").lower() in ("zh", "cn") and original_title:
+            row["title_zh"] = original_title
+            row["original_title"] = original_title
+        return row
 
 
 def fetch_external_ids_from_api(
@@ -329,6 +338,12 @@ def enrich_external_ids(
             ext["title"] = api_row["title"]
         if api_row.get("original_language"):
             ext["original_language"] = api_row["original_language"]
+        if api_row.get("origin_country"):
+            ext["origin_country"] = api_row["origin_country"]
+        if api_row.get("title_zh"):
+            ext["title_zh"] = api_row["title_zh"]
+        if api_row.get("original_title"):
+            ext["original_title"] = api_row["original_title"]
         if api_row.get("year") and not ext.get("year"):
             ext["year"] = api_row["year"]
         ext["source"] = api_row.get("source", ext.get("source"))
