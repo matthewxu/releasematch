@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-日韩内容区域判定与多语言搜索词。
+亚洲内容区域判定与多语言搜索词（日韩中）。
 
 @module workflow.torrent_sources.asia_region
-@description 依据 TMDB original_language / standalone 映射选择 Nyaa LA 路由与搜索标题。
+@description
+  依据 TMDB original_language / origin_country 选择 Nyaa LA、DMHy、Jackett 路由与搜索标题。
 """
 
 from __future__ import annotations
@@ -18,16 +19,18 @@ _CJK_RE = re.compile(r"[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]")
 
 def detect_content_region(metadata: Dict[str, Any]) -> Optional[str]:
     """
-    判定作品是否走日韩路由。
+    判定作品是否走亚洲专用路由。
 
     @param metadata: resolve_external_ids 或扩展字段（含 original_language）
-    @returns: "jp" | "kr" | None（None 走欧美默认路由）
+    @returns: "jp" | "kr" | "cn" | None（None 走欧美默认路由）
     """
     lang = str(metadata.get("original_language") or "").lower().strip()
     if lang == "ja":
         return "jp"
     if lang == "ko":
         return "kr"
+    if lang in ("zh", "cn"):
+        return "cn"
     countries = metadata.get("origin_country") or []
     if isinstance(countries, str):
         countries = [countries]
@@ -36,34 +39,54 @@ def detect_content_region(metadata: Dict[str, Any]) -> Optional[str]:
         return "jp"
     if "KR" in upper and lang in ("ko", "en", ""):
         return "kr"
+    if upper & {"CN", "HK", "TW"} and lang in ("zh", "cn", "en", ""):
+        return "cn"
     return None
+
+
+def is_asia_region(region: Optional[str]) -> bool:
+    """
+    是否为亚洲专用路由（日韩中）。
+
+    @param region: detect_content_region 返回值
+    @returns: True 表示跳过 EZTV/YTS 欧美主源
+    """
+    return region in ("jp", "kr", "cn")
 
 
 def build_search_titles(metadata: Dict[str, Any], region: Optional[str] = None) -> List[str]:
     """
-    生成 Nyaa / Jackett 多语言搜索词列表（去重保序）。
+    生成 Nyaa / DMHy / Jackett 多语言搜索词列表（去重保序）。
 
-    @param metadata: 含 title、title_ja、title_ko
-    @param region: jp | kr | None
-    @returns: 标题变体列表
+    @param metadata: 含 title、title_ja、title_ko、title_zh
+    @param region: jp | kr | cn | None
+    @returns: 标题变体列表（中文区优先本地标题）
     """
     region = region or detect_content_region(metadata)
-    titles: List[str] = []
+    primary: List[str] = []
+    secondary: List[str] = []
 
-    def _add(value: Any) -> None:
-        """追加非空标题。"""
+    def _add(bucket: List[str], value: Any) -> None:
+        """追加非空标题到指定桶。"""
         if isinstance(value, str) and value.strip():
-            titles.append(value.strip())
+            bucket.append(value.strip())
 
-    _add(metadata.get("title"))
-    if region == "jp":
-        _add(metadata.get("title_ja"))
+    if region == "cn":
+        _add(primary, metadata.get("title_zh"))
+        _add(primary, metadata.get("original_title"))
+        _add(secondary, metadata.get("title"))
+    elif region == "jp":
+        _add(secondary, metadata.get("title"))
+        _add(primary, metadata.get("title_ja"))
     elif region == "kr":
-        _add(metadata.get("title_ko"))
+        _add(secondary, metadata.get("title"))
+        _add(primary, metadata.get("title_ko"))
+    else:
+        _add(primary, metadata.get("title"))
 
     seen: set[str] = set()
     ordered: List[str] = []
-    for title in titles:
+    for title in primary + secondary:
         key = title.lower()
         if key not in seen:
             seen.add(key)

@@ -30,7 +30,7 @@ def normalize_source_family(indexer: str) -> str:
         return "jackett"
     if raw.startswith("nyaa"):
         return "nyaa"
-    if raw in ("eztv", "yts"):
+    if raw in ("eztv", "yts", "dmhy"):
         return raw
     return raw.split(":", 1)[0]
 

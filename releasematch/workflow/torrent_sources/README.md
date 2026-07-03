@@ -8,7 +8,7 @@
 
 ## 模块用途
 
-从 Jackett / EZTV / YTS / Nyaa 拉取 torrent **元数据**（infohash、标题、seeders、magnet），不下载、不托管视频。
+从 Jackett / EZTV / YTS / Nyaa / **DMHy（动漫花园）** 拉取 torrent **元数据**（infohash、标题、seeders、magnet），不下载、不托管视频。
 
 | 模式 | 命令 | 说明 |
 |------|------|------|
@@ -30,6 +30,8 @@ torrent_sources/
 ├── eztv_client.py            # Layer 2A 🔧 R0
 ├── yts_client.py             # Layer 2B 🔧 R0
 ├── nyaa_client.py            # Layer 2C 🔧 R1
+├── nyaa_live_action_client.py # Layer 2D 日韩真人 🔧 R1
+├── dmhy_client.py            # Layer 2F 中文 DMHy 🔧 R1
 ├── release_parser.py         # 归一化 🔧 R1
 ├── fetch_service.py          # 编排层 🔧 R0
 ├── batch_fetch.py            # 批补 🔧 R1

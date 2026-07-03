@@ -4,7 +4,7 @@
 多源拉取编排层。
 
 @module workflow.torrent_sources.fetch_service
-@description 缓存、EZTV/YTS/Nyaa/Jackett 串行拉取、跨源聚合、release 解析。
+@description 缓存、EZTV/YTS/Nyaa/DMHy/Jackett 串行拉取、跨源聚合、release 解析。
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ from workflow.metadata.external_ids import resolve_external_ids
 from workflow.torrent_sources.asia_region import (
     build_search_titles,
     detect_content_region,
+    is_asia_region,
 )
 from workflow.torrent_sources.cache_index import CacheIndex
 from workflow.torrent_sources.config import (
@@ -28,6 +29,7 @@ from workflow.torrent_sources.cross_source import (
     count_attempted_families,
     merge_by_infohash,
 )
+from workflow.torrent_sources.dmhy_client import DmhyClient
 from workflow.torrent_sources.eztv_client import EztvClient
 from workflow.torrent_sources.http_fetch import proxy_settings_from_config
 from workflow.torrent_sources.jackett_client import JackettClient
@@ -156,6 +158,17 @@ class FetchService:
             proxy=self._proxy,
             category=str(nyaa_la_cfg.get("category") or "4_0"),
         )
+        dmhy_cfg = self._cfg.get("dmhy", {})
+        self._dmhy = DmhyClient(
+            base_url=str(dmhy_cfg.get("base_url") or "https://share.dmhy.org"),
+            mirrors=list(dmhy_cfg.get("mirrors") or []),
+            min_interval_sec=max(rate, 3.0),
+            enabled=bool(dmhy_cfg.get("enabled", True)),
+            proxy=self._proxy,
+            sort_id=int(dmhy_cfg.get("sort_id") or 0),
+            team_id=int(dmhy_cfg.get("team_id") or 0),
+            order=str(dmhy_cfg.get("order") or "date-desc"),
+        )
         jackett_cfg = self._cfg.get("jackett", {})
         api_key = str(jackett_cfg.get("api_key") or "")
         self._jackett: Optional[JackettClient] = None
@@ -171,8 +184,10 @@ class FetchService:
             "movie": list(idx.get("movie") or ["all"]),
             "jp_tv": list(idx.get("jp_tv") or idx.get("tv") or []),
             "kr_tv": list(idx.get("kr_tv") or idx.get("tv") or []),
+            "cn_tv": list(idx.get("cn_tv") or idx.get("tv") or []),
             "jp_movie": list(idx.get("jp_movie") or idx.get("movie") or []),
             "kr_movie": list(idx.get("kr_movie") or idx.get("movie") or []),
+            "cn_movie": list(idx.get("cn_movie") or idx.get("movie") or []),
         }
 
     def fetch_slot(self, request: FetchRequest) -> FetchResult:
@@ -256,26 +271,30 @@ class FetchService:
         """
         按内容区域选择 Jackett 剧集 indexer 列表。
 
-        @param region: jp | kr | None
+        @param region: jp | kr | cn | None
         @returns: indexer id 列表
         """
         if region == "jp":
             return self._jackett_indexers["jp_tv"]
         if region == "kr":
             return self._jackett_indexers["kr_tv"]
+        if region == "cn":
+            return self._jackett_indexers["cn_tv"]
         return self._jackett_indexers["tv"]
 
     def _jackett_movie_indexers_for(self, region: Optional[str]) -> List[str]:
         """
         按内容区域选择 Jackett 电影 indexer 列表。
 
-        @param region: jp | kr | None
+        @param region: jp | kr | cn | None
         @returns: indexer id 列表
         """
         if region == "jp":
             return self._jackett_indexers["jp_movie"]
         if region == "kr":
             return self._jackett_indexers["kr_movie"]
+        if region == "cn":
+            return self._jackett_indexers["cn_movie"]
         return self._jackett_indexers["movie"]
 
     def _resolve_tv_metadata(self, request: FetchRequest) -> Dict[str, Any]:
@@ -329,7 +348,7 @@ class FetchService:
 
     def _fetch_tv(self, request: FetchRequest) -> Tuple[List[ResourceItem], Dict[str, bool]]:
         """
-        剧集：欧美 EZTV + Nyaa；日韩 Nyaa LA + Jackett（含槽位标题过滤）。
+        剧集：欧美 EZTV + Nyaa；日韩中 Nyaa LA / DMHy + Jackett（含槽位标题过滤）。
 
         @param request: FetchRequest
         @returns: (items, source_enabled)
@@ -368,7 +387,7 @@ class FetchService:
 
         @param request: FetchRequest
         @param meta: 可选预解析元数据
-        @param region: jp | kr | None
+        @param region: jp | kr | cn | None
         @param search_titles: 多语言搜索词
         @returns: (items, source_enabled, show_title)
         """
@@ -381,12 +400,13 @@ class FetchService:
         source_enabled: Dict[str, bool] = {
             "eztv": False,
             "nyaa": False,
+            "dmhy": False,
             "jackett": bool(self._jackett),
         }
-        is_asia = region in ("jp", "kr")
+        asia = is_asia_region(region)
 
         if (
-            not is_asia
+            not asia
             and request.imdb_id
             and request.season is not None
             and request.episode is not None
@@ -408,7 +428,19 @@ class FetchService:
             and request.episode is not None
             and search_titles
         ):
-            if is_asia and self._nyaa_la.enabled:
+            if region == "cn" and self._dmhy.enabled:
+                source_enabled["dmhy"] = True
+                try:
+                    items.extend(
+                        self._dmhy.fetch_episode_titles(
+                            search_titles,
+                            request.season,
+                            request.episode,
+                        )
+                    )
+                except Exception:
+                    pass
+            if asia and self._nyaa_la.enabled:
                 source_enabled["nyaa"] = True
                 try:
                     items.extend(
@@ -447,12 +479,21 @@ class FetchService:
                     )
                 except Exception:
                     continue
+            if asia and search_titles and not items:
+                for indexer in self._jackett_tv_indexers_for(region):
+                    for query in search_titles[:3]:
+                        try:
+                            items.extend(self._jackett.search_text(indexer, query))
+                        except Exception:
+                            continue
+                    if items:
+                        break
 
         return items, source_enabled, show_title
 
     def _fetch_movie(self, request: FetchRequest) -> Tuple[List[ResourceItem], Dict[str, bool]]:
         """
-        电影：YTS + Nyaa LA（日韩）+ Jackett。
+        电影：YTS + Nyaa LA / DMHy（亚洲）+ Jackett。
 
         @param request: FetchRequest
         @returns: (items, source_enabled)
@@ -460,24 +501,32 @@ class FetchService:
         meta = self._resolve_movie_metadata(request)
         region = detect_content_region(meta)
         search_titles = build_search_titles(meta, region)
-        is_asia = region in ("jp", "kr")
+        asia = is_asia_region(region)
         imdb_id = request.imdb_id or meta.get("imdb_id")
 
         items: List[ResourceItem] = []
         source_enabled: Dict[str, bool] = {
             "yts": False,
             "nyaa": False,
+            "dmhy": False,
             "jackett": bool(self._jackett),
         }
 
-        if not is_asia and imdb_id:
+        if not asia and imdb_id:
             source_enabled["yts"] = True
             try:
                 items.extend(self._yts.fetch_movie(imdb_id))
             except Exception:
                 pass
 
-        if is_asia and self._nyaa_la.enabled and search_titles:
+        if region == "cn" and self._dmhy.enabled and search_titles:
+            source_enabled["dmhy"] = True
+            try:
+                items.extend(self._dmhy.fetch_movie_titles(search_titles))
+            except Exception:
+                pass
+
+        if asia and self._nyaa_la.enabled and search_titles:
             source_enabled["nyaa"] = True
             try:
                 items.extend(self._nyaa_la.fetch_movie_titles(search_titles))

@@ -19,7 +19,11 @@
 | [nyaa-proxy-asia.md](./nyaa-proxy-asia.md) | **日韩剧 Nyaa LA 直连 + SSH SOCKS 隧道回退** |
 | [09-Stremio插件价值分析.md](./09-Stremio插件价值分析.md) | **Stremio 平台用户规模、竞品缺口、插件差异化与执行路线** |
 | [**10-稀缺槽与用户求片通知方案.md**](./10-稀缺槽与用户求片通知方案.md) | **稀缺槽产品化 + 用户求片 / 定时爬取 / 通知（规划稿，暂不开发）** |
+<<<<<<< HEAD
 | [**全球SEO流量定位.md**](./全球SEO流量定位.md) | **全球影视资源视角：意图分层、市场、关键词簇、选槽与流量组合** |
 | [**11-页面SEO分析与优化方向.md**](./11-页面SEO分析与优化方向.md) → [worklog](../worklogs/2026-07-03/页面SEO分析与优化方向.md) | **全站 SEO 审计 + C2 任务清单（2026-07-03 工作日志）** |
+=======
+| [**11-CN华语影视资源方案.md**](./11-CN华语影视资源方案.md) | **华语影视**：全球市场摘要、DMHy Layer 2F、`cn` 路由、渠道矩阵、PoC |
+>>>>>>> origin/main
 
 **隔离说明：** `03` 文档中 `tmdbpy/workflow/torrent_sources/`、`subtitle-portal` 路由等路径已废弃，以 `releasematch/` 为准。

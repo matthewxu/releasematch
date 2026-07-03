@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from workflow.config import (
+    DMHY_BASE_URL,
     EZTV_BASE_URL,
     JACKETT_API_KEY,
     JACKETT_BASE_URL,
@@ -120,6 +121,9 @@ def load_accounts_config(path: Path | None = None) -> Dict[str, Any]:
         data.setdefault("nyaa_live_action", {})["base_url"] = data.get("nyaa", {}).get(
             "base_url", NYAA_BASE_URL
         )
+    data.setdefault("dmhy", {}).setdefault("base_url", DMHY_BASE_URL)
+    data.setdefault("dmhy", {}).setdefault("enabled", True)
+    data.setdefault("dmhy", {}).setdefault("mirrors", [])
     data.setdefault("rate_limit", {})["min_interval_sec"] = TORRENT_MIN_INTERVAL_SEC
     data.setdefault("cache", {})["seeders_ttl_hours"] = TORRENT_SEEDERS_TTL_HOURS
     return data
