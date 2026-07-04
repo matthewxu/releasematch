@@ -973,6 +973,80 @@ def _enrich_recommended_with_speed(
         rec_dict["speed"] = speed_summary.recommended_speed
 
 
+def build_tv_episode_schema_ld(
+    *,
+    episode_title: str,
+    show_title: str,
+    season: int,
+    episode: int,
+    canonical_url: str,
+    show_hub_url: str,
+    air_date: str = "",
+    description: str = "",
+) -> Dict[str, Any]:
+    """
+    构造单集页 schema.org TVEpisode JSON-LD 字典（T-SEO-04 / D-T1）。
+
+    @param episode_title: TMDB 单集标题；空则回退 SxxExx
+    @param show_title: 剧集名（TVSeries.name）
+    @param season: 季号
+    @param episode: 集号（TVEpisode.position）
+    @param canonical_url: 本页 canonical 绝对 URL
+    @param show_hub_url: 剧集 Hub 页 URL（partOfSeries.url）
+    @param air_date: 播出日 YYYY-MM-DD（可选，写入 datePublished）
+    @param description: 单集简介（可选）
+    @returns: 可直接 Jinja ``|tojson`` 的字典
+    """
+    name = episode_title.strip() if episode_title.strip() else f"S{season:02d}E{episode:02d}"
+    schema: Dict[str, Any] = {
+        "@context": "https://schema.org",
+        "@type": "TVEpisode",
+        "name": name,
+        "position": episode,
+        "season": season,
+        "partOfSeries": {
+            "@type": "TVSeries",
+            "name": show_title,
+            "url": show_hub_url,
+        },
+        "url": canonical_url,
+    }
+    if air_date:
+        schema["datePublished"] = air_date
+    if description:
+        schema["description"] = description
+    return schema
+
+
+def build_movie_schema_ld(
+    *,
+    movie_title: str,
+    year: str,
+    canonical_url: str,
+    description: str = "",
+) -> Dict[str, Any]:
+    """
+    构造电影页 schema.org Movie JSON-LD 字典（T-SEO-04）。
+
+    @param movie_title: 电影名
+    @param year: 上映年份
+    @param canonical_url: 本页 canonical 绝对 URL
+    @param description: 简介（可选）
+    @returns: 可直接 Jinja ``|tojson`` 的字典
+    """
+    schema: Dict[str, Any] = {
+        "@context": "https://schema.org",
+        "@type": "Movie",
+        "name": movie_title,
+        "url": canonical_url,
+    }
+    if year:
+        schema["datePublished"] = year
+    if description:
+        schema["description"] = description
+    return schema
+
+
 @dataclass
 class EpisodePageContext:
     """
@@ -1025,11 +1099,22 @@ class EpisodePageContext:
                 return f"{site_origin.rstrip('/')}{path}"
             return path
 
+        origin = site_origin.rstrip("/") if site_origin else ""
+        canonical = self.canonical_url or (
+            f"{origin}{self.page.canonical_path}" if origin else self.page.canonical_path
+        )
+        hub_path = f"/{slug}/"
+        show_hub_url = f"{origin}{hub_path}" if origin else hub_path
+        season_num = self.page.season or 0
+        episode_num = self.page.episode or 0
+        overview = self.page.overview or self.catalog.overview or ""
+
         return {
             "show_title": self.catalog.title,
             "show_slug": slug,
             "season": self.page.season,
             "episode": self.page.episode,
+            "episode_title": self.page.episode_title,
             "air_date": self.page.air_date,
             "episode_overview": self.page.overview or self.catalog.overview,
             "cross_source_count": self.page.cross_source_count,
@@ -1062,7 +1147,18 @@ class EpisodePageContext:
             ),
             "streaming_providers": self.catalog.streaming_providers,
             "subtitle_url": self.page.subtitle_url,
-            "canonical_url": self.canonical_url or f"{site_origin}{self.page.canonical_path}",
+            "canonical_url": canonical,
+            "show_hub_url": show_hub_url,
+            "schema_ld": build_tv_episode_schema_ld(
+                episode_title=self.page.episode_title,
+                show_title=self.catalog.title,
+                season=season_num,
+                episode=episode_num,
+                canonical_url=canonical,
+                show_hub_url=show_hub_url,
+                air_date=self.page.air_date,
+                description=overview,
+            ),
             "robots_noindex": not self.page.is_indexable(),
             "meta_description": (
                 f"{self.catalog.title} 第 {self.page.season} 季第 {self.page.episode} 集 "
@@ -1119,11 +1215,13 @@ class MoviePageContext:
         canonical = self.canonical_url or (
             f"{origin}{self.page.canonical_path}" if origin else self.page.canonical_path
         )
+        overview = self.page.overview or self.catalog.overview or ""
+        year = self.catalog.year or ""
         return {
             "movie_title": self.catalog.title,
-            "year": self.catalog.year or "",
+            "year": year,
             "runtime": runtime,
-            "movie_overview": self.page.overview or self.catalog.overview,
+            "movie_overview": overview,
             "cross_source_count": self.page.cross_source_count,
             "cross_source_total": self.page.cross_source_total,
             "speed_summary": self.speed_summary.to_template_dict() if self.speed_summary else None,
@@ -1136,6 +1234,12 @@ class MoviePageContext:
             "tmdb_overview": self.page.overview or self.catalog.overview,
             "tmdb_url": self.catalog.tmdb_url,
             "canonical_url": canonical,
+            "schema_ld": build_movie_schema_ld(
+                movie_title=self.catalog.title,
+                year=year,
+                canonical_url=canonical,
+                description=overview,
+            ),
             "robots_noindex": not self.page.is_indexable(),
         }
 

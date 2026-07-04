@@ -14,16 +14,9 @@
   {% endif %}
 {% endblock %}
 
+{# T-SEO-04 / D-T1：TVEpisode + partOfSeries(TVSeries)，由 schema_ld 在 Python 侧组装 #}
 {% block head_extra %}
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebPage",
-    "name": "{{ show_title }} S{{ season }}E{{ episode }} — Release-Matched Sources",
-    "description": "{{ meta_description | default('Release navigation with verified release recommendations') }}",
-    "url": "{{ canonical_url }}"
-  }
-  </script>
+  <script type="application/ld+json">{{ schema_ld | tojson }}</script>
 {% endblock %}
 
 {% block content %}
