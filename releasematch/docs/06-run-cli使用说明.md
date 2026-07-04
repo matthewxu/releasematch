@@ -1,10 +1,10 @@
 # 06 — workflow.run 总控 CLI 使用说明
 
-> **版本：** v0.2（2026-07-03）  
+> **版本：** v0.3（2026-07-04）  
 > **入口文件：** `workflow/run.py`  
 > **调用方式：** `python -m workflow.run <子命令> [参数]`  
 > **前置：** 在 `releasematch/` 目录下执行；配置见 [05-存储与部署配置.md](./05-存储与部署配置.md)  
-> **关联文档：** [VPS迁移与部署.md](./VPS迁移与部署.md) · [11-CN华语影视资源方案.md](./11-CN华语影视资源方案.md) · [nyaa-proxy-asia.md](./nyaa-proxy-asia.md)
+> **关联文档：** [VPS迁移与部署.md](./VPS迁移与部署.md) · [11-CN华语影视资源方案.md](./11-CN华语影视资源方案.md) · [nyaa-proxy-asia.md](./nyaa-proxy-asia.md) · [worklogs SEO §六](../worklogs/2026-07-03/页面SEO分析与优化方向.md)
 
 ---
 
@@ -390,12 +390,18 @@ python -m workflow.run generate page --page-id tv:1396:s04e06
 # 单页（URL 路径）
 python -m workflow.run generate page --path /breaking-bad/s4e6/
 
-# 全量 published（生产 dist 构建）
+# 全量 published（生产 dist 构建 + sitemap.xml）
 python -m workflow.run generate all
 
 # 开发：嵌入 IG debug 面板
 python -m workflow.run generate all --show-ig-debug
 ```
+
+**产出（`generate all`）：**
+
+- 各 published 内容页 → `portal/dist/<slug>/.../index.html`
+- 首页 → `portal/dist/index.html`
+- **sitemap** → `portal/dist/sitemap.xml`（按 SEO 决策 D3：≤30 indexable 内容页 + Trust 4 + 首页）
 
 **参数：**
 
@@ -421,7 +427,57 @@ python -m workflow.run serve
 python -m workflow.run serve --host 0.0.0.0 --port 8080
 ```
 
-**说明：** SEO 验收以 **`generate all` 产出的 `portal/dist/`** 为准，非 `serve` 动态页。
+**说明：** SEO 验收以 **`generate all` 产出的 `portal/dist/`** 为准，非 `serve` 动态页。部署前可运行 **`scripts/seo_c2_checklist.sh`** 自动化 §6.1～6.3 本地检查（见 §5.8）。
+
+---
+
+### 3.8 C2 SEO 本地检查 — `scripts/seo_c2_checklist`
+
+**作用：** 对 `portal/dist/` 执行 [页面SEO分析与优化方向.md](../worklogs/2026-07-03/页面SEO分析与优化方向.md) **§6.1～6.3** 可本地完成的检查（robots.txt、sitemap 规则、canonical 抽查、404/410、页面 head、MySQL magnet/Recommended 交叉验证等）。**§6.4 GSC** 与 **HTTPS/HSTS** 标记为 SKIP，须上线后在 Google Search Console 验收。
+
+**语法：**
+
+```bash
+# 检查已有 dist（须先 generate all 或 deploy --prepare-only）
+bash scripts/seo_c2_checklist.sh
+
+# 先生成 dist 再检查（= deploy_cf_pages.sh --prepare-only + 检查）
+bash scripts/seo_c2_checklist.sh --prepare
+
+# JSON 报告（CI / 脚本解析）
+bash scripts/seo_c2_checklist.sh --json
+
+# 无 MySQL 时跳过 DB 交叉验证
+bash scripts/seo_c2_checklist.sh --no-db
+```
+
+**等价 Python 入口：**
+
+```bash
+python scripts/seo_c2_checklist.py [--dist portal/dist] [--site-origin URL] [--prepare] [--no-db] [--json]
+```
+
+**参数：**
+
+| 参数 | 说明 |
+|------|------|
+| `--dist` | dist 目录，默认 `portal/dist` |
+| `--site-origin` | 期望 canonical origin，默认 `RM_SITE_ORIGIN` |
+| `--prepare` | 检查前执行 `bash scripts/deploy_cf_pages.sh --prepare-only` |
+| `--no-db` | 跳过 MySQL 交叉验证（无库环境） |
+| `--json` | 输出 JSON 报告 |
+
+**退出码：**
+
+| 退出码 | 含义 |
+|--------|------|
+| `0` | 无 FAIL 项 |
+| `1` | 存在 FAIL（如 OG/favicon 未实现、Trust privacy 缺 description） |
+| `2` | `--prepare` 失败 |
+
+**典型输出：** 按 §6.1 / §6.2 / §6.3 分组，每项标记 ✅ pass / ❌ fail / ⚠️ warn / ⏭️ skip。
+
+**说明：** 生产部署完整流程为 `generate all` → `seo_c2_checklist.sh` → `bash scripts/deploy_cf_pages.sh`（见 §5.8）。
 
 ---
 
@@ -533,10 +589,13 @@ python scripts/tmdb_warm_external_ids.py --force
 python -m workflow.run pipeline batch \
   --slots-json worklogs/2026-07-03/tmdb-benchmark-slots.json --fetch
 
-# 3. 生成静态站
+# 3. 生成静态站 + sitemap
 python -m workflow.run generate all
 
-# 4. 全量测速（cron 推荐 worker + workers=5）
+# 4. C2 SEO 本地检查（§6.1～6.3）
+bash scripts/seo_c2_checklist.sh
+
+# 5. 全量测速（cron 推荐 worker + workers=5）
 python scripts/speedtest_batch_worker.py \
   --all-published --write --workers 5 \
   --report worklogs/$(date +%Y-%m-%d)/speedtest-all-published-benchmark.json
@@ -563,6 +622,24 @@ python -m workflow.run pipeline batch \
   --slots-json data/failed_slots/failed-slots.json \
   --fetch --no-skip-existing
 ```
+
+### 5.8 C2 SEO 本地验收（GSC 提交前）
+
+```bash
+# 方式 A：已有 dist
+python -m workflow.run generate all
+bash scripts/seo_c2_checklist.sh
+
+# 方式 B：一键 prepare + 检查
+bash scripts/seo_c2_checklist.sh --prepare
+
+# 仅 JSON（供 CI）
+bash scripts/seo_c2_checklist.sh --json | jq '.summary'
+```
+
+**通过标准：** 退出码 `0`（无 FAIL）。常见 FAIL 来自尚未实现的 P1 项（Open Graph、favicon、Trust privacy description），修复后重跑即可。
+
+**上线后（不可本地替代）：** Cloudflare Pages 部署 → 生产 URL 验证 HTTPS/410 HTTP 状态 → GSC 属性验证与 sitemap 提交（§6.4）。
 
 ---
 
@@ -592,6 +669,8 @@ python -m workflow.run pipeline batch \
 | `scripts/tmdb_warm_external_ids.py` | pipeline batch 前预热 imdb/tvdb 缓存 |
 | `scripts/tmdb_select_benchmark_slots.py` | TMDB 日导出 → benchmark slot JSON |
 | `scripts/failed_slots_merge_reports.py` | 合并 pipeline 失败报告 → 登记册 |
+| `scripts/seo_c2_checklist.sh` | C2 SEO 本地检查（§6.1～6.3）；等价 `seo_c2_checklist.py` |
+| `scripts/deploy_cf_pages.sh` | `generate all` + 同步静态壳 + wrangler 部署 CF Pages |
 
 ---
 
@@ -610,6 +689,9 @@ python -m workflow.run pipeline batch \
 | `generate all` 页数少于预期 | 仅生成 `published` 且 `magnet_count ≥ 2` 的页 |
 | 测速全为 `dry_run` | 安装 `libtorrent`（见 worklogs speedtest 文档） |
 | Nyaa/DMHy 国内超时 | 配置 SSH SOCKS 隧道，见 [nyaa-proxy-asia.md](./nyaa-proxy-asia.md) |
+| `seo_c2_checklist` FAIL：缺 OG / favicon | T-SEO-05 未实现；见 worklogs SEO 文档 P1 任务 |
+| `seo_c2_checklist` FAIL：privacy 缺 description | T-SEO-07；补 `portal/trust/privacy/index.html` meta |
+| `seo_c2_checklist`：dist 不存在 | 先 `generate all` 或加 `--prepare` |
 
 ---
 
@@ -622,7 +704,8 @@ python -m workflow.run pipeline batch \
 | `run recommended` | `workflow/recommended/scorer.py` |
 | `pipeline slot` / `batch` | `workflow/storage/pipeline.py` |
 | `query page` | `workflow/storage/pipeline.py` + `schema/d1_models.py` |
-| `generate *` | `portal/generator/generate_one.py`、`render.py` |
+| `generate *` | `portal/generator/generate_one.py`、`render.py`、`sitemap.py` |
+| `seo_c2_checklist` | `scripts/seo_c2_checklist.py` |
 | `serve` | `portal/generator/dev_server.py` |
 | `torrent_sources.run *` | `workflow/torrent_sources/run.py` |
 | `speedtest.run *` | `workflow/torrent_sources/speedtest/` |
@@ -637,3 +720,4 @@ python -m workflow.run pipeline batch \
 |------|------|------|
 | v0.1 | 2026-06-29 | 初版：status / db / run / pipeline slot / query |
 | v0.2 | 2026-07-03 | 新增 `generate`、`serve`、`pipeline batch`；独立 CLI（torrent_sources、speedtest）；修正 live/fetch 与 recommended；DMHy/cn 路由；生产工作流、脚本索引与故障排查 |
+| v0.3 | 2026-07-04 | `generate all` 产出 sitemap；新增 §3.8 / §5.8 `seo_c2_checklist` C2 SEO 本地检查用法 |
