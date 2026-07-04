@@ -92,6 +92,7 @@ def speedtest_recommended_slot(
     target_bytes: int = 1_048_576,
     force_dry_run: bool = False,
     write_mysql: bool = False,
+    skip_phase1: bool = False,
 ) -> Dict[str, Any]:
     """
     对 MySQL 槽位中 is_recommended=1 的 magnet 执行完整测速。
@@ -102,6 +103,7 @@ def speedtest_recommended_slot(
     @param target_bytes: Phase 2 目标字节
     @param force_dry_run: 跳过 libtorrent
     @param write_mysql: True 时写入 speedtest_results 与 slot_speed_summary
+    @param skip_phase1: True 时 TTL 内仅跑 Phase 2
     @returns: 含 full 结果与可选 write 摘要的字典
     @raises RuntimeError: 页面无 Recommended 或 MySQL 未配置
     """
@@ -125,6 +127,7 @@ def speedtest_recommended_slot(
         target_bytes=target_bytes,
         force_dry_run=force_dry_run,
         magnet_uri=recommended.magnet_uri or None,
+        skip_phase1=skip_phase1,
     )
 
     payload: Dict[str, Any] = {

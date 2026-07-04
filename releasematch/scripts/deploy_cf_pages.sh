@@ -55,7 +55,7 @@ sync_static_shell() {
   # 将 Trust 四页、404、static 资源复制到 dist（index.html 由 generate all 生成）
   mkdir -p "${DIST}"
 
-  for item in 404.html; do
+  for item in 404.html 410.html; do
     if [[ -f "${PORTAL}/${item}" ]]; then
       cp "${PORTAL}/${item}" "${DIST}/${item}"
     fi

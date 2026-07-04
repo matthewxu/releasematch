@@ -185,6 +185,7 @@ def cmd_batch(args: argparse.Namespace) -> int:
         ttl_hours=args.ttl_hours,
         force=args.force,
         workers=args.workers,
+        phase2_only=getattr(args, "phase2_only", False),
     )
 
     if args.report:
@@ -332,6 +333,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=DEFAULT_SPEEDTEST_TTL_HOURS,
         help=f"TTL 跳过小时数（默认 {DEFAULT_SPEEDTEST_TTL_HOURS}）",
+    )
+    p_batch.add_argument(
+        "--phase2-only",
+        action="store_true",
+        help="TTL 内跳过 Phase1，仅跑 Phase2 刷新测速",
     )
     p_batch.set_defaults(func=cmd_batch)
 

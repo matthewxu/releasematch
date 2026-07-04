@@ -1189,4 +1189,9 @@ class ShowHubPageContext:
             "poster_url": self.catalog.poster_url(),
             "tmdb_url": self.catalog.tmdb_url,
             "canonical_url": canonical,
+            "robots_noindex": True,
+            "meta_description": (
+                f"{self.catalog.title} episode release navigation: "
+                "per-episode Recommended Release and multi-source comparison."
+            ),
         }

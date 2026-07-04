@@ -639,6 +639,53 @@ class MySQLStore:
         conn.close()
         return [str(r["page_id"]) for r in rows]
 
+    def list_sitemap_content_pages(self) -> List[Dict[str, Any]]:
+        """
+        列出可纳入 sitemap 的内容页（indexable + 有 Recommended）。
+
+        @returns: 含 page_id、canonical_path、updated_at 的字典列表
+        """
+        conn = self._connect()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT p.page_id, p.canonical_path, p.updated_at, p.magnet_count,
+                       p.robots_noindex, p.page_type
+                FROM media_pages p
+                WHERE p.page_status = 'published'
+                  AND p.page_type IN ('episode', 'movie')
+                  AND p.magnet_count >= 2
+                  AND (p.robots_noindex IS NULL OR p.robots_noindex = 0)
+                  AND EXISTS (
+                    SELECT 1 FROM download_resources d
+                    WHERE d.page_id = p.page_id AND d.is_recommended = 1
+                  )
+                ORDER BY p.catalog_id, p.season, p.episode
+                """
+            )
+            rows = cur.fetchall()
+        conn.close()
+        return [_normalize_row(r) for r in rows]
+
+    def list_show_hub_page_ids(self) -> List[str]:
+        """
+        列出所有 show_hub 页面 ID（供 generate all 生成 Hub 静态页）。
+
+        @returns: page_id 列表
+        """
+        conn = self._connect()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT page_id FROM media_pages
+                WHERE page_type = 'show_hub'
+                ORDER BY catalog_id
+                """
+            )
+            rows = cur.fetchall()
+        conn.close()
+        return [str(r["page_id"]) for r in rows]
+
     def list_home_catalog_entries(self) -> List[Dict[str, Any]]:
         """
         聚合 published 页面为首页目录卡片（按作品 catalog 分组）。

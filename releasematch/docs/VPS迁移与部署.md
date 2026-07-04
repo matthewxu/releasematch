@@ -1,10 +1,10 @@
-# VPS 迁移：104.105.137.77 → 172.238.15.236
+# VPS 迁移：172.238.15.236 → 172.237.11.232
 
-> **日期：** 2026-07-02  
-> **状态：** Jackett + FlareSolverr 已在新机部署；本机配置已切换  
+> **日期：** 2026-07-04（本次）；历史见下方迁移链  
+> **状态：** ✅ Jackett + FlareSolverr 已在新机部署；本机配置已切换；**2026-07-04 验收通过**
 > **文档类型：** 运维记录（长期有效，自 `worklogs/2026-07-01/` 迁入并持续更新）
 
-**历史迁移链：** `104.105.140.11`（2026-06-30）→ `104.105.137.77`（2026-07-01）→ **`172.238.15.236`（2026-07-02，当前）**
+**历史迁移链：** `104.105.140.11`（2026-06-30）→ `104.105.137.77`（2026-07-01）→ `172.238.15.236`（2026-07-02）→ **`172.237.11.232`（2026-07-04，当前）**
 
 ---
 
@@ -12,9 +12,9 @@
 
 | 项 | 旧值 | 新值 |
 |----|------|------|
-| VPS IP | `104.105.137.77` | **`172.238.15.236`** |
-| Jackett URL | `http://104.105.137.77:9117` | `http://172.238.15.236:9117` |
-| API Key | 见旧机 `servers.local.json` | **新机生成**，见 `servers.local.json` |
+| VPS IP | `172.238.15.236` | **`172.237.11.232`** |
+| Jackett URL | `http://172.238.15.236:9117` | `http://172.237.11.232:9117` |
+| API Key | 见旧机 `servers.local.json` | 沿用 `servers.local.json`（配置卷或新机生成） |
 | SSH 用户/密码 | root / 见 servers.local.json | **不变** |
 
 ---
@@ -24,12 +24,22 @@
 ```bash
 cd releasematch
 export SSHPASS=$(python3 -c "import json; print(json.load(open('workflow/torrent_sources/servers.local.json'))['jackett_vps_japan']['ssh']['password'])")
-FORCE_RECREATE=1 bash scripts/deploy_jackett_vps.sh --host 172.238.15.236
+FORCE_RECREATE=1 bash scripts/deploy_jackett_vps.sh --host 172.237.11.232
 ```
 
 **结果：** Docker + FlareSolverr + Jackett 安装成功；FlareSolverr sessions.list HTTP 200。
 
-**2026-07-02 实测：**
+**2026-07-04 迁移：** 日本测试机 IP 由 `172.238.15.236` 切换至 `172.237.11.232`；SSH 密码不变。
+
+**2026-07-04 验收（当前机 `172.237.11.232`）：**
+
+```text
+jackett_probe.reachable=true
+has_valid_api_key=true
+jackett_base_url=http://172.237.11.232:9117
+```
+
+**2026-07-02 实测（上一机 `172.238.15.236`）：**
 
 ```text
 jackett_probe.reachable=true
@@ -63,7 +73,7 @@ bash scripts/start_ssh_socks_tunnel.sh
 
 ---
 
-## 测速 cron Worker（172.238.15.236）
+## 测速 cron Worker（172.237.11.232）
 
 在 VPS 或本机（需 libtorrent + MySQL 可达）定时跑批量测速：
 

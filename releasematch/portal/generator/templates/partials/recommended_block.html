@@ -31,15 +31,6 @@
 
     <h3 class="rm-release-card__title">{{ recommended.title_raw }}</h3>
 
-    {% if recommended.speed_test %}
-    <div class="rm-release-card__speed-facts-wrap">
-      <p class="rm-release-card__speed-facts-title">libtorrent 片段实测（S-06 / A-02 / A-03）</p>
-      {% with facts=recommended.speed_test, variant='card' %}
-      {% include 'partials/speed_test_facts.html' %}
-      {% endwith %}
-    </div>
-    {% endif %}
-
     <div class="rm-release-card__reason">
       <strong>推荐理由：</strong>{{ recommended.recommend_reason }}
     </div>
@@ -70,5 +61,12 @@
       <button class="rm-btn rm-btn--ghost" type="button" data-copy-magnet="{{ recommended.magnet_uri }}">复制 Magnet</button>
     </div>
   </article>
+</section>
+{% else %}
+<section class="rm-section rm-empty-state" aria-labelledby="no-recommended-heading">
+  <h2 class="rm-section__title" id="no-recommended-heading">Recommended Release 暂不可用</h2>
+  <p class="rm-text-muted">
+    Indexer 暂不足 2 条 release，本站持续追踪；当前仅展示已匹配源。请查看下方 All Sources 或稍后回访。
+  </p>
 </section>
 {% endif %}

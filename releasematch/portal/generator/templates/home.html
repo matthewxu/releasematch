@@ -46,6 +46,17 @@
     </div>
 
     {% if catalog_entries %}
+    <div class="rm-catalog-search-wrap">
+      <label class="rm-sr-only" for="catalog-search">搜索作品</label>
+      <input
+        id="catalog-search"
+        class="rm-input rm-catalog-search"
+        type="search"
+        placeholder="搜索作品，如 Breaking Bad…"
+        data-rm-catalog-search
+        autocomplete="off"
+      >
+    </div>
     <div class="rm-show-grid">
       {% for entry in catalog_entries %}
       <a class="rm-show-card" href="{{ entry.href }}">

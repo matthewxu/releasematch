@@ -124,6 +124,8 @@
 
 **建议：** 选 A。当前 title/H1 已是英文（`Sources — Release-Matched`），与 `lang=en` 一致；UI 文案可暂保留中文或逐步英文化。
 
+> **✅ 2026-07-04 已定：选 A** — `base.html` 已设 `lang="en"`。
+
 ### 决策 D2：Hub 页是否 index
 
 | 选项 | 优点 | 缺点 |
@@ -132,6 +134,8 @@
 | **noindex,follow** | 权重集中到 L3；沙盒期更保守 | Hub 词不参与排名 |
 
 **建议：** C2 沙盒期选 **noindex,follow**；C3 收录率 >25% 后再改 index 并补 IG 文案。
+
+> **✅ 2026-07-04 已定：选 noindex,follow** — `show_hub.html` 已落地。
 
 ### 决策 D3：C2 sitemap 提交范围
 
@@ -143,6 +147,8 @@
 
 **建议：** 选 A 或 C。从 [validation-pages.json](./validation-pages.json) / DB 筛 `is_indexable() AND has_recommended` 生成首批 sitemap。
 
+> **✅ 2026-07-04 已定：选 A** — sitemap 首批 ≤30 indexable 内容页 + Trust 4 + 首页；实现见 `portal/generator/sitemap.py`。
+
 ### 决策 D4：subtitle 跨站链
 
 `episode.html` 中 `SubtitlePortal →` 链接：
@@ -151,6 +157,8 @@
 - 是否仅在 `recommended` 存在时展示？
 
 **建议：** 加 `rel="nofollow ugc"`；仅 recommended 存在时展示。
+
+> **✅ 2026-07-04 已定** — `episode.html` 已加 `nofollow ugc`；仅 `recommended` 存在时展示 SubtitlePortal。
 
 ---
 

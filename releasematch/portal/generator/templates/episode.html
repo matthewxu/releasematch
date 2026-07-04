@@ -49,11 +49,11 @@
   <div class="rm-main-grid rm-main-grid--with-sidebar">
     <div class="rm-main-grid__primary">
 
-      {# 测速 IG 证据面板（S-06 / S-07 / A 级） #}
-      {% include 'partials/speed_evidence_panel.html' %}
-
-      {# ★ Recommended Release — 最高 IG 模块 #}
+      {# ★ Recommended Release — 首屏主 CTA（UX-02） #}
       {% include 'partials/recommended_block.html' %}
+
+      {# 测速 IG 证据面板 — 默认折叠详情，避免挤占首屏（UX-02） #}
+      {% include 'partials/speed_evidence_panel.html' %}
 
       {# All Sources 对比表 #}
       <section class="rm-section all-sources" aria-labelledby="sources-heading">
@@ -142,11 +142,11 @@
       </section>
       {% endif %}
 
-      {% if subtitle_url %}
+      {% if subtitle_url and recommended %}
       <section class="rm-card rm-mt-0">
         <h2 class="rm-card__title">Matched Subtitles</h2>
         <p class="rm-card__text">本站推荐 release 可与以下字幕页配对使用（跨站单链协同）。</p>
-        <a href="{{ subtitle_url }}">SubtitlePortal →</a>
+        <a href="{{ subtitle_url }}" rel="nofollow ugc">SubtitlePortal →</a>
       </section>
       {% endif %}
     </aside>

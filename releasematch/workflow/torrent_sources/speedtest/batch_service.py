@@ -137,14 +137,16 @@ def check_skip_ttl(
     *,
     ttl_hours: int,
     force: bool,
+    phase2_only: bool = False,
 ) -> Optional[Dict[str, Any]]:
     """
-    若 slot_speed_summary 在 TTL 内且 infohash 未变，返回 skipped_ttl 摘要。
+    TTL 内且 infohash 未变时的跳过或 Phase2-only 策略。
 
     @param page_id: 页面槽位 ID
     @param ttl_hours: TTL 小时数；≤0 时不跳过
     @param force: True 时强制重测
-    @returns: 跳过时的结果 dict；需测速时返回 None
+    @param phase2_only: True 时 TTL 内跑 Phase2-only；False 时整槽 skipped_ttl
+    @returns: 跳过/phase2_only 摘要；需全量测速时返回 None
     """
     if force or ttl_hours <= 0:
         return None
@@ -182,6 +184,19 @@ def check_skip_ttl(
     if age_sec > ttl_hours * 3600:
         return None
 
+    if phase2_only:
+        return {
+            "page_id": page_id,
+            "label": page_id,
+            "status": "phase2_only",
+            "reason": f"phase2_only_within_{ttl_hours}h",
+            "elapsed_sec": 0.0,
+            "recommended_speed": summary.recommended_speed,
+            "reachability": summary.reachability,
+            "summary_updated_at": summary.updated_at,
+            "recommended_infohash": infohash,
+        }
+
     return {
         "page_id": page_id,
         "label": page_id,
@@ -206,9 +221,10 @@ def run_single_batch_slot(
     write_mysql: bool = False,
     ttl_hours: int = DEFAULT_SPEEDTEST_TTL_HOURS,
     force: bool = False,
+    phase2_only: bool = False,
 ) -> Dict[str, Any]:
     """
-    对单个 page_id 执行槽位测速（含 TTL 跳过）。
+    对单个 page_id 执行槽位测速（含 TTL 跳过或 Phase2-only）。
 
     @param page_id: 如 tv:1396:s04e06
     @param label: 报告展示名
@@ -219,6 +235,7 @@ def run_single_batch_slot(
     @param write_mysql: 写入 MySQL
     @param ttl_hours: TTL 小时；配合 force 控制跳过
     @param force: 忽略 TTL
+    @param phase2_only: TTL 内仅跑 Phase 2（不整槽跳过）
     @returns: 单槽结果摘要
     """
     from workflow.torrent_sources.speedtest.store_service import speedtest_recommended_slot
@@ -226,10 +243,14 @@ def run_single_batch_slot(
     display = label or page_id
     started = time.monotonic()
 
-    skipped = check_skip_ttl(page_id, ttl_hours=ttl_hours, force=force)
-    if skipped:
+    skipped = check_skip_ttl(
+        page_id, ttl_hours=ttl_hours, force=force, phase2_only=phase2_only
+    )
+    if skipped and skipped.get("status") == "skipped_ttl":
         skipped["label"] = display
         return skipped
+
+    run_skip_phase1 = bool(skipped and skipped.get("status") == "phase2_only")
 
     try:
         payload = speedtest_recommended_slot(
@@ -239,6 +260,7 @@ def run_single_batch_slot(
             target_bytes=target_bytes,
             force_dry_run=force_dry_run,
             write_mysql=write_mysql,
+            skip_phase1=run_skip_phase1,
         )
     except RuntimeError as exc:
         return {
@@ -258,7 +280,7 @@ def run_single_batch_slot(
     return {
         "page_id": page_id,
         "label": display,
-        "status": overall_status,
+        "status": "phase2_only_ok" if run_skip_phase1 else overall_status,
         "elapsed_sec": round(time.monotonic() - started, 3),
         "phase1_elapsed_ms": phase1.get("elapsed_ms"),
         "phase2_elapsed_ms": phase2.get("elapsed_ms"),
@@ -293,6 +315,7 @@ def run_batch_speedtest(
     write_mysql: bool = False,
     ttl_hours: int = DEFAULT_SPEEDTEST_TTL_HOURS,
     force: bool = False,
+    phase2_only: bool = False,
     workers: int = 1,
 ) -> Dict[str, Any]:
     """
@@ -320,6 +343,7 @@ def run_batch_speedtest(
         "write_mysql": write_mysql,
         "ttl_hours": ttl_hours,
         "force": force,
+        "phase2_only": phase2_only,
     }
 
     results: List[Dict[str, Any]] = []
@@ -352,9 +376,10 @@ def run_batch_speedtest(
         results.sort(key=lambda r: order.get(r.get("page_id", ""), 999))
 
     wall_sec = round(time.monotonic() - wall_start, 3)
-    ok_statuses = {"ok", "dry_run", "timeout", "skipped", "skipped_ttl"}
+    ok_statuses = {"ok", "dry_run", "timeout", "skipped", "skipped_ttl", "phase2_only_ok"}
     error_count = sum(1 for r in results if r.get("status") not in ok_statuses)
     skipped_ttl_count = sum(1 for r in results if r.get("status") == "skipped_ttl")
+    phase2_only_count = sum(1 for r in results if r.get("status") == "phase2_only_ok")
 
     return {
         "meta": {
@@ -366,6 +391,7 @@ def run_batch_speedtest(
             "write_mysql": write_mysql,
             "ttl_hours": ttl_hours,
             "force": force,
+            "phase2_only": phase2_only,
             "started_at": started_at,
             "finished_at": datetime.now(timezone.utc).isoformat(),
             "total_wall_sec": wall_sec,
@@ -376,6 +402,7 @@ def run_batch_speedtest(
             "succeeded": len(results) - error_count,
             "errors": error_count,
             "skipped_ttl": skipped_ttl_count,
+            "phase2_only_ok": phase2_only_count,
         },
         "results": results,
     }

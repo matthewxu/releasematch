@@ -1,7 +1,7 @@
 # Jackett 部署在海外 VPS 说明
 
 > **适用：** 开发机在国内，Jackett 本地 indexer（1337x / Nyaa 等）大量 400 或超时  
-> **项目测试机：** 日本 VPS `172.238.15.236`（见 §四；历史 IP 见 [VPS迁移与部署.md](./VPS迁移与部署.md)）
+> **项目测试机：** 日本 VPS `172.237.11.232`（见 §四；历史 IP 见 [VPS迁移与部署.md](./VPS迁移与部署.md)）
 
 ---
 
@@ -46,7 +46,7 @@ bash scripts/deploy_jackett_vps.sh
 指定主机或密码：
 
 ```bash
-SSHPASS='your-password' bash scripts/deploy_jackett_vps.sh --host 172.238.15.236
+SSHPASS='your-password' bash scripts/deploy_jackett_vps.sh --host 172.237.11.232
 FORCE_RECREATE=1 bash scripts/deploy_jackett_vps.sh   # 强制重建容器
 bash scripts/deploy_jackett_vps.sh --dry-run          # 仅预览 SSH 命令
 ```
@@ -129,7 +129,7 @@ docker restart jackett
 
 ```json
 "jackett": {
-  "base_url": "http://172.238.15.236:9117",
+  "base_url": "http://172.237.11.232:9117",
   "api_key": "从 Dashboard 或 servers.local.json 复制",
   "indexers": {
     "tv": ["thepiratebay", "torrentgalaxyclone", "nyaasi", "1337x", "all"],
@@ -141,7 +141,7 @@ docker restart jackett
 或环境变量：
 
 ```bash
-export JACKETT_BASE_URL=http://172.238.15.236:9117
+export JACKETT_BASE_URL=http://172.237.11.232:9117
 export JACKETT_API_KEY=...
 ```
 
@@ -149,8 +149,8 @@ export JACKETT_API_KEY=...
 
 ```bash
 python -m workflow.torrent_sources.run status
-python scripts/poc_phase0.py --jackett-base-url http://172.238.15.236:9117
-python scripts/poc_jackett_indexers.py --jackett-base-url http://172.238.15.236:9117
+python scripts/poc_phase0.py --jackett-base-url http://172.237.11.232:9117
+python scripts/poc_jackett_indexers.py --jackett-base-url http://172.237.11.232:9117
 ```
 
 ---
@@ -177,12 +177,12 @@ cp workflow/torrent_sources/servers.example.json workflow/torrent_sources/server
 | 项 | 值 |
 |----|-----|
 | **标签** | 日本测试服务器 |
-| **IP** | `172.238.15.236` |
+| **IP** | `172.237.11.232` |
 | **SSH 用户** | `root` |
 | **SSH 密码** | 见 `servers.local.json`（勿写入公开文档） |
 | **系统** | Debian 12 |
-| **Jackett** | `http://172.238.15.236:9117` |
-| **Dashboard** | `http://172.238.15.236:9117/UI/Dashboard` |
+| **Jackett** | `http://172.237.11.232:9117` |
+| **Dashboard** | `http://172.237.11.232:9117/UI/Dashboard` |
 | **FlareSolverr** | 容器内 `http://flaresolverr:8191/`（宿主机 `127.0.0.1:8191`） |
 | **Docker 网络** | `jackett-net` |
 | **配置卷** | `/opt/jackett/config` |
@@ -199,7 +199,7 @@ cp workflow/torrent_sources/servers.example.json workflow/torrent_sources/server
 
 ```bash
 # SSH 登录
-ssh root@172.238.15.236
+ssh root@172.237.11.232
 
 # 查看容器
 docker ps
@@ -257,6 +257,7 @@ docker exec jackett curl -s -o /dev/null -w '%{http_code}\n' http://flaresolverr
 |------|------|
 | 2026-06-30 | 初版：国内本机 indexer 失败后的海外 Jackett 方案 |
 | 2026-06-30 | 补充日本测试机 104.105.140.11、FlareSolverr Docker 网络、`servers.local.json` 凭据规范 |
-| 2026-07-02 | 当前测试机迁移至 `172.238.15.236`（见 [VPS迁移与部署.md](./VPS迁移与部署.md)） |
+| 2026-07-02 | 测试机迁移至 `172.238.15.236`（见 [VPS迁移与部署.md](./VPS迁移与部署.md)） |
+| 2026-07-04 | 测试机迁移至 `172.237.11.232`；SSH 密码不变；**部署验收通过** |
 | 2026-06-30 | 增加 [jackett-stability.md](./jackett-stability.md) 交叉引用 |
 | 2026-06-30 | 增加本机一键脚本 `scripts/deploy_jackett_vps.sh` |

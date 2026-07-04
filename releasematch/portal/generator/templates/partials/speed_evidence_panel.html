@@ -1,6 +1,11 @@
 {# 测速 IG 证据面板 — S-06 / S-07 / A-01~A-03 / A-09 / A-10 #}
 {# @partial speed_evidence_panel.html — 六项实测指标主展示 + 可达性补充 #}
 {% if speed_evidence %}
+<details class="rm-speed-evidence-wrap">
+  <summary class="rm-speed-evidence-wrap__summary">
+    <span class="rm-speed-evidence-wrap__icon" aria-hidden="true">⚡</span>
+    展开测速证据：{{ speed_evidence.avg_speed }} avg · {{ speed_evidence.reachability }} 可达性
+  </summary>
 <section class="rm-section rm-speed-evidence" aria-labelledby="speed-evidence-heading">
   {# RM Grab 指数 — 全页最优先展示 #}
   {% with grab=speed_evidence, variant='panel' %}
@@ -107,4 +112,5 @@
     </p>
   </article>
 </section>
+</details>
 {% endif %}

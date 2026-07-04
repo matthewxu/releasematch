@@ -17,6 +17,7 @@ from workflow.config import PROJECT_ROOT, SHOW_IG_DEBUG, SITE_ORIGIN
 from workflow.storage.mysql_store import MySQLStore
 
 from portal.generator.render import render_by_page_id, render_home_page
+from portal.generator.sitemap import write_sitemap
 
 # 默认输出根目录
 DEFAULT_OUT_ROOT = PROJECT_ROOT / "portal" / "dist"
@@ -90,6 +91,12 @@ def write_all_published(
         if not result.get("ok"):
             errors.append(f"{page_id}: {result.get('error')}")
 
+    home_result = write_home_page(out_root=out_root, site_origin=site_origin, show_ig_debug=show_ig_debug)
+    hub_result = write_all_show_hubs(
+        out_root=out_root, site_origin=site_origin, show_ig_debug=show_ig_debug
+    )
+    sitemap_result = write_sitemap(out_root=out_root, site_origin=site_origin)
+
     return {
         "ok": len(errors) == 0,
         "count": len(page_ids),
@@ -97,7 +104,48 @@ def write_all_published(
         "out_root": str(out_root),
         "pages": results,
         "errors": errors,
-        "home": write_home_page(out_root=out_root, site_origin=site_origin, show_ig_debug=show_ig_debug),
+        "home": home_result,
+        "hubs": hub_result,
+        "sitemap": sitemap_result,
+    }
+
+
+def write_all_show_hubs(
+    out_root: Path = DEFAULT_OUT_ROOT,
+    site_origin: str = SITE_ORIGIN,
+    *,
+    show_ig_debug: Optional[bool] = None,
+) -> Dict[str, Any]:
+    """
+    批量生成全部 show_hub 静态页。
+
+    @param out_root: 输出根目录
+    @param site_origin: canonical origin
+    @param show_ig_debug: 覆盖 RM_SHOW_IG_DEBUG
+    @returns: 批量摘要
+    """
+    store = MySQLStore()
+    hub_ids = store.list_show_hub_page_ids()
+    results: List[Dict[str, Any]] = []
+    errors: List[str] = []
+
+    for page_id in hub_ids:
+        result = write_page_html(
+            page_id,
+            out_root=out_root,
+            site_origin=site_origin,
+            show_ig_debug=show_ig_debug,
+        )
+        results.append(result)
+        if not result.get("ok"):
+            errors.append(f"{page_id}: {result.get('error')}")
+
+    return {
+        "ok": len(errors) == 0,
+        "count": len(hub_ids),
+        "generated": sum(1 for r in results if r.get("ok")),
+        "pages": results,
+        "errors": errors,
     }
 
 

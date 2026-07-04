@@ -25,6 +25,7 @@ def run_full_speedtest(
     force_dry_run: bool = False,
     magnet_uri: Optional[str] = None,
     skip_phase2: bool = False,
+    skip_phase1: bool = False,
 ) -> FullSpeedResult:
     """
     依次执行 Phase 1 连接性与 Phase 2 片段测速，并派生 S-06 / A-01 展示字段。
@@ -37,15 +38,26 @@ def run_full_speedtest(
     @param force_dry_run: 跳过 libtorrent
     @param magnet_uri: 可选完整 magnet
     @param skip_phase2: True 时仅跑 Phase 1
+    @param skip_phase1: True 时跳过 Phase 1，仅跑 Phase 2（TTL 内增量）
     @returns: FullSpeedResult
     """
-    phase1 = test_connectivity(
-        infohash,
-        page_id=page_id,
-        timeout_sec=phase1_timeout_sec,
-        force_dry_run=force_dry_run,
-        magnet_uri=magnet_uri,
-    )
+    if skip_phase1:
+        from workflow.torrent_sources.speedtest.models import ConnectivityResult
+
+        phase1 = ConnectivityResult(
+            infohash=infohash.lower(),
+            page_id=page_id,
+            status="skipped",
+            mode="phase2_only",
+        )
+    else:
+        phase1 = test_connectivity(
+            infohash,
+            page_id=page_id,
+            timeout_sec=phase1_timeout_sec,
+            force_dry_run=force_dry_run,
+            magnet_uri=magnet_uri,
+        )
 
     if skip_phase2:
         from workflow.torrent_sources.speedtest.models import FragmentSpeedResult

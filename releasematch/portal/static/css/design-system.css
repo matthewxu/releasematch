@@ -1809,3 +1809,89 @@ dd:last-child {
 .rm-ig-debug__row--missing {
   opacity: 0.55;
 }
+
+/* ── UX-01 Toast / UX-04 首页搜索 / UX-02 测速折叠 ── */
+
+.rm-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(1rem);
+  z-index: 9999;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  background: #22c55e;
+  color: #0f172a;
+  font-weight: 600;
+  font-size: 0.9rem;
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.rm-toast.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.rm-toast--error {
+  background: #f87171;
+  color: #fff;
+}
+
+.rm-catalog-search-wrap {
+  margin-bottom: 1.25rem;
+  max-width: 28rem;
+}
+
+.rm-input,
+.rm-catalog-search {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.6);
+  color: #f1f5f9;
+  font-size: 1rem;
+}
+
+.rm-input:focus,
+.rm-catalog-search:focus {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+.rm-speed-evidence-wrap {
+  margin-bottom: 1.5rem;
+}
+
+.rm-speed-evidence-wrap__summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: #cbd5e1;
+  font-weight: 500;
+}
+
+.rm-speed-evidence-wrap__summary::-webkit-details-marker {
+  display: none;
+}
+
+.rm-speed-evidence-wrap[open] .rm-speed-evidence-wrap__summary {
+  margin-bottom: 0.75rem;
+}
+
+.rm-speed-evidence-wrap__icon {
+  margin-right: 0.35rem;
+}
+
+.rm-empty-state {
+  padding: 1.25rem;
+  border-radius: 8px;
+  border: 1px dashed rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.4);
+}

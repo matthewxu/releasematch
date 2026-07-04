@@ -93,6 +93,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="TTL 跳过小时数",
     )
     parser.add_argument("--dry-run", action="store_true", help="dry-run 模式")
+    parser.add_argument(
+        "--phase2-only",
+        action="store_true",
+        help="TTL 内跳过 Phase1，仅跑 Phase2",
+    )
     return parser
 
 
@@ -129,6 +134,7 @@ def main(argv: list[str] | None = None) -> int:
         ttl_hours=args.ttl_hours,
         force=args.force,
         workers=args.workers,
+        phase2_only=args.phase2_only,
     )
 
     if args.report:
