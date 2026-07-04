@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Recommended Release 评分引擎 v1（规则版）。
+Recommended Release 评分引擎 v1.1（规则版 · 可下载性优先）。
 
 @module workflow.recommended.scorer
 @description
-  本站规则：
-    - Group tier 权重（L0 > L1 > L2 > L3 > L4），数据来自 data/groups.yaml
-    - seeders 权重
-    - 跨源置信度 cross_source_count
-    - 同分 tie-break：seeders → 分辨率（1080p 优先）→ 跨源数 → tier
+  本站规则（R1）：
+    - **可下载性优先**：主分中 seeders 权重最高（50%）
+    - Group tier 权重（L0 > L1 > L2 > L3 > L4），数据来自 data/groups.yaml（25%）
+    - 跨源置信度 cross_source_count（25%）
+    - 同分 tie-break：**分辨率** → seeders → 跨源数 → tier
 
-  R1 目标：对单槽 ResourceItem 列表选出 is_recommended=1 及 recommend_reason。
+  目标：对单槽 ResourceItem 列表选出 is_recommended=1 及 recommend_reason。
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from workflow.recommended.groups_registry import infer_group_tier, lookup_group
 
-# Group tier 默认权重
+# Group tier 默认权重（映射到 0~1 后乘以 _SCORE_WEIGHT_TIER）
 _GROUP_TIER_WEIGHT: Dict[str, float] = {
     "L0": 1.0,
     "L1": 0.85,
@@ -30,6 +30,14 @@ _GROUP_TIER_WEIGHT: Dict[str, float] = {
     "L3": 0.3,
     "L4": 0.1,
 }
+
+# 主分三项权重（合计 100）：可下载性（seeders）最高
+_SCORE_WEIGHT_SEEDERS: float = 50.0
+_SCORE_WEIGHT_TIER: float = 25.0
+_SCORE_WEIGHT_CROSS: float = 25.0
+
+# seeders 归一化上限：达到此做种数视为满分
+_SEEDERS_FULL_SCORE_AT: int = 50
 
 
 @dataclass
@@ -77,7 +85,9 @@ def _tier_sort_weight(tier: str) -> int:
 
 def score_item(item: Dict[str, Any]) -> float:
     """
-    对单条 ResourceItem 字典计算推荐分。
+    对单条 ResourceItem 字典计算推荐分（可下载性优先）。
+
+    公式：tier×25 + seeders×50 + cross×25（各项先归一化到 0~1）。
 
     @param item: 含 release_group、seeders、cross_source_count 等字段
     @returns: 0~100 分
@@ -87,12 +97,16 @@ def score_item(item: Dict[str, Any]) -> float:
     tier_w = _GROUP_TIER_WEIGHT.get(tier, 0.1)
 
     seeders = int(item.get("seeders") or 0)
-    seeder_w = min(seeders / 50.0, 1.0)
+    seeder_w = min(seeders / float(_SEEDERS_FULL_SCORE_AT), 1.0)
 
     cross = int(item.get("cross_source_count") or 1)
     cross_w = min(cross / 3.0, 1.0)
 
-    raw = tier_w * 50.0 + seeder_w * 30.0 + cross_w * 20.0
+    raw = (
+        tier_w * _SCORE_WEIGHT_TIER
+        + seeder_w * _SCORE_WEIGHT_SEEDERS
+        + cross_w * _SCORE_WEIGHT_CROSS
+    )
     return round(raw, 2)
 
 
@@ -128,7 +142,7 @@ def build_recommend_reason(item: Dict[str, Any], tier: str, canonical_group: str
 
 def _sort_key(item: Dict[str, Any], order: Order) -> Tuple[float, int, int, int, int]:
     """
-    排序键：主分降序，同分按 seeders / 分辨率 / 跨源 / tier 依次决胜。
+    排序键：主分降序，同分按 **分辨率** → seeders → 跨源 → tier 依次决胜。
 
     @param item: 原始 ResourceItem 字典
     @param order: 已算分的 Order
@@ -138,7 +152,7 @@ def _sort_key(item: Dict[str, Any], order: Order) -> Tuple[float, int, int, int,
     cross = int(item.get("cross_source_count") or 1)
     res_rank = _resolution_rank(str(item.get("resolution") or ""), str(item.get("title_raw") or ""))
     tier_w = _tier_sort_weight(order.group_tier)
-    return (-order.score, -seeders, -res_rank, -cross, -tier_w)
+    return (-order.score, -res_rank, -seeders, -cross, -tier_w)
 
 
 def rank_items(items: List[Dict[str, Any]]) -> List[Order]:
