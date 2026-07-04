@@ -121,6 +121,18 @@ def load_accounts_config(path: Path | None = None) -> Dict[str, Any]:
         data.setdefault("nyaa_live_action", {})["base_url"] = data.get("nyaa", {}).get(
             "base_url", NYAA_BASE_URL
         )
+    data.setdefault("nyaa_anime", {}).setdefault("enabled", True)
+    data.setdefault("nyaa_anime", {}).setdefault("category", "1_0")
+    if not data.get("nyaa_anime", {}).get("base_url"):
+        data.setdefault("nyaa_anime", {})["base_url"] = data.get("nyaa", {}).get(
+            "base_url", NYAA_BASE_URL
+        )
+    data.setdefault("cn_sources", {}).setdefault(
+        "jackett", ["dmhy", "mikan", "acgrip"]
+    )
+    data.setdefault("cn_sources", {}).setdefault(
+        "direct", ["dmhy", "nyaa_live_action", "nyaa_anime"]
+    )
     data.setdefault("dmhy", {}).setdefault("base_url", DMHY_BASE_URL)
     data.setdefault("dmhy", {}).setdefault("enabled", True)
     data.setdefault("dmhy", {}).setdefault("mirrors", [])

@@ -15,7 +15,7 @@
       "movie": ["yts", "1337x", "torrentgalaxyclone"],
       "jp_tv": ["nyaasi", "thepiratebay"],
       "kr_tv": ["nyaasi", "thepiratebay"],
-      "cn_tv": ["dmhy", "nyaasi", "1337x", "torrentgalaxyclone"],
+      "cn_tv": ["dmhy", "mikan", "acgrip", "nyaasi", "thepiratebay", "torrentgalaxyclone", "1337x"],
       "jp_movie": ["nyaasi", "yts"],
       "kr_movie": ["nyaasi", "yts"],
       "cn_movie": ["dmhy", "nyaasi", "1337x"]
@@ -38,6 +38,18 @@
     "category": "4_0",
     "base_url": "https://nyaa.si",
     "mirrors": ["https://nyaa.iss.ink"]
+  },
+  "nyaa_anime": {
+    "_comment": "Layer 2D 国漫/动漫，Nyaa 分类 c=1_0",
+    "enabled": true,
+    "category": "1_0",
+    "base_url": "https://nyaa.si",
+    "mirrors": ["https://nyaa.iss.ink"]
+  },
+  "cn_sources": {
+    "_comment": "华语专用源；scripts/cn_probe_sources.py 仅测此块",
+    "jackett": ["dmhy", "mikan", "acgrip"],
+    "direct": ["dmhy", "nyaa_live_action", "nyaa_anime"]
   },
   "dmhy": {
     "_comment": "Layer 2F：动漫花园 RSS 直连（中文动漫/部分剧集第一手源）",

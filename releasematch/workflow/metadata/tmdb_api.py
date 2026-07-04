@@ -330,23 +330,24 @@ def enrich_external_ids(
 
     api_row = fetch_external_ids_from_api(tmdb_id, media_type)
     if api_row:
-        if api_row.get("imdb_id"):
+        if api_row.get("imdb_id") and not ext.get("imdb_id"):
             ext["imdb_id"] = api_row["imdb_id"]
-        if api_row.get("tvdb_id"):
+        if api_row.get("tvdb_id") and not ext.get("tvdb_id"):
             ext["tvdb_id"] = api_row["tvdb_id"]
         if api_row.get("title") and not ext.get("title"):
             ext["title"] = api_row["title"]
-        if api_row.get("original_language"):
+        if api_row.get("original_language") and not ext.get("original_language"):
             ext["original_language"] = api_row["original_language"]
-        if api_row.get("origin_country"):
+        if api_row.get("origin_country") and not ext.get("origin_country"):
             ext["origin_country"] = api_row["origin_country"]
-        if api_row.get("title_zh"):
+        if api_row.get("title_zh") and not ext.get("title_zh"):
             ext["title_zh"] = api_row["title_zh"]
-        if api_row.get("original_title"):
+        if api_row.get("original_title") and not ext.get("original_title"):
             ext["original_title"] = api_row["original_title"]
         if api_row.get("year") and not ext.get("year"):
             ext["year"] = api_row["year"]
-        ext["source"] = api_row.get("source", ext.get("source"))
+        if ext.get("source") != "standalone_map":
+            ext["source"] = api_row.get("source", ext.get("source"))
 
     if title and not ext.get("title"):
         ext["title"] = title

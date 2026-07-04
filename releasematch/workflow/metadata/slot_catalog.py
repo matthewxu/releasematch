@@ -53,6 +53,28 @@ SLOT_CATALOG_META: Dict[int, Dict[str, Any]] = {
     94997: {"title": "House of the Dragon", "media_kind": "tv", "slug": "house-of-the-dragon"},
     4604: {"title": "Smallville", "media_kind": "tv", "slug": "smallville"},
     1408: {"title": "House", "media_kind": "tv", "slug": "house"},
+    # ── 华语剧 / 电影（cn 路由 · 中文标题搜索）────────────────────────────
+    95842: {"title": "Joy of Life", "title_zh": "庆余年", "media_kind": "tv", "slug": "joy-of-life"},
+    97113: {
+        "title": "The Three-Body Problem",
+        "title_zh": "三体",
+        "media_kind": "tv",
+        "slug": "three-body-problem",
+    },
+    64197: {
+        "title": "Nirvana in Fire",
+        "title_zh": "琅琊榜",
+        "media_kind": "tv",
+        "slug": "nirvana-in-fire",
+    },
+    90761: {"title": "The Untamed", "title_zh": "陈情令", "media_kind": "tv", "slug": "the-untamed"},
+    535167: {
+        "title": "The Wandering Earth",
+        "title_zh": "流浪地球",
+        "media_kind": "movie",
+        "year": 2019,
+        "slug": "the-wandering-earth-2019",
+    },
 }
 
 

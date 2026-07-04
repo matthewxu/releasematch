@@ -1,0 +1,286 @@
+{
+  "meta": {
+    "kind": "cn_sources_probe",
+    "slots_json": "/Users/xuli/vscodeai/releasematch/releasematch/worklogs/2026-07-04/cn-sources-test-slots.json",
+    "started_at": "2026-07-04T09:55:32.439620+00:00",
+    "elapsed_sec": 2810,
+    "cn_sources": {
+      "jackett": [
+        "dmhy",
+        "mikan",
+        "acgrip"
+      ],
+      "direct": [
+        "dmhy",
+        "nyaa_live_action",
+        "nyaa_anime"
+      ]
+    },
+    "note": "VPS jackett/flaresolverr restarted + base32 + 第N集 queries + SSH SOCKS"
+  },
+  "slots": [
+    {
+      "label": "庆余年 S01E01",
+      "tmdb_id": 95842,
+      "media_type": "tv",
+      "season": 1,
+      "episode": 1,
+      "search_titles": [
+        "庆余年",
+        "Joy of Life",
+        "Joy.of.Life"
+      ],
+      "sources": [
+        {
+          "source_id": "dmhy",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        },
+        {
+          "source_id": "nyaa_live_action",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        },
+        {
+          "source_id": "nyaa_anime",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        },
+        {
+          "source_id": "jackett:dmhy",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        },
+        {
+          "source_id": "jackett:mikan",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        },
+        {
+          "source_id": "jackett:acgrip",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        }
+      ],
+      "any_ok": false
+    },
+    {
+      "label": "琅琊榜 S01E01",
+      "tmdb_id": 64197,
+      "media_type": "tv",
+      "season": 1,
+      "episode": 1,
+      "search_titles": [
+        "琅琊榜",
+        "Nirvana in Fire",
+        "Nirvana.in.Fire"
+      ],
+      "sources": [
+        {
+          "source_id": "dmhy",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        },
+        {
+          "source_id": "nyaa_live_action",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        },
+        {
+          "source_id": "nyaa_anime",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        },
+        {
+          "source_id": "jackett:dmhy",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        },
+        {
+          "source_id": "jackett:mikan",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        },
+        {
+          "source_id": "jackett:acgrip",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        }
+      ],
+      "any_ok": false
+    },
+    {
+      "label": "三体 S01E01",
+      "tmdb_id": 97113,
+      "media_type": "tv",
+      "season": 1,
+      "episode": 1,
+      "search_titles": [
+        "三体",
+        "The Three-Body Problem",
+        "The.Three.Body.Problem"
+      ],
+      "sources": [
+        {
+          "source_id": "dmhy",
+          "raw_count": 7,
+          "filtered_count": 7,
+          "sample_titles": [
+            "[GM-Team][国漫][三体][The Three-Body Problem][2022][01-15 Fin][AVC][GB][1080P]",
+            "[GM-Team][国漫][三体][The Three-Body Problem][2022][01][AVC][GB][1080P].V2",
+            "[GM-Team][国漫][三体][The Three-Body Problem][2022][01][AVC][GB][1080P]"
+          ],
+          "error": null,
+          "ok": true
+        },
+        {
+          "source_id": "nyaa_live_action",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        },
+        {
+          "source_id": "nyaa_anime",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        },
+        {
+          "source_id": "jackett:dmhy",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        },
+        {
+          "source_id": "jackett:mikan",
+          "raw_count": 2,
+          "filtered_count": 2,
+          "sample_titles": [
+            "[GM-Team][国漫][三体][The Three-Body Problem][2022][01][AVC][GB][1080P].V2",
+            "[GM-Team][国漫][三体][The Three-Body Problem][2022][01][AVC][GB][1080P]"
+          ],
+          "error": null,
+          "ok": true
+        },
+        {
+          "source_id": "jackett:acgrip",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        }
+      ],
+      "any_ok": true
+    },
+    {
+      "label": "陈情令 S01E01",
+      "tmdb_id": 90761,
+      "media_type": "tv",
+      "season": 1,
+      "episode": 1,
+      "search_titles": [
+        "陈情令",
+        "The Untamed",
+        "The.Untamed"
+      ],
+      "sources": [
+        {
+          "source_id": "dmhy",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        },
+        {
+          "source_id": "nyaa_live_action",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        },
+        {
+          "source_id": "nyaa_anime",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        },
+        {
+          "source_id": "jackett:dmhy",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        },
+        {
+          "source_id": "jackett:mikan",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        },
+        {
+          "source_id": "jackett:acgrip",
+          "raw_count": 0,
+          "filtered_count": 0,
+          "sample_titles": [],
+          "error": null,
+          "ok": false
+        }
+      ],
+      "any_ok": false
+    }
+  ],
+  "summary": {
+    "total": 4,
+    "slots_with_hits": 1
+  }
+}

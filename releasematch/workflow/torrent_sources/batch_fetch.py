@@ -67,6 +67,9 @@ class BatchSlotResult:
     cross_source_max: int = 0
     error: Optional[str] = None
     ok: bool = False
+    content_region: Optional[str] = None
+    search_titles: List[str] = field(default_factory=list)
+    source_enabled: Dict[str, bool] = field(default_factory=dict)
 
 
 @dataclass
@@ -103,6 +106,9 @@ class BatchFetchSummary:
                     "cross_source_max": r.cross_source_max,
                     "error": r.error,
                     "ok": r.ok,
+                    "content_region": r.content_region,
+                    "search_titles": r.search_titles,
+                    "source_enabled": r.source_enabled,
                 }
                 for r in self.results
             ],
@@ -189,6 +195,9 @@ def run_batch_fetch(
             cross_source_max=cross_max,
             error=result.error,
             ok=ok,
+            content_region=result.content_region,
+            search_titles=list(result.search_titles or []),
+            source_enabled=dict(result.source_enabled or {}),
         )
         summary.results.append(slot_result)
         if ok:

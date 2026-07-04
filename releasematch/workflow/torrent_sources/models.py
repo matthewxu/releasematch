@@ -139,6 +139,9 @@ class FetchResult:
     error: Optional[str] = None
     cross_source_page_count: int = 0
     cross_source_page_total: int = 3
+    content_region: Optional[str] = None
+    search_titles: List[str] = field(default_factory=list)
+    source_enabled: Dict[str, bool] = field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         """转为可 JSON 序列化的字典。"""
@@ -156,4 +159,7 @@ class FetchResult:
             "error": self.error,
             "cross_source_page_count": self.cross_source_page_count,
             "cross_source_page_total": self.cross_source_page_total,
+            "content_region": self.content_region,
+            "search_titles": self.search_titles,
+            "source_enabled": self.source_enabled,
         }

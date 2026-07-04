@@ -13,8 +13,8 @@ import json
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
-from workflow.metadata.external_ids import resolve_external_ids
 from workflow.torrent_sources.asia_region import (
+    build_cn_jackett_queries,
     build_search_titles,
     detect_content_region,
     is_asia_region,
@@ -158,6 +158,15 @@ class FetchService:
             proxy=self._proxy,
             category=str(nyaa_la_cfg.get("category") or "4_0"),
         )
+        anime_cfg = self._cfg.get("nyaa_anime", {})
+        self._nyaa_anime = NyaaLiveActionClient(
+            base_url=str(anime_cfg.get("base_url") or la_base),
+            mirrors=list(anime_cfg.get("mirrors") or la_mirrors),
+            min_interval_sec=max(rate, 3.0),
+            enabled=bool(anime_cfg.get("enabled", True)),
+            proxy=self._proxy,
+            category=str(anime_cfg.get("category") or "1_0"),
+        )
         dmhy_cfg = self._cfg.get("dmhy", {})
         self._dmhy = DmhyClient(
             base_url=str(dmhy_cfg.get("base_url") or "https://share.dmhy.org"),
@@ -179,15 +188,20 @@ class FetchService:
                 min_interval_sec=rate,
             )
         idx = jackett_cfg.get("indexers", {})
+        cn_native = list((self._cfg.get("cn_sources") or {}).get("jackett") or [])
+        cn_tv_full = list(idx.get("cn_tv") or idx.get("tv") or [])
+        cn_tv_merged = cn_native + [x for x in cn_tv_full if x not in cn_native]
+        cn_movie_full = list(idx.get("cn_movie") or idx.get("movie") or [])
+        cn_movie_merged = cn_native + [x for x in cn_movie_full if x not in cn_native]
         self._jackett_indexers: Dict[str, List[str]] = {
             "tv": list(idx.get("tv") or ["all"]),
             "movie": list(idx.get("movie") or ["all"]),
             "jp_tv": list(idx.get("jp_tv") or idx.get("tv") or []),
             "kr_tv": list(idx.get("kr_tv") or idx.get("tv") or []),
-            "cn_tv": list(idx.get("cn_tv") or idx.get("tv") or []),
+            "cn_tv": cn_tv_merged,
             "jp_movie": list(idx.get("jp_movie") or idx.get("movie") or []),
             "kr_movie": list(idx.get("kr_movie") or idx.get("movie") or []),
-            "cn_movie": list(idx.get("cn_movie") or idx.get("movie") or []),
+            "cn_movie": cn_movie_merged,
         }
 
     def fetch_slot(self, request: FetchRequest) -> FetchResult:
@@ -226,6 +240,10 @@ class FetchService:
         except Exception as exc:  # noqa: BLE001 — 汇总到 FetchResult.error
             return FetchResult(request=request, items=[], error=str(exc))
 
+        meta = self._resolve_metadata_for_request(request)
+        region = detect_content_region(meta)
+        search_titles = build_search_titles(meta, region)
+
         page_count, page_total = compute_page_cross_source(
             raw_items,
             source_enabled=source_enabled,
@@ -251,7 +269,21 @@ class FetchService:
             cached=False,
             cross_source_page_count=page_count,
             cross_source_page_total=page_total,
+            content_region=region,
+            search_titles=search_titles,
+            source_enabled=source_enabled,
         )
+
+    def _resolve_metadata_for_request(self, request: FetchRequest) -> Dict[str, Any]:
+        """
+        解析槽位 TMDB 元数据（含 title_zh），供区域路由与 CLI 展示。
+
+        @param request: FetchRequest
+        @returns: external_ids 风格元数据字典
+        """
+        if request.media_type == MediaType.TV:
+            return self._resolve_tv_metadata(request)
+        return self._resolve_movie_metadata(request)
 
     def _fetch_from_sources(
         self,
@@ -428,19 +460,47 @@ class FetchService:
             and request.episode is not None
             and search_titles
         ):
-            if region == "cn" and self._dmhy.enabled:
-                source_enabled["dmhy"] = True
-                try:
-                    items.extend(
-                        self._dmhy.fetch_episode_titles(
-                            search_titles,
-                            request.season,
-                            request.episode,
-                        )
+            if self._jackett:
+                if asia and search_titles:
+                    cn_queries = (
+                        build_cn_jackett_queries(search_titles, request.season, request.episode)
+                        if region == "cn"
+                        else []
                     )
-                except Exception:
-                    pass
-            if asia and self._nyaa_la.enabled:
+                    query_list = cn_queries if cn_queries else search_titles[:4]
+                    for indexer in self._jackett_tv_indexers_for(region):
+                        for query in query_list:
+                            try:
+                                items.extend(self._jackett.search_text(indexer, query))
+                            except Exception:
+                                pass
+                        if region == "cn" and items:
+                            break
+                else:
+                    for indexer in self._jackett_tv_indexers_for(region):
+                        try:
+                            items.extend(
+                                self._jackett.search_tv(
+                                    indexer=indexer,
+                                    tvdb_id=request.tvdb_id,
+                                    season=request.season,
+                                    episode=request.episode,
+                                    query_text=show_title,
+                                )
+                            )
+                        except Exception:
+                            continue
+                    if search_titles and not items:
+                        for indexer in self._jackett_tv_indexers_for(region):
+                            for query in search_titles[:4]:
+                                try:
+                                    items.extend(self._jackett.search_text(indexer, query))
+                                except Exception:
+                                    continue
+                            if items:
+                                break
+
+            if asia and self._nyaa_la.enabled and not items:
                 source_enabled["nyaa"] = True
                 try:
                     items.extend(
@@ -452,7 +512,24 @@ class FetchService:
                     )
                 except Exception:
                     pass
-            elif self._nyaa.enabled and show_title:
+            if (
+                region == "cn"
+                and self._nyaa_anime.enabled
+                and not items
+            ):
+                source_enabled["nyaa"] = True
+                try:
+                    anime_batch = self._nyaa_anime.fetch_episode_titles(
+                        search_titles,
+                        request.season,
+                        request.episode,
+                    )
+                    for item in anime_batch:
+                        item.indexer = "nyaa_anime"
+                    items.extend(anime_batch)
+                except Exception:
+                    pass
+            elif self._nyaa.enabled and show_title and not asia:
                 source_enabled["nyaa"] = True
                 try:
                     items.extend(
@@ -465,29 +542,23 @@ class FetchService:
                 except Exception:
                     pass
 
-        if self._jackett and request.season is not None and request.episode is not None:
-            for indexer in self._jackett_tv_indexers_for(region):
+            if (
+                region == "cn"
+                and self._dmhy.enabled
+                and not self._dmhy.unreachable
+                and not items
+            ):
+                source_enabled["dmhy"] = True
                 try:
                     items.extend(
-                        self._jackett.search_tv(
-                            indexer=indexer,
-                            tvdb_id=request.tvdb_id,
-                            season=request.season,
-                            episode=request.episode,
-                            query_text=show_title,
+                        self._dmhy.fetch_episode_titles(
+                            search_titles,
+                            request.season,
+                            request.episode,
                         )
                     )
                 except Exception:
-                    continue
-            if asia and search_titles and not items:
-                for indexer in self._jackett_tv_indexers_for(region):
-                    for query in search_titles[:3]:
-                        try:
-                            items.extend(self._jackett.search_text(indexer, query))
-                        except Exception:
-                            continue
-                    if items:
-                        break
+                    pass
 
         return items, source_enabled, show_title
 
@@ -519,20 +590,6 @@ class FetchService:
             except Exception:
                 pass
 
-        if region == "cn" and self._dmhy.enabled and search_titles:
-            source_enabled["dmhy"] = True
-            try:
-                items.extend(self._dmhy.fetch_movie_titles(search_titles))
-            except Exception:
-                pass
-
-        if asia and self._nyaa_la.enabled and search_titles:
-            source_enabled["nyaa"] = True
-            try:
-                items.extend(self._nyaa_la.fetch_movie_titles(search_titles))
-            except Exception:
-                pass
-
         if self._jackett and imdb_id:
             for indexer in self._jackett_movie_indexers_for(region):
                 try:
@@ -548,13 +605,27 @@ class FetchService:
 
         if self._jackett and not items and search_titles:
             for indexer in self._jackett_movie_indexers_for(region):
-                for query in search_titles[:2]:
+                for query in search_titles[:4]:
                     try:
                         items.extend(self._jackett.search_text(indexer, query))
                     except Exception:
                         continue
                 if items:
                     break
+
+        if region == "cn" and self._dmhy.enabled and search_titles and not items:
+            source_enabled["dmhy"] = True
+            try:
+                items.extend(self._dmhy.fetch_movie_titles(search_titles))
+            except Exception:
+                pass
+
+        if asia and self._nyaa_la.enabled and search_titles and not items:
+            source_enabled["nyaa"] = True
+            try:
+                items.extend(self._nyaa_la.fetch_movie_titles(search_titles))
+            except Exception:
+                pass
 
         return items, source_enabled
 

@@ -1,0 +1,73 @@
+{
+  "indexers": [
+    "dmhy",
+    "mikan",
+    "acgrip"
+  ],
+  "slots": [
+    {
+      "label": "庆余年",
+      "sources": {
+        "dmhy_rss": [],
+        "jackett:dmhy": [],
+        "jackett:mikan": [],
+        "jackett:acgrip": []
+      },
+      "any_hits": false
+    },
+    {
+      "label": "琅琊榜",
+      "sources": {
+        "dmhy_rss": [],
+        "jackett:dmhy": [],
+        "jackett:mikan": [],
+        "jackett:acgrip": []
+      },
+      "any_hits": false
+    },
+    {
+      "label": "三体",
+      "sources": {
+        "dmhy_rss": [
+          "[GM-Team][国漫][三体][The Three-Body Problem][2022][01-15 Fin][AVC][GB][1080P]",
+          "【彽爺】【国产动画】【三体动画版 The Three-Body Animation】【1~15】【GB_MP4】【3840X2160】【全集】",
+          "[GM-Team][国漫][三体][The Three-Body Problem][2022][14][AVC][GB][1080P]",
+          "[GM-Team][国漫][三体][The Three-Body Problem][2022][13][AVC][GB][1080P]",
+          "[GM-Team][国漫][三体][The Three-Body Problem][2022][12][AVC][GB][1080P]"
+        ],
+        "jackett:dmhy": [
+          "[GM-Team][国漫][三体][The Three-Body Problem][2022][01-15 Fin][AVC][GB][1080P]",
+          "【彽爺】【国产动画】【三体动画版 The Three-Body Animation】【1~15】【GB_MP4】【3840X2160】【全集】",
+          "[GM-Team][国漫][三体][The Three-Body Problem][2022][14][AVC][GB][1080P]",
+          "[GM-Team][国漫][三体][The Three-Body Problem][2022][13][AVC][GB][1080P]",
+          "[GM-Team][国漫][三体][The Three-Body Problem][2022][12][AVC][GB][1080P]"
+        ],
+        "jackett:mikan": [
+          "[Up to 21°C] 我的三体 第四季 / My Three-Body - 09 (B-Global Donghua 1920x1080 HEVC AAC ",
+          "[Up to 21°C] 我的三体 第四季 / My Three-Body - 08 (B-Global Donghua 1920x1080 HEVC AAC ",
+          "[Up to 21°C] 我的三体 第四季 / My Three-Body - 07 (B-Global Donghua 1920x1080 HEVC AAC ",
+          "[Up to 21°C] 我的三体 第四季 / My Three-Body - 05 (B-Global Donghua 1920x1080 HEVC AAC ",
+          "[Up to 21°C] 我的三体 第四季 / My Three-Body - 04 (B-Global Donghua 1920x1080 HEVC AAC "
+        ],
+        "jackett:acgrip": [
+          "[jibaketa合成&音頻壓制][代理商粵語]咒術迴戰 第三季 / Jujutsu Kaisen S3 - 12 END [粵日雙語+內封繁體中文字幕](WE",
+          "[jibaketa合成][代理商粵語]【我推的孩子】第三季 / Oshi no Ko 3rd Season - 11 END [粵日雙語+內封繁體中文字幕](W",
+          "[jibaketa合成&音頻壓制][代理商粵語]咒術迴戰 第三季 / Jujutsu Kaisen S3 - 11 [粵日雙語+內封繁體中文字幕](WEB 19",
+          "[jibaketa合成][代理商粵語]【我推的孩子】第三季 / Oshi no Ko 3rd Season - 10 [粵日雙語+內封繁體中文字幕](WEB 1",
+          "[jibaketa合成&音頻壓制][代理商粵語]咒術迴戰 第三季 / Jujutsu Kaisen S3 - 10 [粵日雙語+內封繁體中文字幕](WEB 19"
+        ]
+      },
+      "any_hits": true
+    },
+    {
+      "label": "陈情令",
+      "sources": {
+        "dmhy_rss": [],
+        "jackett:dmhy": [],
+        "jackett:mikan": [],
+        "jackett:acgrip": []
+      },
+      "any_hits": false
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 {
   "meta": {
-    "updated_at": "2026-07-02T13:54:43Z",
-    "active_count": 17,
+    "updated_at": "2026-07-04T07:43:46Z",
+    "active_count": 18,
     "resolved_count": 12,
     "version": 1
   },
@@ -394,6 +394,31 @@
       "last_report_path": "worklogs/2026-07-03/pipeline-retry-failed-report.json",
       "last_sync_run_id": "0861ed44-e3b5-4b07-b786-6101eb4799e0",
       "first_failed_at": "2026-07-02T13:54:43Z"
+    },
+    "tv:95842:s01e01": {
+      "slot_key": "tv:95842:s01e01",
+      "tmdb_id": 95842,
+      "media_type": "tv",
+      "season": 1,
+      "episode": 1,
+      "label": "庆余年 S01E01",
+      "title": "Joy of Life",
+      "page_id": "tv:95842:s01e01",
+      "imdb_id": "tt11273352",
+      "tvdb_id": 372881,
+      "failure_class": "genuine_scarcity",
+      "error": "公开 BT 稀缺：cn_sources 探测 0 命中，pipeline 仅 1 magnet（thin）",
+      "fetch_note": "dmhy/mikan/acgrip 无 S01E01；国际源亦不足 2 magnet",
+      "attempt_count": 1,
+      "sources": [
+        "cn_probe_sources",
+        "cn_poc_fetch",
+        "pipeline_batch_cn"
+      ],
+      "first_failed_at": "2026-07-04T07:43:46Z",
+      "last_failed_at": "2026-07-04T07:43:46Z",
+      "last_report_path": "worklogs/2026-07-04/cn-sources-probe-vps.json",
+      "content_region": "cn"
     }
   },
   "resolved": {

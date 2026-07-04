@@ -26,6 +26,44 @@ _SEASON_EPISODE_X_RE = re.compile(
     r"(?:^|[\s._\-])0*(\d+)x0*(\d+)(?:[\s._\-]|$)",
     re.IGNORECASE,
 )
+# 中文「第01集」「第1话」；多季「第2季第1集」
+_CN_EPISODE_RE = re.compile(
+    r"第\s*0*(\d+)\s*(?:集|话|回)",
+    re.IGNORECASE,
+)
+_CN_SEASON_EPISODE_RE = re.compile(
+    r"第\s*0*(\d+)\s*季\s*第\s*0*(\d+)\s*(?:集|话|回)",
+    re.IGNORECASE,
+)
+# 独立 E01 / EP01（无季号时视为 S01）
+_STANDALONE_EP_RE = re.compile(
+    r"(?:^|[\s._\-])e(?:p(?:isode)?)?\s*0*(\d+)(?:[\s._\-]|$)",
+    re.IGNORECASE,
+)
+# 整季/Complete 包（华语常见 NYHD Complete）
+_CN_COMPLETE_RE = re.compile(
+    r"(?:^|[\s._\-])(?:complete|全集|整季)(?:[\s._\-]|$)",
+    re.IGNORECASE,
+)
+# EP01-20 / E01-E54 范围包（首集可视为 S01E01）
+_CN_EP_RANGE_START_RE = re.compile(
+    r"(?:^|[\s._\-])e(?:p(?:isode)?)?\s*0*(\d+)\s*[\-–—~至到]\s*0*(\d+)(?:[\s._\-]|$)",
+    re.IGNORECASE,
+)
+# 国漫/字幕组常见：01-15 Fin、[1~15]、【1~15】、2022][01-15
+_CN_BRACKET_RANGE_RE = re.compile(
+    r"[\[\(【]?\s*0*(\d+)\s*[\-–—~至到]\s*0*(\d+)\s*(?:Fin|fin|全集)?\s*[\]\)】]?",
+    re.IGNORECASE,
+)
+# 单集号：[2022][14]、【01】、- 09 (
+_CN_BRACKET_EP_RE = re.compile(
+    r"[\[\(【]\s*0*(\d+)\s*[\]\)】]",
+    re.IGNORECASE,
+)
+_CN_DASH_EP_RE = re.compile(
+    r"[\-–—]\s*0*(\d+)\s*\(",
+    re.IGNORECASE,
+)
 
 _STOP_WORDS: FrozenSet[str] = frozenset({"the", "a", "an", "of", "and", "in", "to"})
 
@@ -54,6 +92,100 @@ def show_title_tokens(show_title: str) -> List[str]:
     return [w for w in words if len(w) >= 2 and w not in _STOP_WORDS]
 
 
+def matches_cn_season_pack(
+    title: str,
+    season: int,
+    episode: int,
+    search_titles: Optional[List[str]] = None,
+) -> bool:
+    """
+    华语整季包是否可映射到目标槽位（如 Nirvana.in.Fire.Complete → S01E01）。
+
+    @param title: release 标题
+    @param season: 季号
+    @param episode: 集号
+    @param search_titles: 多语言作品名
+    @returns: Complete/EP01-N 包且标题命中作品名时为 True
+    """
+    if season != 1 or episode != 1:
+        return False
+    raw = title or ""
+    from workflow.torrent_sources.asia_region import any_title_matches_release
+
+    titles = [t for t in (search_titles or []) if t]
+    if not titles or not any_title_matches_release(raw, titles):
+        return False
+    if _CN_COMPLETE_RE.search(raw):
+        return True
+    range_match = _CN_EP_RANGE_START_RE.search(raw)
+    if range_match:
+        try:
+            return int(range_match.group(1)) == 1
+        except (TypeError, ValueError):
+            pass
+    bracket_range = _CN_BRACKET_RANGE_RE.search(raw)
+    if bracket_range:
+        try:
+            return int(bracket_range.group(1)) == 1
+        except (TypeError, ValueError):
+            pass
+    return False
+
+
+def matches_cn_episode_in_pack(
+    title: str,
+    season: int,
+    episode: int,
+    search_titles: Optional[List[str]] = None,
+) -> bool:
+    """
+    国漫单集或全集包内某一集是否命中槽位（如 [2022][14] 或 01-15 Fin 含 E01）。
+
+    @param title: release 标题
+    @param season: 季号
+    @param episode: 集号
+    @param search_titles: 多语言作品名
+    @returns: 标题命中作品且季集可解析时为 True
+    """
+    if season != 1:
+        return False
+    raw = title or ""
+    from workflow.torrent_sources.asia_region import any_title_matches_release
+
+    titles = [t for t in (search_titles or []) if t]
+    if not titles or not any_title_matches_release(raw, titles):
+        return False
+    if matches_cn_season_pack(raw, season, episode, titles):
+        return True
+    bracket_range = _CN_BRACKET_RANGE_RE.search(raw)
+    if bracket_range:
+        try:
+            start = int(bracket_range.group(1))
+            end = int(bracket_range.group(2))
+            if start <= episode <= end:
+                return True
+        except (TypeError, ValueError):
+            pass
+    for match in _CN_BRACKET_EP_RE.finditer(raw):
+        try:
+            ep_num = int(match.group(1))
+            # 跳过四位年份误匹配（如 [2022]）
+            if ep_num >= 1900:
+                continue
+            if ep_num == episode:
+                return True
+        except (TypeError, ValueError):
+            continue
+    dash_match = _CN_DASH_EP_RE.search(raw)
+    if dash_match:
+        try:
+            if int(dash_match.group(1)) == episode:
+                return True
+        except (TypeError, ValueError):
+            pass
+    return False
+
+
 def matches_season_episode(title: str, season: int, episode: int) -> bool:
     """
     判断标题是否包含目标季集号。
@@ -61,9 +193,16 @@ def matches_season_episode(title: str, season: int, episode: int) -> bool:
     @param title: release 标题
     @param season: 季号
     @param episode: 集号
-    @returns: 是否匹配 SxxExx 或 NxM 形式
+    @returns: 是否匹配中文第N集、SxxExx、NxM 或 EP01 等形式
     """
     text = title or ""
+    season_ep = _CN_SEASON_EPISODE_RE.search(text)
+    if season_ep:
+        try:
+            if int(season_ep.group(1)) == season and int(season_ep.group(2)) == episode:
+                return True
+        except (TypeError, ValueError):
+            pass
     for pattern in (_SEASON_EPISODE_RE, _SEASON_EPISODE_X_RE):
         match = pattern.search(text)
         if not match:
@@ -73,6 +212,20 @@ def matches_season_episode(title: str, season: int, episode: int) -> bool:
                 return True
         except (TypeError, ValueError):
             continue
+    cn_match = _CN_EPISODE_RE.search(text)
+    if cn_match:
+        try:
+            if season <= 1 and int(cn_match.group(1)) == episode:
+                return True
+        except (TypeError, ValueError):
+            pass
+    ep_match = _STANDALONE_EP_RE.search(text)
+    if ep_match and season <= 1:
+        try:
+            if int(ep_match.group(1)) == episode:
+                return True
+        except (TypeError, ValueError):
+            pass
     return False
 
 
@@ -135,6 +288,13 @@ def matches_tv_slot(
     @param alt_titles: 额外搜索标题（日韩本地名等）
     @returns: 是否保留
     """
+    from workflow.torrent_sources.asia_region import any_title_matches_release
+
+    candidates = [t for t in ([show_title] if show_title else []) + list(alt_titles or []) if t]
+    if matches_cn_season_pack(title_raw, season, episode, candidates):
+        return True
+    if matches_cn_episode_in_pack(title_raw, season, episode, candidates):
+        return True
     if not matches_season_episode(title_raw, season, episode):
         return False
     family = indexer_family(indexer)
@@ -142,9 +302,7 @@ def matches_tv_slot(
         return True
     if not require_show_title:
         return True
-    from workflow.torrent_sources.asia_region import any_title_matches_release
 
-    candidates = [t for t in ([show_title] if show_title else []) + list(alt_titles or []) if t]
     if not candidates:
         return True
     return any_title_matches_release(title_raw, candidates)

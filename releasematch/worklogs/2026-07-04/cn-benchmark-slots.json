@@ -1,0 +1,35 @@
+[
+  {
+    "label": "庆余年 S01E01",
+    "tmdb_id": 95842,
+    "media_type": "tv",
+    "season": 1,
+    "episode": 1
+  },
+  {
+    "label": "三体 S01E01",
+    "tmdb_id": 97113,
+    "media_type": "tv",
+    "season": 1,
+    "episode": 1
+  },
+  {
+    "label": "琅琊榜 S01E01",
+    "tmdb_id": 64197,
+    "media_type": "tv",
+    "season": 1,
+    "episode": 1
+  },
+  {
+    "label": "陈情令 S01E01",
+    "tmdb_id": 90761,
+    "media_type": "tv",
+    "season": 1,
+    "episode": 1
+  },
+  {
+    "label": "流浪地球",
+    "tmdb_id": 535167,
+    "media_type": "movie"
+  }
+]

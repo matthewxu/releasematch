@@ -41,4 +41,9 @@ curl -s -o /dev/null -w "Nyaa via SOCKS: HTTP %{http_code}\n" \
   --connect-timeout 15 \
   --proxy "socks5h://127.0.0.1:${LOCAL_PORT}" https://nyaa.si/
 
+curl -s -o /dev/null -w "DMHy via SOCKS: HTTP %{http_code}\n" \
+  --connect-timeout 15 \
+  --proxy "socks5h://127.0.0.1:${LOCAL_PORT}" \
+  "https://share.dmhy.org/topics/rss/rss.xml?keyword=%E4%B8%89%E4%BD%93&sort_id=0&team_id=0"
+
 echo "隧道就绪。请 export TORRENT_PROXY=socks5h://127.0.0.1:${LOCAL_PORT}"

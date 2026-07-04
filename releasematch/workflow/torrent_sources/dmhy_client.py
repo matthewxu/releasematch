@@ -11,6 +11,8 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
 import re
 import time
 import xml.etree.ElementTree as ET
@@ -19,7 +21,8 @@ from urllib.parse import urlencode
 
 from workflow.torrent_sources.http_fetch import ProxySettings, http_get
 from workflow.torrent_sources.models import ResourceItem
-from workflow.torrent_sources.slot_filter import matches_season_episode
+from workflow.torrent_sources.asia_region import build_cn_episode_search_queries
+from workflow.torrent_sources.slot_filter import matches_tv_slot
 
 # 默认请求头（DMHy 对空 UA 可能限流）
 _DEFAULT_HEADERS = {
@@ -36,20 +39,32 @@ _RSS_PATH = "/topics/rss/rss.xml"
 # 跨源统计用 indexer 标识
 INDEXER_LABEL = "dmhy"
 
-# magnet 中 infohash 提取
-_BTih_RE = re.compile(r"btih:([0-9a-fA-F]{40})", re.IGNORECASE)
+# magnet 中 infohash 提取（DMHy 常用 32 位 base32，Nyaa 等常用 40 位 hex）
+_BTih_RAW_RE = re.compile(r"btih:([^&\s]+)", re.IGNORECASE)
+_BTih_HEX_RE = re.compile(r"^[0-9a-fA-F]{40}$")
 
 
 def _extract_infohash(magnet_uri: str) -> str:
     """
-    从 magnet URI 提取 40 位 infohash。
+    从 magnet URI 提取 40 位 hex infohash。
+
+    DMHy RSS 的 enclosure 多为 base32（32 字符）；其他源多为 hex（40 字符）。
 
     @param magnet_uri: magnet 链接
-    @returns: 小写 infohash 或空串
+    @returns: 小写 hex infohash 或空串
     """
-    match = _BTih_RE.search(magnet_uri or "")
-    if match:
-        return match.group(1).lower()
+    match = _BTih_RAW_RE.search(magnet_uri or "")
+    if not match:
+        return ""
+    raw = match.group(1).strip()
+    if _BTih_HEX_RE.fullmatch(raw):
+        return raw.lower()
+    # DMHy / 部分 tracker 使用 BitTorrent base32（RFC 4648，大写 A–Z2–7）
+    if len(raw) == 32:
+        try:
+            return base64.b32decode(raw.upper()).hex()
+        except (ValueError, binascii.Error):
+            return ""
     return ""
 
 
@@ -73,7 +88,7 @@ class DmhyClient:
         base_url: str = "https://share.dmhy.org",
         mirrors: Optional[List[str]] = None,
         min_interval_sec: float = 3.0,
-        timeout_sec: float = 30.0,
+        timeout_sec: float = 10.0,
         enabled: bool = True,
         proxy: Optional[ProxySettings] = None,
         sort_id: int = 0,
@@ -97,11 +112,17 @@ class DmhyClient:
         self._team_id = team_id
         self._order = order
         self._last_call = 0.0
+        self._unreachable = False
 
     @property
     def enabled(self) -> bool:
         """客户端是否启用。"""
         return self._enabled
+
+    @property
+    def unreachable(self) -> bool:
+        """站点是否已标记为不可达（连接超时后跳过后续查询）。"""
+        return self._unreachable
 
     def _throttle(self) -> None:
         """请求限速。"""
@@ -139,6 +160,8 @@ class DmhyClient:
         """
         if not self._enabled or not query.strip():
             return []
+        if self._unreachable:
+            return []
 
         last_error: Optional[Exception] = None
         for base in self._bases:
@@ -154,6 +177,9 @@ class DmhyClient:
                 return self._parse_rss(response.content, limit=limit)
             except Exception as exc:  # noqa: BLE001 — 尝试下一镜像
                 last_error = exc
+                err_text = str(exc).lower()
+                if "connect" in err_text or "timed out" in err_text:
+                    self._unreachable = True
                 continue
 
         if last_error:
@@ -164,17 +190,14 @@ class DmhyClient:
         """
         单标题 + 季集拉取（本地过滤 RSS 结果）。
 
+        搜索词优先华语命名（第N集、[01]、全集），S01E01 仅兜底。
+
         @param title: 作品名（优先中文）
         @param season: 季号
         @param episode: 集号
         @returns: 匹配季集的 ResourceItem 列表
         """
-        queries = [
-            f"{title} S{season:02d}E{episode:02d}",
-            f"{title} {season}x{episode:02d}",
-            f"{title} 第{episode}集",
-            title,
-        ]
+        queries = build_cn_episode_search_queries([title], season, episode)[:8]
         merged: List[ResourceItem] = []
         seen: set[str] = set()
         for query in queries:
@@ -183,7 +206,13 @@ class DmhyClient:
             except Exception:
                 continue
             for item in batch:
-                if not matches_season_episode(item.title_raw, season, episode):
+                if not matches_tv_slot(
+                    item.title_raw,
+                    title,
+                    season,
+                    episode,
+                    indexer=INDEXER_LABEL,
+                ):
                     continue
                 ih = item.infohash.lower()
                 if ih in seen:

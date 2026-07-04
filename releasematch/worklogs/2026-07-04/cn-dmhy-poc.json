@@ -1,0 +1,136 @@
+{
+  "meta": {
+    "kind": "cn_poc",
+    "slots_json": "/Users/xuli/vscodeai/releasematch/releasematch/worklogs/2026-07-04/cn-benchmark-slots.json",
+    "started_at": "2026-07-04T06:39:18.828118+00:00",
+    "min_count": 1,
+    "force": true
+  },
+  "summary": {
+    "total": 5,
+    "succeeded": 3,
+    "failed": 2,
+    "results": [
+      {
+        "tmdb_id": 95842,
+        "media_type": "tv",
+        "season": 1,
+        "episode": 1,
+        "cache_key": "tv:95842:s01e01",
+        "count": 0,
+        "cached": false,
+        "cross_source_max": 0,
+        "error": null,
+        "ok": false,
+        "content_region": "cn",
+        "search_titles": [
+          "庆余年",
+          "Joy of Life",
+          "Joy.of.Life"
+        ],
+        "source_enabled": {
+          "eztv": false,
+          "nyaa": false,
+          "dmhy": false,
+          "jackett": true
+        }
+      },
+      {
+        "tmdb_id": 97113,
+        "media_type": "tv",
+        "season": 1,
+        "episode": 1,
+        "cache_key": "tv:97113:s01e01",
+        "count": 3,
+        "cached": false,
+        "cross_source_max": 1,
+        "error": null,
+        "ok": true,
+        "content_region": "cn",
+        "search_titles": [
+          "三体",
+          "The Three-Body Problem",
+          "The.Three.Body.Problem"
+        ],
+        "source_enabled": {
+          "eztv": false,
+          "nyaa": false,
+          "dmhy": false,
+          "jackett": true
+        }
+      },
+      {
+        "tmdb_id": 64197,
+        "media_type": "tv",
+        "season": 1,
+        "episode": 1,
+        "cache_key": "tv:64197:s01e01",
+        "count": 0,
+        "cached": false,
+        "cross_source_max": 0,
+        "error": null,
+        "ok": false,
+        "content_region": "cn",
+        "search_titles": [
+          "琅琊榜",
+          "Nirvana in Fire",
+          "Nirvana.in.Fire"
+        ],
+        "source_enabled": {
+          "eztv": false,
+          "nyaa": false,
+          "dmhy": false,
+          "jackett": true
+        }
+      },
+      {
+        "tmdb_id": 90761,
+        "media_type": "tv",
+        "season": 1,
+        "episode": 1,
+        "cache_key": "tv:90761:s01e01",
+        "count": 2,
+        "cached": false,
+        "cross_source_max": 1,
+        "error": null,
+        "ok": true,
+        "content_region": "cn",
+        "search_titles": [
+          "陈情令",
+          "The Untamed",
+          "The.Untamed"
+        ],
+        "source_enabled": {
+          "eztv": false,
+          "nyaa": false,
+          "dmhy": false,
+          "jackett": true
+        }
+      },
+      {
+        "tmdb_id": 535167,
+        "media_type": "movie",
+        "season": null,
+        "episode": null,
+        "cache_key": "movie:535167",
+        "count": 16,
+        "cached": false,
+        "cross_source_max": 1,
+        "error": null,
+        "ok": true,
+        "content_region": "cn",
+        "search_titles": [
+          "流浪地球",
+          "The Wandering Earth",
+          "The.Wandering.Earth"
+        ],
+        "source_enabled": {
+          "yts": false,
+          "nyaa": false,
+          "dmhy": false,
+          "jackett": true
+        }
+      }
+    ]
+  }
+}
