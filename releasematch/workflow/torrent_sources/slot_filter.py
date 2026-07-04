@@ -86,10 +86,18 @@ def show_title_tokens(show_title: str) -> List[str]:
     从作品名提取用于匹配的显著 token。
 
     @param show_title: TMDB 作品英文名
-    @returns: token 列表（去停用词，长度 >= 2）
+    @returns: token 列表（去停用词；字母 token 长度 >= 2；**数字 token 全保留**）
     """
     words = normalize_title(show_title).split()
-    return [w for w in words if len(w) >= 2 and w not in _STOP_WORDS]
+    tokens: List[str] = []
+    for w in words:
+        if w in _STOP_WORDS:
+            continue
+        if w.isdigit():
+            tokens.append(w)
+        elif len(w) >= 2:
+            tokens.append(w)
+    return tokens
 
 
 def matches_cn_season_pack(

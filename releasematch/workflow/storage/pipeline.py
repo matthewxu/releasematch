@@ -206,7 +206,7 @@ def run_slot_pipeline(
             "error": "无可用 items；请先 db seed 或使用已知 Demo 槽位 1396/4/6",
         }
 
-    ranked = rank_items(items)
+    ranked = rank_items(items, media_kind=media_kind)
     write_result = store.upsert_slot_resources(
         page_id=page_id,
         tmdb_id=tmdb_id,
@@ -361,6 +361,150 @@ def run_batch_slot_pipeline(
         "results": results,
     }
     return report
+
+
+def _resource_item_dict(resource: Any) -> Dict[str, Any]:
+    """
+    将 DownloadResource ORM 行转为 scorer 输入字典。
+
+    @param resource: DownloadResource 实例
+    @returns: rank_items 可用的 item 字典
+    """
+    return {
+        "infohash": resource.infohash,
+        "title_raw": resource.title_raw,
+        "seeders": resource.seeders,
+        "release_group": resource.release_group,
+        "cross_source_count": resource.cross_source_count,
+        "resolution": resource.resolution,
+        "codec": resource.codec,
+        "source": resource.source,
+        "size_bytes": resource.size_bytes,
+        "magnet_uri": resource.magnet_uri,
+        "indexer": resource.indexer,
+        "cross_source_confidence": resource.cross_source_confidence,
+    }
+
+
+def rescore_page_recommendations(
+    page_id: str,
+    store: Optional[MySQLStore] = None,
+) -> Dict[str, Any]:
+    """
+    不重拉 torrent：用 DB 现有 resources 重算 Recommended 并写回。
+
+    @param page_id: movie:… 或 tv:…:sXXeYY
+    @param store: 可选 MySQLStore
+    @returns: 重算摘要 JSON
+    """
+    store = store or MySQLStore()
+    media_kind = "movie" if page_id.startswith("movie:") else "tv"
+    media_type = "movie" if media_kind == "movie" else "tv_episode"
+
+    if media_kind == "movie":
+        ctx = store.get_movie_page_context(page_id)
+        if not ctx:
+            return {"ok": False, "page_id": page_id, "error": "电影页不存在"}
+        tmdb_id = ctx.catalog.tmdb_id
+        season: Optional[int] = None
+        episode: Optional[int] = None
+    else:
+        ctx = store.get_episode_page_context(page_id)
+        if not ctx:
+            return {"ok": False, "page_id": page_id, "error": "剧集页不存在"}
+        tmdb_id = ctx.catalog.tmdb_id
+        season = ctx.page.season
+        episode = ctx.page.episode
+
+    if not ctx.sources:
+        return {
+            "ok": False,
+            "page_id": page_id,
+            "error": "无 download_resources，无法重算",
+        }
+
+    old_rec = ctx.recommended.title_raw if ctx.recommended else None
+    old_score = ctx.recommended.match_score if ctx.recommended else None
+    items = [_resource_item_dict(r) for r in ctx.sources]
+    ranked = rank_items(items, media_kind=media_kind)
+    write = store.upsert_slot_resources(
+        page_id=page_id,
+        tmdb_id=tmdb_id,
+        media_type=media_type,
+        season=season,
+        episode=episode,
+        items=items,
+        ranked=ranked,
+        cross_source_page_count=ctx.page.cross_source_count,
+        cross_source_page_total=ctx.page.cross_source_total,
+    )
+
+    ctx2 = (
+        store.get_movie_page_context(page_id)
+        if media_kind == "movie"
+        else store.get_episode_page_context(page_id)
+    )
+    new_rec = ctx2.recommended.title_raw if ctx2 and ctx2.recommended else None
+    new_score = ctx2.recommended.match_score if ctx2 and ctx2.recommended else None
+    new_seeders = ctx2.recommended.seeders if ctx2 and ctx2.recommended else None
+
+    return {
+        "ok": True,
+        "page_id": page_id,
+        "media_kind": media_kind,
+        "resources": len(items),
+        "changed": old_rec != new_rec or old_score != new_score,
+        "old_recommended": old_rec,
+        "old_score": old_score,
+        "new_recommended": new_rec,
+        "new_score": new_score,
+        "new_seeders": new_seeders,
+        "write": write,
+    }
+
+
+def rescore_published_pages(
+    *,
+    media_kind: Optional[str] = None,
+    store: Optional[MySQLStore] = None,
+) -> Dict[str, Any]:
+    """
+    批量重算 published 页的 Recommended（不重拉）。
+
+    @param media_kind: None=全部 · tv · movie
+    @param store: 可选 MySQLStore
+    @returns: 批次摘要
+    """
+    store = store or MySQLStore()
+    results: List[Dict[str, Any]] = []
+    ok_count = 0
+    changed_count = 0
+    fail_count = 0
+
+    for page_id in store.list_published_page_ids():
+        if media_kind == "movie" and not page_id.startswith("movie:"):
+            continue
+        if media_kind == "tv" and not page_id.startswith("tv:"):
+            continue
+
+        one = rescore_page_recommendations(page_id, store=store)
+        results.append(one)
+        if one.get("ok"):
+            ok_count += 1
+            if one.get("changed"):
+                changed_count += 1
+        else:
+            fail_count += 1
+
+    return {
+        "ok": fail_count == 0,
+        "media_kind": media_kind or "all",
+        "total": len(results),
+        "ok_count": ok_count,
+        "changed_count": changed_count,
+        "fail_count": fail_count,
+        "results": results,
+    }
 
 
 def load_slots_json(path: Path) -> List[Dict[str, Any]]:

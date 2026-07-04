@@ -250,6 +250,15 @@ python -m workflow.torrent_sources.run test --tmdb 1396 --season 4 --episode 6
 
 **作用：** 调用 `workflow/recommended/scorer.py`。默认 **live 拉取 + 排序**；加 `--demo` 则使用内置 Demo 数据。
 
+**评分版本（2026-07-05）：**
+
+| 类型 | 公式概要 | 说明 |
+|------|----------|------|
+| 剧集 `tv` | seed 50% · tier 25% · cross 25% | v1.1，可下载性优先 |
+| 电影 `movie` | seed 55% · tier 15% · cross 30% | v1.2，seed≥1 门禁 + 版本 tie-break |
+
+完整公式见 [IG信息登记册.md](./IG信息登记册.md) §6.5。
+
 **语法：**
 
 ```bash
@@ -282,9 +291,22 @@ python -m workflow.run run recommended --tmdb 1396 --season 4 --episode 6 --demo
 **作用：**
 
 1. 获取槽位 resource 列表（`demo` 或 `live --fetch`）
-2. `recommended/scorer` 排序并标记 Recommended
+2. `recommended/scorer.rank_items(..., media_kind=tv|movie)` 排序并标记 Recommended
 3. 写入 `download_resources`，更新 `media_pages.magnet_count` / 薄页门禁
 4. 写入 `sync_runs` 审计记录
+
+**不重拉、仅重算分数并写库**（scorer 升级后批量刷新电影/剧集 REC）：
+
+```python
+from workflow.storage.pipeline import rescore_page_recommendations, rescore_published_pages
+
+rescore_page_recommendations("movie:603")
+rescore_published_pages(media_kind="movie")   # 62 槽 published 电影
+# rescore_published_pages(media_kind="tv")
+# rescore_published_pages()  # 全部 published
+```
+
+之后对受影响页面执行 `generate page` 或 `portal.generator.generate_one.write_page_html`。
 
 **语法：**
 

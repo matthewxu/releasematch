@@ -104,6 +104,8 @@
 
 ### 阶段 2：评分（`workflow.run run recommended` / pipeline scorer）
 
+**入口：** `rank_items(items, media_kind="tv"|"movie")` — 剧集 v1.1、电影 v1.2，见 §6.5。
+
 | 字段 | 类型 | IG 等级 | 说明 |
 |------|------|---------|------|
 | `is_recommended` | bool | **S** | S-01 |
@@ -369,7 +371,7 @@ title_raw
   → release_parser.parse_release_title()     # A-06：正则取最后一个 - 后 token
   → ResourceItem.release_group
   → groups_registry.lookup_group()           # yaml 查 canonical + tier
-  → scorer.score_item() / rank_items()       # 50% 权重 + tie-break
+  → scorer.rank_items(media_kind=tv|movie)   # 剧集 v1.1 / 电影 v1.2，见 §6.5
   → mysql_store.upsert_slot_resources()      # download_resources.group_tier 冗余
   → recommended_block.html                   # Hero Group Badge
 ```
@@ -411,21 +413,86 @@ title_raw
 | mSD | mSD | **L3** |
 | IMMERSE / XEBEC / FQM | — | **L4**（未入 yaml） |
 
-### 6.5 评分公式与 tie-break（scorer v1）
+### 6.5 评分公式与 tie-break（scorer v1.1 剧集 · v1.2 电影）
+
+**模块：** `workflow/recommended/scorer.py`  
+**入口：** `rank_items(items, media_kind="tv"|"movie")` — pipeline / `rescore_page_recommendations()` 按槽位类型传入。
+
+#### 6.5.1 共用子项
+
+```
+tier_w:   L0=1.0, L1=0.85, L2=0.6, L3=0.3, L4=0.1
+seeder_w: min(seeders / 50, 1.0)    # 50 seeders 视为满分
+cross_w:  min(cross_source_count / 3, 1.0)
+```
+
+#### 6.5.2 剧集（`media_kind=tv`，默认 · v1.1）
 
 **主分（0~100）：**
 
 ```
-score = tier_w × 50 + seeder_w × 30 + cross_w × 20
-
-tier_w:   L0=1.0, L1=0.85, L2=0.6, L3=0.3, L4=0.1
-seeder_w: min(seeders / 50, 1.0)
-cross_w:  min(cross_source_count / 3, 1.0)
+score = tier_w × 25 + seeder_w × 50 + cross_w × 25
 ```
 
-**Group tier 占 50% 权重**，但在当前 BB 测试集多数条目为 L4 时，**seeders 往往决定 Recommended**。
+**设计意图：** 可下载性优先；seeders 占 **50%**，避免旧版 v1（tier 50%）出现「0 seed 高 tier 组压过 7 seed 低 tier 组」。
 
-**同分 tie-break（降序）：** seeders → 1080p → `cross_source_count` → tier
+**Recommended 标记：** 排序后 **第 1 名** `is_recommended=1`（每槽仅一条）。
+
+**同分 tie-break（降序）：** 分辨率（1080p 甜点）→ seeders → cross_source_count → tier
+
+#### 6.5.3 电影（`media_kind=movie` · v1.2）
+
+**主分（0~100）：**
+
+```
+score = tier_w × 15 + seeder_w × 55 + cross_w × 30
+```
+
+**设计意图：**
+
+- YTS 等 **L4 但高 seed** 的电影 release 不应被 tier 压过（tier 仅 15%）。
+- 跨源验证对单文件电影更重要（cross **30%**）。
+
+**Recommended 门禁：** 若槽位内存在 **seeders ≥ 1** 的条目，**跳过全部 0 seed** 再取最高分；仅当全部 0 seed 时才推第一名（与剧集不同）。
+
+**同分 tie-break（降序）：** **版本类型**（WEB-DL/BluRay > REMUX > CAM/TS）→ 分辨率 → seeders → cross → tier
+
+| 版本信号（title 正则） | edition 排序分 |
+|------------------------|----------------|
+| CAM / TS / TELE / HDTS | 5（最低） |
+| WEB-DL | 50 |
+| BluRay | 45 |
+| REMUX | 40 |
+| 2160p/4K | 35 |
+| 其他 | 25 |
+
+> **与 §01 文档 5.8 的关系：** 页面层仍只展示 **一条** Hero Recommended；电影「多版本对比」指 Sources 表辅助选版，非多条 REC。差异化体现在 **权重 + 版本 tie-break + seed 门禁**。
+
+#### 6.5.4 历史版本（勿再使用）
+
+| 版本 | 公式 | 问题 |
+|------|------|------|
+| **v1（已废弃）** | tier×50 + seed×30 + cross×20 | tier 过重；6 LOVERS 等槽 0 seed L3 压过 7 seed L4 |
+| **v1.1 剧集** | 见 §6.5.2 | 2026-07-03 后 pipeline 默认 |
+| **v1.2 电影** | 见 §6.5.3 | 2026-07-05 电影批量 rescore |
+
+#### 6.5.5 不重拉重算 Recommended
+
+改 scorer 或修复旧 `match_score` 时，**无需 `--fetch`**：
+
+```python
+from workflow.storage.pipeline import rescore_page_recommendations, rescore_published_pages
+
+# 单槽
+rescore_page_recommendations("movie:603")
+
+# 全部 published 电影
+rescore_published_pages(media_kind="movie")
+```
+
+写回 `download_resources.is_recommended` / `match_score` / `recommend_reason` 后，执行 `generate page` 或批量 `write_page_html` 刷新 dist。
+
+**局限：** 不重算 **槽位过滤**（`slot_filter`）；DB 内误匹配条目仍会参与排序——需 `--force` 重拉 + 过滤修复才能根治。
 
 ### 6.6 推荐理由与页面展示
 
@@ -641,3 +708,4 @@ python -m workflow.torrent_sources.speedtest.run slot \
 | v1.2 | 2026-07-01 | §六 Release Group S-05/A-06 计算逻辑 + 实现进度 + MySQL 实测 |
 | v1.3 | 2026-07-01 | §七 S-06 Phase 2 + 批量成本综合评估 + benchmark JSON |
 | v1.4 | 2026-07-01 | 迁移至 `docs/IG信息登记册.md`（正式文档） |
+| v1.5 | 2026-07-05 | §6.5 scorer v1.1 剧集 / v1.2 电影分化 + `rescore_page_recommendations` 不重拉重算 |
