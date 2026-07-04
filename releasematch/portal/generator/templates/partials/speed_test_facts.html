@@ -1,9 +1,9 @@
 {# libtorrent 实测六项指标 — 测速时间 / 均速 / 峰值 / total peers / 已连 / 连接率 #}
 {# @partial speed_test_facts.html — facts 字典由 SpeedEvidenceContext.to_template_dict 或 recommended.speed_test 提供 #}
 {% if facts %}
-<div class="rm-speed-facts rm-speed-facts--{{ variant | default('panel') }}" role="group" aria-label="libtorrent 实测指标">
+<div class="rm-speed-facts rm-speed-facts--{{ variant | default('panel') }}" role="group" aria-label="实测下载指标">
   <div class="rm-speed-facts__cell rm-speed-facts__cell--time">
-    <span class="rm-speed-facts__label">测速时间（A-03）</span>
+    <span class="rm-speed-facts__label">测速时间</span>
     <span class="rm-speed-facts__value">
       {% if facts.tested_at_iso %}
       <time datetime="{{ facts.tested_at_iso }}">{{ facts.tested_at }}</time>
@@ -13,25 +13,25 @@
   </div>
 
   <div class="rm-speed-facts__cell rm-speed-facts__cell--avg">
-    <span class="rm-speed-facts__label">片段均速（S-06 avg）</span>
+    <span class="rm-speed-facts__label">片段均速</span>
     <span class="rm-speed-facts__value">{{ facts.avg_speed or '—' }}</span>
     <span class="rm-speed-facts__sub">{% if facts.avg_kbps %}{{ facts.avg_kbps }} KB/s{% else %}—{% endif %}</span>
   </div>
 
   <div class="rm-speed-facts__cell rm-speed-facts__cell--max">
-    <span class="rm-speed-facts__label">片段峰值（S-06 max）</span>
+    <span class="rm-speed-facts__label">片段峰值</span>
     <span class="rm-speed-facts__value">{{ facts.max_speed or '—' }}</span>
     <span class="rm-speed-facts__sub">{% if facts.max_kbps %}{{ facts.max_kbps }} KB/s{% else %}—{% endif %}</span>
   </div>
 
   <div class="rm-speed-facts__cell rm-speed-facts__cell--peers-total">
-    <span class="rm-speed-facts__label">观测 peers（A-02 total）</span>
+    <span class="rm-speed-facts__label">观测 peers</span>
     <span class="rm-speed-facts__value">{{ facts.peers_total_display | default(facts.peers_total) }}</span>
     <span class="rm-speed-facts__sub">libtorrent 时点采样</span>
   </div>
 
   <div class="rm-speed-facts__cell rm-speed-facts__cell--peers-connected">
-    <span class="rm-speed-facts__label">已连 peers（A-02 connected）</span>
+    <span class="rm-speed-facts__label">已连 peers</span>
     <span class="rm-speed-facts__value">{{ facts.peers_reachable_display | default(facts.peers_reachable) }}</span>
     <span class="rm-speed-facts__sub">成功握手 peer 数</span>
   </div>

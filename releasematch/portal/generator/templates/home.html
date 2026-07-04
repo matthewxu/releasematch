@@ -39,6 +39,28 @@
     </article>
   </section>
 
+  {% if scarcity_entries %}
+  <section class="rm-section rm-scarcity-track" aria-labelledby="scarcity-heading">
+    <div class="rm-section__header">
+      <h2 id="scarcity-heading">稀缺追踪</h2>
+      <span class="rm-text-muted">{{ scarcity_count }} 部作品持续探测中</span>
+    </div>
+    <p class="rm-scarcity-track__intro">
+      以下槽位在公开源暂不足 2 条 release，本站仍持续 retry；命中后将自动上架 Recommended。
+    </p>
+    <ul class="rm-scarcity-track__list">
+      {% for item in scarcity_entries %}
+      <li class="rm-scarcity-track__item">
+        <span class="rm-scarcity-track__title">{{ item.label or item.title }}</span>
+        <span class="rm-badge rm-badge--scarcity">
+          {% if item.failure_class == 'region_gap' %}区域缺口{% else %}公开源稀缺{% endif %}
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
   <section class="rm-section" aria-labelledby="catalog-heading">
     <div class="rm-section__header">
       <h2 id="catalog-heading">全部作品</h2>
@@ -72,6 +94,7 @@
       </a>
       {% endfor %}
     </div>
+    <p class="rm-catalog-search-empty rm-text-muted" data-rm-catalog-empty hidden>无匹配作品，请换个关键词。</p>
     {% else %}
     <p class="rm-text-muted">暂无 published 页面；请先运行 pipeline 扩槽与 generate all。</p>
     {% endif %}

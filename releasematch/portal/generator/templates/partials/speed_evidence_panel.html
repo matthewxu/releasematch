@@ -4,7 +4,7 @@
 <details class="rm-speed-evidence-wrap">
   <summary class="rm-speed-evidence-wrap__summary">
     <span class="rm-speed-evidence-wrap__icon" aria-hidden="true">⚡</span>
-    展开测速证据：{{ speed_evidence.avg_speed }} avg · {{ speed_evidence.reachability }} 可达性
+    展开测速证据：均速 {{ speed_evidence.avg_speed }} · {{ speed_evidence.reachability_display | default(speed_evidence.reachability) }}
   </summary>
 <section class="rm-section rm-speed-evidence" aria-labelledby="speed-evidence-heading">
   {# RM Grab 指数 — 全页最优先展示 #}
@@ -21,9 +21,11 @@
       <p class="rm-speed-evidence__subtitle">{{ speed_evidence.method_note }}</p>
     </div>
     <div class="rm-speed-evidence__badges" aria-label="Information Gain 字段">
+      {% if show_ig_debug %}
       {% for badge in speed_evidence.ig_badges %}
       <span class="rm-badge rm-badge--ig">{{ badge }}</span>
       {% endfor %}
+      {% endif %}
     </div>
   </div>
 
@@ -34,9 +36,9 @@
 
   <div class="rm-speed-evidence__freshness rm-speed-evidence__freshness--{{ speed_evidence.freshness_class }}" role="status">
     <div class="rm-speed-evidence__freshness-main">
-      <span class="rm-speed-evidence__freshness-label">测试有效性（A-03）</span>
+      <span class="rm-speed-evidence__freshness-label">数据时效</span>
       <span class="rm-speed-evidence__freshness-value">{{ speed_evidence.freshness_label }}</span>
-      <span class="rm-speed-evidence__freshness-validity">效力 {{ speed_evidence.validity_level }}</span>
+      <span class="rm-speed-evidence__freshness-validity">可信度 {{ speed_evidence.validity_level }}</span>
     </div>
     <div class="rm-speed-evidence__freshness-time">
       {% if speed_evidence.tested_at_iso %}
@@ -45,7 +47,7 @@
       {% else %}
       <span>尚无测速时间记录</span>
       {% endif %}
-      <span class="rm-speed-evidence__freshness-ttl">· TTL {{ speed_evidence.ttl_hours }}h</span>
+      <span class="rm-speed-evidence__freshness-ttl">· 刷新周期 {{ speed_evidence.ttl_hours }} 小时</span>
     </div>
     <p class="rm-speed-evidence__freshness-note">{{ speed_evidence.freshness_note }}</p>
   </div>
@@ -53,12 +55,13 @@
   <article class="rm-speed-evidence__panel rm-speed-evidence__panel--{{ speed_evidence.reachability_class }}">
     <div class="rm-speed-evidence__reachability-banner">
       <div class="rm-speed-evidence__reachability-head">
-        <span class="rm-speed-evidence__reachability-label">Peer 可达性等级（A-01）</span>
-        <span class="rm-speed-evidence__reachability-value">{{ speed_evidence.reachability }}</span>
+        <span class="rm-speed-evidence__reachability-label">Peer 可达性</span>
+        <span class="rm-speed-evidence__reachability-value">{{ speed_evidence.reachability_display | default(speed_evidence.reachability) }}</span>
       </div>
-      <p class="rm-speed-evidence__reachability-display">{{ speed_evidence.reachability_display }}</p>
       <p class="rm-speed-evidence__reachability-detail">{{ speed_evidence.reachability_detail }}</p>
+      {% if show_ig_debug %}
       <p class="rm-speed-evidence__reachability-rule">{{ speed_evidence.reachability_rule }}</p>
+      {% endif %}
     </div>
 
     <dl class="rm-speed-evidence__metrics">
@@ -92,7 +95,7 @@
         <dd>{{ speed_evidence.connect_rate_pct }} <span class="rm-speed-evidence__metric-sub">（{{ speed_evidence.connect_rate_display }}）</span></dd>
       </div>
       <div class="rm-speed-evidence__metric">
-        <dt>首包延迟（A-09）</dt>
+        <dt>首包延迟</dt>
         <dd>{{ speed_evidence.latency_display }}</dd>
       </div>
       <div class="rm-speed-evidence__metric">
@@ -103,7 +106,7 @@
 
     {% if speed_evidence.index_vs_measured %}
     <p class="rm-speed-evidence__compare">
-      <strong>索引 vs 实测（A-10）：</strong>{{ speed_evidence.index_vs_measured }}
+      <strong>索引 vs 实测：</strong>{{ speed_evidence.index_vs_measured }}
     </p>
     {% endif %}
 

@@ -131,11 +131,12 @@
   }
 
   /**
-   * 首页目录客户端搜索（UX-04）。
+   * 首页目录客户端搜索（UX-04）+ 无结果提示。
    */
   function initCatalogSearch() {
     var input = document.querySelector("[data-rm-catalog-search]");
     var grid = document.querySelector(".rm-show-grid");
+    var emptyHint = document.querySelector("[data-rm-catalog-empty]");
     if (!input || !grid) {
       return;
     }
@@ -153,10 +154,84 @@
           visible += 1;
         }
       });
+      if (emptyHint) {
+        emptyHint.hidden = visible > 0 || !query;
+      }
       input.setAttribute(
         "aria-label",
         query ? "搜索作品，当前显示 " + visible + " 项" : "搜索作品"
       );
+    });
+  }
+
+  /**
+   * All Sources 表格客户端排序（UX-11）：Seed / Size。
+   */
+  function initTableSort() {
+    var tables = document.querySelectorAll("[data-rm-table-sort]");
+    tables.forEach(function (table) {
+      var tbody = table.querySelector("tbody");
+      if (!tbody) {
+        return;
+      }
+      var headers = table.querySelectorAll(".rm-table__sort");
+
+      /**
+       * 按列排序表格行。
+       * @param {HTMLButtonElement} button - 排序按钮
+       * @param {string} direction - asc | desc
+       */
+      function applySort(button, direction) {
+        var sortType = button.getAttribute("data-sort-type") || "string";
+        headers.forEach(function (other) {
+          other.classList.remove("is-active");
+          other.removeAttribute("data-sort-dir");
+        });
+        button.classList.add("is-active");
+        button.setAttribute("data-sort-dir", direction);
+
+        var colIndex = Array.prototype.indexOf.call(
+          button.parentElement.parentElement.children,
+          button.parentElement
+        );
+        var rows = Array.prototype.slice.call(tbody.querySelectorAll("tr"));
+        rows.sort(function (a, b) {
+          var aCell = a.children[colIndex];
+          var bCell = b.children[colIndex];
+          var aVal = aCell ? aCell.getAttribute("data-sort-value") || aCell.textContent : "";
+          var bVal = bCell ? bCell.getAttribute("data-sort-value") || bCell.textContent : "";
+          if (sortType === "number") {
+            var aNum = parseFloat(aVal) || 0;
+            var bNum = parseFloat(bVal) || 0;
+            return direction === "asc" ? aNum - bNum : bNum - aNum;
+          }
+          aVal = String(aVal).toLowerCase();
+          bVal = String(bVal).toLowerCase();
+          if (aVal < bVal) {
+            return direction === "asc" ? -1 : 1;
+          }
+          if (aVal > bVal) {
+            return direction === "asc" ? 1 : -1;
+          }
+          return 0;
+        });
+        rows.forEach(function (row) {
+          tbody.appendChild(row);
+        });
+      }
+
+      headers.forEach(function (button) {
+        button.addEventListener("click", function () {
+          var currentDir = button.getAttribute("data-sort-dir") || "asc";
+          var nextDir = currentDir === "asc" ? "desc" : "asc";
+          applySort(button, nextDir);
+        });
+      });
+
+      var defaultSort = table.querySelector('.rm-table__sort[data-sort-key="seed"]');
+      if (defaultSort) {
+        applySort(defaultSort, "desc");
+      }
     });
   }
 
@@ -168,6 +243,7 @@
     initResponsiveTables();
     initCopyMagnet();
     initCatalogSearch();
+    initTableSort();
   }
 
   if (document.readyState === "loading") {

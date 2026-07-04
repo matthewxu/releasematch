@@ -33,7 +33,9 @@
           <a
             class="rm-episode-chip{% if ep.is_active %} rm-episode-chip--active{% endif %}"
             href="/{{ show_slug }}/s{{ season.number }}e{{ ep.number }}/"
-          >S{{ '%02d'|format(season.number) }}E{{ '%02d'|format(ep.number) }}</a>
+            aria-label="{{ show_title }} 第 {{ season.number }} 季第 {{ ep.number }} 集"
+            title="第 {{ season.number }} 季 · 第 {{ ep.number }} 集"
+          ><span class="rm-episode-chip__num">第 {{ ep.number }} 集</span></a>
           {% endfor %}
         </div>
       </section>

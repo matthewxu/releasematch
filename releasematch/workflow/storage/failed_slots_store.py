@@ -408,3 +408,35 @@ def merge_report_files(
         "registry_path": str(registry_path),
         "details": summaries,
     }
+
+
+def list_scarcity_home_entries(
+    limit: int = 8,
+    *,
+    registry_path: Path = DEFAULT_REGISTRY_PATH,
+) -> List[Dict[str, Any]]:
+    """
+    导出首页「稀缺追踪」展示用条目（genuine_scarcity / region_gap）。
+
+    @param limit: 最多条数
+    @param registry_path: 登记册路径
+    @returns: 含 label、title、failure_class、slot_key 的字典列表
+    """
+    registry = load_registry(registry_path)
+    active: Dict[str, Dict[str, Any]] = registry.get("active") or {}
+    rows: List[Dict[str, Any]] = []
+    for entry in active.values():
+        failure_class = str(entry.get("failure_class") or "")
+        if failure_class not in ("genuine_scarcity", "region_gap"):
+            continue
+        rows.append(
+            {
+                "label": entry.get("label") or entry.get("title"),
+                "title": entry.get("title") or entry.get("label"),
+                "failure_class": failure_class,
+                "slot_key": entry.get("slot_key"),
+                "content_region": entry.get("content_region"),
+            }
+        )
+    rows.sort(key=lambda item: str(item.get("label") or "").lower())
+    return rows[:limit]

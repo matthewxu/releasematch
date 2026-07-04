@@ -1895,3 +1895,97 @@ dd:last-child {
   border: 1px dashed rgba(148, 163, 184, 0.35);
   background: rgba(15, 23, 42, 0.4);
 }
+
+/* ==========================================================================
+   UX-06 稀缺追踪 · UX-11 表格排序 · 移动端 Magnet 吸底
+   ========================================================================== */
+
+.rm-scarcity-track__intro {
+  margin: 0 0 1rem;
+  color: var(--rm-text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.rm-scarcity-track__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.rm-scarcity-track__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--rm-radius-md);
+  border: 1px solid var(--rm-border-subtle);
+  background: var(--rm-bg-surface);
+}
+
+.rm-scarcity-track__title {
+  font-size: 0.92rem;
+  color: var(--rm-text-primary);
+}
+
+.rm-badge--scarcity {
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  background: rgba(251, 191, 36, 0.08);
+  white-space: nowrap;
+}
+
+.rm-catalog-search-empty {
+  margin: 0.75rem 0 0;
+  text-align: center;
+}
+
+.rm-table__sort {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  padding: 0;
+}
+
+.rm-table__sort:hover,
+.rm-table__sort.is-active {
+  color: var(--rm-recommended);
+}
+
+.rm-table__sort.is-active::after {
+  content: " ↓";
+  font-size: 0.65rem;
+}
+
+.rm-table__sort.is-active[data-sort-dir="asc"]::after {
+  content: " ↑";
+}
+
+.rm-episode-chip__num {
+  font-size: 0.82rem;
+}
+
+@media (max-width: 640px) {
+  .rm-release-card__actions {
+    position: sticky;
+    bottom: 0.75rem;
+    z-index: 20;
+    padding: 0.75rem 0 0.25rem;
+    background: linear-gradient(180deg, transparent, var(--rm-bg-base) 35%);
+  }
+
+  .rm-release-card__actions .rm-btn--primary {
+    flex: 1;
+    justify-content: center;
+  }
+}
