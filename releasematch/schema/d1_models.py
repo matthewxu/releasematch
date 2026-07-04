@@ -916,6 +916,48 @@ class SpeedEvidenceContext:
         }
 
 
+def _merge_measured_into_recommend_reason(
+    rec_dict: Dict[str, Any],
+    speed_evidence: "SpeedEvidenceContext",
+    speed_ctx: Dict[str, Any],
+    endorsement: str,
+) -> None:
+    """
+    E-05 / S-02：将 libtorrent 实测事实并入 ``recommend_reason``（渲染期，不写回 MySQL）。
+
+    优先使用 A-10 ``index_vs_measured``；若无则回退 ``speed_endorsement`` 核心（均速 + peers + UTC）。
+
+    @param rec_dict: Recommended 模板字典（就地修改）
+    @param speed_evidence: 测速 IG 证据上下文
+    @param speed_ctx: ``speed_evidence.to_template_dict()`` 结果
+    @param endorsement: ``build_endorsement_sentence`` 完整背书句
+    @returns: None
+    """
+    base = str(rec_dict.get("recommend_reason") or "").strip()
+    measured = str(
+        speed_ctx.get("index_vs_measured") or speed_evidence.build_index_vs_measured_text()
+    ).strip()
+    if not measured and endorsement:
+        tested = str(speed_ctx.get("tested_at") or "").strip()
+        avg = str(speed_ctx.get("avg_speed") or "").strip()
+        peers = str(
+            speed_ctx.get("peers_pair_display")
+            or speed_ctx.get("peers_total_display")
+            or ""
+        ).strip()
+        parts: List[str] = []
+        if avg:
+            parts.append(f"libtorrent 实测均速 {avg}")
+        if peers:
+            parts.append(f"Peer {peers}")
+        if tested:
+            parts.append(f"测于 {tested} UTC")
+        measured = "，".join(parts)
+    if not measured or measured in base:
+        return
+    rec_dict["recommend_reason"] = f"{base}；{measured}" if base else measured
+
+
 def _enrich_recommended_with_speed(
     rec_dict: Dict[str, Any],
     speed_evidence: Optional[SpeedEvidenceContext],
@@ -923,7 +965,7 @@ def _enrich_recommended_with_speed(
     release_title: str,
 ) -> None:
     """
-    就地写入 Recommended 模板的测速、Grab 指数与 S-07 背书字段。
+    就地写入 Recommended 模板的测速、Grab 指数、S-07 背书与 E-05 reason 合并字段。
 
     @param rec_dict: recommended.to_template_dict() 结果（会被修改）
     @param speed_evidence: 测速 IG 证据上下文
@@ -966,8 +1008,10 @@ def _enrich_recommended_with_speed(
             "grab_index_breakdown": speed_ctx["grab_index_breakdown"],
             "grab_index_has_data": speed_ctx["grab_index_has_data"],
         }
-        rec_dict["speed_endorsement"] = speed_evidence.build_endorsement_sentence(
-            release_title
+        endorsement = speed_evidence.build_endorsement_sentence(release_title)
+        rec_dict["speed_endorsement"] = endorsement
+        _merge_measured_into_recommend_reason(
+            rec_dict, speed_evidence, speed_ctx, endorsement
         )
     elif speed_summary and speed_summary.recommended_speed:
         rec_dict["speed"] = speed_summary.recommended_speed

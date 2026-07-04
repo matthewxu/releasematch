@@ -20,8 +20,8 @@
 | **GSC** | 未提交 | C2 门禁通过后提交 | ⏸ |
 | **CF Pages 生产** | 暂缓 | C2 门禁通过后 | ⏸ |
 | **页面 IG 估分（真实页）** | **5~7** | **≥7** | 🔴 |
-| **测速 bake 覆盖率** | ~81% 槽有数据 | **100%** indexable 页 | 🟡 |
-| **E-E-A-T 综合** | Trust B+ · Exp B+ · Exp A- · Auth C | Trust A- · Exp A | 🟡 |
+| **测速 bake 覆盖率** | **96/96 有 Recommended** · 97/118 summary | **100%**（有 Rec 页） | ✅ |
+| **E-E-A-T 综合** | Trust B+ · Experience B+ · Expertise A- · Auth C | Trust A- · Experience A | 🟡 |
 
 ---
 
@@ -47,15 +47,18 @@
 
 ### 2.2 Experience（经验）
 
+> **数据快照（2026-07-05）：** indexable **118** · 有 Recommended **96/96 已测速** · cron `--all-published` 每 6h · thin **2** 页 noindex dist
+
 | # | 信号 | 要求 | 状态 | IG-ID | 备注 |
 |---|------|------|------|-------|------|
-| E-01 | VPS/libtorrent 测速 | cron 每 6h | ✅ | S-06 | 114 槽 ~81% ok |
-| E-02 | 测速 bake 进 HTML | 静态可爬 | 🔶 | S-06/S-07 | 未 100% 覆盖 |
-| E-03 | grab_index Hero | Recommended 卡片 | 🔶 | S-07 | 模板有，数据不全 |
-| E-04 | speed_endorsement 文案 | 实测背书句 | 🔶 | S-07 | A-10 模板待建 |
-| E-05 | recommend_reason 含实测事实 | UTC + peers 对比 | ❌ | S-02 | 当前公式拼接 |
-| E-06 | tested_at 页面展示 | 更新时间 | 🔶 | A-03 | speed bar 部分有 |
-| E-07 | 索引 vs 实测 peers 对比 | 独家事实句 | ❌ | A-10 | |
+| E-01 | VPS/libtorrent 测速 | cron 每 6h | ✅ | S-06 | 有 Rec 页 96/96 summary · cron 已上线 |
+| E-02 | 测速 bake 进 HTML | 静态可爬 | ✅ | S-06 | `generate all` 120 页（118 index + 2 thin）· 有 Rec 全覆盖 |
+| E-03 | grab_index Hero | Recommended 卡片 | 🔶 | S-07 | 模板 ✅；不可达/0 peers 页 badge 弱 |
+| E-04 | speed_endorsement 文案 | 实测背书句 | 🔶 | S-07 | 有 Phase2 数据页已 bake |
+| E-05 | recommend_reason 含实测事实 | UTC + peers 对比 | ✅ | S-02 | `_merge_measured_into_recommend_reason` · 有 Rec+summary 页 |
+| E-06 | tested_at 页面展示 | 更新时间 | 🔶 | A-03 | 有 summary 页已展示；22 页无 Recommended 无测速 |
+| E-07 | 索引 vs 实测 peers 对比 | 独家事实句 | ✅ | A-10 | 面板 + **已并入 recommend_reason** |
+| E-08 | thin 降级仍输出 HTML | noindex UX | ✅ | — | `list_renderable_page_ids` · thin 页 `noindex,follow` 进 dist |
 
 ### 2.3 Expertise（专业）
 
@@ -94,12 +97,12 @@
 | IG-ID | 名称 | 后端 | 页面 bake | 数据质量 | 下一动作 |
 |-------|------|------|-----------|----------|----------|
 | S-01 | Recommended Release | ✅ | ✅ | ✅ | — |
-| S-02 | recommend_reason | ✅ | ✅ | ⚠️ 模板化 | P0：A-10 实测句 |
+| S-02 | recommend_reason | ✅ | ✅ | ✅ 有 Rec 页 | — |
 | S-03 | 跨源 N/M | ✅ | ✅ | ⚠️ 多数 1/3 | 修 Nyaa/EZTV |
 | S-04 | hash confidence | ✅ | 🔶 | ❌ 全 0.333 | P3：fuzzy 对齐 |
 | S-05 | Group tier | ✅ | 🔶 Hero | ⚠️ L4 为主 | P1：补 yaml |
-| S-06 | 实测速度 | ✅ | 🔶 | 🔶 81% | P1：100% bake |
-| S-07 | 实测背书 | 🔶 | 🔶 | 🔶 | P0：speed_endorsement |
+| S-06 | 实测速度 | ✅ | ✅ | ✅ **96/96 Rec** | 22 页无 Rec 不适用 |
+| S-07 | 实测背书 | ✅ | 🔶 | 🔶 不可达槽弱 | 琅琊榜/三体 timeout 观察 |
 | S-08 | 多地域测速 | 📋 | 📋 | — | P2+ |
 
 ### 3.2 页面 IG 估分目标
@@ -116,9 +119,9 @@
 
 | 优先级 | IG-ID | 缺口 | 负责模块 | 状态 |
 |--------|-------|------|----------|------|
-| P0 | A-01,A-03,S-07 | speed bar + 生成器渲染 | T2+T3 | 🔶 |
+| P0 | A-01,A-03,S-07 | speed 面板 + endorsement 已渲染 | T2+T3 | ✅ 有 Rec 页 |
 | P0 | A-07 | timeout 条目隐藏 | T2+T3 | ❌ |
-| P0 | A-10 | 索引 vs 实测对比文案 | T3 | ❌ |
+| P0 | A-10 | 索引/实测句已并入 **recommend_reason** | T3 | ✅ 有 Rec 页 |
 | P1 | S-05 | 补 groups.yaml | T1 | ❌ |
 | P1 | S-05 | Sources 表 tier badge | T3 | ❌ |
 | P1 | S-06 | 批量 slot cron 增量 TTL | T2 | ✅ cron |
@@ -181,15 +184,18 @@
 | 2026-07-04 | C2 SEO | sitemap ≤35 · 410 · Hub noindex · lang=en | Trust/技术 SEO ↑ | — | seo_c2_checklist |
 | 2026-07-04 | cron | VPS 测速 `--all-published` 每 6h | Experience ↑ | S-06 数据 ↑ | 92/114 ok |
 | 2026-07-05 | Trust | Contact 页 + 五页 `lang=en` + `ReleaseMatch@hotmail.com` | Trust ↑ | — | `/trust/contact/` |
+| 2026-07-05 | E-05 | `recommend_reason` 合并 A-10 实测句（生成器） | Experience ↑ | S-02 ↑ | BB S04E06 验收 |
+| 2026-07-05 | 测速+dist | 4 槽 gap-fill 测速 · `generate all` 120 页 | E-02/E-05 ✅ | S-06 96/96 Rec | speedtest-cn-gap-fill.json |
 | 2026-07-05 | T-10 | 删除 `portal/` 手写 demo（BB S04E6 等） | Trust ↑ | 避免虚假 cross/tier | generate page 验收 |
 | | | | | | |
 
 **下一迭代待办（摘自基线评估 P0/P1）：**
 
 - [x] P0：生成器 100% DB 驱动，清理手写 demo 页（T-10）
-- [ ] P0：`speed_endorsement` + A-10 索引/实测对比模板（E-04/E-07）
+- [x] P0：`recommend_reason` 合并 A-10 实测句（E-05 · 有 Rec 页 96/96）
 - [ ] P1：补 `groups.yaml` BB 高频组（X-07）
-- [ ] P1：全 indexable 页测速 + grab_index bake（E-02/E-03）
+- [x] P1：有 Recommended 页测速 summary 100%（E-02 · 96/96）
+- [ ] P1：22 页无 Recommended 的 pipeline/scorer 修复（非测速 cron 范围）
 - [x] P2：Trust 页 `lang=en` + Contact 页（T-05/T-09）· 邮箱 `ReleaseMatch@hotmail.com`
 
 ---
@@ -212,3 +218,6 @@
 | v1.0 | 2026-07-04 | 初建看板；同步基线评估结论 |
 | v1.1 | 2026-07-05 | T-05 Contact · T-09 lang=en · 功能性邮箱 `ReleaseMatch@hotmail.com` |
 | v1.2 | 2026-07-05 | T-10 清理 portal/ 手写 demo 页 |
+| v1.3 | 2026-07-05 | §2.2 Experience 对齐代码与 DB（93/118 测速 · E-04/E-07 已实现） |
+| v1.4 | 2026-07-05 | E-05：`recommend_reason` 渲染期合并 A-10 实测句 |
+| v1.5 | 2026-07-05 | 测速 gap-fill 4 槽 + `generate all` · E-02/E-05 有 Rec 页闭合 |
