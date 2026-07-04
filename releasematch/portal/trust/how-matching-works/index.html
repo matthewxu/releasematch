@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>对版如何工作 — ReleaseMatch</title>
-  <meta name="description" content="ReleaseMatch 如何验证 release 对版、评分 Recommended Release 与产生 Information Gain。">
+  <title>How Release Matching Works — ReleaseMatch</title>
+  <meta name="description" content="How ReleaseMatch verifies release matching, scores Recommended Release, and produces Information Gain beyond magnet lists.">
   <link rel="canonical" href="https://releasematch.io/trust/how-matching-works/">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/css/design-system.css">
@@ -12,25 +12,25 @@
 <body class="rm-page">
   <header class="rm-header"><div class="rm-container rm-header__inner"><a class="rm-logo" href="/"><span class="rm-logo__mark">RM</span><span>ReleaseMatch</span></a></div></header>
   <main class="rm-container rm-section">
-    <h1>对版（Release Matching）如何工作</h1>
+    <h1>How Release Matching Works</h1>
     <div class="rm-prose">
-      <p>「对版」指验证某一 release 是否与实际剧集内容完全对应——音轨同步、画质档位、剪辑版本等。多数 magnet 聚合站只列清单；本站在此基础上增加可验证的增量信息。</p>
-      <h2>评分维度</h2>
+      <p>“Release matching” means verifying that a release actually corresponds to the target episode or film—audio sync, quality tier, cut version, etc. Most magnet sites only list links; we add verifiable incremental signals.</p>
+      <h2>Scoring dimensions</h2>
       <ol>
-        <li><strong>Group 信誉</strong> — 基于历史压制质量的分档（L0~L4）</li>
-        <li><strong>跨源交叉验证</strong> — 同一 infohash 在多个数据源是否一致出现</li>
-        <li><strong>做种与测速</strong> — seeders 日更 + 连接性/片段测速摘要</li>
-        <li><strong>编码规格</strong> — 从 release 名与元数据推断 source、codec、音轨</li>
+        <li><strong>Group reputation</strong> — tiers L0~L4 based on historical encode quality</li>
+        <li><strong>Cross-source verification</strong> — whether the same infohash appears consistently across sources</li>
+        <li><strong>Swarm health &amp; speed tests</strong> — seeders plus connectivity / partial download summaries</li>
+        <li><strong>Encode metadata</strong> — source, codec, and audio inferred from release names</li>
       </ol>
       <h2>Recommended Release</h2>
-      <p>对每一槽位（如 Breaking Bad S04E06），引擎对全部候选 release 打分，最高分标记为推荐，并生成嵌入页面的 <code>recommend_reason</code> 文本。</p>
-      <h2>薄页门禁</h2>
+      <p>For each slot (e.g. Breaking Bad S04E06), the engine scores all candidates and marks the top pick as recommended, with an embedded <code>recommend_reason</code> on the page.</p>
+      <h2>Thin-page gate</h2>
       <ul>
-        <li>magnet = 0：不建页</li>
-        <li>magnet = 1：noindex</li>
-        <li>magnet ≥ 2 且含 IG 模块：允许 index</li>
+        <li>0 magnets: no page</li>
+        <li>1 magnet: noindex</li>
+        <li>≥2 magnets with IG modules: eligible for index</li>
       </ul>
-      <p><a href="/breaking-bad/s4e6/">查看示例页面 →</a></p>
+      <p><a href="/breaking-bad/s4e6/">See an example page →</a></p>
     </div>
   </main>
   <footer class="rm-footer"><div class="rm-container"><div class="rm-footer__bottom">&copy; 2026 ReleaseMatch</div></div></footer>

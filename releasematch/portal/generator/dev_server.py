@@ -6,8 +6,9 @@
 @module portal.generator.dev_server
 @description
   启动 HTTP 服务：
-    - /static/、/trust/、index.html 等走 portal/ 静态文件
-    - /breaking-bad/s4e6/ 等 DB 槽位路径实时读 MySQL 渲染 Jinja2
+    - /static/、/trust/、404/410 等走 portal/ 静态文件
+    - 首页与槽位路径（如 /breaking-bad/s4e6/）实时读 MySQL 渲染 Jinja2
+    - 内容页 **不** 使用 portal/ 下手写 HTML（已清理，仅 dist/ 为静态产出）
 """
 
 from __future__ import annotations
@@ -165,8 +166,8 @@ def run_dev_server(host: str = "127.0.0.1", port: int = 8080) -> None:
     PortalDevHandler.site_origin = f"http://{host}:{port}"
     server = ThreadingHTTPServer((host, port), PortalDevHandler)
     print(f"ReleaseMatch Portal 开发服：http://{host}:{port}/")
-    print("  DB 页面：/breaking-bad/  /breaking-bad/s4e6/  /inception-2010/")
-    print("  静态资源：/static/  /trust/  /index.html")
+    print("  DB 页面：/  /breaking-bad/s4e6/  /inception-2010/  …")
+    print("  静态资源：/static/  /trust/  /404.html")
     print(f"  IG debug 面板：{'开启' if SHOW_IG_DEBUG else '关闭'}（RM_SHOW_IG_DEBUG）")
     print("  Ctrl+C 停止")
     try:

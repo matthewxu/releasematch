@@ -26,21 +26,20 @@
 ```
 portal/
 ├── README.md                 # 本文件
-├── index.html                # 首页（设计演示）
 ├── 404.html                  # 404 模板
-├── breaking-bad/             # 剧集 Hub + 单集演示
-├── inception-2010/           # 电影页演示
+├── 410.html                  # DMCA 410 Gone
 ├── static/
 │   ├── css/design-system.css # 设计系统
 │   ├── js/site.js            # 轻量交互
 │   └── robots.txt
-├── trust/                    # C0：About / DMCA / Privacy / How It Works
+├── trust/                    # C0：About / Contact / DMCA / Privacy / How It Works
 ├── generator/                # T3：页面生成器
 │   └── templates/            # Jinja2 模板（base / episode / movie / show_hub）
-├── templates/                # （预留）与 generator 同步的静态参考
 ├── workers/                  # D1 API + sync
-└── dist/                     # T3 批量产出目录（生成器写入）
+└── dist/                     # T3 批量产出（generate all 写入；部署唯一内容源）
 ```
+
+> **勿在 `portal/` 根下维护手写内容页**（如旧版 `breaking-bad/s4e6/index.html`）。预览用 `serve` 或 `dist/`。
 
 ---
 
@@ -55,16 +54,16 @@ portal/
 | **移动适配** | 表格响应式卡片化、顶栏折叠菜单 |
 | **E-E-A-T** | Trust 四页、DMCA、nofollow magnet、不托管声明 |
 
-### 页面类型与演示路径
+### 页面类型与路径
 
-| 类型 | URL 演示 | Jinja2 模板 |
-|------|----------|-------------|
-| 首页 | `/index.html` | — |
-| 剧集 Hub | `/breaking-bad/` | `show_hub.html` |
-| **单集 L3（核心）** | `/breaking-bad/s4e6/` | `episode.html` |
-| 电影 | `/inception-2010/` | `movie.html` |
-| Trust | `/trust/about/` 等 | 静态 prose |
-| 404 | `/404.html` | — |
+| 类型 | URL 示例 | 来源 |
+|------|----------|------|
+| 首页 | `/` | `generate all` → `dist/index.html` 或 `serve`（MySQL） |
+| 剧集 Hub | `/breaking-bad/` | 生成器 `show_hub.html` |
+| **单集 L3（核心）** | `/breaking-bad/s4e6/` | 生成器 `episode.html` |
+| 电影 | `/inception-2010/` | 生成器 `movie.html` |
+| Trust | `/trust/about/` 等 | 静态 `trust/*/index.html` |
+| 404 / 410 | `/404.html` | 静态壳 |
 
 ### 单集页模块顺序（对齐 01 文档 §5.5）
 
@@ -92,20 +91,11 @@ python -m workflow.run serve --port 8080
 - `http://127.0.0.1:8080/breaking-bad/` — Hub
 - `http://127.0.0.1:8080/inception-2010/` — 电影
 
-**方式 B — 生成静态 HTML 到 `portal/dist/`：**
+**方式 B — 生成静态 HTML 到 `portal/dist/`（部署同源）：**
 
 ```bash
-python -m workflow.run generate page --path /breaking-bad/s4e6/
 python -m workflow.run generate all
-cd portal && python -m http.server 8080
-```
-
-**方式 C — 旧版静态演示（硬编码，不读库）：**
-
-```bash
-cd releasematch/portal
-python -m http.server 8080
-# 打开 /breaking-bad/s4e6/index.html（演示 HTML，非 DB）
+cd portal/dist && python -m http.server 8080
 ```
 
 ---
@@ -128,8 +118,8 @@ releasematch.io/about/                        About
 ## C0 交付清单（可与 T3 并行）
 
 - [x] 设计系统 `static/css/design-system.css`
-- [x] Trust 四页静态 HTML（`trust/*/index.html`）
-- [x] 单集 / 电影 / Hub 设计演示页
+- [x] Trust 五页静态 HTML（`trust/*/index.html`）
+- [x] 单集 / 电影 / Hub — **仅经生成器产出**（T-10 已清理手写 demo）
 - [x] robots.txt 占位
 - [x] 404 模板
 - [ ] CF Pages 项目初始化

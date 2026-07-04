@@ -68,7 +68,10 @@ def write_all_published(
     show_ig_debug: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """
-    批量生成所有 published 且 magnet≥2 的页面，并写入 DB 驱动的首页目录 index.html。
+    批量生成 episode/movie 静态 HTML，并写入首页、Hub、sitemap。
+
+    indexable（published 且 magnet≥2）输出 index,follow；thin 页仍生成 HTML 但为 noindex,follow，
+    避免 Hub/prev-next 内链 404，同时不进 sitemap。
 
     @param out_root: 输出根目录
     @param site_origin: canonical origin
@@ -76,7 +79,8 @@ def write_all_published(
     @returns: 批量摘要
     """
     store = MySQLStore()
-    page_ids = store.list_published_page_ids()
+    page_ids = store.list_renderable_page_ids()
+    published_ids = set(store.list_published_page_ids())
     results: List[Dict[str, Any]] = []
     errors: List[str] = []
 
@@ -87,6 +91,7 @@ def write_all_published(
             site_origin=site_origin,
             show_ig_debug=show_ig_debug,
         )
+        result["indexable"] = page_id in published_ids
         results.append(result)
         if not result.get("ok"):
             errors.append(f"{page_id}: {result.get('error')}")
@@ -97,10 +102,15 @@ def write_all_published(
     )
     sitemap_result = write_sitemap(out_root=out_root, site_origin=site_origin)
 
+    indexable_generated = sum(1 for r in results if r.get("ok") and r.get("indexable"))
+    noindex_generated = sum(1 for r in results if r.get("ok") and not r.get("indexable"))
+
     return {
         "ok": len(errors) == 0,
         "count": len(page_ids),
         "generated": sum(1 for r in results if r.get("ok")),
+        "indexable_generated": indexable_generated,
+        "noindex_generated": noindex_generated,
         "out_root": str(out_root),
         "pages": results,
         "errors": errors,

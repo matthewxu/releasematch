@@ -639,6 +639,32 @@ class MySQLStore:
         conn.close()
         return [str(r["page_id"]) for r in rows]
 
+    def list_renderable_page_ids(self) -> List[str]:
+        """
+        列出应写入 portal/dist 的 episode/movie page_id。
+
+        - published 且 magnet≥2：index,follow（进 sitemap）
+        - thin（magnet<2 且已 pipeline）：仍生成 HTML，meta robots 为 noindex,follow（Hub 内链 UX）
+
+        @returns: page_id 列表
+        """
+        conn = self._connect()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT page_id FROM media_pages
+                WHERE page_type IN ('episode', 'movie')
+                  AND (
+                    (page_status = 'published' AND magnet_count >= 2)
+                    OR page_status = 'thin'
+                  )
+                ORDER BY catalog_id, page_type, season, episode
+                """
+            )
+            rows = cur.fetchall()
+        conn.close()
+        return [str(r["page_id"]) for r in rows]
+
     def list_sitemap_content_pages(self) -> List[Dict[str, Any]]:
         """
         列出可纳入 sitemap 的内容页（indexable + 有 Recommended）。

@@ -21,9 +21,10 @@ from xml.dom import minidom
 from workflow.config import PROJECT_ROOT, SITE_ORIGIN
 from workflow.storage.mysql_store import MySQLStore
 
-# Trust 四页固定路径（trailing slash）
+# Trust 五页固定路径（trailing slash）；含 Contact（T-05 功能性邮箱）
 TRUST_PATHS: Tuple[str, ...] = (
     "/trust/about/",
+    "/trust/contact/",
     "/trust/privacy/",
     "/trust/dmca/",
     "/trust/how-matching-works/",

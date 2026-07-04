@@ -412,7 +412,12 @@ python -m workflow.run generate all --show-ig-debug
 | `--out` | 输出根目录，默认 `portal/dist` |
 | `--show-ig-debug` / `--no-ig-debug` | 覆盖环境变量 `RM_SHOW_IG_DEBUG` |
 
-**前提：** 目标页面已在 MySQL 中 published 且 `magnet_count ≥ 2`（`generate all` 仅处理满足门禁的页）。
+**前提：** `generate all` 写入 `portal/dist/` 的 episode/movie 包括：
+
+- **indexable：** `published` 且 `magnet_count ≥ 2` → `index,follow`，进 sitemap
+- **thin：** 已 pipeline 但 `magnet_count < 2` → 仍生成 HTML，**`noindex,follow`**，不进 sitemap（Hub 内链 UX）
+
+`draft`（仅占位、未拉取）仍不生成静态页。
 
 ---
 
@@ -686,7 +691,7 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | `run 4c` 要求 `--test` | 必须加 `--test` 参数 |
 | `run 4c` 返回 1、items < 2 | 检查 Jackett / 代理；华语槽位见 [11-CN华语影视资源方案.md](./11-CN华语影视资源方案.md) |
 | `recommended 步骤需要 --tmdb` | 补充 `--tmdb` |
-| `generate all` 页数少于预期 | 仅生成 `published` 且 `magnet_count ≥ 2` 的页 |
+| `generate all` 页数少于预期 | indexable 仅 `published`+magnet≥2；另含 `thin` 的 noindex 页；`draft` 占位不生成 |
 | 测速全为 `dry_run` | 安装 `libtorrent`（见 worklogs speedtest 文档） |
 | Nyaa/DMHy 国内超时 | 配置 SSH SOCKS 隧道，见 [nyaa-proxy-asia.md](./nyaa-proxy-asia.md) |
 | `seo_c2_checklist` FAIL：缺 OG / favicon | T-SEO-05 未实现；见 worklogs SEO 文档 P1 任务 |

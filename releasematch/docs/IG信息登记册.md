@@ -69,7 +69,7 @@
 |-------|------|------|
 | C-01 | 0 条 magnet | 薄页，不 index |
 | C-02 | 仅 B 级字段、无 Recommended | IG < 5，验证集不通过 |
-| C-03 | 纯手写演示页 `portal/breaking-bad/` | 已废弃，以 DB+generator 为准 |
+| C-03 | 纯手写演示页 `portal/breaking-bad/` 等 | **已删除**（2026-07-05）；以 DB + `portal/dist/` 为准 |
 
 ---
 
