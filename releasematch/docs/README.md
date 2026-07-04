@@ -33,6 +33,7 @@
 | [**11-CN华语影视资源方案.md**](./11-CN华语影视资源方案.md) | **华语专用**：市场摘要、DMHy Layer 2F、`cn` 路由、稀缺分类、PoC |
 | [03-工作流集成与模块规划.md](./03-工作流集成与模块规划.md) | 原 Step 4c 规划（**代码已迁移至 releasematch/**） |
 | [04-方案全景分析与优先级重评.md](./04-方案全景分析与优先级重评.md) | **T0~T5 工具轨 + C0~C4 内容轨（v1.1，当前生效）** |
+| [**12-日常运营执行手册.md**](./12-日常运营执行手册.md) | **日常运维**：巡检、cron、扩槽→生成→SEO 门禁 |
 | [../releasematch/README.md](../releasematch/README.md) | **独立代码库**：workflow / portal / extension |
 
 ---

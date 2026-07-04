@@ -138,6 +138,7 @@ WantedBy=timers.target
 
 ## 关联
 
+- [**12-日常运营执行手册.md**](./12-日常运营执行手册.md) — **日常巡检、cron 节奏、扩槽标准路径**
 - [jackett-remote-linode.md](./jackett-remote-linode.md) — 海外 VPS 通用部署
 - [jackett-stability.md](./jackett-stability.md) — 稳定性与 healthcheck
 - [nyaa-proxy-asia.md](./nyaa-proxy-asia.md) — SSH SOCKS 隧道回退

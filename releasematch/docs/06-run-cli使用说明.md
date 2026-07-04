@@ -4,7 +4,7 @@
 > **入口文件：** `workflow/run.py`  
 > **调用方式：** `python -m workflow.run <子命令> [参数]`  
 > **前置：** 在 `releasematch/` 目录下执行；配置见 [05-存储与部署配置.md](./05-存储与部署配置.md)  
-> **关联文档：** [VPS迁移与部署.md](./VPS迁移与部署.md) · [11-CN华语影视资源方案.md](./11-CN华语影视资源方案.md) · [nyaa-proxy-asia.md](./nyaa-proxy-asia.md) · [worklogs SEO §六](../worklogs/2026-07-03/页面SEO分析与优化方向.md)
+> **关联文档：** [12-日常运营执行手册.md](./12-日常运营执行手册.md) · [VPS迁移与部署.md](./VPS迁移与部署.md) · [11-CN华语影视资源方案.md](./11-CN华语影视资源方案.md) · [nyaa-proxy-asia.md](./nyaa-proxy-asia.md) · [worklogs SEO §六](../worklogs/2026-07-03/页面SEO分析与优化方向.md)
 
 ---
 

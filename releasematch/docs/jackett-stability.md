@@ -214,6 +214,8 @@ python -m workflow.run generate page --page-id tv:1396:s04e06
 
 ### 6.3 建议探测节奏
 
+完整日常/每周/发版前清单见 [**12-日常运营执行手册.md**](./12-日常运营执行手册.md) §三 · §十 · §十一。
+
 | 频率 | 动作 |
 |------|------|
 | 每天 | `workflow.torrent_sources.run status` |
