@@ -1,0 +1,13 @@
+started 2026-07-04T09:08:42.551611+00:00
+=== 庆余年 S01E01 ===
+done 763s any_ok=False hits=[]
+=== 琅琊榜 S01E01 ===
+done 744s any_ok=False hits=[]
+=== 三体 S01E01 ===
+done 611s any_ok=True hits=['dmhy', 'jackett:mikan']
+  dmhy: raw=7 filtered=7
+  jackett:mikan: raw=2 filtered=2
+=== 陈情令 S01E01 ===
+done 691s any_ok=False hits=[]
+{"total": 4, "slots_with_hits": 1}
+report: /Users/xuli/vscodeai/releasematch/releasematch/worklogs/2026-07-04/cn-sources-probe-socks-retest-v2.json
