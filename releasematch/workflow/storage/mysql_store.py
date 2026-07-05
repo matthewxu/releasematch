@@ -40,6 +40,7 @@ from schema.d1_models import (
     SpeedTestResult,
     build_catalog_id,
     build_page_id,
+    is_speed_evidence_publishable,
 )
 
 
@@ -508,6 +509,8 @@ class MySQLStore:
         phase2 = self.get_latest_speedtest_result(
             page_id, phase=2, infohash=infohash or None
         )
+        if not is_speed_evidence_publishable(speed, phase1, phase2):
+            return None
         return SpeedEvidenceContext.from_parts(
             speed,
             phase1,

@@ -67,11 +67,11 @@
 
 | # | 信号 | 要求 | 状态 | IG-ID | 备注 |
 |---|------|------|------|-------|------|
-| X-01 | groups.yaml 分档 | L0~L4 | ✅ | S-05 | **102** 组 |
+| X-01 | groups.yaml 分档 | L0~L4 | ✅ | S-05 | **111** 组 |
 | X-02 | Group badge Hero | Recommended 表格 Group 列 | ✅ | S-05 | |
 | X-03 | Group badge Sources 表 | 逐条 | ✅ | S-05 | `sources_table_row.html` |
 | X-04 | 跨源 N/M Hero badge | 页面级 | ✅ | S-03 | 数据多为 1/3 |
-| X-05 | 跨源 confidence Sources | 单条 badge | ❌ | S-04 | |
+| X-05 | 跨源 confidence Sources | 单条 badge | ✅ | S-04 | `sources_table_row` Cross 列 |
 | X-06 | release 解析 | source/codec/res | ✅ | A-05 | |
 | X-07 | BB 高频组入库 | XEBEC/FQM/IMMERSE/ASAP | ✅ | S-05 | yaml **98→102** 组 · 2026-07-05 rescore |
 | X-08 | scene_compliant | 入 reason | ✅ | S-02 | L0~L2 已知组 · Scene/P2P 短句 |
@@ -102,7 +102,7 @@
 | S-01 | Recommended Release | ✅ | ✅ | ✅ | — |
 | S-02 | recommend_reason | ✅ | ✅ | ✅ 有 Rec 页 | — |
 | S-03 | 跨源 N/M | ✅ | ✅ | ⚠️ 多数 1/3 | 修 Nyaa/EZTV |
-| S-04 | hash confidence | ✅ | 🔶 | ❌ 全 0.333 | P3：fuzzy 对齐 |
+| S-04 | hash confidence | ✅ | ✅ | 🔶 依赖多源同 release | fuzzy 已落地 · 待 Nyaa/EZTV 重叠 |
 | S-05 | Group tier | ✅ | ✅ Hero | 🔶 L4 Rec **43/109**（↓ yaml 补库后） | 继续扩 yaml |
 | S-06 | 实测速度 | ✅ | ✅ | ✅ **96/104 Rec** | 8 页 Rec 无 summary · 16 页无 Rec |
 | S-07 | 实测背书 | ✅ | 🔶 | 🔶 不可达槽弱 | 琅琊榜/三体 timeout 观察 |
@@ -127,13 +127,14 @@
 | 优先级 | IG-ID | 缺口 | 负责模块 | 状态 |
 |--------|-------|------|----------|------|
 | P0 | A-01,A-03,S-07 | speed 面板 + endorsement 已渲染 | T2+T3 | ✅ 有 Rec 页 |
-| P0 | A-07 | timeout 条目隐藏 | T2+T3 | ❌ |
+| P0 | A-07 | timeout 条目隐藏 | T2+T3 | ✅ |
 | P0 | A-10 | 索引/实测句已并入 **recommend_reason** | T3 | ✅ 有 Rec 页 |
 | P1 | S-05 | 补 groups.yaml（BB 首批 4 组） | T1 | ✅ |
-| P1 | S-05 | 补 groups.yaml（MeGusta/AFG 等全库高频） | T1 | ❌ |
+| P1 | S-05 | 补 groups.yaml（MeGusta/AFG 等全库高频） | T1 | ✅ +9 组 |
 | P1 | S-05 | Sources 表 tier badge | T3 | ❌ |
 | P1 | S-06 | 批量 slot cron 增量 TTL | T2 | ✅ cron |
-| P1 | S-04 | title/fuzzy 跨源对齐 | T1 | ❌ |
+| P1 | S-04 | title/fuzzy 跨源对齐 | T1 | ✅ |
+| P1 | A-07 | timeout 无 peers 隐藏测速面板 | T3 | ✅ |
 | P2 | S-05 | scene_compliant 入 reason（静态句） | T1 | ✅ |
 | P2 | S-05 | cron 动态 compliance_rate | T1 | ❌ |
 | P2 | S-08 | 多节点 Worker | T2+ | 📋 |
@@ -157,7 +158,7 @@
 | Schema JSON-LD | ✅ | TVEpisode / Movie / WebSite | — |
 | Open Graph | ✅ | `base.html` og:* + Twitter Card | — |
 | favicon | ✅ | `/static/favicon.ico` + `.svg` | — |
-| BreadcrumbList | ❌ | — | P2 |
+| BreadcrumbList | ✅ | episode/movie | T-SEO-08 |
 
 ### 4.2 内容 SEO / 政策
 
@@ -200,6 +201,10 @@
 | 2026-07-05 | IG Debug | 全站 120 页批量 Debug（未重拉）· §一基线刷新 | — | Debug **8~9：97** · 质量仍 **5~7** | [ig-debug-batch-summary.md](../../worklogs/2026-07-05/ig-debug-batch-summary.md) |
 | 2026-07-05 | X-07/X-08 | groups.yaml +4（XEBEC/FQM/IMMERSE/ASAP）· scene_compliant 入 reason · rescore 107 页 | Expertise ↑ | S-05 XEBEC **L1** · S-02 合规句 | BB S04E06 · L4 Rec 43/109 |
 | 2026-07-05 | T-SEO-04/05 | OG + favicon + WebSite Schema · Trust favicon · C2 checklist **13 pass** | 技术 SEO ↑ | — | seo_c2_checklist |
+| 2026-07-05 | S-04/X-05 | fuzzy 跨源对齐 + Sources Cross badge · `recompute_cross_source_fuzzy.py` | Expertise ↑ | S-04 页面 bake | 不重拉 DB 重算 |
+| 2026-07-05 | A-07 | timeout/error 无 peers → 不 bake speed_evidence | Experience ↑ | 琅琊榜/三体弱槽 | 生成器 |
+| 2026-07-05 | X-07b | groups.yaml +9（MeGusta/AFG/DL…）· **111** 组 | Expertise ↑ | S-05 tier 命中 ↑ | rescore |
+| 2026-07-05 | T-SEO-08 | BreadcrumbList JSON-LD · episode/movie | 技术 SEO ↑ | — | schema head |
 | | | | | | |
 
 **下一迭代待办（摘自基线评估 P0/P1）：**
@@ -207,7 +212,10 @@
 - [x] P0：生成器 100% DB 驱动，清理手写 demo 页（T-10）
 - [x] P0：`recommend_reason` 合并 A-10 实测句（E-05 · 有 Rec 页 96/96）
 - [x] P1：补 `groups.yaml` BB 首批 4 组（X-07 · XEBEC/FQM/IMMERSE/ASAP）
-- [ ] P1：补 `groups.yaml` 全库高频 L4 组（MeGusta/AFG/DL 等）
+- [x] P1：补 `groups.yaml` 全库高频 L4 组（MeGusta/AFG/DL 等 · +9 组）
+- [x] P1：S-04 fuzzy 跨源 + X-05 Sources Cross badge（不重拉）
+- [x] P0：A-07 timeout 槽隐藏测速面板
+- [x] P2：BreadcrumbList JSON-LD（T-SEO-08）
 - [x] P1：有 Recommended 页测速 summary 100%（E-02 · 96/96）
 - [ ] P1：**16 页**无 Recommended 的 pipeline/scorer 修复（非测速 cron 范围）
 - [ ] P1：**8 页** Rec 无测速 summary（7 电影 + 1 单集）· 电影 cron 覆盖
@@ -239,3 +247,4 @@
 | v1.6 | 2026-07-05 | 全站 IG Debug 批量汇总 · §一拆 Debug/质量双轨 · §3.2/§4.3/§五同步 |
 | v1.7 | 2026-07-05 | X-07 yaml +4 组 · X-08 scene_compliant 入 reason · rescore 107 页 |
 | v1.8 | 2026-07-05 | T-SEO-04/05：OG + favicon + WebSite Schema · Trust 五页 favicon |
+| v1.9 | 2026-07-05 | S-04 fuzzy · X-05 Cross badge · A-07 timeout 隐藏 · yaml +9 · BreadcrumbList |

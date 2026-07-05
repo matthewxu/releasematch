@@ -354,6 +354,61 @@ groups:
     scene_compliant: true
     notes: Scene 社区组
 
+  # --- L1/L2 补库：全库高频 x265 / Scene（2026-07-05 · X-07b，不重拉 rescore）---
+  - name: MeGusta
+    aliases: [MEGUSTA, MeGusta]
+    tier: L2
+    scene_compliant: false
+    notes: 主流 P2P x265，全库高频
+
+  - name: AFG
+    aliases: [AFG]
+    tier: L2
+    scene_compliant: true
+    notes: Scene 社区组，美剧高频
+
+  - name: DL
+    aliases: [DL]
+    tier: L2
+    scene_compliant: false
+    notes: P2P 重编码组
+
+  - name: ETHEL
+    aliases: [ETHEL]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P x265
+
+  - name: NaNi
+    aliases: [NANI, NaNi]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P x265
+
+  - name: BONE
+    aliases: [BONE]
+    tier: L2
+    scene_compliant: false
+    notes: 动漫/剧集 P2P
+
+  - name: KIMCHI
+    aliases: [KIMCHI]
+    tier: L2
+    scene_compliant: false
+    notes: 韩剧 P2P
+
+  - name: PSA
+    aliases: [PSA, PSArips]
+    tier: L3
+    scene_compliant: false
+    notes: 小体积 x265 重编码
+
+  - name: JOY
+    aliases: [JOY]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
   # --- L2 P2P / 社区组 ---
   - name: ION10
     aliases: [ION10, ION]

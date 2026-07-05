@@ -1091,6 +1091,55 @@ def build_movie_schema_ld(
     return schema
 
 
+def build_breadcrumb_list_schema_ld(
+    items: List[Dict[str, str]],
+) -> Dict[str, Any]:
+    """
+    构造 BreadcrumbList JSON-LD（T-SEO-08 / P2 技术 SEO）。
+
+    @param items: 有序列表，每项含 name；末项可不含 item（当前页）
+    @returns: schema.org BreadcrumbList 字典
+    """
+    elements: List[Dict[str, Any]] = []
+    for index, entry in enumerate(items, start=1):
+        node: Dict[str, Any] = {
+            "@type": "ListItem",
+            "position": index,
+            "name": entry.get("name") or "",
+        }
+        url = (entry.get("url") or "").strip()
+        if url:
+            node["item"] = url
+        elements.append(node)
+    return {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": elements,
+    }
+
+
+def is_speed_evidence_publishable(
+    summary: Optional["SlotSpeedSummary"],
+    phase1: Optional["SpeedTestResult"] = None,
+    phase2: Optional["SpeedTestResult"] = None,
+) -> bool:
+    """
+    A-07：timeout/error 且无 peers 时不向页面输出测速 IG 面板。
+
+    @param summary: slot_speed_summary 行
+    @param phase1: Phase 1 测速明细
+    @param phase2: Phase 2 测速明细
+    @returns: True 表示可 bake speed_evidence
+    """
+    if not summary or not (summary.recommended_infohash or "").strip():
+        return False
+    status = (phase2.status if phase2 else "") or (phase1.status if phase1 else "ok")
+    peers = (phase2.peers_total if phase2 else 0) or (phase1.peers_total if phase1 else 0)
+    if status in ("timeout", "error") and peers <= 0:
+        return False
+    return True
+
+
 @dataclass
 class EpisodePageContext:
     """
@@ -1203,6 +1252,15 @@ class EpisodePageContext:
                 air_date=self.page.air_date,
                 description=overview,
             ),
+            "breadcrumb_ld": build_breadcrumb_list_schema_ld(
+                [
+                    {"name": "Home", "url": f"{origin}/" if origin else "/"},
+                    {"name": self.catalog.title, "url": show_hub_url},
+                    {
+                        "name": f"S{season_num:02d}E{episode_num:02d}",
+                    },
+                ]
+            ),
             "robots_noindex": not self.page.is_indexable(),
             "meta_description": (
                 f"{self.catalog.title} 第 {self.page.season} 季第 {self.page.episode} 集 "
@@ -1303,6 +1361,12 @@ class MoviePageContext:
                 year=year,
                 canonical_url=canonical,
                 description=overview,
+            ),
+            "breadcrumb_ld": build_breadcrumb_list_schema_ld(
+                [
+                    {"name": "Home", "url": f"{origin}/" if origin else "/"},
+                    {"name": f"{self.catalog.title} ({year})" if year else self.catalog.title},
+                ]
             ),
             "robots_noindex": not self.page.is_indexable(),
         }

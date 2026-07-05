@@ -20,6 +20,9 @@
 {# T-SEO-04 / D-T1：TVEpisode + partOfSeries(TVSeries)，由 schema_ld 在 Python 侧组装 #}
 {% block head_extra %}
   <script type="application/ld+json">{{ schema_ld | tojson }}</script>
+  {% if breadcrumb_ld %}
+  <script type="application/ld+json">{{ breadcrumb_ld | tojson }}</script>
+  {% endif %}
 {% endblock %}
 
 {% block content %}

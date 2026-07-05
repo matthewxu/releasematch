@@ -24,6 +24,13 @@
     <span class="rm-text-muted">—</span>
     {% endif %}
   </td>
+  <td data-label="Cross" data-sort-value="{{ item.cross_source_count }}">
+    {% if item.cross_source_count and item.cross_source_count > 1 %}
+    <span class="rm-badge rm-badge--cross" title="跨 {{ item.cross_source_count }} 个数据源交叉验证（S-04）">{{ item.cross_source_count }}/{{ cross_source_total | default(3) }}</span>
+    {% else %}
+    <span class="rm-text-muted">1</span>
+    {% endif %}
+  </td>
   <td data-label="Size" data-sort-value="{{ item.size_bytes }}">{{ item.size_human }}</td>
   <td data-label="Seed" data-sort-value="{{ item.seeders }}">{{ item.seeders }}</td>
   <td data-label="操作"><a class="rm-table__magnet" href="{{ item.magnet_uri }}" rel="nofollow">Magnet</a></td>

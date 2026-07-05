@@ -25,6 +25,7 @@ from workflow.torrent_sources.config import (
     load_accounts_config,
 )
 from workflow.torrent_sources.cross_source import (
+    apply_fuzzy_cross_source,
     compute_page_cross_source,
     count_attempted_families,
     merge_by_infohash,
@@ -259,6 +260,13 @@ class FetchService:
         parsed = [_apply_parser(item) for item in raw_items]
         total_families = count_attempted_families(source_enabled)
         merged = merge_by_infohash(parsed, total_source_families=total_families)
+        merged = apply_fuzzy_cross_source(
+            merged,
+            total_source_families=total_families,
+            media_type=request.media_type.value,
+            slot_season=request.season,
+            slot_episode=request.episode,
+        )
         if merged:
             expires = _utc_expires_iso(self._cache_ttl_hours)
             self._cache.upsert(

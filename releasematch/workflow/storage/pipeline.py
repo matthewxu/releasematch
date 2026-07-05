@@ -517,6 +517,148 @@ def rescore_published_pages(
     }
 
 
+def _resource_to_item(resource: Any) -> Any:
+    """
+    将 DownloadResource 转为 ResourceItem（供跨源 fuzzy 重算）。
+
+    @param resource: DownloadResource 实例
+    @returns: ResourceItem
+    """
+    from workflow.torrent_sources.models import ResourceItem
+
+    row = _resource_item_dict(resource)
+    return ResourceItem(
+        infohash=str(row.get("infohash") or ""),
+        title_raw=str(row.get("title_raw") or ""),
+        release_group=str(row.get("release_group") or ""),
+        source=str(row.get("source") or ""),
+        resolution=str(row.get("resolution") or ""),
+        codec=str(row.get("codec") or ""),
+        size_bytes=int(row.get("size_bytes") or 0),
+        seeders=int(row.get("seeders") or 0),
+        peers=int(getattr(resource, "peers", 0) or 0),
+        magnet_uri=str(row.get("magnet_uri") or ""),
+        indexer=str(row.get("indexer") or ""),
+        cross_source_count=int(row.get("cross_source_count") or 1),
+        cross_source_confidence=float(row.get("cross_source_confidence") or 0.0),
+    )
+
+
+def recompute_page_cross_source_fuzzy(
+    page_id: str,
+    store: Optional[MySQLStore] = None,
+) -> Dict[str, Any]:
+    """
+    不重拉 indexer：对 DB 现有 download_resources 做 S-04 fuzzy 对齐并重算 Recommended。
+
+    @param page_id: movie:… 或 tv:…:sXXeYY
+    @param store: 可选 MySQLStore
+    @returns: 重算摘要 JSON
+    """
+    from workflow.torrent_sources.cross_source import apply_fuzzy_cross_source, default_source_total
+
+    store = store or MySQLStore()
+    media_kind = "movie" if page_id.startswith("movie:") else "tv"
+    media_type = "movie" if media_kind == "movie" else "tv_episode"
+
+    if media_kind == "movie":
+        ctx = store.get_movie_page_context(page_id)
+        if not ctx:
+            return {"ok": False, "page_id": page_id, "error": "电影页不存在"}
+        tmdb_id = ctx.catalog.tmdb_id
+        season: Optional[int] = None
+        episode: Optional[int] = None
+    else:
+        ctx = store.get_episode_page_context(page_id)
+        if not ctx:
+            return {"ok": False, "page_id": page_id, "error": "剧集页不存在"}
+        tmdb_id = ctx.catalog.tmdb_id
+        season = ctx.page.season
+        episode = ctx.page.episode
+
+    if not ctx.sources:
+        return {"ok": False, "page_id": page_id, "error": "无 download_resources"}
+
+    total_families = int(ctx.page.cross_source_total or default_source_total(media_kind))
+    before_max = max((r.cross_source_count for r in ctx.sources), default=1)
+    items = [_resource_to_item(r) for r in ctx.sources]
+    apply_fuzzy_cross_source(
+        items,
+        total_source_families=total_families,
+        media_type=media_type,
+        slot_season=season,
+        slot_episode=episode,
+    )
+    after_max = max((i.cross_source_count for i in items), default=1)
+    item_dicts = [row.to_dict() for row in items]
+    ranked = rank_items(item_dicts, media_kind=media_kind)
+    write = store.upsert_slot_resources(
+        page_id=page_id,
+        tmdb_id=tmdb_id,
+        media_type=media_type,
+        season=season,
+        episode=episode,
+        items=item_dicts,
+        ranked=ranked,
+        cross_source_page_count=ctx.page.cross_source_count,
+        cross_source_page_total=ctx.page.cross_source_total,
+    )
+
+    return {
+        "ok": True,
+        "page_id": page_id,
+        "resources": len(items),
+        "cross_max_before": before_max,
+        "cross_max_after": after_max,
+        "cross_improved": after_max > before_max,
+        "write": write,
+    }
+
+
+def recompute_published_cross_source_fuzzy(
+    *,
+    media_kind: Optional[str] = None,
+    store: Optional[MySQLStore] = None,
+) -> Dict[str, Any]:
+    """
+    批量对 published 页做 S-04 fuzzy 对齐（不重拉）。
+
+    @param media_kind: None=全部 · tv · movie
+    @param store: 可选 MySQLStore
+    @returns: 批次摘要
+    """
+    store = store or MySQLStore()
+    results: List[Dict[str, Any]] = []
+    ok_count = 0
+    improved_count = 0
+    fail_count = 0
+
+    for page_id in store.list_published_page_ids():
+        if media_kind == "movie" and not page_id.startswith("movie:"):
+            continue
+        if media_kind == "tv" and not page_id.startswith("tv:"):
+            continue
+
+        one = recompute_page_cross_source_fuzzy(page_id, store=store)
+        results.append(one)
+        if one.get("ok"):
+            ok_count += 1
+            if one.get("cross_improved"):
+                improved_count += 1
+        else:
+            fail_count += 1
+
+    return {
+        "ok": fail_count == 0,
+        "media_kind": media_kind or "all",
+        "total": len(results),
+        "ok_count": ok_count,
+        "improved_count": improved_count,
+        "fail_count": fail_count,
+        "results": results,
+    }
+
+
 def load_slots_json(path: Path) -> List[Dict[str, Any]]:
     """
     从 benchmark slot JSON 加载槽位列表。
