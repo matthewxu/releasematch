@@ -206,6 +206,11 @@ def run_slot_pipeline(
             "error": "无可用 items；请先 db seed 或使用已知 Demo 槽位 1396/4/6",
         }
 
+    from workflow.torrent_sources.release_parser import enrich_item_dict
+
+    for it in items:
+        enrich_item_dict(it, force_specs=True)
+
     ranked = rank_items(items, media_kind=media_kind)
     write_result = store.upsert_slot_resources(
         page_id=page_id,
@@ -365,12 +370,14 @@ def run_batch_slot_pipeline(
 
 def _resource_item_dict(resource: Any) -> Dict[str, Any]:
     """
-    将 DownloadResource ORM 行转为 scorer 输入字典。
+    将 DownloadResource ORM 行转为 scorer 输入字典（含 spec 回填）。
 
     @param resource: DownloadResource 实例
     @returns: rank_items 可用的 item 字典
     """
-    return {
+    from workflow.torrent_sources.release_parser import enrich_item_dict
+
+    item = {
         "infohash": resource.infohash,
         "title_raw": resource.title_raw,
         "seeders": resource.seeders,
@@ -383,7 +390,10 @@ def _resource_item_dict(resource: Any) -> Dict[str, Any]:
         "magnet_uri": resource.magnet_uri,
         "indexer": resource.indexer,
         "cross_source_confidence": resource.cross_source_confidence,
+        "video_spec": resource.video_spec,
+        "audio_spec": resource.audio_spec,
     }
+    return enrich_item_dict(item, force_specs=True)
 
 
 def rescore_page_recommendations(

@@ -1244,12 +1244,31 @@ class MoviePageContext:
         rec_dict = None
         if recommended:
             rec_dict = recommended.to_template_dict()
+            from workflow.torrent_sources.release_parser import enrich_item_dict
+
+            enrich_item_dict(rec_dict, force_specs=True)
             _enrich_recommended_with_speed(
                 rec_dict,
                 self.speed_evidence,
                 self.speed_summary,
                 recommended.title_raw,
             )
+        from workflow.movie_editions import annotate_source_dict, group_movie_sources
+
+        source_dicts = []
+        for src in self.sources:
+            row = annotate_source_dict(
+                enrich_item_dict(src.to_template_dict(), force_specs=True)
+            )
+            source_dicts.append(row)
+        source_editions = group_movie_sources(source_dicts)
+        edition_pick_hashes = {
+            str(g["best"].get("infohash"))
+            for g in source_editions
+            if g.get("best") and g["best"].get("infohash")
+        }
+        for row in source_dicts:
+            row["is_edition_pick"] = str(row.get("infohash") or "") in edition_pick_hashes
         runtime = (
             f"{self.catalog.runtime_minutes} min"
             if self.catalog.runtime_minutes
@@ -1272,8 +1291,9 @@ class MoviePageContext:
             "speed_evidence": self.speed_evidence.to_template_dict() if self.speed_evidence else None,
             "recommended": rec_dict,
             "recommended_quality": recommended.resolution if recommended else "",
-            "sources": [s.to_template_dict() for s in self.sources],
-            "source_count": len(self.sources),
+            "sources": source_dicts,
+            "source_editions": source_editions,
+            "source_count": len(source_dicts),
             "poster_url": self.catalog.poster_url(),
             "tmdb_overview": self.page.overview or self.catalog.overview,
             "tmdb_url": self.catalog.tmdb_url,

@@ -26,6 +26,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 from workflow.recommended.groups_registry import infer_group_tier, lookup_group
+from workflow.torrent_sources.release_parser import edition_sort_rank
 
 # Group tier 默认权重（映射到 0~1 后乘以 _SCORE_WEIGHT_TIER）
 _GROUP_TIER_WEIGHT: Dict[str, float] = {
@@ -99,25 +100,15 @@ def _tier_sort_weight(tier: str) -> int:
     return {"L0": 5, "L1": 4, "L2": 3, "L3": 2, "L4": 1}.get(tier, 0)
 
 
-def _edition_rank(title_raw: str) -> int:
+def _edition_rank(title_raw: str, source: str = "") -> int:
     """
-    电影版本类型排序（WEB-DL/BluRay 优于 CAM/TS）。
+    电影版本类型排序（委托 release_parser，与页面分组一致）。
 
     @param title_raw: release 标题
+    @param source: 已解析 source 字段
     @returns: 越大越优先
     """
-    text = (title_raw or "").lower()
-    if re.search(r"\bcam\b|telesync|\bts\b|hdts|hdcam|telecine", text):
-        return 5
-    if "web-dl" in text or "webdl" in text or "web dl" in text:
-        return 50
-    if "bluray" in text or "blu-ray" in text or "blu ray" in text:
-        return 45
-    if "remux" in text:
-        return 40
-    if re.search(r"2160|4k|uhd", text):
-        return 35
-    return 25
+    return edition_sort_rank(title_raw, source)
 
 
 def score_item(item: Dict[str, Any], media_kind: str = _MEDIA_KIND_TV) -> float:
@@ -200,7 +191,10 @@ def _sort_key(
     cross = int(item.get("cross_source_count") or 1)
     res_rank = _resolution_rank(str(item.get("resolution") or ""), str(item.get("title_raw") or ""))
     tier_w = _tier_sort_weight(order.group_tier)
-    edition = _edition_rank(str(item.get("title_raw") or "")) if media_kind == _MEDIA_KIND_MOVIE else 0
+    edition = _edition_rank(
+        str(item.get("title_raw") or ""),
+        str(item.get("source") or ""),
+    ) if media_kind == _MEDIA_KIND_MOVIE else 0
     return (-order.score, -edition, -res_rank, -seeders, -cross, -tier_w)
 
 

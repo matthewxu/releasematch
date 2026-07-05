@@ -963,6 +963,12 @@ class MySQLStore:
                     )
                     ON DUPLICATE KEY UPDATE
                         title_raw=VALUES(title_raw),
+                        release_group=VALUES(release_group),
+                        source=VALUES(source),
+                        resolution=VALUES(resolution),
+                        codec=VALUES(codec),
+                        video_spec=VALUES(video_spec),
+                        audio_spec=VALUES(audio_spec),
                         seeders=VALUES(seeders),
                         peers=VALUES(peers),
                         magnet_uri=VALUES(magnet_uri),

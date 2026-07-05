@@ -679,6 +679,62 @@ dd:last-child {
   background: rgba(61, 214, 140, 0.04);
 }
 
+.rm-table tr.is-edition-pick td {
+  background: rgba(91, 156, 246, 0.04);
+}
+
+.rm-badge--edition-pick {
+  color: var(--rm-accent-blue, #5b9cf6);
+  background: rgba(91, 156, 246, 0.12);
+  margin-left: 0.35rem;
+}
+
+.rm-edition-group {
+  margin-bottom: var(--rm-space-lg, 1.5rem);
+  padding-bottom: var(--rm-space-md, 1rem);
+  border-bottom: 1px solid var(--rm-border-subtle);
+}
+
+.rm-edition-group:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.rm-edition-group--cam .rm-edition-group__title {
+  color: var(--rm-tier-l3);
+}
+
+.rm-edition-group__header {
+  margin-bottom: var(--rm-space-sm, 0.75rem);
+}
+
+.rm-edition-group__title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+}
+
+.rm-edition-group__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  padding: 0 0.4rem;
+  margin-left: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--rm-text-secondary);
+  background: var(--rm-bg-elevated);
+  border-radius: 999px;
+}
+
+.rm-edition-group__pick {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--rm-text-secondary);
+}
+
 .rm-table__release {
   font-family: var(--rm-font-mono);
   font-size: 0.78rem;

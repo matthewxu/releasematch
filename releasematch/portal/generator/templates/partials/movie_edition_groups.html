@@ -1,0 +1,25 @@
+{# 电影页 — 按版本类型分组展示 #}
+{# @partial movie_edition_groups.html #}
+{% for group in source_editions %}
+<section class="rm-edition-group{% if group.edition_type == 'cam' %} rm-edition-group--cam{% endif %}" aria-labelledby="edition-{{ group.edition_type }}">
+  <div class="rm-edition-group__header">
+    <h3 class="rm-edition-group__title" id="edition-{{ group.edition_type }}">
+      {{ group.edition_label }}
+      <span class="rm-edition-group__count">{{ group.count }}</span>
+    </h3>
+    {% if group.best %}
+    <p class="rm-edition-group__pick">
+      本组推荐：
+      <strong>{{ group.best.video_spec or group.best.resolution }}</strong>
+      {% if group.best.audio_spec %} · {{ group.best.audio_spec }}{% endif %}
+      · {{ group.best.seeders }} seeders
+    </p>
+    {% endif %}
+  </div>
+  <div class="rm-table-wrap">
+    {% with items=group.rows %}
+    {% include 'partials/movie_sources_table.html' %}
+    {% endwith %}
+  </div>
+</section>
+{% endfor %}

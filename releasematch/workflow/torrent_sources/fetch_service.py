@@ -36,7 +36,7 @@ from workflow.torrent_sources.jackett_client import JackettClient
 from workflow.torrent_sources.models import FetchRequest, FetchResult, MediaType, ResourceItem
 from workflow.torrent_sources.nyaa_client import NyaaClient
 from workflow.torrent_sources.nyaa_live_action_client import NyaaLiveActionClient
-from workflow.torrent_sources.release_parser import parse_release_title
+from workflow.torrent_sources.release_parser import enrich_item_dict
 from workflow.torrent_sources.slot_filter import filter_tv_slot_items
 from workflow.torrent_sources.yts_client import YtsClient
 
@@ -78,20 +78,27 @@ def _utc_expires_iso(hours: float) -> str:
 
 def _apply_parser(item: ResourceItem) -> ResourceItem:
     """
-    用 release_parser 填充 item 空字段。
+    用 release_parser 填充 item 字段与 video/audio 展示行。
 
     @param item: ResourceItem
     @returns: 同一对象（已更新）
     """
-    parsed = parse_release_title(item.title_raw)
-    if not item.release_group:
-        item.release_group = parsed["release_group"]
-    if not item.resolution:
-        item.resolution = parsed["resolution"]
-    if not item.codec:
-        item.codec = parsed["codec"]
-    if not item.source:
-        item.source = parsed["source"]
+    data = enrich_item_dict(
+        {
+            "title_raw": item.title_raw,
+            "release_group": item.release_group,
+            "resolution": item.resolution,
+            "codec": item.codec,
+            "source": item.source,
+            "video_spec": getattr(item, "video_spec", "") or "",
+            "audio_spec": getattr(item, "audio_spec", "") or "",
+        },
+        force_specs=False,
+    )
+    item.release_group = str(data.get("release_group") or item.release_group or "")
+    item.resolution = str(data.get("resolution") or item.resolution or "")
+    item.codec = str(data.get("codec") or item.codec or "")
+    item.source = str(data.get("source") or item.source or "")
     return item
 
 

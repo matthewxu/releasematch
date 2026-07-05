@@ -1,0 +1,43 @@
+{# 电影页 Sources 表（含 Source / Video / Audio 列） #}
+{# @partial movie_sources_table.html — 供 movie.html 与 edition 分组复用 #}
+<table class="rm-table rm-table--responsive rm-table--sortable rm-table--movie" data-rm-table-sort>
+  <thead>
+    <tr>
+      <th scope="col">Release</th>
+      <th scope="col">Source</th>
+      <th scope="col">Quality</th>
+      <th scope="col">Video</th>
+      <th scope="col">Audio</th>
+      <th scope="col">Group</th>
+      <th scope="col"><button type="button" class="rm-table__sort" data-sort-key="size" data-sort-type="number">Size</button></th>
+      <th scope="col"><button type="button" class="rm-table__sort is-active" data-sort-key="seed" data-sort-type="number">Seed</button></th>
+      <th scope="col">操作</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr{% if item.is_recommended %} class="is-recommended"{% elif item.is_edition_pick %} class="is-edition-pick"{% endif %}>
+      <td class="rm-table__release" data-label="Release">
+        {{ item.title_raw }}
+        {% if item.is_edition_pick and not item.is_recommended %}
+        <span class="rm-badge rm-badge--edition-pick">本组最佳</span>
+        {% endif %}
+      </td>
+      <td data-label="Source">{{ item.source or '—' }}</td>
+      <td data-label="Quality" data-sort-value="{{ item.resolution }}">{{ item.resolution or '—' }}</td>
+      <td data-label="Video">{{ item.video_spec or item.codec or '—' }}</td>
+      <td data-label="Audio">{{ item.audio_spec or '—' }}</td>
+      <td data-label="Group">
+        {% if item.release_group %}
+        <span class="rm-badge rm-badge--tier-{{ item.group_tier | lower }}" title="Release Group 信誉 {{ item.group_tier }}">{{ item.release_group }} · {{ item.group_tier }}</span>
+        {% else %}
+        <span class="rm-text-muted">—</span>
+        {% endif %}
+      </td>
+      <td data-label="Size" data-sort-value="{{ item.size_bytes }}">{{ item.size_human }}</td>
+      <td data-label="Seed" data-sort-value="{{ item.seeders }}">{{ item.seeders }}</td>
+      <td data-label="操作"><a class="rm-table__magnet" href="{{ item.magnet_uri }}" rel="nofollow">Magnet</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
