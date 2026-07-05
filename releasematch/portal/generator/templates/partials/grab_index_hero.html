@@ -4,20 +4,20 @@
 <div class="rm-grab-index rm-grab-index--{{ variant | default('panel') }} rm-grab-index--{{ grab.grab_index_tier_class }}" role="status" aria-label="{{ grab.grab_index_name }}">
   <div class="rm-grab-index__main">
     <div class="rm-grab-index__brand">
-      <span class="rm-grab-index__name">{{ grab.grab_index_name }}</span>
-      <span class="rm-grab-index__tagline">{{ grab.grab_index_tagline }}</span>
+      <span class="rm-grab-index__name"{% if i18n_enabled %} data-i18n="speed.grab.name"{% endif %}>{{ grab.grab_index_name }}</span>
+      <span class="rm-grab-index__tagline"{% if i18n_enabled %} data-i18n="speed.grab.tagline"{% endif %}>{{ grab.grab_index_tagline }}</span>
     </div>
     <div class="rm-grab-index__score-wrap">
       <span class="rm-grab-index__score" aria-label="{{ t('speed.grab.score_aria') }}">{{ grab.grab_index_score }}</span>
-      <span class="rm-grab-index__tier">{{ grab.grab_index_tier_label }}</span>
+      <span class="rm-grab-index__tier"{% if i18n_enabled %} data-i18n-dynamic="grab_index_tier_label"{% endif %}>{{ grab.grab_index_tier_label }}</span>
     </div>
   </div>
-  <p class="rm-grab-index__summary">{{ grab.grab_index_summary }}</p>
+  <p class="rm-grab-index__summary"{% if i18n_enabled %} data-i18n-dynamic="grab_index_summary"{% endif %}>{{ grab.grab_index_summary }}</p>
   {% if grab.grab_index_breakdown %}
   <ul class="rm-grab-index__breakdown" aria-label="{{ t('speed.grab.breakdown_aria') }}">
     {% for item in grab.grab_index_breakdown %}
     <li class="rm-grab-index__breakdown-item">
-      <span class="rm-grab-index__breakdown-label">{{ item.label }}</span>
+      <span class="rm-grab-index__breakdown-label"{% if i18n_enabled %} data-i18n="speed.grab.dim.{{ item.key }}"{% endif %}>{{ item.label }}</span>
       <span class="rm-grab-index__breakdown-bar" aria-hidden="true">
         <span class="rm-grab-index__breakdown-fill" style="width: {{ item.score }}%"></span>
       </span>
@@ -31,8 +31,8 @@
 <div class="rm-grab-index rm-grab-index--{{ variant | default('panel') }} rm-grab-index--unknown" role="status">
   <div class="rm-grab-index__main">
     <div class="rm-grab-index__brand">
-      <span class="rm-grab-index__name">{{ grab.grab_index_name }}</span>
-      <span class="rm-grab-index__tagline">{{ grab.grab_index_tagline }}</span>
+      <span class="rm-grab-index__name"{% if i18n_enabled %} data-i18n="speed.grab.name"{% endif %}>{{ grab.grab_index_name }}</span>
+      <span class="rm-grab-index__tagline"{% if i18n_enabled %} data-i18n="speed.grab.tagline"{% endif %}>{{ grab.grab_index_tagline }}</span>
     </div>
     <div class="rm-grab-index__score-wrap">
       <span class="rm-grab-index__score rm-grab-index__score--pending">—</span>

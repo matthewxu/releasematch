@@ -252,6 +252,7 @@
     }
 
     var messages = payload.messages || {};
+    var dynamicContent = payload.dynamic || {};
     var defaultLocale = payload.defaultLocale || "en";
     var storageKey = "rm_locale";
 
@@ -320,6 +321,22 @@
         var pKey = el.getAttribute("data-i18n-placeholder");
         if (pKey && bucket[pKey]) {
           el.setAttribute("placeholder", bucket[pKey]);
+        }
+      });
+
+      document.querySelectorAll("[data-i18n-dynamic]").forEach(function (el) {
+        var dKey = el.getAttribute("data-i18n-dynamic");
+        if (!dKey) {
+          return;
+        }
+        var entry = dynamicContent[dKey];
+        if (!entry || !entry[locale]) {
+          return;
+        }
+        if (el.hasAttribute("data-i18n-html")) {
+          el.innerHTML = entry[locale];
+        } else {
+          el.textContent = entry[locale];
         }
       });
 

@@ -113,18 +113,27 @@ class TmdbApiClient:
             time.sleep(_RATE_LIMIT_DELAY_SEC - elapsed)
         self._last_request_at = time.monotonic()
 
-    def _build_target_url(self, path: str, *, append: Optional[str] = None) -> str:
+    def _build_target_url(
+        self,
+        path: str,
+        *,
+        append: Optional[str] = None,
+        language: Optional[str] = None,
+    ) -> str:
         """
         构造 TMDB 目标 URL（供 CORS Proxy apiurl 参数）。
 
         @param path: 如 /movie/603 或 /tv/1399
         @param append: append_to_response 值
+        @param language: TMDB language 参数，如 en-US、zh-CN
         @returns: 完整 TMDB URL
         """
         sep = "&" if "?" in path else "?"
         url = f"{self.target_api_base}{path}{sep}api_key={self.api_key}"
         if append:
             url = f"{url}&append_to_response={append}"
+        if language:
+            url = f"{url}&language={language}"
         return url
 
     def _get_json(self, target_url: str, *, retry_429: int = 2) -> Optional[Dict[str, Any]]:

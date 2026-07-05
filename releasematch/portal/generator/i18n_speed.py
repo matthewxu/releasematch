@@ -348,20 +348,18 @@ def _localize_method_and_compare(se: Dict[str, Any], locale: str) -> None:
 
 def _localize_endorsement(se: Dict[str, Any], locale: str, release_title: str = "") -> str:
     """
-    生成英文 S-07 实测背书句。
+    生成 S-07 实测背书句（en / zh）。
 
     @param se: 已局部本地化的 speed_evidence 字典
     @param locale: en | zh
     @param release_title: Recommended release 标题
     @returns: 背书句
     """
-    if normalize_locale(locale) == "zh":
-        return str(se.get("speed_endorsement") or "")
-
+    loc = normalize_locale(locale)
     title_part = (
-        translate("speed.endorsement.title_named", locale, title=release_title)
+        translate("speed.endorsement.title_named", loc, title=release_title)
         if release_title
-        else translate("speed.endorsement.title_default", locale)
+        else translate("speed.endorsement.title_default", loc)
     )
     infohash = str(se.get("infohash_short") or "")
     speed_pair = se.get("speed_pair_display") or ""
@@ -370,7 +368,7 @@ def _localize_endorsement(se: Dict[str, Any], locale: str, release_title: str = 
     if se.get("tested_at_iso"):
         time_part = translate(
             "speed.endorsement.time",
-            locale,
+            loc,
             tested=se.get("tested_at") or "",
             age=se.get("age_display") or "—",
             validity=se.get("validity_level") or "—",
@@ -378,7 +376,7 @@ def _localize_endorsement(se: Dict[str, Any], locale: str, release_title: str = 
         )
     return translate(
         "speed.endorsement.body",
-        locale,
+        loc,
         title=title_part,
         hash=infohash,
         speed=speed_pair,
@@ -430,12 +428,17 @@ def _localize_speed_test_subset(st: Dict[str, Any], se: Dict[str, Any]) -> None:
             st[key] = se[key]
 
 
-def _refresh_recommend_reason_measured(rec: Dict[str, Any], localized_se: Dict[str, Any]) -> None:
+def _refresh_recommend_reason_measured(
+    rec: Dict[str, Any],
+    localized_se: Dict[str, Any],
+    locale: str,
+) -> None:
     """
-    英文模式下用本地化 ``index_vs_measured`` 替换 ``recommend_reason`` 末尾实测句。
+    用本地化 ``index_vs_measured`` 替换 ``recommend_reason`` 末尾实测句。
 
     @param rec: recommended 模板字典（就地修改）
     @param localized_se: 已本地化的 speed_evidence
+    @param locale: en | zh
     @returns: None
     """
     measured = str(localized_se.get("index_vs_measured") or "").strip()
@@ -451,24 +454,24 @@ def _refresh_recommend_reason_measured(rec: Dict[str, Any], localized_se: Dict[s
     if measured in base:
         rec["recommend_reason"] = base
         return
-    sep = "; " if base else ""
-    rec["recommend_reason"] = f"{base}{sep}{measured}" if base else measured
+    sep = "; " if normalize_locale(locale) == "en" else "；"
+    if base:
+        rec["recommend_reason"] = f"{base}{sep}{measured}"
+    else:
+        rec["recommend_reason"] = measured
 
 
-def localize_page_variables(variables: Dict[str, Any], locale: str) -> Dict[str, Any]:
+def apply_page_locale(variables: Dict[str, Any], locale: str) -> None:
     """
-    渲染前本地化页面上下文中的测速与推荐理由动态字段。
+    就地按 locale 重写测速与推荐理由等动态字段。
 
     @param variables: Jinja 模板变量 dict
     @param locale: en | zh
-    @returns: 就地更新后的 variables
+    @returns: None
     """
     from portal.generator.i18n_reason import localize_recommend_reason
 
     loc = normalize_locale(locale)
-    if loc == "zh":
-        return variables
-
     recommended = variables.get("recommended")
     if isinstance(recommended, dict):
         localize_recommend_reason(recommended, loc)
@@ -498,6 +501,19 @@ def localize_page_variables(variables: Dict[str, Any], locale: str) -> Dict[str,
             endorsement = _localize_endorsement(localized, loc, release_title)
             if endorsement:
                 recommended["speed_endorsement"] = endorsement
-            _refresh_recommend_reason_measured(recommended, localized)
+            _refresh_recommend_reason_measured(recommended, localized, loc)
 
+
+def localize_page_variables(variables: Dict[str, Any], locale: str) -> Dict[str, Any]:
+    """
+    渲染前本地化页面上下文（``RM_SITE_LOCALE`` 固定语言模式）。
+
+    @param variables: Jinja 模板变量 dict
+    @param locale: en | zh
+    @returns: 就地更新后的 variables
+    """
+    loc = normalize_locale(locale)
+    if loc == "zh":
+        return variables
+    apply_page_locale(variables, loc)
     return variables

@@ -102,6 +102,10 @@ def write_all_published(
     )
     sitemap_result = write_sitemap(out_root=out_root, site_origin=site_origin)
 
+    from portal.generator.render_trust import write_trust_pages
+
+    trust_result = write_trust_pages(out_root=out_root, site_origin=site_origin)
+
     indexable_generated = sum(1 for r in results if r.get("ok") and r.get("indexable"))
     noindex_generated = sum(1 for r in results if r.get("ok") and not r.get("indexable"))
 
@@ -117,6 +121,7 @@ def write_all_published(
         "home": home_result,
         "hubs": hub_result,
         "sitemap": sitemap_result,
+        "trust": trust_result,
     }
 
 

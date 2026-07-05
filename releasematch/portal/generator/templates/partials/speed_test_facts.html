@@ -9,7 +9,7 @@
       <time datetime="{{ facts.tested_at_iso }}">{{ facts.tested_at }}</time>
       {% else %}—{% endif %}
     </span>
-    <span class="rm-speed-facts__sub">{{ facts.age_display }}{% if facts.freshness_label %} · {{ facts.freshness_label }}{% endif %}{% if facts.validity_level %} · {{ t('speed.metric.validity', level=facts.validity_level) }}{% endif %}</span>
+    <span class="rm-speed-facts__sub"{% if i18n_enabled %} data-i18n-dynamic="speed_facts_time_sub"{% endif %}>{{ facts.age_display }}{% if facts.freshness_label %} · {{ facts.freshness_label }}{% endif %}{% if facts.validity_level %} · {{ t('speed.metric.validity', level=facts.validity_level) }}{% endif %}</span>
   </div>
 
   <div class="rm-speed-facts__cell rm-speed-facts__cell--avg">
@@ -39,7 +39,7 @@
   <div class="rm-speed-facts__cell rm-speed-facts__cell--rate">
     <span class="rm-speed-facts__label"{% if i18n_enabled %} data-i18n="speed.metric.connect_rate"{% endif %}>{{ t('speed.metric.connect_rate') }}</span>
     <span class="rm-speed-facts__value">{{ facts.connect_rate_pct | default('—') }}</span>
-    <span class="rm-speed-facts__sub">{{ facts.connect_rate_display | default(facts.peers_pair_display) }}</span>
+    <span class="rm-speed-facts__sub"{% if i18n_enabled %} data-i18n-dynamic="speed_connect_rate_display"{% endif %}>{{ facts.connect_rate_display | default(facts.peers_pair_display) }}</span>
   </div>
 </div>
 {% endif %}

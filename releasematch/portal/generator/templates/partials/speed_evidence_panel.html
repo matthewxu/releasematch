@@ -4,7 +4,7 @@
 <details class="rm-speed-evidence-wrap">
   <summary class="rm-speed-evidence-wrap__summary">
     <span class="rm-speed-evidence-wrap__icon" aria-hidden="true">⚡</span>
-    {{ t('speed.panel.summary', avg=speed_evidence.avg_speed, reach=speed_evidence.reachability_display | default(speed_evidence.reachability)) }}
+    <span{% if i18n_enabled %} data-i18n-dynamic="speed_panel_summary"{% endif %}>{{ t('speed.panel.summary', avg=speed_evidence.avg_speed, reach=speed_evidence.reachability_display | default(speed_evidence.reachability)) }}</span>
   </summary>
 <section class="rm-section rm-speed-evidence" aria-labelledby="speed-evidence-heading">
   <div class="rm-speed-evidence__header">
@@ -13,7 +13,7 @@
         <span class="rm-speed-evidence__icon" aria-hidden="true">⚡</span>
         <span{% if i18n_enabled %} data-i18n="speed.panel.title"{% endif %}>{{ t('speed.panel.title') }}</span>
       </h2>
-      <p class="rm-speed-evidence__subtitle">{{ speed_evidence.method_note }}</p>
+      <p class="rm-speed-evidence__subtitle"{% if i18n_enabled %} data-i18n-dynamic="speed_method_note"{% endif %}>{{ speed_evidence.method_note }}</p>
     </div>
     <div class="rm-speed-evidence__badges" aria-label="{{ t('speed.panel.ig_aria') }}">
       {% if show_ig_debug %}
@@ -31,28 +31,28 @@
   <div class="rm-speed-evidence__freshness rm-speed-evidence__freshness--{{ speed_evidence.freshness_class }}" role="status">
     <div class="rm-speed-evidence__freshness-main">
       <span class="rm-speed-evidence__freshness-label"{% if i18n_enabled %} data-i18n="speed.freshness.label"{% endif %}>{{ t('speed.freshness.label') }}</span>
-      <span class="rm-speed-evidence__freshness-value">{{ speed_evidence.freshness_label }}</span>
-      <span class="rm-speed-evidence__freshness-validity">{{ t('speed.freshness.validity', level=speed_evidence.validity_level) }}</span>
+      <span class="rm-speed-evidence__freshness-value"{% if i18n_enabled %} data-i18n-dynamic="speed_freshness_label"{% endif %}>{{ speed_evidence.freshness_label }}</span>
+      <span class="rm-speed-evidence__freshness-validity"{% if i18n_enabled %} data-i18n-dynamic="speed_freshness_validity_line"{% endif %}>{{ t('speed.freshness.validity', level=speed_evidence.validity_level) }}</span>
     </div>
     <div class="rm-speed-evidence__freshness-time">
       {% if speed_evidence.tested_at_iso %}
       <time datetime="{{ speed_evidence.tested_at_iso }}">{{ t('speed.freshness.tested_at', time=speed_evidence.tested_at) }}</time>
-      <span class="rm-speed-evidence__freshness-age">· {{ speed_evidence.age_display }}</span>
+      <span class="rm-speed-evidence__freshness-age">· <span{% if i18n_enabled %} data-i18n-dynamic="speed_age_display"{% endif %}>{{ speed_evidence.age_display }}</span></span>
       {% else %}
       <span{% if i18n_enabled %} data-i18n="speed.freshness.no_time"{% endif %}>{{ t('speed.freshness.no_time') }}</span>
       {% endif %}
       <span class="rm-speed-evidence__freshness-ttl">· {{ t('speed.freshness.ttl', hours=speed_evidence.ttl_hours) }}</span>
     </div>
-    <p class="rm-speed-evidence__freshness-note">{{ speed_evidence.freshness_note }}</p>
+    <p class="rm-speed-evidence__freshness-note"{% if i18n_enabled %} data-i18n-dynamic="speed_freshness_note"{% endif %}>{{ speed_evidence.freshness_note }}</p>
   </div>
 
   <article class="rm-speed-evidence__panel rm-speed-evidence__panel--{{ speed_evidence.reachability_class }}">
     <div class="rm-speed-evidence__reachability-banner">
       <div class="rm-speed-evidence__reachability-head">
         <span class="rm-speed-evidence__reachability-label"{% if i18n_enabled %} data-i18n="speed.reach.label"{% endif %}>{{ t('speed.reach.label') }}</span>
-        <span class="rm-speed-evidence__reachability-value">{{ speed_evidence.reachability_display | default(speed_evidence.reachability) }}</span>
+        <span class="rm-speed-evidence__reachability-value"{% if i18n_enabled %} data-i18n-dynamic="speed_reachability_display"{% endif %}>{{ speed_evidence.reachability_display | default(speed_evidence.reachability) }}</span>
       </div>
-      <p class="rm-speed-evidence__reachability-detail">{{ speed_evidence.reachability_detail }}</p>
+      <p class="rm-speed-evidence__reachability-detail"{% if i18n_enabled %} data-i18n-dynamic="speed_reachability_detail"{% endif %}>{{ speed_evidence.reachability_detail }}</p>
       {% if show_ig_debug %}
       <p class="rm-speed-evidence__reachability-rule">{{ speed_evidence.reachability_rule }}</p>
       {% endif %}
@@ -64,7 +64,7 @@
         <dd>
           {% if speed_evidence.tested_at_iso %}
           <time datetime="{{ speed_evidence.tested_at_iso }}">{{ speed_evidence.tested_at }}</time>
-          <span class="rm-speed-evidence__metric-sub">· {{ speed_evidence.age_display }}</span>
+          <span class="rm-speed-evidence__metric-sub">· <span{% if i18n_enabled %} data-i18n-dynamic="speed_age_display"{% endif %}>{{ speed_evidence.age_display }}</span></span>
           {% else %}—{% endif %}
         </dd>
       </div>
@@ -74,7 +74,7 @@
       </div>
       <div class="rm-speed-evidence__metric rm-speed-evidence__metric--highlight">
         <dt{% if i18n_enabled %} data-i18n="speed.metric.max"{% endif %}>{{ t('speed.metric.max') }}</dt>
-        <dd>{{ speed_evidence.max_speed }} <span class="rm-speed-evidence__metric-sub">({{ speed_evidence.max_kbps }} KB/s{% if speed_evidence.speed_spread_display %} · {{ speed_evidence.speed_spread_display }}{% endif %})</span></dd>
+        <dd>{{ speed_evidence.max_speed }} <span class="rm-speed-evidence__metric-sub">({{ speed_evidence.max_kbps }} KB/s{% if speed_evidence.speed_spread_display %} · <span{% if i18n_enabled %} data-i18n-dynamic="speed_spread_display"{% endif %}>{{ speed_evidence.speed_spread_display }}</span>{% endif %})</span></dd>
       </div>
       <div class="rm-speed-evidence__metric rm-speed-evidence__metric--highlight">
         <dt{% if i18n_enabled %} data-i18n="speed.metric.peers_total"{% endif %}>{{ t('speed.metric.peers_total') }}</dt>
@@ -86,7 +86,7 @@
       </div>
       <div class="rm-speed-evidence__metric rm-speed-evidence__metric--highlight">
         <dt{% if i18n_enabled %} data-i18n="speed.metric.connect_rate"{% endif %}>{{ t('speed.metric.connect_rate') }}</dt>
-        <dd>{{ speed_evidence.connect_rate_pct }} <span class="rm-speed-evidence__metric-sub">（{{ speed_evidence.connect_rate_display }}）</span></dd>
+        <dd>{{ speed_evidence.connect_rate_pct }} <span class="rm-speed-evidence__metric-sub">（<span{% if i18n_enabled %} data-i18n-dynamic="speed_connect_rate_display"{% endif %}>{{ speed_evidence.connect_rate_display }}</span>）</span></dd>
       </div>
       <div class="rm-speed-evidence__metric">
         <dt{% if i18n_enabled %} data-i18n="speed.metric.latency"{% endif %}>{{ t('speed.metric.latency') }}</dt>
@@ -100,11 +100,11 @@
 
     {% if speed_evidence.index_vs_measured %}
     <p class="rm-speed-evidence__compare">
-      <strong{% if i18n_enabled %} data-i18n="speed.compare.label"{% endif %}>{{ t('speed.compare.label') }}</strong>{{ speed_evidence.index_vs_measured }}
+      <strong{% if i18n_enabled %} data-i18n="speed.compare.label"{% endif %}>{{ t('speed.compare.label') }}</strong><span{% if i18n_enabled %} data-i18n-dynamic="speed_index_vs_measured"{% endif %}>{{ speed_evidence.index_vs_measured }}</span>
     </p>
     {% endif %}
 
-    <p class="rm-speed-evidence__footnote">
+    <p class="rm-speed-evidence__footnote"{% if i18n_enabled %} data-i18n-dynamic="speed_footnote" data-i18n-html="1"{% endif %}>
       {{ t('speed.footnote', method=speed_evidence.method_note) | safe }}
     </p>
   </article>

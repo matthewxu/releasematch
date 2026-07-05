@@ -1,0 +1,17 @@
+{# Trust 合规页 — 由 render_trust 生成，支持 en/zh 切换 #}
+{# @template trust/page.html #}
+{% extends "base.html" %}
+
+{% block title %}{{ t(trust_title_key) }}{% endblock %}
+{% block meta_description %}{{ t(trust_meta_key) }}{% endblock %}
+{% block og_title %}{{ t(trust_title_key) }}{% endblock %}
+{% block og_description %}{{ t(trust_meta_key) }}{% endblock %}
+
+{% block content %}
+<div class="rm-container rm-section">
+  <h1{% if i18n_enabled %} data-i18n="{{ trust_heading_key }}"{% endif %}>{{ t(trust_heading_key) }}</h1>
+  <div class="rm-prose"{% if i18n_enabled %} data-i18n-dynamic="trust_body" data-i18n-html="1"{% endif %}>
+    {{ trust_body_html | safe }}
+  </div>
+</div>
+{% endblock %}

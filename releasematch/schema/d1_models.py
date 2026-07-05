@@ -1206,6 +1206,8 @@ class EpisodePageContext:
         return {
             "show_title": self.catalog.title,
             "show_slug": slug,
+            "tmdb_id": self.catalog.tmdb_id,
+            "media_kind": self.catalog.media_kind,
             "season": self.page.season,
             "episode": self.page.episode,
             "episode_title": self.page.episode_title,
@@ -1344,6 +1346,8 @@ class MoviePageContext:
         year = self.catalog.year or ""
         return {
             "movie_title": self.catalog.title,
+            "tmdb_id": self.catalog.tmdb_id,
+            "media_kind": self.catalog.media_kind,
             "year": year,
             "runtime": runtime,
             "movie_overview": overview,
@@ -1423,6 +1427,8 @@ class ShowHubPageContext:
         return {
             "show_title": self.catalog.title,
             "show_slug": self.catalog.slug,
+            "tmdb_id": self.catalog.tmdb_id,
+            "media_kind": self.catalog.media_kind,
             "show_overview": self.page.overview or self.catalog.overview,
             "seasons": seasons_out,
             "poster_url": self.catalog.poster_url(),

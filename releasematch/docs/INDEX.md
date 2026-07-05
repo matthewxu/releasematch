@@ -24,6 +24,7 @@
 | [11-页面SEO分析与优化方向.md](./11-页面SEO分析与优化方向.md) → [worklog](../worklogs/2026-07-03/页面SEO分析与优化方向.md) | **全站 SEO 审计 + C2 任务清单（2026-07-03 工作日志）** |
 | [**12-日常运营执行手册.md**](./12-日常运营执行手册.md) | **日常运维**：巡检、cron、扩槽→生成→SEO 门禁、失败槽、指标看板 |
 | [**seo/**](./seo/INDEX.md) | **SEO 迭代专项**：E-E-A-T / Info Gain 评估、跟进看板、历次迭代记录 |
+| [**portal/UI国际化方案.md**](./portal/UI国际化方案.md) | **页面 UI 国际化（en/zh）**：配置、架构、dynamic 切换、Trust 生成 |
 | [**parallel/大陆站影视资源数据源技术方案.md**](./parallel/大陆站影视资源数据源技术方案.md) | **平行项目 v0.6**：有效覆盖率 · **不限于网盘、优先网盘** · 插件化 · 全自动 |
 
 **隔离说明：** `03` 文档中 `tmdbpy/workflow/torrent_sources/`、`subtitle-portal` 路由等路径已废弃，以 `releasematch/` 为准。

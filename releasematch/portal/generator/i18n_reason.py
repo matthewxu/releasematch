@@ -20,16 +20,12 @@ from workflow.recommended.scorer import build_recommend_reason
 
 def localize_recommend_reason(rec: Dict[str, Any], locale: str) -> None:
     """
-    就地重建 ``recommend_reason`` 为指定 locale（仅非 zh 时生效）。
+    就地重建 ``recommend_reason`` 为指定 locale。
 
     @param rec: recommended 模板字典（含 release_group、group_tier 等）
     @param locale: en | zh
     @returns: None
     """
-    loc = normalize_locale(locale)
-    if loc == "zh":
-        return
-
     release_group = str(rec.get("release_group") or "")
     group_info = lookup_group_detail(release_group)
     canonical = group_info.canonical or release_group or "Unknown"
@@ -41,5 +37,5 @@ def localize_recommend_reason(rec: Dict[str, Any], locale: str) -> None:
         tier,
         canonical,
         scene_compliant=scene_flag,
-        locale=loc,
+        locale=normalize_locale(locale),
     )

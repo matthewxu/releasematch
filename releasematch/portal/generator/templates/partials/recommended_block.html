@@ -15,7 +15,7 @@
     {% endwith %}
 
     <div class="rm-release-card__reason">
-      <strong{% if i18n_enabled %} data-i18n="recommended.reason"{% endif %}>{{ t('recommended.reason') }}</strong>{{ recommended.recommend_reason }}
+      <strong{% if i18n_enabled %} data-i18n="recommended.reason"{% endif %}>{{ t('recommended.reason') }}</strong><span{% if i18n_enabled %} data-i18n-dynamic="recommend_reason"{% endif %}>{{ recommended.recommend_reason }}</span>
     </div>
 
     {% if recommended.grab_index %}
@@ -34,7 +34,7 @@
 
     {% if recommended.speed_endorsement %}
     <div class="rm-release-card__speed-endorsement">
-      <strong{% if i18n_enabled %} data-i18n="recommended.endorsement"{% endif %}>{{ t('recommended.endorsement') }}</strong>{{ recommended.speed_endorsement }}
+      <strong{% if i18n_enabled %} data-i18n="recommended.endorsement"{% endif %}>{{ t('recommended.endorsement') }}</strong><span{% if i18n_enabled %} data-i18n-dynamic="speed_endorsement"{% endif %}>{{ recommended.speed_endorsement }}</span>
     </div>
     {% endif %}
 

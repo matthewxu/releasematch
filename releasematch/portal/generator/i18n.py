@@ -422,6 +422,37 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "zh": "以下数据绑定 {title}（infohash …{hash}），libtorrent 片段实测 {speed}，Peer 可达性 {reach}。{time}",
     },
     "movie.edition_pick": {"en": "Best in group:", "zh": "本组推荐："},
+    # ── Trust 五页 ──
+    "trust.about.title": {"en": "About — ReleaseMatch", "zh": "关于 — ReleaseMatch"},
+    "trust.about.meta": {
+        "en": "ReleaseMatch is an independent Release navigation site. We index public torrent metadata only—no video hosting—and provide Recommended Release matching.",
+        "zh": "ReleaseMatch 是独立 Release 导航站，仅索引公开 torrent 元数据，不托管视频，提供 Recommended Release 对版推荐。",
+    },
+    "trust.about.heading": {"en": "About ReleaseMatch", "zh": "关于 ReleaseMatch"},
+    "trust.how.title": {"en": "How Release Matching Works — ReleaseMatch", "zh": "对版如何工作 — ReleaseMatch"},
+    "trust.how.meta": {
+        "en": "How ReleaseMatch verifies release matching, scores Recommended Release, and produces Information Gain beyond magnet lists.",
+        "zh": "ReleaseMatch 如何验证对版、评分 Recommended Release，并在 magnet 列表之外提供 Information Gain。",
+    },
+    "trust.how.heading": {"en": "How Release Matching Works", "zh": "对版如何工作"},
+    "trust.contact.title": {"en": "Contact — ReleaseMatch", "zh": "联系 — ReleaseMatch"},
+    "trust.contact.meta": {
+        "en": "Contact ReleaseMatch for general inquiries, DMCA notices, and privacy questions. Functional email: ReleaseMatch@hotmail.com.",
+        "zh": "联系 ReleaseMatch：一般咨询、DMCA 与隐私问题。邮箱：ReleaseMatch@hotmail.com。",
+    },
+    "trust.contact.heading": {"en": "Contact", "zh": "联系我们"},
+    "trust.privacy.title": {"en": "Privacy Policy — ReleaseMatch", "zh": "隐私政策 — ReleaseMatch"},
+    "trust.privacy.meta": {
+        "en": "ReleaseMatch privacy policy: web logs, optional speed-test extension data, no video storage, Cloudflare hosting.",
+        "zh": "ReleaseMatch 隐私政策：Web 日志、可选测速扩展数据、不存视频、Cloudflare 托管。",
+    },
+    "trust.privacy.heading": {"en": "Privacy Policy", "zh": "隐私政策"},
+    "trust.dmca.title": {"en": "DMCA — ReleaseMatch", "zh": "DMCA — ReleaseMatch"},
+    "trust.dmca.meta": {
+        "en": "DMCA and copyright notice policy for ReleaseMatch. We index metadata only; valid notices are processed with 410 Gone removal.",
+        "zh": "ReleaseMatch DMCA 与版权通知政策；仅索引元数据，有效通知将 410 Gone 处理。",
+    },
+    "trust.dmca.heading": {"en": "DMCA / Copyright Notice", "zh": "DMCA / 版权通知"},
 }
 
 
@@ -526,6 +557,12 @@ class I18nRuntime:
         merged["html_lang"] = self.html_lang
         if self.enabled:
             merged["i18n_catalog"] = catalog_for_js()
+            from portal.generator.i18n_dynamic import build_i18n_dynamic
+
+            preset = dict(merged.get("i18n_dynamic") or {})
+            dynamic = build_i18n_dynamic(merged)
+            dynamic.update(preset)
+            merged["i18n_dynamic"] = dynamic
         localize_page_variables(merged, self.locale)
         return merged
 
