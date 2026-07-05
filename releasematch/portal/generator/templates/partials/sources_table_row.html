@@ -28,7 +28,7 @@
     {% if item.cross_source_count and item.cross_source_count > 1 %}
     <span class="rm-badge rm-badge--cross" title="{{ t('badge.cross_item_title', count=item.cross_source_count) }}">{{ item.cross_source_count }}/{{ cross_source_total | default(3) }}</span>
     {% else %}
-    <span class="rm-text-muted">1</span>
+    <span class="rm-text-muted" title="{{ t('badge.cross_single_title') }}">1</span>
     {% endif %}
   </td>
   <td data-label="{{ t('table.size') }}" data-sort-value="{{ item.size_bytes }}">{{ item.size_human }}</td>

@@ -1,7 +1,7 @@
 # E-E-A-T · Info Gain · SEO 跟进看板
 
 > **Living Document** — 随 SEO 迭代持续更新  
-> **创建：** 2026-07-04 · **最近更新：** 2026-07-06（宽松 fuzzy · groups +12）  
+> **创建：** 2026-07-04 · **最近更新：** 2026-07-06（质量向定义拆分 · Hero 文案语义修正）  
 > **功能性邮箱：** `ReleaseMatch@hotmail.com`（Contact · DMCA · Privacy）  
 > **基线评估：** [2026-07-04 基线评估](./assessments/2026-07-04-E-E-A-T与Info-Gain基线评估.md)  
 > **IG 字段权威：** [IG信息登记册.md](../IG信息登记册.md)  
@@ -22,7 +22,7 @@
 | **CF Pages 生产** | 暂缓 | C2 本地门禁通过后 deploy | ⏸ |
 | **C2 本地 SEO 门禁** | **13 pass / 0 fail**（§6.1～6.3） | deploy + GSC | ✅ 本地 |
 | **页面 IG 估分（Debug 呈现）** | **8~9（109/120）** · 7~8（6）· 0~1（5） | Rec+测速页 **8~9** | ✅ |
-| **页面 IG 估分（质量向）** | **5~7**（cross≥2 **8/110** · 7+ 代理 **7** · L4 Rec **12** · 分母均值 **3.58**） | **≥7** | 🔶 |
+| **页面 IG 估分（质量向）** | 见 **§3.2.1** · 主轨 **7+：98/110** · S-04 验证 **8/110** · L4 Rec **12** | **主轨维持 · S-04 辅轨↑** | 🔶 |
 | **测速 bake 覆盖率** | **110/110 Rec** 有 summary | **100%**（有 Rec 页） | ✅ |
 | **E-E-A-T 综合** | Trust B+ · Experience B+ · Expertise A- · Auth C | Trust A- · Experience A | 🟡 |
 
@@ -70,7 +70,7 @@
 | X-01 | groups.yaml 分档 | L0~L4 | ✅ | S-05 | **123** 组（+12 · 2026-07-06） |
 | X-02 | Group badge Hero | Recommended 表格 Group 列 | ✅ | S-05 | |
 | X-03 | Group badge Sources 表 | 逐条 | ✅ | S-05 | `sources_table_row.html` |
-| X-04 | 跨源 N/M Hero badge | 页面级 | 🔶 | S-03 | cross≥2 **8/110**；分母 **3.58** avg · 分子仍多 1 |
+| X-04 | 跨源 N/M Hero badge | 页面级 | 🔶 | S-03 | 文案 **「N/M 源有结果」**（覆盖，非验证）；见 [语义修订](./iterations/2026-07-06-跨源语义与质量向定义.md) |
 | X-05 | 跨源 confidence Sources | 单条 badge | ✅ | S-04 | 三档 fuzzy strict/no_group/slot_resolution |
 | X-06 | release 解析 | source/codec/res | 🔶 | A-05 | `[GROUP]` / `...Hon3y` 尾缀 · 空组名 Rec 仍 12 L4 |
 | X-07 | BB 高频组入库 | XEBEC/FQM/IMMERSE/ASAP | ✅ | S-05 | yaml **98→102** 组 · 2026-07-05 rescore |
@@ -101,24 +101,50 @@
 |-------|------|------|-----------|----------|----------|
 | S-01 | Recommended Release | ✅ | ✅ | ✅ | — |
 | S-02 | recommend_reason | ✅ | ✅ | ✅ 有 Rec 页 | — |
-| S-03 | 跨源 N/M | ✅ | ✅ | 🔶 分母 **3.58** avg · cross≥2 **8/110** | 源重叠 ↑ 或 parser 空组名 |
-| S-04 | hash confidence | ✅ | ✅ | 🔶 宽松 fuzzy 已跑 · improved **5** 页 | 见 worklog 2026-07-06 |
+| S-03 | 跨源 N/M | ✅ | ✅ | 🔶 **覆盖** N avg **1.07** / M **3.67** | Hero「源有结果」· 非验证 |
+| S-04 | hash confidence | ✅ | ✅ | 🔶 **验证** 页 **8/110** | Sources Verify 列 |
 | S-05 | Group tier | ✅ | ✅ Hero+Sources | 🔶 L4 Rec **12**（24→12） | 空组名 / 华语标题 parser |
 | S-06 | 实测速度 | ✅ | ✅ | ✅ **110/110 Rec** | cron 维持 |
 | S-07 | 实测背书 | ✅ | 🔶 | 🔶 不可达槽弱 | 琅琊榜/三体 timeout 观察 |
 | S-08 | 多地域测速 | 📋 | 📋 | — | P2+ |
 
-### 3.2 页面 IG 估分目标
+### 3.2 页面 IG 估分目标（Debug 呈现）
 
-> **2026-07-06 基线**（120 renderable · cross≥2 **8/110** · 7+ 代理 **7** · [fuzzy 对比](../../worklogs/2026-07-06/fuzzy-relaxed-and-groups-before-after.json)）：**Debug 呈现**与**质量向**分列。
+> 算法见 `ig_debug._estimate_page_ig`；与质量向 **分列**（§3.2.1）。
 
-| 页面类型 | Debug 呈现（当前） | 质量向（当前） | C3 目标 | 关键提升项 |
-|----------|-------------------|---------------|---------|-----------|
-| 单集 L3（Rec + 测速） | **8~9**（多数） | 5~7（**7** 页达 7+ 代理） | 8~9 | cross≥2 · 空组名 parser |
-| 单集 L3（无 Rec） | **0~1** | 2~4 | noindex | 已 noindex 或 scorer |
-| 电影（Rec + 测速） | **8~9**（多数） | 5~7 | 7~9 | 同单集 + edition 分组 |
-| 电影（无 Rec） | **0~1** | 0~1 | noindex | pipeline / noindex |
-| Trust 页 | — | — | Trust A- | Contact ✅ · lang=en ✅ |
+| 页面类型 | Debug 呈现（当前） | C3 目标 |
+|----------|-------------------|---------|
+| Rec + 测速 | **8~9**（109 页） | 维持 |
+| 无 Rec / thin | **0~1** | noindex |
+
+### 3.2.1 质量向估分规则（2026-07-06 修订）
+
+> **问题：** 原先把 Hero **N/M**（S-03 覆盖）与 **cross≥2**（S-04 验证）混为同一「质量向」升降机，导致 cross「长期不提升」的错觉。  
+> **修订：** 拆成 **主轨 / 覆盖轨 / 验证轨**；质量向 **7+** 不再以页面 cross≥2 为主条件。
+
+| 轨道 | IG-ID | 指标 | 当前基线 | 角色 |
+|------|-------|------|----------|------|
+| **主轨（质量向 7+）** | S-02,S-05,S-06 | Rec + 测速 + Group **L0~L3** | **98/110** | **决定质量向档位** |
+| **覆盖轨** | S-03 | Hero **N/M 源有结果** | N avg **1.07**，M avg **3.67** | Experience / 可得性 |
+| **验证轨** | S-04 | 页面存在任一条 **cross≥2**，或 Rec 条 cross≥2 | **8/110** 页 | Expertise 加分；公网稀缺 |
+
+**质量向档位（手工代理，非 Debug 算法）：**
+
+| 档位 | 条件 |
+|------|------|
+| **7+** | 主轨满足（Rec + 测速 + L0~L3） |
+| **5~7** | Rec + 测速，但 **L4** Rec 或缺 Group 解析 |
+| **2~4** | 无 Rec 或缺测速（多数已 noindex） |
+
+**Hero 文案（已落地）：** `{N}/{M} sources with results` / `{N}/{M} 源有结果` — 对应 S-03 only。  
+**Sources 表：** Verify 列仅在 `cross_source_count > 1` 时显示 badge — 对应 S-04。
+
+| 页面类型 | 质量向（当前） | C3 目标 | 关键提升项 |
+|----------|---------------|---------|-----------|
+| Rec + 测速 + L0~L3 | **7+**（**98/110**） | 维持 | release_parser 空组名 |
+| Rec + 测速 + L4 | **5~7**（**12** 页） | 降 L4 | yaml + parser |
+| S-04 验证（任一 cross≥2） | **8** 页 | 占比 ↑（非主轨硬门槛） | indexer 重叠 · fuzzy |
+| Trust 页 | — | Trust A- | Contact ✅ · lang=en ✅ |
 
 ### 3.3 IG 缺口 → 开发映射
 
@@ -162,7 +188,7 @@
 
 | 元素 | 状态 | 说明 |
 |------|------|------|
-| Information Gain | 🟡 Debug **8~9**（109 页）· 质量 **5~7**（7+ 代理 **7** 页） | 本看板 §一 · §3.2 |
+| Information Gain | 🟡 Debug **8~9**（109）· 质量主轨 **7+：98/110** · S-04 **8** 页 | §3.2.1 |
 | Scaled Content 合规 | ✅ | 薄页门禁 + **无 Rec noindex** + sitemap 限批 |
 | Helpful Content | 🟡 | 依赖 IG 提升 |
 | Pirate Demotion 防护 | 🟡 | 独立域 + DMCA；垂直风险仍在 |
@@ -179,7 +205,7 @@
 | 品牌词 impression | 0 | >0 | GSC |
 | 长尾词 Top 50 排名 | — | 跟踪 | GSC / 第三方 |
 | 单页 IG debug 分布 | 8~9 **109** · 7~8 **6** · 0~1 **5** | Rec+测速 **≥8~9** | [批量汇总](../../worklogs/2026-07-05/ig-debug-batch-summary.md) · 2026-07-06 重算后 |
-| 质量向 IG（cross/L4） | cross≥2 **8/110** · 7+ 代理 **7** · L4 Rec **12** | cross≥2 占比 ↑ | [fuzzy 前后对比](../../worklogs/2026-07-06/fuzzy-relaxed-and-groups-before-after.json) |
+| 质量向 IG（主轨 / S-04） | 主轨 7+ **98/110** · S-04 **8/110** · L4 Rec **12** | S-04 占比 ↑（辅轨） | §3.2.1 |
 
 ---
 
@@ -204,7 +230,8 @@
 | 2026-07-05 | X-07b | groups.yaml +9（MeGusta/AFG/DL…）· **111** 组 | Expertise ↑ | S-05 tier 命中 ↑ | rescore |
 | 2026-07-05 | `5ed2784` | 跨源 per-indexer（TPB/1337x）· 无 Rec noindex · `pipeline refetch-all` · VPS `172.236.156.193` | Trust/Scaled ↑ | S-03 分母 **3.28** avg · S-06 **107/107** | [迭代](./iterations/2026-07-05-跨源扩展与全站重拉.md) |
 | 2026-07-05 | T-SEO-08 | BreadcrumbList JSON-LD · episode/movie | 技术 SEO ↑ | — | schema head |
-| 2026-07-06 | fuzzy+groups | 三档宽松 fuzzy · yaml **+12** · parser 方括号组 · L4 Rec **24→12** · cross≥2 **4→8** | Expertise ↑ | 质量 7+ 代理 **3→7** | [worklog](../../worklogs/2026-07-06/fuzzy-relaxed-and-groups-before-after.json) |
+| 2026-07-06 | fuzzy+groups | 三档宽松 fuzzy · yaml **+12** · L4 Rec **24→12** · S-04 页 **8/110** | Expertise ↑ | 主轨 7+ **98/110**（新定义） | [worklog](../../worklogs/2026-07-06/fuzzy-relaxed-and-groups-before-after.json) |
+| 2026-07-06 | 语义修订 | Hero **源有结果**（S-03）· §3.2.1 三轨 · Trust 方法论 | Trust ↑ | 消除 cross 名不副实 | [迭代](./iterations/2026-07-06-跨源语义与质量向定义.md) |
 | | | | | | |
 
 **下一迭代待办（摘自基线评估 P0/P1）：**
@@ -221,8 +248,9 @@
 - [x] P1：跨源 per-indexer + 全站 `pipeline refetch-all`
 - [x] P2：`recompute_cross_source_fuzzy.py --all-published --rescore-after`（严格档无效 → **宽松三档** 已落地）
 - [x] P1：groups.yaml 补档 **+12** · L4 Rec **24→12**
-- [ ] P1：release_parser 空组名 / 华语无 `-Group` 标题（剩余 **12** L4 Rec）
-- [ ] P2：跨源分子 majority 仍 1 → 需 indexer 间 release 重叠或更宽对齐策略
+- [ ] P1：release_parser 空组名 / 华语无 `-Group` 标题（剩余 **12** L4 Rec）→ **抬主轨 7+**
+- [ ] P2：S-04 验证页占比 ↑（**8/110**）— 辅轨，非质量向主门槛
+- [x] P2：Hero / Trust **跨源文案语义**与 TRACKER 质量向拆分（2026-07-06）
 
 ---
 
@@ -252,4 +280,5 @@
 | v1.8 | 2026-07-05 | T-SEO-04/05：OG + favicon + WebSite Schema · Trust 五页 favicon |
 | v1.9 | 2026-07-05 | S-04 fuzzy · X-05 Cross badge · A-07 timeout 隐藏 · yaml +9 · BreadcrumbList |
 | v2.0 | 2026-07-05 | 跨源 per-indexer · 无 Rec noindex · refetch-all · VPS 172.236.156.193 · 迭代文档 |
-| v2.1 | 2026-07-06 | 宽松 fuzzy 三档 · groups +12 · cross≥2 8/110 · 质量 7+ 代理 7 · L4 Rec 12 |
+| v2.1 | 2026-07-06 | 宽松 fuzzy 三档 · groups +12 · cross≥2 8/110 |
+| v2.2 | 2026-07-06 | §3.2.1 质量向三轨 · Hero S-03 文案 · Trust 方法论 · 迭代文档 |

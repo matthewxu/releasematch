@@ -40,7 +40,8 @@
 
 | 文档 | 日期 | 说明 |
 |------|------|------|
-| [2026-07-06-宽松fuzzy与groups补档.md](./iterations/2026-07-06-宽松fuzzy与groups补档.md) | 2026-07-06 | 三档 fuzzy · groups +12 · cross≥2 8/110 |
+| [2026-07-06-跨源语义与质量向定义.md](./iterations/2026-07-06-跨源语义与质量向定义.md) | 2026-07-06 | Hero 源有结果 · §3.2.1 三轨 · Trust 方法论 |
+| [2026-07-06-宽松fuzzy与groups补档.md](./iterations/2026-07-06-宽松fuzzy与groups补档.md) | 2026-07-06 | 三档 fuzzy · groups +12 |
 | [2026-07-05-跨源扩展与全站重拉.md](./iterations/2026-07-05-跨源扩展与全站重拉.md) | 2026-07-05 | per-indexer · noindex · refetch-all |
 
 ---

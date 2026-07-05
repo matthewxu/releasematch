@@ -39,7 +39,7 @@
     <div class="rm-hero__meta">
       <span{% if i18n_enabled %} data-i18n="episode.season_episode" data-i18n-vars='{"season": {{ season }}, "episode": {{ episode }}}'{% endif %}>{{ t('episode.season_episode', season=season, episode=episode) }}</span>
       {% if air_date %}<span>{{ air_date }}</span>{% endif %}
-      <span class="rm-badge rm-badge--cross">{{ t('badge.cross_page', count=cross_source_count, total=cross_source_total) }}</span>
+      <span class="rm-badge rm-badge--cross" title="{{ t('badge.cross_page_title', count=cross_source_count, total=cross_source_total) }}">{{ t('badge.cross_page', count=cross_source_count, total=cross_source_total) }}</span>
     </div>
     <h1 class="rm-hero__title">{{ t('episode.hero_title', show=show_title, season=season, episode=episode) }}</h1>
     <p class="rm-hero__subtitle"{% if i18n_enabled %} data-i18n-dynamic="episode_overview"{% endif %}>{{ episode_overview }}</p>

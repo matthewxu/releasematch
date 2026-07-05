@@ -44,8 +44,8 @@ REASON_MESSAGES: Dict[str, Dict[str, str]] = {
         "zh": "当前 {seeders} seeders",
     },
     "cross_verified": {
-        "en": "Cross-verified on {count} source families",
-        "zh": "跨 {count} 个数据源交叉验证",
+        "en": "Cross-verified on {count} source families (S-04)",
+        "zh": "跨 {count} 个源族交叉验证（S-04）",
     },
     "default": {
         "en": "Highest composite score",

@@ -50,8 +50,8 @@ MESSAGES: Dict[str, Dict[str, str]] = {
     "footer.trust": {"en": "Trust", "zh": "Trust"},
     "footer.notes": {"en": "Notes", "zh": "说明"},
     "footer.cross_verified": {
-        "en": "Multi-source cross-verification",
-        "zh": "数据经多源交叉验证",
+        "en": "Multi-source coverage & verification",
+        "zh": "多源检索覆盖与交叉验证",
     },
     "footer.copyright": {
         "en": "© {year} ReleaseMatch · No video hosting · Magnet links rel=\"nofollow\"",
@@ -61,7 +61,7 @@ MESSAGES: Dict[str, Dict[str, str]] = {
     "table.release": {"en": "Release", "zh": "Release"},
     "table.quality": {"en": "Quality", "zh": "Quality"},
     "table.group": {"en": "Group", "zh": "Group"},
-    "table.cross": {"en": "Cross", "zh": "Cross"},
+    "table.cross": {"en": "Verify", "zh": "验证"},
     "table.size": {"en": "Size", "zh": "Size"},
     "table.seed": {"en": "Seed", "zh": "Seed"},
     "table.action": {"en": "Action", "zh": "操作"},
@@ -72,16 +72,24 @@ MESSAGES: Dict[str, Dict[str, str]] = {
     "badge.recommended": {"en": "Site pick", "zh": "本站推荐"},
     "badge.edition_pick": {"en": "Best in edition", "zh": "本组最佳"},
     "badge.cross_page": {
-        "en": "{count}/{total} sources verified",
-        "zh": "{count}/{total} 源验证",
+        "en": "{count}/{total} sources with results",
+        "zh": "{count}/{total} 源有结果",
+    },
+    "badge.cross_page_title": {
+        "en": "S-03: {count} of {total} queried source families returned at least one release (coverage, not same-hash verification)",
+        "zh": "S-03：在 {total} 个检索源族中，{count} 个至少返回 1 条 release（覆盖/可得性，非同一 hash 验证）",
     },
     "badge.group_tier_title": {
         "en": "Release Group tier {tier}",
         "zh": "Release Group 信誉 {tier}",
     },
     "badge.cross_item_title": {
-        "en": "Cross-verified on {count} source families (S-04)",
-        "zh": "跨 {count} 个数据源交叉验证（S-04）",
+        "en": "S-04: cross-verified on {count} source families (same release / infohash alignment)",
+        "zh": "S-04：跨 {count} 个源族交叉验证（同一 release / infohash 对齐）",
+    },
+    "badge.cross_single_title": {
+        "en": "Seen on one source family only (no cross-verification badge)",
+        "zh": "仅在单一源族出现（无交叉验证标记）",
     },
     # ── Recommended ──
     "recommended.title": {"en": "Recommended Release", "zh": "Recommended Release"},
@@ -192,10 +200,10 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "en": "Group tier, cross-source signals, and seeders combined into a ranked pick with indexed reasons.",
         "zh": "综合 Group 信誉、跨源验证与做种情况，推荐最优 release 并给出可索引的推荐理由。",
     },
-    "home.feature_cross_title": {"en": "Multi-source verification", "zh": "多源交叉验证"},
+    "home.feature_cross_title": {"en": "Multi-source coverage", "zh": "多源检索覆盖"},
     "home.feature_cross_text": {
-        "en": "Jackett, EZTV, YTS, Nyaa aggregated and deduplicated with confidence badges.",
-        "zh": "Jackett、EZTV、YTS、Nyaa 等源聚合去重，标注跨源一致等高置信度信号。",
+        "en": "Query EZTV, YTS, Nyaa, Jackett indexers; Hero shows how many families returned results. Per-row badges mark true cross-verification when the same release aligns.",
+        "zh": "检索 EZTV、YTS、Nyaa、Jackett 等源；Hero 展示多少源族有结果。Sources 表仅在同一 release 对齐时显示交叉验证标记。",
     },
     "home.feature_speed_title": {"en": "Speed & reachability", "zh": "测速与可用性"},
     "home.feature_speed_text": {

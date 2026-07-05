@@ -28,7 +28,7 @@
 |-------|----------|-------------|----------|----------|------|----------|------|
 | S-01 | **Recommended Release** | `is_recommended=1` + 完整 release 元数据 | 评分 | T1 `scorer.py` | `download_resources` | Hero 推荐块 | ✅ |
 | S-02 | **推荐理由** | `recommend_reason` | 评分 | T1 scorer | `download_resources` | Hero 表格下方文案 | ✅ |
-| S-03 | **跨源验证 N/M** | `cross_source_page_count/total` | 拉取 | T1 `cross_source` | FetchResult / 页面 | Hero badge「2/3 源一致」 | ✅ [§五](./IG信息登记册.md#五跨源验证-s-03--s-04计算逻辑与测试结果) |
+| S-03 | **多源覆盖 N/M** | `cross_source_page_count/total` | 拉取 | T1 `cross_source` | FetchResult / 页面 | Hero badge「**N/M 源有结果**」（覆盖，非验证） | ✅ [§五](./IG信息登记册.md#五跨源验证-s-03--s-04计算逻辑与测试结果) |
 | S-04 | **单条跨源置信度** | `cross_source_count`、`cross_source_confidence` | 拉取 | T1 cross_source | `download_resources` | Sources 表 badge | ✅ [§五](./IG信息登记册.md#五跨源验证-s-03--s-04计算逻辑与测试结果) |
 | S-05 | **Release Group 信誉** | `group_tier`（L0~L4） | 评分 | T1 `groups.yaml` | `download_resources` | 组名旁 tier 标 | ✅ [§六](./IG信息登记册.md#六release-group-信誉-s-05--a-06计算逻辑与实现进度) |
 | S-06 | **实测下载速度** | `avg_kbps`、`max_kbps` → `recommended_speed` | 测速 P2 | T2 speedtest | `speedtest_results` → `slot_speed_summary` | 「前次测速 4.2 MB/s」 | 🔶 [§七](./IG信息登记册.md#七测速-s-06phase-2片段测速) |
@@ -214,10 +214,12 @@
 
 | 指标 | IG-ID | 字段 | 回答的问题 |
 |------|-------|------|------------|
-| **页面 N/M** | S-03 | `cross_source_page_count` / `cross_source_page_total` | 本次拉取中，**有几个源族至少返回了 1 条 magnet** |
-| **单条置信度** | S-04 | `cross_source_count` / `cross_source_confidence` | **同一个 infohash** 被几个源族同时索引到 |
+| **页面 N/M** | S-03 | `cross_source_page_count` / `cross_source_page_total` | 本次拉取中，**有几个源族至少返回了 1 条 magnet**（**覆盖 / 可得性**） |
+| **单条置信度** | S-04 | `cross_source_count` / `cross_source_confidence` | **同一 infohash**（或 fuzzy 对齐的 release）被几个源族同时索引到（**验证**） |
 
-二者相关但**不等价**：页面可以是 **2/3**，而所有单条 confidence 仍全是 **0.333**（见 §5.5 实测）。
+二者相关但**不等价**：页面可以是 **2/6 源有结果**，而所有单条 confidence 仍全是 **0.17**（见 §5.5 实测）。
+
+**2026-07-06 文案规范：** Hero 仅表述 S-03（`badge.cross_page` = “sources with results” / “源有结果”）；**禁止**在 Hero 使用 “verified / 验证 / 源一致”。S-04 仅在 Sources 表 Verify 列与 `recommend_reason`（当 Rec 条 `cross>1`）中出现。
 
 ### 5.2 源族（Family）归一化
 
@@ -306,8 +308,8 @@ cross_source_confidence = min(count / M, 1.0)   # 保留 3 位小数
 |------|------|
 | 排序 tie-break | seeders → 1080p → **`cross_source_count`** → group tier |
 | `recommend_reason` | `cross_source_count > 1` 时追加「跨 N 个数据源交叉验证」 |
-| Hero badge | 展示页面 **N/M**，不直接展示单条 confidence |
-| Sources 表 | `cross_source_count` badge · tier badge（`sources_table_row.html`） |
+| Hero badge | 展示页面 **N/M 源有结果**（S-03），不直接展示单条 confidence |
+| Sources 表 | Verify 列：`cross_source_count > 1` 时显示 S-04 badge · tier badge |
 
 ### 5.6 测试结果 — Pipeline 基准（2026-06-30，7 槽 `--force`）
 
@@ -769,3 +771,4 @@ python -m workflow.torrent_sources.speedtest.run slot \
 | v1.5 | 2026-07-05 | §6.5 scorer v1.1 剧集 / v1.2 电影分化 + `rescore_page_recommendations` 不重拉重算 |
 | v1.6 | 2026-07-05 | §4.1 Hero 表格 + Grab 信息架构；电影多版本分组；§7.6 Grab 指数；§6.8 页面 bake 状态更新 |
 | v1.7 | 2026-07-05 | groups.yaml **102** 组（X-07）；scene_compliant 静态句入 reason（X-08） |
+| v1.8 | 2026-07-06 | §5.1 S-03/S-04 语义拆分；Hero「源有结果」文案规范；TRACKER §3.2.1 质量向三轨 |

@@ -27,7 +27,7 @@ TRUST_PAGES: List[Dict[str, Any]] = [
 <ul>
   <li>Aggregate public indexer <strong>metadata</strong> (infohash, title, seeders, etc.)</li>
   <li>Publish a <strong>Recommended Release</strong> per slot with matching rationale</li>
-  <li>Cross-check sources, group reputation tiers, and speed-test summaries</li>
+  <li>Cross-check sources: <strong>coverage</strong> (how many indexers returned results) and <strong>verification</strong> (when the same release aligns across families)</li>
 </ul>
 <h2>What we do not do</h2>
 <ul>
@@ -46,7 +46,7 @@ TRUST_PAGES: List[Dict[str, Any]] = [
 <ul>
   <li>聚合公开索引器<strong>元数据</strong>（infohash、标题、seeders 等）</li>
   <li>为每个槽位发布 <strong>Recommended Release</strong> 及可索引的推荐理由</li>
-  <li>多源交叉验证、压制组信誉档位与测速摘要</li>
+  <li>多源核对：<strong>覆盖</strong>（多少索引源有结果）与<strong>验证</strong>（同一 release 跨源对齐时）</li>
 </ul>
 <h2>我们不做什么</h2>
 <ul>
@@ -72,10 +72,16 @@ TRUST_PAGES: List[Dict[str, Any]] = [
 <h2>Scoring dimensions</h2>
 <ol>
   <li><strong>Group reputation</strong> — tiers L0~L4 based on historical encode quality</li>
-  <li><strong>Cross-source verification</strong> — whether the same infohash appears consistently across sources</li>
+  <li><strong>Multi-source coverage (S-03)</strong> — how many queried source families returned at least one release for the slot</li>
+  <li><strong>Cross-source verification (S-04)</strong> — when the same infohash or aligned release fingerprint appears on multiple families (rare on public indexers; shown per row in Sources)</li>
   <li><strong>Swarm health &amp; speed tests</strong> — seeders plus connectivity / partial download summaries</li>
   <li><strong>Encode metadata</strong> — source, codec, and audio inferred from release names</li>
 </ol>
+<h2>Hero badge vs Sources table</h2>
+<ul>
+  <li><strong>Hero N/M</strong> answers: “How many sources had any match?” — not “all sources agree on the same file.”</li>
+  <li><strong>Sources Verify column</strong> shows S-04 only when <code>cross_source_count &gt; 1</code> on that row.</li>
+</ul>
 <h2>Recommended Release</h2>
 <p>For each slot (e.g. Breaking Bad S04E06), the engine scores all candidates and marks the top pick as recommended, with an embedded <code>recommend_reason</code> on the page.</p>
 <h2>Thin-page gate</h2>
@@ -91,10 +97,16 @@ TRUST_PAGES: List[Dict[str, Any]] = [
 <h2>评分维度</h2>
 <ol>
   <li><strong>压制组信誉</strong> — 基于历史编码质量的 L0~L4 档位</li>
-  <li><strong>多源交叉验证</strong> — 同一 infohash 是否在多源一致出现</li>
+  <li><strong>多源覆盖（S-03）</strong> — 本次检索中有多少源族至少返回 1 条 release</li>
+  <li><strong>跨源验证（S-04）</strong> — 同一 infohash 或对齐的 release 指纹是否在多源出现（公网 indexer 上较少见；仅在 Sources 表逐行展示）</li>
   <li><strong>Swarm 健康与测速</strong> — seeders 与连接性/片段下载摘要</li>
   <li><strong>编码元数据</strong> — 从 release 名推断 source、codec、音轨</li>
 </ol>
+<h2>Hero 标记与 Sources 表</h2>
+<ul>
+  <li><strong>Hero N/M</strong> 表示「多少源有结果」，<strong>不是</strong>「所有源指向同一文件」。</li>
+  <li><strong>Sources 验证列</strong> 仅在该行 <code>cross_source_count &gt; 1</code> 时展示 S-04 标记。</li>
+</ul>
 <h2>Recommended Release</h2>
 <p>每个槽位（如 Breaking Bad S04E06），引擎对全部候选打分并标记最优为推荐，页面嵌入可索引的 <code>recommend_reason</code>。</p>
 <h2>薄页门禁</h2>

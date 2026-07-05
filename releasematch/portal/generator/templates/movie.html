@@ -36,7 +36,7 @@
     <div class="rm-hero__meta">
       <span>{{ year }}</span>
       <span>{{ runtime }}</span>
-      <span class="rm-badge rm-badge--cross">{{ t('badge.cross_page', count=cross_source_count, total=cross_source_total) }}</span>
+      <span class="rm-badge rm-badge--cross" title="{{ t('badge.cross_page_title', count=cross_source_count, total=cross_source_total) }}">{{ t('badge.cross_page', count=cross_source_count, total=cross_source_total) }}</span>
     </div>
     <h1 class="rm-hero__title">{{ t('movie.hero_title', title=movie_title, year=year) }}</h1>
     <p class="rm-hero__subtitle"{% if i18n_enabled %} data-i18n-dynamic="movie_overview"{% endif %}>{{ movie_overview }}</p>
