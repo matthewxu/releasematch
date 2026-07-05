@@ -19,6 +19,9 @@ from workflow.torrent_sources.models import ResourceItem
 # 从标题解析 S/E（fuzzy 对齐 fallback）
 _SEASON_EPISODE_RE = re.compile(r"\bS(\d+)E(\d+)\b", re.IGNORECASE)
 
+# fuzzy 指纹档位：由严到宽（S-04）
+FUZZY_FINGERPRINT_MODES = ("strict", "no_group", "slot_resolution")
+
 
 def normalize_source_family(indexer: str) -> str:
     """
@@ -103,25 +106,34 @@ def build_release_fingerprint(
     media_type: str = "tv",
     slot_season: Optional[int] = None,
     slot_episode: Optional[int] = None,
+    mode: str = "strict",
 ) -> Optional[str]:
     """
     构造 release 软对齐指纹（S-04 fuzzy）。
 
-    仅在 release_group + resolution 可确定时返回指纹，避免误合并。
+    档位说明（误匹配风险递增）：
+    - ``strict``：S/E + resolution + source + codec + group（需可解析 group）
+    - ``no_group``：去掉 group，同集同规格不同组可跨源对齐
+    - ``slot_resolution``：仅 S/E + resolution（电影为 edition + resolution）；可能合并 WEB-DL 与 HDTV
 
     @param item: ResourceItem 或 dict
     @param media_type: tv | movie | tv_episode
     @param slot_season: 槽位季号（剧集页上下文）
     @param slot_episode: 槽位集号
+    @param mode: strict | no_group | slot_resolution
     @returns: 指纹字符串；无法安全对齐时 None
     """
     from workflow.torrent_sources.release_parser import classify_edition, parse_release_title
+
+    fingerprint_mode = (mode or "strict").strip().lower()
+    if fingerprint_mode not in FUZZY_FINGERPRINT_MODES:
+        fingerprint_mode = "strict"
 
     title = str(_item_field(item, "title_raw") or "")
     parsed = parse_release_title(title)
 
     group = str(_item_field(item, "release_group") or parsed.get("release_group") or "").strip().upper()
-    if not group:
+    if fingerprint_mode == "strict" and not group:
         return None
 
     resolution = str(_item_field(item, "resolution") or parsed.get("resolution") or "").strip().lower()
@@ -130,14 +142,16 @@ def build_release_fingerprint(
 
     source = str(_item_field(item, "source") or parsed.get("source") or "").strip().lower()
     codec = str(_item_field(item, "codec") or parsed.get("codec") or "").strip().lower()
-    if not resolution and source in ("hdtv",):
-        resolution = "hdtv"
     source_key = source.replace(" ", "") if source else "any"
     codec_key = codec.replace(".", "").replace(" ", "") if codec else "any"
 
     kind = (media_type or "").lower()
     if kind in ("movie",):
         edition = classify_edition(title, source)
+        if fingerprint_mode == "slot_resolution":
+            return f"m|{edition}|{resolution}"
+        if fingerprint_mode == "no_group":
+            return f"m|{edition}|{resolution}|{source_key}|{codec_key}"
         return f"m|{edition}|{resolution}|{source_key}|{codec_key}|{group}"
 
     season = _item_field(item, "season") or slot_season
@@ -148,7 +162,41 @@ def build_release_fingerprint(
             season, episode = int(match.group(1)), int(match.group(2))
     if season is None or episode is None:
         return None
-    return f"tv|S{int(season):02d}E{int(episode):02d}|{resolution}|{source_key}|{codec_key}|{group}"
+    se = f"S{int(season):02d}E{int(episode):02d}"
+    if fingerprint_mode == "slot_resolution":
+        return f"tv|{se}|{resolution}"
+    if fingerprint_mode == "no_group":
+        return f"tv|{se}|{resolution}|{source_key}|{codec_key}"
+    return f"tv|{se}|{resolution}|{source_key}|{codec_key}|{group}"
+
+
+def _cap_cross_count(count: int, page_families: Set[str]) -> int:
+    """
+    跨源分子不得超过本页实际出现的源族数（防止宽松指纹过度计数）。
+
+    @param count: 原始分子
+    @param page_families: 本页 items 中出现的源族集合
+    @returns: 钳制后的分子，至少为 1
+    """
+    ceiling = max(len(page_families), 1)
+    return min(max(int(count), 1), ceiling)
+
+
+def max_item_cross_count(items: List[Any]) -> int:
+    """
+    从 items 推断页面 Hero 跨源分子（取各条 cross_source_count 最大值）。
+
+    @param items: ResourceItem 或 dict 列表
+    @returns: 至少 1
+    """
+    best = 1
+    for row in items:
+        if isinstance(row, dict):
+            val = int(row.get("cross_source_count") or 1)
+        else:
+            val = int(getattr(row, "cross_source_count", None) or 1)
+        best = max(best, val)
+    return best
 
 
 def apply_fuzzy_cross_source(
@@ -160,7 +208,10 @@ def apply_fuzzy_cross_source(
     slot_episode: Optional[int] = None,
 ) -> List[ResourceItem]:
     """
-    在 hash 级跨源计数基础上，用 release 指纹提升 S-04 cross_source_count。
+    在 hash 级跨源计数基础上，用多档 release 指纹提升 S-04 cross_source_count。
+
+    依次尝试 strict → no_group → slot_resolution，取各档与 hash 级的最大源族命中数；
+    最终结果钳制在本页实际源族数以内。
 
     @param items: merge_by_infohash 后的列表
     @param total_source_families: 跨源分母 M
@@ -170,31 +221,41 @@ def apply_fuzzy_cross_source(
     @returns: 就地更新 cross_source_count/confidence 后的同一列表
     """
     denominator = max(int(total_source_families), 1)
+    page_families: Set[str] = set()
     hash_families: Dict[str, Set[str]] = {}
     fp_families: Dict[str, Set[str]] = {}
-    item_fps: Dict[str, Optional[str]] = {}
+    item_fps: Dict[str, Dict[str, Optional[str]]] = {}
 
     for row in items:
         infohash = row.infohash.lower().strip()
         family = normalize_source_family(row.indexer)
+        if family != "unknown":
+            page_families.add(family)
         hash_families.setdefault(infohash, set()).add(family)
-        fingerprint = build_release_fingerprint(
-            row,
-            media_type=media_type,
-            slot_season=slot_season,
-            slot_episode=slot_episode,
-        )
-        item_fps[infohash] = fingerprint
-        if fingerprint:
-            fp_families.setdefault(fingerprint, set()).add(family)
+        item_fps[infohash] = {}
+        for fp_mode in FUZZY_FINGERPRINT_MODES:
+            fingerprint = build_release_fingerprint(
+                row,
+                media_type=media_type,
+                slot_season=slot_season,
+                slot_episode=slot_episode,
+                mode=fp_mode,
+            )
+            item_fps[infohash][fp_mode] = fingerprint
+            if fingerprint:
+                fp_key = f"{fp_mode}:{fingerprint}"
+                fp_families.setdefault(fp_key, set()).add(family)
 
     for row in items:
         infohash = row.infohash.lower().strip()
         hash_count = len(hash_families.get(infohash, set())) or 1
-        fingerprint = item_fps.get(infohash)
         fuzzy_count = hash_count
-        if fingerprint and fingerprint in fp_families:
-            fuzzy_count = max(hash_count, len(fp_families[fingerprint]))
+        for fp_mode in FUZZY_FINGERPRINT_MODES:
+            fingerprint = item_fps.get(infohash, {}).get(fp_mode)
+            if fingerprint:
+                fp_key = f"{fp_mode}:{fingerprint}"
+                fuzzy_count = max(fuzzy_count, len(fp_families.get(fp_key, set())))
+        fuzzy_count = _cap_cross_count(fuzzy_count, page_families)
         row.cross_source_count = fuzzy_count
         row.cross_source_confidence = round(min(fuzzy_count / denominator, 1.0), 3)
 

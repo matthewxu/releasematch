@@ -729,7 +729,7 @@ def recompute_page_cross_source_fuzzy(
         episode=episode,
         items=item_dicts,
         ranked=ranked,
-        cross_source_page_count=ctx.page.cross_source_count,
+        cross_source_page_count=after_max,
         cross_source_page_total=ctx.page.cross_source_total,
     )
 

@@ -1,0 +1,48 @@
+{
+  "run_at_utc": "2026-07-05T16:10:00Z",
+  "command": "recompute_cross_source_fuzzy.py --all-published --rescore-after",
+  "total": 115,
+  "ok_count": 110,
+  "improved_count": 0,
+  "fail_count": 5,
+  "failed_pages": [
+    "movie:404574",
+    "movie:479787",
+    "tv:284631:s01e01",
+    "tv:290138:s01e01",
+    "tv:71790:s01e01"
+  ],
+  "before_after": {
+    "cross_ge2_indexable_rec": {
+      "before": 4,
+      "after": 4,
+      "delta": 0
+    },
+    "cross_total_avg": {
+      "before": 3.58,
+      "after": 3.58,
+      "delta": 0
+    },
+    "quality_7plus_proxy": {
+      "before": 3,
+      "after": 3,
+      "delta": 0
+    },
+    "quality_5to7_proxy": {
+      "before": 106,
+      "after": 106,
+      "delta": 0
+    },
+    "debug_8to9": {
+      "before": 109,
+      "after": 109,
+      "delta": 0
+    },
+    "l4_rec": {
+      "before": 24,
+      "after": 24,
+      "delta": 0
+    }
+  },
+  "diagnosis": "fuzzy 要求同一 release 指纹跨 ≥2 源族；当前各 indexer 返回多为不同 group/release，指纹不重合，故 improved=0"
+}

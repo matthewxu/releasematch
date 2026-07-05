@@ -281,6 +281,9 @@ class FetchService:
             slot_episode=request.episode,
         )
         if merged:
+            from workflow.torrent_sources.cross_source import max_item_cross_count
+
+            page_count = max(page_count, max_item_cross_count(merged))
             expires = _utc_expires_iso(self._cache_ttl_hours)
             self._cache.upsert(
                 cache_key=cache_key,

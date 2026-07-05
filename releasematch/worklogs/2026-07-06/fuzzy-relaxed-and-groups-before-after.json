@@ -1,0 +1,44 @@
+{
+  "run_at_utc": "2026-07-05T16:30:00Z",
+  "changes": [
+    "cross_source.py: fuzzy strict→no_group→slot_resolution 三档 + 源族数钳制",
+    "pipeline.py: fuzzy 重算写回 cross_source_page_count=after_max（修复旧值覆盖）",
+    "release_parser.py: [GROUP] 前缀与 ...Group 尾缀解析",
+    "groups.yaml: +12 组（EMBER/HHWEB/HYBRiS/LAZY/NYHD/OFT/GRACE/HiggsBoson/d3g/Hon3y/YG/SuccessfulCrab）"
+  ],
+  "commands": [
+    "python scripts/recompute_cross_source_fuzzy.py --all-published --rescore-after",
+    "python -m workflow.run generate all"
+  ],
+  "fuzzy_report": {
+    "total": 115,
+    "improved_count": 5,
+    "fail_count": 5
+  },
+  "before": {
+    "cross_ge2_indexable_rec": 4,
+    "cross_total_avg": 3.58,
+    "quality_7plus_proxy": 3,
+    "quality_5to7_proxy": 106,
+    "debug_8to9": 109,
+    "l4_rec": 24
+  },
+  "after": {
+    "cross_ge2_indexable_rec": 8,
+    "cross_total_avg": 3.58,
+    "quality_7plus_proxy": 7,
+    "quality_5to7_proxy": 102,
+    "debug_8to9": 109,
+    "l4_rec": 12,
+    "cross_ge2_pages": [
+      "movie:1288341",
+      "movie:840464",
+      "tv:124364:s01e01",
+      "tv:1396:s04e02",
+      "tv:1399:s01e01",
+      "tv:1408:s01e01",
+      "tv:45952:s01e01",
+      "tv:76479:s01e01"
+    ]
+  }
+}

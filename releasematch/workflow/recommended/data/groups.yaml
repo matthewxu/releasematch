@@ -674,3 +674,76 @@ groups:
     tier: L3
     scene_compliant: false
     notes: 聚合低质量
+
+  # --- L2 补充（2026-07-06 · 全库 Rec L4 降档）---
+  - name: EMBER
+    aliases: [EMBER]
+    tier: L2
+    scene_compliant: false
+    notes: 动漫 WEB P2P
+
+  - name: HHWEB
+    aliases: [HHWEB]
+    tier: L2
+    scene_compliant: false
+    notes: WEB-DL P2P
+
+  - name: HYBRiS
+    aliases: [HYBRIS, HYBRiS]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: LAZY
+    aliases: [LAZY]
+    tier: L2
+    scene_compliant: false
+    notes: Lazy 发布组
+
+  - name: NYHD
+    aliases: [NYHD]
+    tier: L2
+    scene_compliant: false
+    notes: NYHD WEB
+
+  - name: OFT
+    aliases: [OFT]
+    tier: L2
+    scene_compliant: false
+    notes: OldFartTorrents P2P
+
+  - name: GRACE
+    aliases: [GRACE]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: HiggsBoson
+    aliases: [HIGGSBOSON, HiggsBoson]
+    tier: L2
+    scene_compliant: false
+    notes: 社区 P2P
+
+  - name: d3g
+    aliases: [D3G, d3g]
+    tier: L3
+    scene_compliant: false
+    notes: DiNGLE 重编码
+
+  - name: Hon3y
+    aliases: [HON3Y, Hon3y]
+    tier: L3
+    scene_compliant: false
+    notes: 重编码发布
+
+  - name: YG
+    aliases: [YG]
+    tier: L3
+    scene_compliant: false
+    notes: 小体积重编码
+
+  - name: SuccessfulCrab
+    aliases: [SUCCESSFULCRAB, SuccessfulCrab]
+    tier: L3
+    scene_compliant: false
+    notes: 社区重编码

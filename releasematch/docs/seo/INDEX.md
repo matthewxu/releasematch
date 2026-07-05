@@ -40,7 +40,8 @@
 
 | 文档 | 日期 | 说明 |
 |------|------|------|
-| [2026-07-05-跨源扩展与全站重拉.md](./iterations/2026-07-05-跨源扩展与全站重拉.md) | 2026-07-05 | per-indexer 跨源 · 无 Rec noindex · refetch-all · VPS 迁移 |
+| [2026-07-06-宽松fuzzy与groups补档.md](./iterations/2026-07-06-宽松fuzzy与groups补档.md) | 2026-07-06 | 三档 fuzzy · groups +12 · cross≥2 8/110 |
+| [2026-07-05-跨源扩展与全站重拉.md](./iterations/2026-07-05-跨源扩展与全站重拉.md) | 2026-07-05 | per-indexer · noindex · refetch-all |
 
 ---
 
@@ -103,3 +104,4 @@ iterations/YYYY-MM-DD-<简短主题>.md
 |------|------|------|
 | v1.0 | 2026-07-04 | 初建目录；基线评估 + E-E-A-T/IG 主看板 |
 | v1.1 | 2026-07-05 | 迭代记录 · refetch-all / fuzzy 工具索引 |
+| v1.2 | 2026-07-06 | 2026-07-06 宽松 fuzzy 迭代记录 |

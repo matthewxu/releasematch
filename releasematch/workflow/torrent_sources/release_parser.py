@@ -30,6 +30,19 @@ _CAM_RE = re.compile(
     r"\b(CAM|HDCAM|HDTS|TELESYNC|TELE|cams?|TS\b|TELECiNE)\b",
     re.IGNORECASE,
 )
+# 方括号前缀中不作为 release group 的 token（字幕/语言标记）
+_BRACKET_GROUP_SKIP = frozenset(
+    {
+        "hysub",
+        "subs",
+        "sub",
+        "eng",
+        "chs",
+        "cht",
+        "gb",
+        "big5",
+    }
+)
 
 _PLATFORM_LABELS: Dict[str, str] = {
     "AMZN": "Amazon",
@@ -112,12 +125,39 @@ def parse_release_title(title_raw: str) -> Dict[str, str]:
     if plat:
         result["platform"] = plat.group(1).upper()
 
-    if "-" in title:
+    # [GROUP] 前缀（动漫/字幕组常见）
+    bracket = re.match(r"^\[([^\]]+)\]", title)
+    if bracket:
+        inner = bracket.group(1).strip()
+        token = re.split(r"[\s/\]]", inner, maxsplit=1)[0].strip()
+        if (
+            token
+            and len(token) <= 24
+            and token.lower() not in _BRACKET_GROUP_SKIP
+            and re.match(r"^[A-Za-z0-9][A-Za-z0-9+._-]*$", token)
+        ):
+            result["release_group"] = token[:64]
+
+    if "-" in title and not result["release_group"]:
         tail = title.rsplit("-", 1)[-1].strip()
         if tail and not re.match(r"^(S\d+E\d+|\d+p)$", tail, re.I):
             group = re.split(r"[\s(\[]", tail, maxsplit=1)[0].strip()
             if group:
                 result["release_group"] = group[:64]
+
+    # ...Hon3y / ..Group 尾缀
+    if not result["release_group"]:
+        dotted = re.search(r"\.{2,}([A-Za-z0-9][A-Za-z0-9._-]{1,20})$", title)
+        if dotted:
+            result["release_group"] = dotted.group(1)[:64]
+
+    # 末段 .Group（无连字符标题）
+    if not result["release_group"]:
+        dot_tail = re.search(r"\.([A-Za-z][A-Za-z0-9]{1,15})$", title)
+        if dot_tail:
+            candidate = dot_tail.group(1)
+            if candidate.lower() not in {"mkv", "mp4", "avi", "webrip", "webdl"}:
+                result["release_group"] = candidate[:64]
 
     return result
 
