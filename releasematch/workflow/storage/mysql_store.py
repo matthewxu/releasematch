@@ -1037,7 +1037,8 @@ class MySQLStore:
 
             magnet_count = len(active_hashes)
             page_status = "published" if magnet_count >= 2 else "thin"
-            robots_noindex = 0 if magnet_count >= 2 else 1
+            has_rec = any(o.is_recommended for o in ranked) if ranked else False
+            robots_noindex = 0 if (magnet_count >= 2 and has_rec) else 1
             cur.execute(
                 """
                 UPDATE media_pages

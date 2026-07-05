@@ -11,7 +11,7 @@
     "api_key": "YOUR_JACKETT_API_KEY",
     "indexers": {
       "_comment": "欧美剧集",
-      "tv": ["torrentgalaxyclone", "1337x", "thepiratebay", "nyaasi"],
+      "tv": ["thepiratebay", "1337x", "torrentgalaxyclone", "nyaasi"],
       "movie": ["yts", "1337x", "torrentgalaxyclone"],
       "jp_tv": ["nyaasi", "thepiratebay"],
       "kr_tv": ["nyaasi", "thepiratebay"],

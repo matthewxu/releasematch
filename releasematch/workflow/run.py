@@ -266,8 +266,15 @@ def cmd_pipeline(args: argparse.Namespace) -> int:
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0 if result.get("ok") else 1
 
+    if action == "refetch-all":
+        from workflow.storage.pipeline import run_refetch_all_published_pipeline
+
+        result = run_refetch_all_published_pipeline(force=not getattr(args, "no_force", False))
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0 if result.get("ok") else 1
+
     if action != "slot":
-        print("当前支持: pipeline slot | pipeline batch")
+        print("当前支持: pipeline slot | pipeline batch | pipeline refetch-all")
         return 1
 
     if args.tmdb is None:
@@ -464,6 +471,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="不跳过已有 >=2 magnet 的页面",
     )
     p_pipe_batch.set_defaults(func=cmd_pipeline, skip_existing=True)
+
+    p_pipe_refetch = pipe_sub.add_parser(
+        "refetch-all",
+        help="全站 published 槽位强制重拉 torrent（更新跨源分母）",
+    )
+    p_pipe_refetch.add_argument(
+        "--no-force",
+        action="store_true",
+        help="不忽略 torrent 缓存（默认 force 重拉）",
+    )
+    p_pipe_refetch.set_defaults(func=cmd_pipeline)
 
     p_query = sub.add_parser("query", help="从 MySQL 读取页面数据")
     query_sub = p_query.add_subparsers(dest="query_action", required=True)

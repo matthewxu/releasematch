@@ -248,7 +248,7 @@ class MediaPage:
     air_date: str = ""
     overview: str = ""
     cross_source_count: int = 0
-    cross_source_total: int = 3
+    cross_source_total: int = 4
     prev_season: Optional[int] = None
     prev_episode: Optional[int] = None
     next_season: Optional[int] = None
@@ -260,13 +260,20 @@ class MediaPage:
     generated_at: Optional[str] = None
     updated_at: str = ""
 
-    def is_indexable(self) -> bool:
+    def is_indexable(self, *, has_recommended: bool = True) -> bool:
         """
-        薄页门禁：magnet ≥ 2 且非 noindex 才允许 index。
+        薄页门禁：magnet ≥ 2、有 Recommended、且非 robots noindex 才允许 index。
 
+        @param has_recommended: 槽位是否已产出 Recommended release
         @returns: 是否应输出 index,follow
         """
-        return self.magnet_count >= 2 and not self.robots_noindex
+        if self.magnet_count < 2:
+            return False
+        if self.robots_noindex:
+            return False
+        if not has_recommended:
+            return False
+        return True
 
     def prev_episode_path(self, slug: str) -> Optional[str]:
         """
@@ -1267,7 +1274,9 @@ class EpisodePageContext:
                     },
                 ]
             ),
-            "robots_noindex": not self.page.is_indexable(),
+            "robots_noindex": not self.page.is_indexable(
+                has_recommended=self.recommended is not None
+            ),
             "meta_description": (
                 f"{self.catalog.title} 第 {self.page.season} 季第 {self.page.episode} 集 "
                 f"Release 导航：本站 Recommended Release、{len(self.sources)} 条多源对比与对版说明。"
@@ -1304,12 +1313,12 @@ class MoviePageContext:
         @param site_origin: 站点 origin
         @returns: Jinja2 参数字典
         """
+        from workflow.torrent_sources.release_parser import enrich_item_dict
+
         recommended = self.recommended
         rec_dict = None
         if recommended:
             rec_dict = recommended.to_template_dict()
-            from workflow.torrent_sources.release_parser import enrich_item_dict
-
             enrich_item_dict(rec_dict, force_specs=True)
             _enrich_recommended_with_speed(
                 rec_dict,
@@ -1379,7 +1388,9 @@ class MoviePageContext:
                     {"name": f"{self.catalog.title} ({year})" if year else self.catalog.title},
                 ]
             ),
-            "robots_noindex": not self.page.is_indexable(),
+            "robots_noindex": not self.page.is_indexable(
+                has_recommended=self.recommended is not None
+            ),
         }
 
 

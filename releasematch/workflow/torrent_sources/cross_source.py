@@ -24,13 +24,22 @@ def normalize_source_family(indexer: str) -> str:
     """
     将 indexer 规范为跨源统计用的「源族」键。
 
-    @param indexer: 如 eztv、yts、nyaa、jackett:all
-    @returns: eztv | yts | nyaa | jackett | 其他前缀
+    Jackett 各 indexer（如 thepiratebay、1337x）单独计族，不再合并为单一 ``jackett``，
+    以便 Hero badge 分母可大于 3（eztv + nyaa + tpb + …）。
+
+    @param indexer: 如 eztv、yts、nyaa、jackett:thepiratebay
+    @returns: eztv | yts | nyaa | thepiratebay | 1337x | …
     """
     raw = (indexer or "").strip().lower()
     if not raw:
         return "unknown"
-    if raw.startswith("jackett"):
+    if raw.startswith("jackett:"):
+        slug = raw.split(":", 1)[1].strip()
+        if slug and slug != "all":
+            # nyaasi（Jackett id）与直连 nyaa 统一为 nyaa 族
+            if slug.startswith("nyaa"):
+                return "nyaa"
+            return slug
         return "jackett"
     if raw.startswith("nyaa"):
         return "nyaa"
@@ -205,15 +214,15 @@ def count_attempted_families(enabled: Dict[str, bool]) -> int:
 
 def default_source_total(media_type: str) -> int:
     """
-    按媒体类型返回默认跨源分母。
+    按媒体类型返回默认跨源分母（无 source_enabled 时的回退值）。
 
     @param media_type: tv | movie | tv_episode
-    @returns: 剧集 3（eztv/nyaa/jackett），电影 2（yts/jackett）
+    @returns: 剧集 4（eztv/nyaa/tpb/1337x），电影 3（yts/tpb/1337x）
     """
     kind = (media_type or "").lower()
     if kind in ("movie",):
-        return 2
-    return 3
+        return 3
+    return 4
 
 
 def count_families_in_items(items: List[Any]) -> int:

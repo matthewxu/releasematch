@@ -42,6 +42,19 @@ from workflow.torrent_sources.slot_filter import filter_tv_slot_items
 from workflow.torrent_sources.yts_client import YtsClient
 
 
+def _enable_jackett_indexers(source_enabled: Dict[str, bool], indexers: List[str]) -> None:
+    """
+    将 Jackett indexer 列表写入 source_enabled（跨源分母按 indexer 计族）。
+
+    @param source_enabled: 源族启用表（就地更新）
+    @param indexers: Jackett indexer id 列表
+    """
+    for indexer in indexers:
+        key = str(indexer or "").strip().lower()
+        if key:
+            source_enabled[key] = True
+
+
 def _item_from_dict(row: Dict[str, Any]) -> ResourceItem:
     """
     从缓存 JSON 行还原 ResourceItem。
@@ -448,9 +461,11 @@ class FetchService:
             "eztv": False,
             "nyaa": False,
             "dmhy": False,
-            "jackett": bool(self._jackett),
         }
         asia = is_asia_region(region)
+        tv_indexers = self._jackett_tv_indexers_for(region) if self._jackett else []
+        if tv_indexers:
+            _enable_jackett_indexers(source_enabled, tv_indexers)
 
         if (
             not asia
@@ -483,7 +498,7 @@ class FetchService:
                         else []
                     )
                     query_list = cn_queries if cn_queries else search_titles[:4]
-                    for indexer in self._jackett_tv_indexers_for(region):
+                    for indexer in tv_indexers:
                         for query in query_list:
                             try:
                                 items.extend(self._jackett.search_text(indexer, query))
@@ -492,7 +507,7 @@ class FetchService:
                         if region == "cn" and items:
                             break
                 else:
-                    for indexer in self._jackett_tv_indexers_for(region):
+                    for indexer in tv_indexers:
                         try:
                             items.extend(
                                 self._jackett.search_tv(
@@ -506,7 +521,7 @@ class FetchService:
                         except Exception:
                             continue
                     if search_titles and not items:
-                        for indexer in self._jackett_tv_indexers_for(region):
+                        for indexer in tv_indexers:
                             for query in search_titles[:4]:
                                 try:
                                     items.extend(self._jackett.search_text(indexer, query))
@@ -595,8 +610,10 @@ class FetchService:
             "yts": False,
             "nyaa": False,
             "dmhy": False,
-            "jackett": bool(self._jackett),
         }
+        movie_indexers = self._jackett_movie_indexers_for(region) if self._jackett else []
+        if movie_indexers:
+            _enable_jackett_indexers(source_enabled, movie_indexers)
 
         if not asia and imdb_id:
             source_enabled["yts"] = True
@@ -606,7 +623,7 @@ class FetchService:
                 pass
 
         if self._jackett and imdb_id:
-            for indexer in self._jackett_movie_indexers_for(region):
+            for indexer in movie_indexers:
                 try:
                     items.extend(
                         self._jackett.search_movie(
@@ -619,7 +636,7 @@ class FetchService:
                     continue
 
         if self._jackett and not items and search_titles:
-            for indexer in self._jackett_movie_indexers_for(region):
+            for indexer in movie_indexers:
                 for query in search_titles[:4]:
                     try:
                         items.extend(self._jackett.search_text(indexer, query))

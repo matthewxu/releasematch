@@ -120,6 +120,7 @@ def run_slot_pipeline(
     mode: str = "demo",
     fetch: bool = False,
     title: Optional[str] = None,
+    force: bool = False,
 ) -> Dict[str, Any]:
     """
     执行单槽位 pipeline：评分 → 写入存储 → 返回摘要。
@@ -131,6 +132,7 @@ def run_slot_pipeline(
     @param mode: demo | live（live 需 --fetch）
     @param fetch: 是否调用 torrent_sources 拉取（R1）
     @param title: 可选 slot 标题（扩槽时来自 TMDB 导出）
+    @param force: True 时忽略 torrent 缓存，强制重拉
     @returns: pipeline 结果 JSON
     """
     if STORAGE_BACKEND != "mysql":
@@ -171,7 +173,7 @@ def run_slot_pipeline(
             tvdb_id=ext.get("tvdb_id"),
             title=title or ext.get("title"),
             mode=FetchMode.ON_DEMAND,
-            force=False,
+            force=force,
         )
         fetch_result = FetchService().fetch_slot(request)
         cross_source_page_count = fetch_result.cross_source_page_count
@@ -242,7 +244,9 @@ def run_slot_pipeline(
             "recommended": ctx.recommended.title_raw if ctx.recommended else None,
             "cross_source_count": ctx.page.cross_source_count,
             "cross_source_total": ctx.page.cross_source_total,
-            "robots_noindex": not ctx.page.is_indexable(),
+            "robots_noindex": not ctx.page.is_indexable(
+                has_recommended=ctx.recommended is not None
+            ),
         }
 
     return {
@@ -368,6 +372,101 @@ def run_batch_slot_pipeline(
     return report
 
 
+def run_refetch_all_published_pipeline(
+    *,
+    force: bool = True,
+    warm_tmdb: bool = True,
+    store: Optional[MySQLStore] = None,
+) -> Dict[str, Any]:
+    """
+    全站 published 槽位强制重拉 torrent → 评分 → 写库（更新跨源分母等）。
+
+    @param force: 是否忽略 torrent 缓存
+    @param warm_tmdb: 批量前预热 TMDB external_ids
+    @param store: 可选 MySQLStore
+    @returns: 批次摘要 JSON
+    """
+    if STORAGE_BACKEND != "mysql":
+        return {
+            "ok": False,
+            "error": f"当前 STORAGE_BACKEND={STORAGE_BACKEND}；请设 RM_STORAGE_BACKEND=mysql",
+        }
+
+    from workflow.storage.failed_slots_store import parse_page_id
+
+    store = store or MySQLStore()
+    ping = store.ping()
+    if not ping.get("ok"):
+        return {"ok": False, "step": "db_ping", "detail": ping}
+
+    page_ids = store.list_published_page_ids()
+    slots: List[Dict[str, Any]] = []
+    for page_id in page_ids:
+        parsed = parse_page_id(page_id)
+        if not parsed:
+            continue
+        slots.append({**parsed, "label": page_id, "page_id": page_id})
+
+    tmdb_warm: Optional[Dict[str, Any]] = None
+    if warm_tmdb and slots:
+        from workflow.metadata.tmdb_api import warm_external_ids_cache
+
+        tmdb_warm = warm_external_ids_cache(slots)
+
+    results: List[Dict[str, Any]] = []
+    ok_count = 0
+    fail_count = 0
+
+    for slot in slots:
+        page_id = str(slot["page_id"])
+        one = run_slot_pipeline(
+            tmdb_id=int(slot["tmdb_id"]),
+            media_kind=str(slot.get("media_type") or "tv"),
+            season=slot.get("season"),
+            episode=slot.get("episode"),
+            mode="live",
+            fetch=True,
+            force=force,
+        )
+        entry = {
+            "page_id": page_id,
+            "status": "ok" if one.get("ok") else "failed",
+            "cross_source_total": (one.get("write") or {}).get("cross_source_total"),
+            "cross_source_count": (one.get("write") or {}).get("cross_source_count"),
+            "magnet_count": (one.get("write") or {}).get("magnet_count"),
+            "fetch_note": one.get("fetch_note"),
+            "error": one.get("error"),
+        }
+        results.append(entry)
+        if one.get("ok"):
+            ok_count += 1
+        else:
+            fail_count += 1
+
+    run_id = str(uuid.uuid4())
+    store.record_sync_run(
+        run_id=run_id,
+        source="pipeline_refetch_all",
+        slots_processed=len(slots),
+        resources_upserted=sum(int(r.get("magnet_count") or 0) for r in results if r.get("status") == "ok"),
+        pages_published=ok_count,
+    )
+
+    cross_totals = [int(r["cross_source_total"]) for r in results if r.get("cross_source_total")]
+    return {
+        "ok": fail_count == 0,
+        "total": len(slots),
+        "ok_count": ok_count,
+        "fail_count": fail_count,
+        "sync_run_id": run_id,
+        "force": force,
+        "tmdb_warm": tmdb_warm,
+        "cross_source_total_avg": round(sum(cross_totals) / len(cross_totals), 2) if cross_totals else 0,
+        "cross_source_total_max": max(cross_totals) if cross_totals else 0,
+        "results": results,
+    }
+
+
 def _resource_item_dict(resource: Any) -> Dict[str, Any]:
     """
     将 DownloadResource ORM 行转为 scorer 输入字典（含 spec 回填）。
@@ -471,6 +570,36 @@ def rescore_page_recommendations(
         "new_seeders": new_seeders,
         "write": write,
     }
+
+
+def backfill_no_rec_noindex(store: Optional[MySQLStore] = None) -> Dict[str, Any]:
+    """
+    将无 Recommended 的 indexable 页降级为 robots_noindex=1（不重拉）。
+
+    @param store: 可选 MySQLStore
+    @returns: 更新摘要
+    """
+    store = store or MySQLStore()
+    conn = store._connect()
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE media_pages p
+            SET robots_noindex = 1,
+                updated_at = UTC_TIMESTAMP(3)
+            WHERE p.page_status IN ('published', 'thin')
+              AND p.magnet_count >= 2
+              AND (p.robots_noindex IS NULL OR p.robots_noindex = 0)
+              AND NOT EXISTS (
+                SELECT 1 FROM download_resources d
+                WHERE d.page_id = p.page_id AND d.is_recommended = 1
+              )
+            """
+        )
+        updated = int(cur.rowcount or 0)
+    conn.commit()
+    conn.close()
+    return {"ok": True, "updated": updated}
 
 
 def rescore_published_pages(
