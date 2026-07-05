@@ -1,0 +1,28 @@
+{# Recommended Release 首屏表格 — 与 All Sources 列一致，便于 Magnet 点击 #}
+{# @partial recommended_release_table.html — 参数 recommended、variant（episode|movie） #}
+<div class="rm-table-wrap rm-table-wrap--recommended-hero">
+  <table class="rm-table rm-table--responsive rm-table--recommended-hero{% if variant == 'movie' %} rm-table--movie{% endif %}">
+    <thead>
+      <tr>
+        <th scope="col">Release</th>
+        {% if variant == 'movie' %}
+        <th scope="col">Source</th>
+        {% endif %}
+        <th scope="col">Quality</th>
+        {% if variant == 'movie' %}
+        <th scope="col">Video</th>
+        <th scope="col">Audio</th>
+        {% endif %}
+        <th scope="col">Group</th>
+        <th scope="col">Size</th>
+        <th scope="col">Seed</th>
+        <th scope="col">操作</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% with item=recommended %}
+      {% include 'partials/sources_table_row.html' %}
+      {% endwith %}
+    </tbody>
+  </table>
+</div>

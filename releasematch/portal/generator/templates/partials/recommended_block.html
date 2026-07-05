@@ -1,6 +1,7 @@
 {# Recommended Release 卡片可复用片段 #}
-{# @partial recommended_block.html — episode / movie 共用 #}
+{# @partial recommended_block.html — episode / movie 共用；is_movie_page 由父模板传入 #}
 {% if recommended %}
+{% set table_variant = 'movie' if is_movie_page else 'episode' %}
 <section class="rm-section recommended-release" aria-labelledby="recommended-heading">
   <div class="rm-section__header">
     <h2 class="rm-section__title" id="recommended-heading">
@@ -9,31 +10,27 @@
   </div>
 
   <article class="rm-release-card rm-release-card--recommended">
+    {% with variant=table_variant %}
+    {% include 'partials/recommended_release_table.html' %}
+    {% endwith %}
+
+    <div class="rm-release-card__reason">
+      <strong>推荐理由：</strong>{{ recommended.recommend_reason }}
+    </div>
+
     {% if recommended.grab_index %}
     {% with grab=recommended.grab_index, variant='card' %}
     {% include 'partials/grab_index_hero.html' %}
     {% endwith %}
     {% endif %}
 
+    {% if recommended.speed %}
     <div class="rm-release-card__header">
       <div class="rm-release-card__badges">
-        {% if recommended.grab_index and recommended.grab_index.grab_index_has_data %}
-        <span class="rm-badge rm-badge--grab" title="{{ recommended.grab_index.grab_index_tagline }}">
-          {{ recommended.grab_index.grab_index_name }} {{ recommended.grab_index.grab_index_score }} · {{ recommended.grab_index.grab_index_tier_label }}
-        </span>
-        {% endif %}
-        <span class="rm-badge rm-badge--recommended">本站推荐</span>
-        <span class="rm-badge rm-badge--tier-{{ recommended.group_tier | lower }}">Group {{ recommended.group_tier }}</span>
-        <span class="rm-badge rm-badge--quality">{{ recommended.resolution }}</span>
-        {% if recommended.speed %}<span class="rm-badge rm-badge--speed" title="均速 / 峰值">{% if recommended.speed_max %}{{ recommended.speed }} / {{ recommended.speed_max }}{% else %}{{ recommended.speed }}{% endif %}</span>{% endif %}
+        <span class="rm-badge rm-badge--speed" title="均速 / 峰值">{% if recommended.speed_max %}{{ recommended.speed }} / {{ recommended.speed_max }}{% else %}{{ recommended.speed }}{% endif %}</span>
       </div>
     </div>
-
-    <h3 class="rm-release-card__title">{{ recommended.title_raw }}</h3>
-
-    <div class="rm-release-card__reason">
-      <strong>推荐理由：</strong>{{ recommended.recommend_reason }}
-    </div>
+    {% endif %}
 
     {% if recommended.speed_endorsement %}
     <div class="rm-release-card__speed-endorsement">
@@ -41,25 +38,7 @@
     </div>
     {% endif %}
 
-    <div class="rm-release-card__grid">
-      <dl>
-        <dt>来源 Source</dt>
-        <dd>{{ recommended.source }}</dd>
-        <dt>视频 Video</dt>
-        <dd>{{ recommended.video_spec }}</dd>
-      </dl>
-      <dl>
-        <dt>音频 Audio</dt>
-        <dd>{{ recommended.audio_spec }}</dd>
-        <dt>大小 Size</dt>
-        <dd>{{ recommended.size_human }} · {{ recommended.seeders }} seeders</dd>
-      </dl>
-    </div>
-
-    <div class="rm-release-card__actions">
-      <a class="rm-btn rm-btn--primary" href="{{ recommended.magnet_uri }}" rel="nofollow">Magnet 链接</a>
-      <button class="rm-btn rm-btn--ghost" type="button" data-copy-magnet="{{ recommended.magnet_uri }}">复制 Magnet</button>
-    </div>
+    {% include 'partials/speed_evidence_panel.html' %}
   </article>
 </section>
 {% else %}

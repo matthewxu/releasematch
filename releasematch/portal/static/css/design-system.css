@@ -483,6 +483,23 @@ dd:last-child {
   box-shadow: var(--rm-shadow-card), var(--rm-shadow-glow);
 }
 
+.rm-table-wrap--recommended-hero {
+  margin: 0 0 1rem;
+}
+
+.rm-table--recommended-hero {
+  margin-bottom: 0;
+}
+
+.rm-table--recommended-hero thead th {
+  font-size: 0.72rem;
+}
+
+.rm-release-card .rm-speed-evidence-wrap {
+  margin-top: 1rem;
+  margin-bottom: 0;
+}
+
 .rm-release-card__header {
   display: flex;
   flex-wrap: wrap;
@@ -521,6 +538,8 @@ dd:last-child {
 
 .rm-release-card__reason {
   grid-column: 1 / -1;
+  margin-top: var(--rm-space-md, 1rem);
+  margin-bottom: var(--rm-space-lg, 1.5rem);
   padding: 0.85rem 1rem;
   border-radius: var(--rm-radius-md);
   background: var(--rm-recommended-bg);
@@ -974,7 +993,12 @@ dd:last-child {
 }
 
 .rm-grab-index--card {
-  margin-bottom: 1rem;
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+}
+
+.rm-release-card .rm-grab-index--card {
+  margin-top: var(--rm-space-xs, 0.25rem);
 }
 
 .rm-grab-index--excellent {

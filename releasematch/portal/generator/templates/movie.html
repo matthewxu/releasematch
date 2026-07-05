@@ -39,8 +39,9 @@
 
   <div class="rm-main-grid rm-main-grid--with-sidebar">
     <div class="rm-main-grid__primary">
+      {% with is_movie_page=true %}
       {% include 'partials/recommended_block.html' %}
-      {% include 'partials/speed_evidence_panel.html' %}
+      {% endwith %}
 
       <section class="rm-section all-sources" aria-labelledby="sources-heading">
         <div class="rm-section__header">

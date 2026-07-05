@@ -1,13 +1,10 @@
-{# 电影页 Sources 表（含 Source / Video / Audio 列） #}
-{# @partial movie_sources_table.html — 供 movie.html 与 edition 分组复用；Recommended 行已在 Hero 区展示 #}
-<table class="rm-table rm-table--responsive rm-table--sortable rm-table--movie" data-rm-table-sort>
+{# 剧集页 All Sources 表 #}
+{# @partial episode_sources_table.html — 参数 sources；Recommended 行已在 Hero 区展示，此处跳过 #}
+<table class="rm-table rm-table--responsive rm-table--sortable" data-rm-table-sort>
   <thead>
     <tr>
       <th scope="col">Release</th>
-      <th scope="col">Source</th>
       <th scope="col">Quality</th>
-      <th scope="col">Video</th>
-      <th scope="col">Audio</th>
       <th scope="col">Group</th>
       <th scope="col"><button type="button" class="rm-table__sort" data-sort-key="size" data-sort-type="number">Size</button></th>
       <th scope="col"><button type="button" class="rm-table__sort is-active" data-sort-key="seed" data-sort-type="number">Seed</button></th>
@@ -15,9 +12,9 @@
     </tr>
   </thead>
   <tbody>
-    {% for item in items %}
+    {% for item in sources %}
     {% if not item.is_recommended %}
-    {% with variant='movie' %}
+    {% with variant='episode' %}
     {% include 'partials/sources_table_row.html' %}
     {% endwith %}
     {% endif %}

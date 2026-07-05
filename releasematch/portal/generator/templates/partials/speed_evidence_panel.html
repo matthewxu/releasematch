@@ -1,4 +1,4 @@
-{# 测速 IG 证据面板 — S-06 / S-07 / A-01~A-03 / A-09 / A-10 #}
+{# 测速 IG 证据面板 — S-06 / S-07 / A-01~A-03 / A-09 / A-10（Grab 指数已在 Recommended 卡片上方展示） #}
 {# @partial speed_evidence_panel.html — 六项实测指标主展示 + 可达性补充 #}
 {% if speed_evidence %}
 <details class="rm-speed-evidence-wrap">
@@ -7,11 +7,6 @@
     展开测速证据：均速 {{ speed_evidence.avg_speed }} · {{ speed_evidence.reachability_display | default(speed_evidence.reachability) }}
   </summary>
 <section class="rm-section rm-speed-evidence" aria-labelledby="speed-evidence-heading">
-  {# RM Grab 指数 — 全页最优先展示 #}
-  {% with grab=speed_evidence, variant='panel' %}
-  {% include 'partials/grab_index_hero.html' %}
-  {% endwith %}
-
   <div class="rm-speed-evidence__header">
     <div class="rm-speed-evidence__titles">
       <h2 class="rm-section__title" id="speed-evidence-heading">
