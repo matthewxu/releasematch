@@ -659,9 +659,9 @@ def check_6_2_page_head(
         CheckItem(
             "6.2",
             "6.2.trust_description",
-            "Trust 四页均有 description",
+            "Trust 五页均有 description",
             "fail" if trust_issues else "pass",
-            "; ".join(trust_issues) if trust_issues else "4/4 OK",
+            "; ".join(trust_issues) if trust_issues else f"{len(TRUST_PATHS)}/{len(TRUST_PATHS)} OK",
         )
     )
 

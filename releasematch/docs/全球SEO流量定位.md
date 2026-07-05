@@ -503,8 +503,8 @@ flowchart TB
 | `lang=en` 统一 | 英文 query 匹配 ↑ | SEO D1 / T-SEO-06 |
 | canonical + trailing slash | 避免地区 duplicate | 已实施 |
 | sitemap 分批 ≤500 URL | crawl budget | T-SEO-01 |
-| TVEpisode / Movie Schema | 欧美 rich result | T-SEO-04 |
-| OG / Twitter Card | Reddit/TG 全球分享 | T-SEO-05 |
+| TVEpisode / Movie / WebSite Schema | 欧美 rich result | T-SEO-04 ✅ |
+| OG / Twitter Card | Reddit/TG 全球分享 | T-SEO-05 ✅ |
 | CWV LCP < 2.5s | 新兴市场 mobile 占比高 | UX-12 字体本地化 |
 | magnet `rel="nofollow"` | 全球合规 | 已实施 |
 | 410 DMCA | Pirate demotion 隔离 | T-SEO-02 |

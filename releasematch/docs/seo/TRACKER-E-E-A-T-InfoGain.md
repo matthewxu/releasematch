@@ -19,7 +19,8 @@
 | **published 页** | 118 | — | ✅ |
 | **sitemap URL 数** | ≤36（+Contact） | 维持 ≤30 内容页 + Trust | ✅ |
 | **GSC** | 未提交 | C2 门禁通过后提交 | ⏸ |
-| **CF Pages 生产** | 暂缓 | C2 门禁通过后 | ⏸ |
+| **CF Pages 生产** | 暂缓 | C2 本地门禁通过后 deploy | ⏸ |
+| **C2 本地 SEO 门禁** | **13 pass / 0 fail**（§6.1～6.3） | deploy + GSC | ✅ 本地 |
 | **页面 IG 估分（Debug 呈现）** | **8~9（97/120）** · 7~8（8）· ≤5~7（15） | Rec+测速页 **8~9** | ✅ |
 | **页面 IG 估分（质量向）** | **5~7**（cross≥2 仅 1/104 · L4 Rec 39/104） | **≥7** | 🔴 |
 | **测速 bake 覆盖率** | **96/104 Rec** · 97/120 summary | **100%**（有 Rec 页） | 🔶 |
@@ -153,9 +154,9 @@
 | 薄页 robots | ✅ | `is_indexable()` | — |
 | Hub noindex | ✅ | D2 决策 | — |
 | lang=en | ✅ | 内容页 + Trust 五页 | — |
-| Schema JSON-LD | 🔶 | WebPage only | P1：TVEpisode |
-| Open Graph | ❌ | — | P1 |
-| favicon | ❌ | — | P1 |
+| Schema JSON-LD | ✅ | TVEpisode / Movie / WebSite | — |
+| Open Graph | ✅ | `base.html` og:* + Twitter Card | — |
+| favicon | ✅ | `/static/favicon.ico` + `.svg` | — |
 | BreadcrumbList | ❌ | — | P2 |
 
 ### 4.2 内容 SEO / 政策
@@ -198,6 +199,7 @@
 | 2026-07-05 | T-10 | 删除 `portal/` 手写 demo（BB S04E6 等） | Trust ↑ | 避免虚假 cross/tier | generate page 验收 |
 | 2026-07-05 | IG Debug | 全站 120 页批量 Debug（未重拉）· §一基线刷新 | — | Debug **8~9：97** · 质量仍 **5~7** | [ig-debug-batch-summary.md](../../worklogs/2026-07-05/ig-debug-batch-summary.md) |
 | 2026-07-05 | X-07/X-08 | groups.yaml +4（XEBEC/FQM/IMMERSE/ASAP）· scene_compliant 入 reason · rescore 107 页 | Expertise ↑ | S-05 XEBEC **L1** · S-02 合规句 | BB S04E06 · L4 Rec 43/109 |
+| 2026-07-05 | T-SEO-04/05 | OG + favicon + WebSite Schema · Trust favicon · C2 checklist **13 pass** | 技术 SEO ↑ | — | seo_c2_checklist |
 | | | | | | |
 
 **下一迭代待办（摘自基线评估 P0/P1）：**
@@ -236,3 +238,4 @@
 | v1.5 | 2026-07-05 | 测速 gap-fill 4 槽 + `generate all` · E-02/E-05 有 Rec 页闭合 |
 | v1.6 | 2026-07-05 | 全站 IG Debug 批量汇总 · §一拆 Debug/质量双轨 · §3.2/§4.3/§五同步 |
 | v1.7 | 2026-07-05 | X-07 yaml +4 组 · X-08 scene_compliant 入 reason · rescore 107 页 |
+| v1.8 | 2026-07-05 | T-SEO-04/05：OG + favicon + WebSite Schema · Trust 五页 favicon |

@@ -664,7 +664,7 @@ bash scripts/seo_c2_checklist.sh --prepare
 bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 ```
 
-**通过标准：** 退出码 `0`（无 FAIL）。常见 FAIL 来自尚未实现的 P1 项（Open Graph、favicon、Trust privacy description），修复后重跑即可。
+**通过标准：** 退出码 `0`（无 FAIL）。**2026-07-05 起** OG / favicon / Trust description 已落地；若 FAIL 多为 **dist 未 sync Trust/static**（见 §7.2）或生产 URL 未部署。
 
 **上线后（不可本地替代）：** Cloudflare Pages 部署 → 生产 URL 验证 HTTPS/410 HTTP 状态 → GSC 属性验证与 sitemap 提交（§6.4）。
 
@@ -716,8 +716,8 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | `generate all` 页数少于预期 | indexable 仅 `published`+magnet≥2；另含 `thin` 的 noindex 页；`draft` 占位不生成 |
 | 测速全为 `dry_run` | 安装 `libtorrent`（见 worklogs speedtest 文档） |
 | Nyaa/DMHy 国内超时 | 配置 SSH SOCKS 隧道，见 [nyaa-proxy-asia.md](./nyaa-proxy-asia.md) |
-| `seo_c2_checklist` FAIL：缺 OG / favicon | T-SEO-05 未实现；见 worklogs SEO 文档 P1 任务 |
-| `seo_c2_checklist` FAIL：privacy 缺 description | T-SEO-07；补 `portal/trust/privacy/index.html` meta |
+| `seo_c2_checklist` FAIL：缺 OG / favicon | 确认 `generate all` 后 dist 为最新；检查 `base.html` og 块 |
+| `seo_c2_checklist` FAIL：Trust 缺 HTML / description | 先 `rsync -a portal/trust/ portal/dist/trust/` 或 `deploy_cf_pages.sh --prepare-only` |
 | `seo_c2_checklist`：dist 不存在 | 先 `generate all` 或加 `--prepare` |
 
 ---
@@ -748,3 +748,4 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | v0.1 | 2026-06-29 | 初版：status / db / run / pipeline slot / query |
 | v0.2 | 2026-07-03 | 新增 `generate`、`serve`、`pipeline batch`；独立 CLI（torrent_sources、speedtest）；修正 live/fetch 与 recommended；DMHy/cn 路由；生产工作流、脚本索引与故障排查 |
 | v0.3 | 2026-07-04 | `generate all` 产出 sitemap；新增 §3.8 / §5.8 `seo_c2_checklist` C2 SEO 本地检查用法 |
+| v0.4 | 2026-07-05 | C2 本地 13 pass；§5.8/§八 更新 OG/favicon 已落地 · dist sync Trust 说明 |

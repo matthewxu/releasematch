@@ -4,7 +4,10 @@
 
 {% block title %}{{ movie_title }} ({{ year }}) Sources — {{ recommended_quality }} | ReleaseMatch{% endblock %}
 
+{% block og_type %}video.movie{% endblock %}
+{% block og_title %}{{ movie_title }} ({{ year }}) Sources — {{ recommended_quality }} | ReleaseMatch{% endblock %}
 {% block meta_description %}{{ movie_title }} ({{ year }}) Release 导航：Recommended Release 与 {{ source_count }} 条多版本对比。{% endblock %}
+{% block og_description %}{{ movie_title }} ({{ year }}) Release 导航：Recommended Release 与 {{ source_count }} 条多版本对比。{% endblock %}
 
 {% block meta_robots %}
   {% if robots_noindex %}

@@ -4,7 +4,13 @@
 
 {% block title %}ReleaseMatch — Release 导航站{% endblock %}
 
+{% block og_title %}ReleaseMatch — Release 导航站{% endblock %}
 {% block meta_description %}影视 Release 导航：102+ 验证集槽位，Recommended Release、对版分析与多源 magnet 对比。{% endblock %}
+{% block og_description %}影视 Release 导航：102+ 验证集槽位，Recommended Release、对版分析与多源 magnet 对比。{% endblock %}
+
+{% block head_extra %}
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"ReleaseMatch","url":"{{ canonical_url }}"}</script>
+{% endblock %}
 
 {% block content %}
 <div class="rm-container">

@@ -542,13 +542,13 @@ rescore_published_pages(media_kind="movie")
 | 展开测速证据（无重复 Grab） | ✅ | `speed_evidence_panel.html` |
 | All Sources / Versions 逐条 tier | ✅ | `episode_sources_table.html` · `movie_sources_table.html` |
 | 电影 edition 分组 + 本组最佳 | ✅ | `movie_edition_groups.html` · `workflow/movie_editions.py` |
-| `scene_compliant` / 合规率 | ❌ yaml 有字段，scorer **不读取** | 规划 |
+| `scene_compliant` / 合规率 | 🔶 | **静态句已入 reason**（X-08）；`compliance_rate` cron 未建 |
 
 ### 6.7 groups.yaml 规模（2026-07-01）
 
 | 统计 | 值 |
 |------|-----|
-| 总组数 | **98** |
+| 总组数 | **102**（2026-07-05 +4：XEBEC/FQM/IMMERSE/ASAP） |
 | L0 | 20 |
 | L1 | 34 |
 | L2 | 33 |
@@ -569,7 +569,7 @@ rescore_published_pages(media_kind="movie")
 | Hero 表格 + Grab + 测速折叠 UX | ✅ | `recommended_block.html` · 2026-07-05 |
 | Sources 表 tier badge | ✅ | `sources_table_row.html` |
 | MySQL `release_groups` 表 | 🔶 | schema 有；**仅 4 条 demo seed**，未从 yaml 同步 |
-| `scene_compliant` / `compliance_rate` | ❌ | yaml 字段存在，运行时未用 |
+| `scene_compliant` / `compliance_rate` | 🔶 | 静态句入 `recommend_reason`（L0~L2）；动态合规率未建 |
 | cron 自动统计更新 | ❌ | 设计文档 §5.4.3 规划 |
 | PTN / mediainfo 组名提取 | ❌ | 仍 T0 正则 |
 | per-edition / 多 hash Grab 测速 | 📋 | 当前 Grab 仅 Hero REC |
@@ -762,3 +762,4 @@ python -m workflow.torrent_sources.speedtest.run slot \
 | v1.4 | 2026-07-01 | 迁移至 `docs/IG信息登记册.md`（正式文档） |
 | v1.5 | 2026-07-05 | §6.5 scorer v1.1 剧集 / v1.2 电影分化 + `rescore_page_recommendations` 不重拉重算 |
 | v1.6 | 2026-07-05 | §4.1 Hero 表格 + Grab 信息架构；电影多版本分组；§7.6 Grab 指数；§6.8 页面 bake 状态更新 |
+| v1.7 | 2026-07-05 | groups.yaml **102** 组（X-07）；scene_compliant 静态句入 reason（X-08） |

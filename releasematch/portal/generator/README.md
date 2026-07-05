@@ -60,3 +60,16 @@
 | `partials/speed_evidence_panel.html` | 展开测速证据（**无重复 Grab**） |
 
 上下文组装：`schema/d1_models.py` · 电影分组：`workflow/movie_editions.py` · 详见 [IG §4.1](../../docs/IG信息登记册.md#41-recommended-区块信息架构2026-07-05)。
+
+---
+
+## 页面 head / SEO（2026-07-05 · T-SEO-04/05）
+
+| 能力 | 位置 | 说明 |
+|------|------|------|
+| **Open Graph + Twitter** | `templates/base.html` | `og:site_name/type/url/title/description`；episode `video.episode` · movie `video.movie` |
+| **Favicon** | `portal/static/favicon.ico` · `.svg` | `base.html` + Trust 五页静态 HTML |
+| **JSON-LD** | `episode.html` / `movie.html` / `home.html` | TVEpisode · Movie · WebSite（`build_*_schema_ld`） |
+| **C2 验收** | `scripts/seo_c2_checklist.py` | 本地 §6.1～6.3；generate 后须 sync Trust/static 进 dist |
+
+Trust 壳（About / Contact / DMCA / Privacy / How-matching-works）为 `portal/trust/` 静态页，**不**经 Jinja；部署前复制到 `portal/dist/trust/`。

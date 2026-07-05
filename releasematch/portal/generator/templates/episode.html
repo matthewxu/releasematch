@@ -4,7 +4,10 @@
 
 {% block title %}{{ show_title }} S{{ '%02d'|format(season) }}E{{ '%02d'|format(episode) }} Sources — {{ recommended_quality }} | ReleaseMatch{% endblock %}
 
+{% block og_type %}video.episode{% endblock %}
+{% block og_title %}{{ show_title }} S{{ '%02d'|format(season) }}E{{ '%02d'|format(episode) }} Sources — {{ recommended_quality }} | ReleaseMatch{% endblock %}
 {% block meta_description %}{{ show_title }} 第 {{ season }} 季第 {{ episode }} 集 Release 导航：本站 Recommended Release、{{ source_count }} 条多源对比与对版说明。{% endblock %}
+{% block og_description %}{{ show_title }} 第 {{ season }} 季第 {{ episode }} 集 Release 导航：本站 Recommended Release、{{ source_count }} 条多源对比与对版说明。{% endblock %}
 
 {% block meta_robots %}
   {% if robots_noindex %}

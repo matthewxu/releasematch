@@ -52,7 +52,7 @@
 |------|------|--------|
 | **内容质量** | Information Gain、Helpful Content、薄页门禁 | TRACKER · IG 登记册 |
 | **E-E-A-T** | Experience / Expertise / Authority / Trust | TRACKER · assessments |
-| **技术 SEO** | sitemap、robots、canonical、Schema、lang | worklog SEO 审计 · `seo_c2_checklist.py` |
+| **技术 SEO** | sitemap、robots、canonical、Schema、OG、favicon | worklog SEO 审计 · `seo_c2_checklist.py`（**2026-07-05 本地 13 pass**） |
 | **站点信任** | Trust 五页（含 Contact）、DMCA、410、nofollow | TRACKER §Trust |
 | **规模与政策** | Scaled Content、Pirate Demotion、sitemap 批次 | 01 §三 · 12 手册 |
 | **度量** | GSC 收录率、排名、IG 估分 | TRACKER §度量（C2 后启用） |

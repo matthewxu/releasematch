@@ -1,12 +1,12 @@
 # 页面 SEO 分析与优化方向
 
-> **版本：** v1.0  
-> **日期：** 2026-07-03  
+> **版本：** v1.1  
+> **日期：** 2026-07-03（**2026-07-05 进度同步**）  
 > **归属：** `worklogs/2026-07-03/`  
-> **状态：** 📋 **下次工作方向** — 承接 C1 验证集完成，目标 C2 GSC 冷启动  
+> **状态：** 🟡 **C2 本地门禁已通过**（`seo_c2_checklist` **13 pass / 0 fail**）— 待 CF 部署 + GSC  
 > **前置阅读：** [01-分支定位与流量获取.md](../../docs/01-分支定位与流量获取.md) §九、[04-方案全景分析与优先级重评.md](../../docs/04-方案全景分析与优先级重评.md) §C2  
 > **关联代码：** `portal/generator/templates/`、`schema/d1_models.py`、`scripts/deploy_cf_pages.sh`  
-> **当日验收：** [今日验收清单.md](./今日验收清单.md)
+> **看板：** [TRACKER-E-E-A-T-InfoGain.md](../../docs/seo/TRACKER-E-E-A-T-InfoGain.md) · **当日验收：** [今日验收清单.md](./今日验收清单.md)
 
 ---
 
@@ -60,11 +60,11 @@
 
 | 页面 | Title | Description | Robots | Canonical | Schema | 内链 | 综合 |
 |------|-------|-------------|--------|-----------|--------|------|------|
-| 单集 L3 | ✅ | ✅ 动态 | ✅ 薄页门禁 | ✅ | ⚠️ 仅 WebPage | ✅ prev/next + 面包屑 | **A-** |
-| 电影 | ✅ | ✅ | ✅ | ✅ | ❌ | 面包屑 | **B** |
-| 剧集 Hub | ✅ | ❌ 继承通用 | ❌ 未覆盖 | ✅ | ❌ | 集芯片 | **C+** |
-| 首页 | ✅ | ✅ | ❌ 未显式 | ✅ | ❌ | 目录网格 | **B-** |
-| Trust 四页 | ✅ | ⚠️ privacy 缺 | ❌ | ✅ | ❌ | footer | **B** |
+| 单集 L3 | ✅ | ✅ 动态 | ✅ 薄页门禁 | ✅ | ✅ TVEpisode | ✅ prev/next + 面包屑 | **A** |
+| 电影 | ✅ | ✅ | ✅ | ✅ | ✅ Movie | 面包屑 | **A-** |
+| 剧集 Hub | ✅ | ✅ 独立 | ✅ noindex | ✅ | ❌ | 集芯片 | **B+** |
+| 首页 | ✅ | ✅ | ❌ 未显式 | ✅ | ✅ WebSite | 目录网格 | **B+** |
+| Trust 五页 | ✅ | ✅ 含 Contact | ❌ | ✅ | ❌ | footer + favicon | **A-** |
 | 404 | ✅ | ❌ | ✅ noindex | ❌ | ❌ | — | **B** |
 
 ### 2.1 已达标项（保持，勿回退）
@@ -77,21 +77,27 @@
 
 3. **Magnet 出站** — 全站 `rel="nofollow"`（`recommended_block.html`、`episode.html` 表格）
 
-4. **Trust / E-E-A-T** — About、DMCA、Privacy、How-matching-works + footer 合规声明
+4. **Trust / E-E-A-T** — About、Contact、DMCA、Privacy、How-matching-works + footer 合规声明
 
 5. **IG 模块已 bake 进页面** — Recommended Release、Group tier、测速证据（S-06/S-07）
 
+6. **Open Graph + favicon + Schema（2026-07-05）** — `base.html` og:* / Twitter Card；`favicon.ico`+`.svg`；TVEpisode / Movie / WebSite JSON-LD
+
 ### 2.2 关键缺口汇总
 
-| 优先级 | 缺口 | 阻塞 C2？ | 涉及文件 |
-|--------|------|-----------|----------|
-| **P0** | `sitemap.xml` 未实现（robots 已引用） | ✅ 是 | 新增生成器模块 |
-| **P0** | 410 Gone 模板缺失 | ✅ 是（DMCA） | `portal/410.html` + 生成器 |
-| **P0** | Hub 页缺独立 description / robots | ⚠️ 部分 | `show_hub.html` |
-| **P1** | Schema 与文档不符（应 TVEpisode） | 否 | `episode.html`、`movie.html` |
-| **P1** | Open Graph / Twitter Card 全缺 | 否 | `base.html` |
-| **P1** | favicon 未声明 | 否 | `base.html` + static |
-| **P1** | 语言信号混乱（zh-CN + 英文 title） | ⚠️ 策略待定 | 全模板 |
+| 优先级 | 缺口 | 阻塞 C2？ | 状态 / 涉及文件 |
+|--------|------|-----------|----------------|
+| ~~**P0**~~ | ~~`sitemap.xml` 未实现~~ | — | ✅ `portal/generator/sitemap.py` |
+| ~~**P0**~~ | ~~410 Gone 模板缺失~~ | — | ✅ `portal/410.html`（HTTP 410 仍须 CF 路由） |
+| ~~**P0**~~ | ~~Hub 页缺独立 description / robots~~ | — | ✅ `show_hub.html` |
+| ~~**P1**~~ | ~~Schema TVEpisode / Movie~~ | — | ✅ `d1_models.py` + 模板 |
+| ~~**P1**~~ | ~~Open Graph / Twitter Card~~ | — | ✅ `base.html` · 2026-07-05 |
+| ~~**P1**~~ | ~~favicon~~ | — | ✅ `portal/static/favicon.*` |
+| ~~**P1**~~ | ~~Trust privacy description~~ | — | ✅ 五页均有 meta description |
+| **P1** | 语言策略（zh 正文 + en lang） | ⚠️ 策略待定 | T-SEO-06 · D1 已 `lang=en` |
+| **P0** | dist 未自动 sync Trust/static | ⚠️ 本地 checklist | `deploy_cf_pages.sh`（待并入 generate） |
+| **P0** | CF Pages 生产部署 + HTTPS 验收 | ✅ 公网 | `wrangler deploy` |
+| **P0** | GSC 属性 + sitemap 提交 | ✅ 公网 | §6.4 |
 | **P2** | BreadcrumbList JSON-LD | 否 | 各内容模板 |
 | **P2** | Google Fonts 影响 LCP | 否 | `base.html` |
 | **P2** | subtitle 跨站链 nofollow 策略未定义 | 否 | `episode.html` |
@@ -166,18 +172,18 @@
 
 ### 5.1 P0 — C2 阻塞项（预估 1~1.5 人天）
 
-#### T-SEO-01：sitemap 生成器
+#### T-SEO-01：sitemap 生成器 — ✅ 2026-07-04
 
 | 字段 | 内容 |
 |------|------|
 | **目标** | `generate all` 后输出 `portal/dist/sitemap.xml`（及必要时 sitemap index） |
-| **纳入 URL** | 首页、`is_indexable()` 内容页、Trust 四页 |
+| **纳入 URL** | 首页、`is_indexable()` 内容页、Trust **五页**（含 Contact） |
 | **排除** | `robots_noindex` 页、404、410、IG debug 模式 |
 | **格式** | `<loc>` + `<lastmod>`（取 DB `updated_at` ISO8601）；单文件 ≤500 URL，超出用 sitemap index |
 | **入口** | `python -m workflow.run generate all` 末尾调用；`deploy_cf_pages.sh` 确保复制到 dist 根 |
 | **验收** | `curl https://releasematch.io/sitemap.xml` 返回 200；URL 数与 DB indexable 一致 |
 
-#### T-SEO-02：410 Gone 页 + DMCA 流程
+#### T-SEO-02：410 Gone 页 + DMCA 流程 — ✅ HTML · ⏸ CF HTTP 410
 
 | 字段 | 内容 |
 |------|------|
@@ -185,7 +191,7 @@
 | **交付** | `portal/410.html`；生成器剔除对应 dist 文件；sitemap 生成器同步排除 |
 | **验收** | 模拟 DMCA 槽位 → dist 无该路径 → sitemap 无该 URL |
 
-#### T-SEO-03：Hub 页 head 补齐
+#### T-SEO-03：Hub 页 head 补齐 — ✅ 2026-07-04
 
 | 字段 | 内容 |
 |------|------|
@@ -196,38 +202,38 @@
 
 ### 5.2 P1 — C2 同期增强（预估 0.5~1 人天）
 
-#### T-SEO-04：Schema.org 升级
+#### T-SEO-04：Schema.org 升级 — ✅ 2026-07-05
 
-| 页面 | 目标 Schema |
-|------|-------------|
-| episode | `TVEpisode` + `partOfSeries`（TVSeries） |
-| movie | `Movie` + `datePublished`（year） |
-| 首页 | `WebSite`（可选 `SearchAction`） |
+| 页面 | 目标 Schema | 实现 |
+|------|-------------|------|
+| episode | `TVEpisode` + `partOfSeries`（TVSeries） | `build_tv_episode_schema_ld` |
+| movie | `Movie` + `datePublished`（year） | `build_movie_schema_ld` |
+| 首页 | `WebSite` | `home.html` head_extra |
 
-参考 [01 §9.2](../../docs/01-分支定位与流量获取.md) 示例。验收：Google Rich Results Test 无致命错误。
+参考 [01 §9.2](../../docs/01-分支定位与流量获取.md) 示例。验收：Rich Results Test（上线后抽查）。
 
-#### T-SEO-05：Open Graph + favicon
+#### T-SEO-05：Open Graph + favicon — ✅ 2026-07-05
 
 | 字段 | 内容 |
 |------|------|
-| **位置** | `base.html` 新增 `{% block og %}`；episode/movie 覆盖 |
+| **位置** | `base.html`：`og:*` 块 + `{% block og_* %}`；episode/movie/home 覆盖 |
 | **字段** | `og:title`、`og:description`、`og:url`、`og:type`、`og:site_name`；Twitter `summary` |
-| **favicon** | `/static/favicon.ico` + `<link rel="icon">` |
-| **验收** | Facebook Sharing Debugger / Twitter Card Validator 预览正常 |
+| **favicon** | `/static/favicon.ico` + `/static/favicon.svg` + `<link rel="icon">`（生成页 + Trust 五页） |
+| **验收** | `seo_c2_checklist` §6.2 通过；上线后 Sharing Debugger 抽查 |
 
-#### T-SEO-06：语言策略落地（依赖 D1）
+#### T-SEO-06：语言策略落地（依赖 D1） — 🔶 `lang=en` 已落地 · 正文仍中英混
 
 | 字段 | 内容 |
 |------|------|
 | **若选 A** | `base.html` `lang="en"`；`meta_description` 块英文化 |
 | **验收** | 抽查 3 页 view-source：`lang`、title、description 语言一致 |
 
-#### T-SEO-07：Trust privacy 补 description
+#### T-SEO-07：Trust privacy 补 description — ✅ 2026-07-05（五页均有 meta description + favicon）
 
 | 字段 | 内容 |
 |------|------|
-| **文件** | `portal/trust/privacy/index.html` |
-| **验收** | 与其他 Trust 页一致的 head 结构 |
+| **文件** | `portal/trust/privacy/index.html` 等五页 |
+| **验收** | `seo_c2_checklist` §6.2.trust_description 通过 |
 
 ### 5.3 P2 — C3 观察期前（可延后）
 
@@ -236,37 +242,39 @@
 | T-SEO-08 | BreadcrumbList JSON-LD | 与 HTML 面包屑同步 |
 | T-SEO-09 | 字体本地化 / 系统栈 | 降低 LCP；对齐 01 §9.3 |
 | T-SEO-10 | Hub IG 文案模块 | D2 改 index 时再做 |
-| T-SEO-11 | 首页 `WebSite` Schema | 品牌词强化 |
+| T-SEO-11 | 首页 `WebSite` Schema | ~~品牌词强化~~ → **已并入 T-SEO-04**（2026-07-05） |
 | T-SEO-12 | GSC 监控脚本 / 文档 | 收录率、Crawl stats 周报模板 |
 
 ---
 
 ## 六、C2 上线检查清单（GSC 提交前必过）
 
-> 全部 ✅ 后才执行 GSC 属性验证与 sitemap 提交。
+> **2026-07-05：** 本地 `python scripts/seo_c2_checklist.py` → **pass=13 · fail=0 · skip=3**（§6.1～6.3）。  
+> **仍须上线后验：** HTTPS/HSTS · HTTP 410 · GSC（脚本 SKIP）。  
+> **注意：** 仅 `generate all` 不会复制 Trust/static；验收前须 sync dist（见 [12-日常运营执行手册 §7.2](../../docs/12-日常运营执行手册.md)）或 `deploy_cf_pages.sh --prepare-only`。
 
 ### 6.1 技术 SEO
 
-- [ ] `https://releasematch.io/robots.txt` 可访问，`Sitemap:` 指向有效 sitemap
-- [ ] `sitemap.xml` 200，URL 仅含 indexable 页 + Trust + 首页
-- [ ] 抽查 10 页：canonical 唯一、trailing slash 一致
-- [ ] 404 页 `noindex`；410 流程可演示
-- [ ] `RM_SHOW_IG_DEBUG` 生产环境为 false（防全站 noindex）
-- [ ] HTTPS + HSTS（CF 默认）
+- [x] `robots.txt` 可访问，`Sitemap:` 指向有效 sitemap（**本地 dist ✅** · 生产待 deploy）
+- [x] `sitemap.xml` 200，URL 仅含 indexable 页 + Trust + 首页（本地 **36 URL / 30 内容**）
+- [x] 抽查 10 页：canonical 唯一、trailing slash 一致
+- [x] 404 页 `noindex`；410 HTML 可演示（**HTTP 410 待 CF 路由**）
+- [x] `RM_SHOW_IG_DEBUG` 生产环境为 false（防全站 noindex）
+- [ ] HTTPS + HSTS（CF 默认）— **上线后**
 
 ### 6.2 页面 head
 
-- [ ] 单集 / 电影：title、description、robots、canonical、OG 齐全
-- [ ] Hub：description + robots 按 D2 决策
-- [ ] Trust 四页：均有 description
-- [ ] favicon 可加载
+- [x] 单集 / 电影：title、description、robots、canonical、OG 齐全
+- [x] Hub：description + robots 按 D2 决策
+- [x] Trust **五页**：均有 description + favicon link
+- [x] favicon 可加载（`portal/static/favicon.ico` + head 声明）
 
 ### 6.3 内容与 IG
 
-- [ ] sitemap 内每页：`magnet_count >= 2`
-- [ ] sitemap 内每页：有 Recommended Release 或明确 noindex 排除
-- [ ] magnet 链接均为 `rel="nofollow"`
-- [ ] 无冒牌播放器、无托管视频
+- [x] sitemap 内每页：`magnet_count >= 2`（DB 交叉验证）
+- [x] sitemap 内每页：有 Recommended Release 或明确 noindex 排除
+- [x] magnet 链接均为 `rel="nofollow"`
+- [x] 无冒牌播放器、无托管视频
 
 ### 6.4 GSC 操作（C2-2）
 
@@ -364,3 +372,4 @@ docs/04-方案全景分析与优先级重评.md        # C2 里程碑
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | v1.0 | 2026-07-03 | 初版：全站 SEO 审计 + C2 任务清单 + 四项待决策；归档于 worklogs |
+| v1.1 | 2026-07-05 | T-SEO-01~05/07 ✅；OG+favicon+Schema；§六 本地 checklist 13 pass；Trust 五页 |
