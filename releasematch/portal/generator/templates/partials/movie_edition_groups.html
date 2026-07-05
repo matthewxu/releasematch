@@ -9,7 +9,7 @@
     </h3>
     {% if group.best %}
     <p class="rm-edition-group__pick">
-      本组推荐：
+      <span{% if i18n_enabled %} data-i18n="movie.edition_pick"{% endif %}>{{ t('movie.edition_pick') }}</span>
       <strong>{{ group.best.video_spec or group.best.resolution }}</strong>
       {% if group.best.audio_spec %} · {{ group.best.audio_spec }}{% endif %}
       · {{ group.best.seeders }} seeders

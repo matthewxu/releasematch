@@ -90,14 +90,14 @@
       event.preventDefault();
       var magnet = button.getAttribute("data-copy-magnet") || "";
       if (!magnet) {
-        showToast("无 Magnet 链接可复制", true);
+        showToast(window.RM_I18N ? window.RM_I18N.t("toast.no_magnet") : "无 Magnet 链接可复制", true);
         return;
       }
 
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(magnet).then(
           function () {
-            showToast("Magnet 已复制到剪贴板");
+            showToast(window.RM_I18N ? window.RM_I18N.t("toast.copied") : "Magnet 已复制到剪贴板");
           },
           function () {
             fallbackCopy(magnet);
@@ -123,9 +123,9 @@
     textarea.select();
     try {
       document.execCommand("copy");
-      showToast("Magnet 已复制到剪贴板");
+      showToast(window.RM_I18N ? window.RM_I18N.t("toast.copied") : "Magnet 已复制到剪贴板");
     } catch (err) {
-      showToast("复制失败，请手动复制 Magnet 链接", true);
+      showToast(window.RM_I18N ? window.RM_I18N.t("toast.copy_failed") : "复制失败，请手动复制 Magnet 链接", true);
     }
     textarea.remove();
   }
@@ -236,9 +236,143 @@
   }
 
   /**
+   * 页面 UI 国际化：读取 catalog、应用 locale、绑定切换器。
+   */
+  function initI18n() {
+    var dataEl = document.getElementById("rm-i18n-data");
+    if (!dataEl || !dataEl.textContent) {
+      return;
+    }
+
+    var payload;
+    try {
+      payload = JSON.parse(dataEl.textContent);
+    } catch (err) {
+      return;
+    }
+
+    var messages = payload.messages || {};
+    var defaultLocale = payload.defaultLocale || "en";
+    var storageKey = "rm_locale";
+
+    /**
+     * 读取当前 locale（localStorage 优先）。
+     * @returns {string} en | zh
+     */
+    function currentLocale() {
+      var saved = window.localStorage.getItem(storageKey);
+      if (saved === "en" || saved === "zh") {
+        return saved;
+      }
+      return defaultLocale === "zh" ? "zh" : "en";
+    }
+
+    /**
+     * Python format 风格占位符替换（仅支持 {name}）。
+     * @param {string} template - 文案模板
+     * @param {Object} vars - 占位符
+     * @returns {string}
+     */
+    function formatMessage(template, vars) {
+      if (!vars) {
+        return template;
+      }
+      return template.replace(/\{(\w+)\}/g, function (_match, key) {
+        if (Object.prototype.hasOwnProperty.call(vars, key)) {
+          return String(vars[key]);
+        }
+        return "{" + key + "}";
+      });
+    }
+
+    /**
+     * 设置 html lang 属性。
+     * @param {string} locale - en | zh
+     */
+    function applyHtmlLang(locale) {
+      document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
+    }
+
+    /**
+     * 将 locale 应用到带 data-i18n 的元素。
+     * @param {string} locale - en | zh
+     */
+    function applyLocale(locale) {
+      var bucket = messages[locale] || messages.en || {};
+      document.querySelectorAll("[data-i18n]").forEach(function (el) {
+        var key = el.getAttribute("data-i18n");
+        if (!key || !bucket[key]) {
+          return;
+        }
+        var varsRaw = el.getAttribute("data-i18n-vars");
+        var vars = null;
+        if (varsRaw) {
+          try {
+            vars = JSON.parse(varsRaw);
+          } catch (parseErr) {
+            vars = null;
+          }
+        }
+        el.textContent = formatMessage(bucket[key], vars);
+      });
+
+      document.querySelectorAll("[data-i18n-placeholder]").forEach(function (el) {
+        var pKey = el.getAttribute("data-i18n-placeholder");
+        if (pKey && bucket[pKey]) {
+          el.setAttribute("placeholder", bucket[pKey]);
+        }
+      });
+
+      applyHtmlLang(locale);
+
+      var switchRoot = document.querySelector("[data-rm-lang-switch]");
+      if (switchRoot) {
+        switchRoot.querySelectorAll("[data-locale]").forEach(function (btn) {
+          var active = btn.getAttribute("data-locale") === locale;
+          btn.classList.toggle("is-active", active);
+          btn.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+      }
+    }
+
+    var locale = currentLocale();
+    applyLocale(locale);
+
+    var switchRoot = document.querySelector("[data-rm-lang-switch]");
+    if (switchRoot) {
+      switchRoot.addEventListener("click", function (event) {
+        var target = event.target;
+        if (!(target instanceof HTMLElement)) {
+          return;
+        }
+        var button = target.closest("[data-locale]");
+        if (!button) {
+          return;
+        }
+        var next = button.getAttribute("data-locale");
+        if (next !== "en" && next !== "zh") {
+          return;
+        }
+        window.localStorage.setItem(storageKey, next);
+        applyLocale(next);
+        initResponsiveTables();
+      });
+    }
+
+    window.RM_I18N = {
+      t: function (key, locale) {
+        var loc = locale || currentLocale();
+        var bucket = messages[loc] || messages.en || {};
+        return bucket[key] || key;
+      },
+    };
+  }
+
+  /**
    * 页面 DOM 就绪后执行全部初始化。
    */
   function init() {
+    initI18n();
     initMobileNav();
     initResponsiveTables();
     initCopyMagnet();

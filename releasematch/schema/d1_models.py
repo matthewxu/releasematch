@@ -910,6 +910,7 @@ class SpeedEvidenceContext:
             "indexed_seeders": self.indexed_seeders,
             "index_vs_measured": self.build_index_vs_measured_text(),
             "method_note": f"libtorrent 片段下载（{self.target_bytes_label}，策略 A2）",
+            "target_bytes_label": self.target_bytes_label,
             "ig_badges": ig_badges,
             "status": (p2.status if p2 else "") or (p1.status if p1 else "ok"),
             **grab,
@@ -1254,7 +1255,10 @@ class EpisodePageContext:
             ),
             "breadcrumb_ld": build_breadcrumb_list_schema_ld(
                 [
-                    {"name": "Home", "url": f"{origin}/" if origin else "/"},
+                    {
+                        "name": _ui_text("nav.home"),
+                        "url": f"{origin}/" if origin else "/",
+                    },
                     {"name": self.catalog.title, "url": show_hub_url},
                     {
                         "name": f"S{season_num:02d}E{episode_num:02d}",
@@ -1364,7 +1368,10 @@ class MoviePageContext:
             ),
             "breadcrumb_ld": build_breadcrumb_list_schema_ld(
                 [
-                    {"name": "Home", "url": f"{origin}/" if origin else "/"},
+                    {
+                        "name": _ui_text("nav.home"),
+                        "url": f"{origin}/" if origin else "/",
+                    },
                     {"name": f"{self.catalog.title} ({year})" if year else self.catalog.title},
                 ]
             ),
@@ -1422,8 +1429,22 @@ class ShowHubPageContext:
             "tmdb_url": self.catalog.tmdb_url,
             "canonical_url": canonical,
             "robots_noindex": True,
-            "meta_description": (
-                f"{self.catalog.title} episode release navigation: "
-                "per-episode Recommended Release and multi-source comparison."
+            "meta_description": _ui_text(
+                "hub.meta_description",
+                show=self.catalog.title,
             ),
         }
+
+
+def _ui_text(key: str, **kwargs: Any) -> str:
+    """
+    按站点 locale 解析 UI 文案（供 to_template_context 内 meta / breadcrumb 使用）。
+
+    @param key: portal.generator.i18n.MESSAGES 键
+    @param kwargs: format 占位符
+    @returns: 翻译字符串
+    """
+    from portal.generator.i18n import build_i18n_runtime, translate
+
+    runtime = build_i18n_runtime()
+    return translate(key, runtime.locale, **kwargs)

@@ -61,11 +61,13 @@ def context_to_template_vars(
 
     from portal.generator.ig_debug import build_ig_debug_panel
 
+    from portal.generator.i18n import merge_render_context
+
     variables = ctx.to_template_context(site_origin=site_origin)
     enabled = SHOW_IG_DEBUG if show_ig_debug is None else show_ig_debug
     variables["show_ig_debug"] = enabled
     variables["ig_debug"] = build_ig_debug_panel(ctx, variables) if enabled else None
-    return variables
+    return merge_render_context(variables)
 
 
 def render_html(
@@ -79,9 +81,11 @@ def render_html(
     @param context: 模板变量
     @returns: 完整 HTML 文档
     """
+    from portal.generator.i18n import merge_render_context
+
     env = _build_jinja_env()
     template = env.get_template(template_name)
-    return template.render(**context)
+    return template.render(**merge_render_context(context))
 
 
 def render_page_context(

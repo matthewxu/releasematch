@@ -6,8 +6,8 @@
 
 {% block og_type %}video.movie{% endblock %}
 {% block og_title %}{{ movie_title }} ({{ year }}) Sources — {{ recommended_quality }} | ReleaseMatch{% endblock %}
-{% block meta_description %}{{ movie_title }} ({{ year }}) Release 导航：Recommended Release 与 {{ source_count }} 条多版本对比。{% endblock %}
-{% block og_description %}{{ movie_title }} ({{ year }}) Release 导航：Recommended Release 与 {{ source_count }} 条多版本对比。{% endblock %}
+{% block meta_description %}{{ t('movie.meta_description', title=movie_title, year=year, count=source_count) }}{% endblock %}
+{% block og_description %}{{ t('movie.meta_description', title=movie_title, year=year, count=source_count) }}{% endblock %}
 
 {% block meta_robots %}
   {% if robots_noindex %}
@@ -17,7 +17,6 @@
   {% endif %}
 {% endblock %}
 
-{# T-SEO-04：Movie + datePublished，由 schema_ld 在 Python 侧组装 #}
 {% block head_extra %}
   <script type="application/ld+json">{{ schema_ld | tojson }}</script>
   {% if breadcrumb_ld %}
@@ -27,8 +26,8 @@
 
 {% block content %}
 <div class="rm-container">
-  <nav class="rm-breadcrumb" aria-label="面包屑">
-    <a href="/">首页</a>
+  <nav class="rm-breadcrumb" aria-label="{{ t('episode.breadcrumb') }}">
+    <a href="/"{% if i18n_enabled %} data-i18n="nav.home"{% endif %}>{{ t('nav.home') }}</a>
     <span class="rm-breadcrumb__sep" aria-hidden="true">/</span>
     <span>{{ movie_title }} ({{ year }})</span>
   </nav>
@@ -37,9 +36,9 @@
     <div class="rm-hero__meta">
       <span>{{ year }}</span>
       <span>{{ runtime }}</span>
-      <span class="rm-badge rm-badge--cross">{{ cross_source_count }}/{{ cross_source_total }} 源验证</span>
+      <span class="rm-badge rm-badge--cross">{{ t('badge.cross_page', count=cross_source_count, total=cross_source_total) }}</span>
     </div>
-    <h1 class="rm-hero__title">{{ movie_title }} ({{ year }}) — Release-Matched Sources</h1>
+    <h1 class="rm-hero__title">{{ t('movie.hero_title', title=movie_title, year=year) }}</h1>
     <p class="rm-hero__subtitle">{{ movie_overview }}</p>
   </header>
 
@@ -51,8 +50,8 @@
 
       <section class="rm-section all-sources" aria-labelledby="sources-heading">
         <div class="rm-section__header">
-          <h2 id="sources-heading">All Versions（{{ sources | length }} matched）</h2>
-          <span class="rm-text-muted">按 WEB-DL / REMUX / BluRay 等版本分组 · 对比画质与音轨</span>
+          <h2 id="sources-heading"{% if i18n_enabled %} data-i18n="movie.versions_heading" data-i18n-vars='{"count": {{ sources | length }}}'{% endif %}>{{ t('movie.versions_heading', count=sources | length) }}</h2>
+          <span class="rm-text-muted"{% if i18n_enabled %} data-i18n="movie.versions_sub"{% endif %}>{{ t('movie.versions_sub') }}</span>
         </div>
 
         {% if source_editions %}
@@ -70,11 +69,11 @@
     <aside class="rm-main-grid__sidebar">
       <section class="rm-card">
         {% if poster_url %}
-        <img class="rm-card__poster" src="{{ poster_url }}" alt="{{ movie_title }} 海报" loading="lazy">
+        <img class="rm-card__poster" src="{{ poster_url }}" alt="{{ t('movie.poster_alt', title=movie_title) }}" loading="lazy">
         {% endif %}
-        <h2 class="rm-card__title">About This Movie</h2>
+        <h2 class="rm-card__title"{% if i18n_enabled %} data-i18n="movie.about"{% endif %}>{{ t('movie.about') }}</h2>
         <p class="rm-card__text">{{ tmdb_overview }}</p>
-        <a class="rm-btn rm-btn--secondary" href="{{ tmdb_url }}" rel="external nofollow">在 TMDB 查看</a>
+        <a class="rm-btn rm-btn--secondary" href="{{ tmdb_url }}" rel="external nofollow"{% if i18n_enabled %} data-i18n="episode.tmdb_cta"{% endif %}>{{ t('episode.tmdb_cta') }}</a>
       </section>
     </aside>
   </div>

@@ -1,0 +1,551 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+页面 UI 国际化（en / zh）。
+
+@module portal.generator.i18n
+@description
+  生成器模板通过 ``t('key')`` 取文案；``RM_SITE_I18N_ENABLED=true`` 时注入前端切换 catalog。
+  ``RM_SITE_LOCALE`` 决定关闭 i18n 时的唯一语言，或开启 i18n 时的默认语言。
+"""
+
+from __future__ import annotations
+
+from typing import Any, Callable, Dict, Optional
+
+# 支持的语言代码（内部归一化为 en | zh）
+SUPPORTED_LOCALES = frozenset({"en", "zh"})
+
+# UI 文案表：key -> {en, zh}
+MESSAGES: Dict[str, Dict[str, str]] = {
+    # ── 站点 / SEO 默认 ──
+    "site.title": {
+        "en": "ReleaseMatch — Release Guide",
+        "zh": "ReleaseMatch — Release 导航站",
+    },
+    "site.meta_default": {
+        "en": "Release guide: Recommended Release, edition matching, and multi-source comparison.",
+        "zh": "影视 Release 导航：Recommended Release、对版分析与多源对比。",
+    },
+    "site.home_meta": {
+        "en": "Release guide: 100+ verified slots, Recommended Release, edition analysis, and multi-source magnets.",
+        "zh": "影视 Release 导航：100+ 验证集槽位，Recommended Release、对版分析与多源 magnet 对比。",
+    },
+    # ── 导航 ──
+    "nav.home": {"en": "Home", "zh": "首页"},
+    "nav.how": {"en": "How matching works", "zh": "对版说明"},
+    "nav.about": {"en": "About", "zh": "关于"},
+    "nav.menu_open": {"en": "Open menu", "zh": "打开菜单"},
+    "nav.home_aria": {"en": "ReleaseMatch home", "zh": "ReleaseMatch 首页"},
+    "nav.main": {"en": "Main navigation", "zh": "主导航"},
+    "nav.mobile": {"en": "Mobile navigation", "zh": "移动端导航"},
+    "lang.switch": {"en": "Language", "zh": "语言"},
+    "lang.en": {"en": "English", "zh": "English"},
+    "lang.zh": {"en": "中文", "zh": "中文"},
+    # ── 页脚 ──
+    "footer.desc": {
+        "en": "Release guide: pick the right release with edition analysis and quality notes. We do not host video; only public metadata.",
+        "zh": "Release 导航站：帮助你在众多压制版本中选对 release，并提供对版分析与质量说明。不托管视频，仅索引公开元数据。",
+    },
+    "footer.trust": {"en": "Trust", "zh": "Trust"},
+    "footer.notes": {"en": "Notes", "zh": "说明"},
+    "footer.cross_verified": {
+        "en": "Multi-source cross-verification",
+        "zh": "数据经多源交叉验证",
+    },
+    "footer.copyright": {
+        "en": "© {year} ReleaseMatch · No video hosting · Magnet links rel=\"nofollow\"",
+        "zh": "© {year} ReleaseMatch · 不托管视频内容 · Magnet 链接 rel=\"nofollow\"",
+    },
+    # ── 表格列 ──
+    "table.release": {"en": "Release", "zh": "Release"},
+    "table.quality": {"en": "Quality", "zh": "Quality"},
+    "table.group": {"en": "Group", "zh": "Group"},
+    "table.cross": {"en": "Cross", "zh": "Cross"},
+    "table.size": {"en": "Size", "zh": "Size"},
+    "table.seed": {"en": "Seed", "zh": "Seed"},
+    "table.action": {"en": "Action", "zh": "操作"},
+    "table.source": {"en": "Source", "zh": "Source"},
+    "table.video": {"en": "Video", "zh": "Video"},
+    "table.audio": {"en": "Audio", "zh": "Audio"},
+    # ── Badge ──
+    "badge.recommended": {"en": "Site pick", "zh": "本站推荐"},
+    "badge.edition_pick": {"en": "Best in edition", "zh": "本组最佳"},
+    "badge.cross_page": {
+        "en": "{count}/{total} sources verified",
+        "zh": "{count}/{total} 源验证",
+    },
+    "badge.group_tier_title": {
+        "en": "Release Group tier {tier}",
+        "zh": "Release Group 信誉 {tier}",
+    },
+    "badge.cross_item_title": {
+        "en": "Cross-verified on {count} source families (S-04)",
+        "zh": "跨 {count} 个数据源交叉验证（S-04）",
+    },
+    # ── Recommended ──
+    "recommended.title": {"en": "Recommended Release", "zh": "Recommended Release"},
+    "recommended.reason": {"en": "Why this release:", "zh": "推荐理由："},
+    "recommended.endorsement": {"en": "Speed evidence:", "zh": "实测背书："},
+    "recommended.speed_title": {"en": "Avg / peak speed", "zh": "均速 / 峰值"},
+    "recommended.unavailable_title": {
+        "en": "Recommended Release unavailable",
+        "zh": "Recommended Release 暂不可用",
+    },
+    "recommended.unavailable_body": {
+        "en": "Fewer than 2 public releases (or data degraded). Check All Sources below, revisit later, or see Scarcity tracking on the home page.",
+        "zh": "公开源暂不足 2 条 release（或数据已降级），本站持续追踪。请查看下方 All Sources、稍后回访，或从首页「稀缺追踪」了解进展。",
+    },
+    # ── 剧集页 ──
+    "episode.breadcrumb": {"en": "Breadcrumb", "zh": "面包屑"},
+    "episode.meta_description": {
+        "en": "{show} S{season:02d}E{episode:02d} release guide: Recommended Release and {count} multi-source comparisons.",
+        "zh": "{show} 第 {season} 季第 {episode} 集 Release 导航：本站 Recommended Release、{count} 条多源对比与对版说明。",
+    },
+    "episode.season_episode": {
+        "en": "Season {season} · Episode {episode}",
+        "zh": "第 {season} 季 · 第 {episode} 集",
+    },
+    "episode.hero_title": {
+        "en": "{show} S{season:02d}E{episode:02d} — Release-Matched Sources",
+        "zh": "{show} S{season:02d}E{episode:02d} — Release-Matched Sources",
+    },
+    "episode.sources_heading": {
+        "en": "All Sources ({count} matched)",
+        "zh": "All Sources（{count} matched）",
+    },
+    "episode.prev": {"en": "Previous", "zh": "上一集"},
+    "episode.next": {"en": "Next", "zh": "下一集"},
+    "episode.season_nav": {"en": "Season {season}", "zh": "第 {season} 季"},
+    "episode.episode_nav": {"en": "Episode navigation", "zh": "同季集导航"},
+    "episode.about": {"en": "About This Episode", "zh": "About This Episode"},
+    "episode.watch_on": {"en": "Watch On", "zh": "Watch On"},
+    "episode.subtitles": {"en": "Matched Subtitles", "zh": "Matched Subtitles"},
+    "episode.subtitles_desc": {
+        "en": "Our recommended release can pair with the subtitle page below (cross-site link).",
+        "zh": "本站推荐 release 可与以下字幕页配对使用（跨站单链协同）。",
+    },
+    "episode.tmdb_cta": {"en": "View on TMDB", "zh": "在 TMDB 查看"},
+    "episode.poster_alt": {"en": "{title} poster", "zh": "{title} 海报"},
+    # ── 电影页 ──
+    "movie.meta_description": {
+        "en": "{title} ({year}) release guide: Recommended Release and {count} edition comparisons.",
+        "zh": "{title} ({year}) Release 导航：Recommended Release 与 {count} 条多版本对比。",
+    },
+    "movie.hero_title": {
+        "en": "{title} ({year}) — Release-Matched Sources",
+        "zh": "{title} ({year}) — Release-Matched Sources",
+    },
+    "movie.versions_heading": {
+        "en": "All Versions ({count} matched)",
+        "zh": "All Versions（{count} matched）",
+    },
+    "movie.versions_sub": {
+        "en": "Grouped by WEB-DL / REMUX / BluRay · compare quality and audio",
+        "zh": "按 WEB-DL / REMUX / BluRay 等版本分组 · 对比画质与音轨",
+    },
+    "movie.about": {"en": "About This Movie", "zh": "About This Movie"},
+    "movie.poster_alt": {"en": "{title} poster", "zh": "{title} 海报"},
+    # ── Hub ──
+    "hub.title": {
+        "en": "{show} — Episode Release Guide | ReleaseMatch",
+        "zh": "{show} — 全部集数 Release 导航 | ReleaseMatch",
+    },
+    "hub.meta_description": {
+        "en": "{show} episode release navigation: per-episode Recommended Release and multi-source comparison.",
+        "zh": "{show} 剧集 Release 导航：分集 Recommended Release 与多源对比。",
+    },
+    "hub.season": {"en": "Season {season}", "zh": "第 {season} 季"},
+    "hub.episode_chip": {"en": "Ep {episode}", "zh": "第 {episode} 集"},
+    "hub.episode_aria": {
+        "en": "{show} season {season} episode {episode}",
+        "zh": "{show} 第 {season} 季第 {episode} 集",
+    },
+    "hub.episode_title": {
+        "en": "Season {season} · Episode {episode}",
+        "zh": "第 {season} 季 · 第 {episode} 集",
+    },
+    # ── 首页 ──
+    "home.badge": {
+        "en": "Release guide · No video hosting",
+        "zh": "Release 导航站 · 非下载托管",
+    },
+    "home.hero_title": {
+        "en": "Pick the right release, not just a magnet",
+        "zh": "选对 Release，而不只是找到 Magnet",
+    },
+    "home.hero_subtitle": {
+        "en": "We aggregate multi-source torrent metadata per slot with <strong>Recommended Release</strong>, edition notes, group tiers, and speed summaries.",
+        "zh": "我们为每一槽位聚合多源 torrent 元数据，给出 <strong>Recommended Release</strong>、对版说明、Group 信誉与测速摘要。",
+    },
+    "home.cta_catalog": {
+        "en": "Browse catalog ({count})",
+        "zh": "浏览全部作品（{count}）",
+    },
+    "home.cta_how": {
+        "en": "How matching works",
+        "zh": "了解对版如何工作",
+    },
+    "home.features_heading": {"en": "Core features", "zh": "核心能力"},
+    "home.feature_rec_title": {"en": "Recommended Release", "zh": "Recommended Release"},
+    "home.feature_rec_text": {
+        "en": "Group tier, cross-source signals, and seeders combined into a ranked pick with indexed reasons.",
+        "zh": "综合 Group 信誉、跨源验证与做种情况，推荐最优 release 并给出可索引的推荐理由。",
+    },
+    "home.feature_cross_title": {"en": "Multi-source verification", "zh": "多源交叉验证"},
+    "home.feature_cross_text": {
+        "en": "Jackett, EZTV, YTS, Nyaa aggregated and deduplicated with confidence badges.",
+        "zh": "Jackett、EZTV、YTS、Nyaa 等源聚合去重，标注跨源一致等高置信度信号。",
+    },
+    "home.feature_speed_title": {"en": "Speed & reachability", "zh": "测速与可用性"},
+    "home.feature_speed_text": {
+        "en": "Connectivity tests and daily seeders; summaries baked into pages.",
+        "zh": "连接性测试与 seeders 日更，将实测摘要嵌入页面。",
+    },
+    "home.scarcity_heading": {"en": "Scarcity tracking", "zh": "稀缺追踪"},
+    "home.scarcity_count": {
+        "en": "{count} titles still probing",
+        "zh": "{count} 部作品持续探测中",
+    },
+    "home.scarcity_intro": {
+        "en": "Slots with fewer than 2 public releases; we keep retrying and publish Recommended when found.",
+        "zh": "以下槽位在公开源暂不足 2 条 release，本站仍持续 retry；命中后将自动上架 Recommended。",
+    },
+    "home.scarcity.region_gap": {"en": "Region gap", "zh": "区域缺口"},
+    "home.scarcity.public": {"en": "Public scarcity", "zh": "公开源稀缺"},
+    "home.catalog_heading": {"en": "Full catalog", "zh": "全部作品"},
+    "home.catalog_stats": {
+        "en": "{movies} movies · {tv} TV · {total} entries",
+        "zh": "{movies} 电影 · {tv} 剧集 · {total} 入口",
+    },
+    "home.search_label": {"en": "Search titles", "zh": "搜索作品"},
+    "home.search_placeholder": {
+        "en": "Search titles, e.g. Breaking Bad…",
+        "zh": "搜索作品，如 Breaking Bad…",
+    },
+    "home.search_empty": {
+        "en": "No matches. Try another keyword.",
+        "zh": "无匹配作品，请换个关键词。",
+    },
+    "home.catalog_empty": {
+        "en": "No published pages yet; run pipeline and generate all.",
+        "zh": "暂无 published 页面；请先运行 pipeline 扩槽与 generate all。",
+    },
+    # ── 通用 / JS toast ──
+    "common.magnet": {"en": "Magnet", "zh": "Magnet"},
+    "toast.no_magnet": {"en": "No magnet link to copy", "zh": "无 Magnet 链接可复制"},
+    "toast.copied": {"en": "Magnet copied to clipboard", "zh": "Magnet 已复制到剪贴板"},
+    "toast.copy_failed": {
+        "en": "Copy failed; copy the magnet link manually",
+        "zh": "复制失败，请手动复制 Magnet 链接",
+    },
+    # ── 测速 / Grab 指数（模板静态 + 动态文案键）──
+    "speed.panel.summary": {
+        "en": "Show speed evidence: avg {avg} · {reach}",
+        "zh": "展开测速证据：均速 {avg} · {reach}",
+    },
+    "speed.panel.title": {
+        "en": "Recommended Release — measured evidence",
+        "zh": "Recommended Release 实测背书",
+    },
+    "speed.panel.ig_aria": {
+        "en": "Information Gain fields",
+        "zh": "Information Gain 字段",
+    },
+    "speed.freshness.label": {"en": "Data freshness", "zh": "数据时效"},
+    "speed.freshness.validity": {"en": "Confidence {level}", "zh": "可信度 {level}"},
+    "speed.freshness.tested_at": {"en": "Tested at {time}", "zh": "测速于 {time}"},
+    "speed.freshness.no_time": {"en": "No speed test timestamp", "zh": "尚无测速时间记录"},
+    "speed.freshness.ttl": {"en": "Refresh interval {hours}h", "zh": "刷新周期 {hours} 小时"},
+    "speed.freshness.status.fresh": {"en": "Fresh", "zh": "新鲜"},
+    "speed.freshness.status.valid": {"en": "Valid", "zh": "有效"},
+    "speed.freshness.status.stale": {"en": "Stale", "zh": "陈旧"},
+    "speed.freshness.status.expired": {"en": "Expired", "zh": "过期"},
+    "speed.freshness.status.unknown": {"en": "Not tested", "zh": "未测速"},
+    "speed.validity.high": {"en": "High", "zh": "高"},
+    "speed.validity.medium": {"en": "Medium", "zh": "中"},
+    "speed.validity.low": {"en": "Low", "zh": "低"},
+    "speed.validity.invalid": {"en": "Invalid", "zh": "无效"},
+    "speed.validity.unknown": {"en": "Unknown", "zh": "未知"},
+    "speed.freshness.note.unknown": {
+        "en": "No libtorrent measurement yet; speeds below are not valid IG evidence.",
+        "zh": "尚无 libtorrent 实测记录，以下速度不可作为 IG 背书。",
+    },
+    "speed.freshness.note.fresh": {
+        "en": "{age}, within {ttl}h TTL; suitable for Recommended measured evidence (S-07).",
+        "zh": "距测速 {age}，在 {ttl}h TTL 内；数据可直接用于 Recommended 实测背书（S-07）。",
+    },
+    "speed.freshness.note.valid": {
+        "en": "{age}, past {ttl}h cron window but <24h; use with caution, re-test in production.",
+        "zh": "距测速 {age}，已超过 {ttl}h cron 窗口但仍 <24h；建议参考，生产环境可安排复测。",
+    },
+    "speed.freshness.note.stale": {
+        "en": "{age} (>24h); peers/speed may have changed — lower IG confidence, re-test preferred.",
+        "zh": "距测速 {age}（>24h）；peer/速度可能已变化，IG 背书效力降低，应优先复测。",
+    },
+    "speed.freshness.note.expired": {
+        "en": "{age} (>72h); do not use as measured evidence — re-run slot/batch speedtest.",
+        "zh": "距测速 {age}（>72h）；不应再作为页面实测背书，请重新执行 slot/batch 测速。",
+    },
+    "speed.age.minutes_ago": {"en": "{minutes} min ago", "zh": "{minutes} 分钟前"},
+    "speed.age.hours_ago": {"en": "{hours} hours ago", "zh": "{hours} 小时前"},
+    "speed.age.days_ago": {"en": "{days} days ago", "zh": "{days} 天前"},
+    "speed.reach.label": {"en": "Peer reachability", "zh": "Peer 可达性"},
+    "speed.reach.level.high": {"en": "High", "zh": "高"},
+    "speed.reach.level.medium": {"en": "Medium", "zh": "中"},
+    "speed.reach.level.low": {"en": "Low", "zh": "低"},
+    "speed.reach.level.unreachable": {"en": "Unreachable", "zh": "不可达"},
+    "speed.reach.display.timeout": {
+        "en": "{level} ({status}, 0 peers available)",
+        "zh": "{level}（{status}，0 peers 可用）",
+    },
+    "speed.reach.display.zero_peers": {
+        "en": "{level} (0 peers observed)",
+        "zh": "{level}（观测 0 peers）",
+    },
+    "speed.reach.display.full": {
+        "en": "{level} · {total} peers observed · {reachable} connected · connect rate {rate}",
+        "zh": "{level} · 观测 {total} peers · 已连 {reachable} · 连接率 {rate}",
+    },
+    "speed.reach.detail.timeout": {
+        "en": "Speedtest status {status}; Phase 1/2 did not establish valid peer connections.",
+        "zh": "测速状态 {status}；Phase 1/2 未获得有效 peer 连接。",
+    },
+    "speed.reach.detail.zero_peers": {
+        "en": "libtorrent observed no usable peers; level derived as unreachable.",
+        "zh": "libtorrent 未观测到可用 peer；等级派生为不可达。",
+    },
+    "speed.reach.detail.full": {
+        "en": "A-01 from peers_total: {threshold}; A-02 peers_reachable={reachable} / peers_total={total}.",
+        "zh": "A-01 由 peers_total 派生：{threshold}；A-02 peers_reachable={reachable} / peers_total={total}。",
+    },
+    "speed.reach.rule": {
+        "en": "Rule: ≥10 High · 3–9 Medium · 1–2 Low · 0/error Unreachable",
+        "zh": "规则：≥10 高 · 3–9 中 · 1–2 低 · 0/error 不可达",
+    },
+    "speed.reach.threshold.error": {
+        "en": "timeout/error → Unreachable",
+        "zh": "timeout/error → 不可达",
+    },
+    "speed.reach.threshold.high": {"en": "≥10 → High; observed {count}", "zh": "≥10 → 高；本次 {count}"},
+    "speed.reach.threshold.medium": {"en": "3–9 → Medium; observed {count}", "zh": "3–9 → 中；本次 {count}"},
+    "speed.reach.threshold.low": {"en": "1–2 → Low; observed {count}", "zh": "1–2 → 低；本次 {count}"},
+    "speed.reach.threshold.zero": {"en": "0 peers → Unreachable", "zh": "0 peers → 不可达"},
+    "speed.pair.display": {"en": "Avg {avg} · Peak {max}", "zh": "均速 {avg} · 峰值 {max}"},
+    "speed.pair.spread": {"en": "Peak/avg ×{ratio}", "zh": "峰值/均速 ×{ratio}"},
+    "speed.peers.connect_rate": {
+        "en": "{pct} ({reachable}/{total})",
+        "zh": "{pct}（{reachable}/{total}）",
+    },
+    "speed.metric.tested_at": {"en": "Test time", "zh": "测速时间"},
+    "speed.metric.avg": {"en": "Avg speed", "zh": "均速 avg"},
+    "speed.metric.max": {"en": "Peak speed", "zh": "峰值 max"},
+    "speed.metric.peers_total": {"en": "Peers observed", "zh": "观测 peers total"},
+    "speed.metric.peers_connected": {"en": "Peers connected", "zh": "已连 peers"},
+    "speed.metric.connect_rate": {"en": "Connect rate", "zh": "连接率"},
+    "speed.metric.latency": {"en": "First-byte latency", "zh": "首包延迟"},
+    "speed.metric.summary_updated": {"en": "Summary stored", "zh": "摘要入库"},
+    "speed.metric.validity": {"en": "Validity {level}", "zh": "效力 {level}"},
+    "speed.facts.aria": {"en": "Measured download metrics", "zh": "实测下载指标"},
+    "speed.facts.avg": {"en": "Segment avg", "zh": "片段均速"},
+    "speed.facts.max": {"en": "Segment peak", "zh": "片段峰值"},
+    "speed.facts.peers_observed": {"en": "Peers observed", "zh": "观测 peers"},
+    "speed.facts.peers_connected": {"en": "Peers connected", "zh": "已连 peers"},
+    "speed.facts.peers_sample": {
+        "en": "libtorrent point-in-time sample",
+        "zh": "libtorrent 时点采样",
+    },
+    "speed.facts.peers_handshake": {
+        "en": "Successful handshake count",
+        "zh": "成功握手 peer 数",
+    },
+    "speed.compare.label": {"en": "Index vs measured:", "zh": "索引 vs 实测："},
+    "speed.footnote": {
+        "en": "Data from libtorrent DHT/tracker point-in-time sampling; <strong>avg, peak, peers and connect rate are from the same {method} run</strong>, and may differ from Jackett indexed seeders.",
+        "zh": "数据来自 libtorrent DHT/tracker 时点采样；<strong>均速、峰值、peers 与连接率均为同一次 {method} 结果</strong>，与 Jackett 索引 seeders 可能偏差。",
+    },
+    "speed.method_note": {
+        "en": "libtorrent segment download ({target}, strategy A2)",
+        "zh": "libtorrent 片段下载（{target}，策略 A2）",
+    },
+    "speed.index_vs.no_index": {
+        "en": "Indexed seeders not recorded; libtorrent measured {peers} peers (A-02).",
+        "zh": "索引 seeders 未记录；libtorrent 实测 {peers} peers（A-02）。",
+    },
+    "speed.index_vs.compare": {
+        "en": "Indexed seeders {indexed} (B-02 ref) vs libtorrent measured {peers} peers (A-02) — measured takes precedence.",
+        "zh": "索引 seeders {indexed}（B-02 参考） vs libtorrent 实测 {peers} peers（A-02）— 以实测为准。",
+    },
+    "speed.latency.ms": {"en": "{ms} ms", "zh": "{ms} ms"},
+    "speed.grab.name": {"en": "RM Grab Index", "zh": "RM Grab 指数"},
+    "speed.grab.tagline": {
+        "en": "ReleaseMatch measured composite score",
+        "zh": "ReleaseMatch 实测综合分",
+    },
+    "speed.grab.pending": {"en": "Awaiting test", "zh": "待测速"},
+    "speed.grab.score_aria": {"en": "Overall score", "zh": "综合分"},
+    "speed.grab.breakdown_aria": {"en": "Breakdown scores", "zh": "分项得分"},
+    "speed.grab.tier.excellent": {"en": "Excellent", "zh": "极佳"},
+    "speed.grab.tier.great": {"en": "Great", "zh": "优秀"},
+    "speed.grab.tier.good": {"en": "Good", "zh": "良好"},
+    "speed.grab.tier.fair": {"en": "Fair", "zh": "一般"},
+    "speed.grab.tier.weak": {"en": "Weak", "zh": "偏弱"},
+    "speed.grab.tier.poor": {"en": "Poor", "zh": "较差"},
+    "speed.grab.dim.speed": {"en": "Speed", "zh": "速度"},
+    "speed.grab.dim.reachability": {"en": "Reachability", "zh": "可达性"},
+    "speed.grab.dim.connect": {"en": "Connect rate", "zh": "连接率"},
+    "speed.grab.dim.freshness": {"en": "Freshness", "zh": "时效"},
+    "speed.grab.summary.empty": {
+        "en": "Not enough measured data yet",
+        "zh": "尚无足够实测数据",
+    },
+    "speed.grab.summary.speed_ok": {"en": "Speed OK", "zh": "速度尚可"},
+    "speed.grab.summary.speed_low": {"en": "Speed low", "zh": "速度偏低"},
+    "speed.grab.summary.reach_level": {"en": "Reachability {level}", "zh": "可达性{level}"},
+    "speed.grab.summary.reach_fair": {"en": "Reachability fair", "zh": "可达性一般"},
+    "speed.grab.summary.connect_pct": {"en": "Connect rate {pct}%", "zh": "连接率 {pct}%"},
+    "speed.grab.summary.connect_low": {"en": "Connect rate low", "zh": "连接率偏低"},
+    "speed.grab.summary.data_fresh": {"en": "Data fresh", "zh": "数据新鲜"},
+    "speed.grab.summary.data_valid": {"en": "Data valid", "zh": "数据有效"},
+    "speed.grab.summary.data_stale": {"en": "Data stale", "zh": "数据陈旧"},
+    "speed.endorsement.title_named": {"en": "\"{title}\"", "zh": "「{title}」"},
+    "speed.endorsement.title_default": {
+        "en": "this site's Recommended release",
+        "zh": "本站 Recommended release",
+    },
+    "speed.endorsement.time": {
+        "en": " Tested at {tested} ({age}, validity {validity}·{freshness}).",
+        "zh": "测速于 {tested}（{age}，有效性 {validity}·{freshness}）。",
+    },
+    "speed.endorsement.body": {
+        "en": "Data bound to {title} (infohash …{hash}), libtorrent segment test {speed}, peer reachability {reach}.{time}",
+        "zh": "以下数据绑定 {title}（infohash …{hash}），libtorrent 片段实测 {speed}，Peer 可达性 {reach}。{time}",
+    },
+    "movie.edition_pick": {"en": "Best in group:", "zh": "本组推荐："},
+}
+
+
+def normalize_locale(raw: Optional[str]) -> str:
+    """
+    将配置或用户 locale 归一化为 en | zh。
+
+    @param raw: 如 en、zh、zh-CN
+    @returns: en 或 zh
+    """
+    token = (raw or "en").strip().lower().replace("_", "-")
+    if token.startswith("zh"):
+        return "zh"
+    return "en"
+
+
+def html_lang_attr(locale: str) -> str:
+    """
+    返回 HTML ``lang`` 属性值。
+
+    @param locale: en | zh
+    @returns: en 或 zh-CN
+    """
+    return "zh-CN" if normalize_locale(locale) == "zh" else "en"
+
+
+def translate(key: str, locale: Optional[str] = None, **kwargs: Any) -> str:
+    """
+    按 key 与 locale 返回 UI 文案。
+
+    @param key: MESSAGES 键
+    @param locale: en | zh；None 时使用站点默认
+    @param kwargs: format 占位符
+    @returns: 翻译字符串；缺 key 时回退 key 本身
+    """
+    loc = normalize_locale(locale)
+    if loc not in SUPPORTED_LOCALES:
+        loc = "en"
+    bucket = MESSAGES.get(key, {})
+    text = bucket.get(loc) or bucket.get("en") or key
+    if not kwargs:
+        return text
+    try:
+        return text.format(**kwargs)
+    except (KeyError, ValueError):
+        return text
+
+
+def catalog_for_js() -> Dict[str, Dict[str, str]]:
+    """
+    导出前端语言切换用的完整 catalog。
+
+    @returns: {"en": {key: text}, "zh": {key: text}}
+    """
+    out: Dict[str, Dict[str, str]] = {"en": {}, "zh": {}}
+    for key, bucket in MESSAGES.items():
+        out["en"][key] = bucket.get("en", key)
+        out["zh"][key] = bucket.get("zh", bucket.get("en", key))
+    return out
+
+
+class I18nRuntime:
+    """
+    单次渲染会话的 i18n 上下文。
+
+    @var enabled: 是否启用前端 en/zh 切换
+    @var locale: 服务端渲染默认语言
+    """
+
+    def __init__(self, *, enabled: bool, locale: str) -> None:
+        self.enabled = bool(enabled)
+        self.locale = normalize_locale(locale)
+
+    @property
+    def html_lang(self) -> str:
+        """HTML lang 属性。"""
+        return html_lang_attr(self.locale)
+
+    def t(self, key: str, **kwargs: Any) -> str:
+        """
+        模板 callable：``{{ t('nav.home') }}``。
+
+        @param key: MESSAGES 键
+        @param kwargs: format 参数
+        @returns: 当前 locale 文案
+        """
+        return translate(key, self.locale, **kwargs)
+
+    def merge_context(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        向 Jinja 上下文中注入 i18n 变量。
+
+        @param context: 原有模板 dict
+        @returns: 合并后的 dict（含 t、html_lang、i18n_catalog 等）
+        """
+        from portal.generator.i18n_speed import localize_page_variables
+
+        merged = dict(context)
+        merged["t"] = self.t
+        merged["i18n_enabled"] = self.enabled
+        merged["site_locale"] = self.locale
+        merged["html_lang"] = self.html_lang
+        if self.enabled:
+            merged["i18n_catalog"] = catalog_for_js()
+        localize_page_variables(merged, self.locale)
+        return merged
+
+
+def build_i18n_runtime() -> I18nRuntime:
+    """
+    从 ``workflow.config`` 读取开关与默认语言。
+
+    @returns: I18nRuntime 实例
+    """
+    from workflow.config import SITE_I18N_ENABLED, SITE_LOCALE
+
+    return I18nRuntime(enabled=SITE_I18N_ENABLED, locale=SITE_LOCALE)
+
+
+def merge_render_context(context: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    渲染前统一注入 i18n（供 render.py / 首页等调用）。
+
+    @param context: 模板变量 dict
+    @returns: 注入 i18n 后的 dict
+    """
+    return build_i18n_runtime().merge_context(context)

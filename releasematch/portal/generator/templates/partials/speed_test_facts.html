@@ -1,43 +1,43 @@
 {# libtorrent 实测六项指标 — 测速时间 / 均速 / 峰值 / total peers / 已连 / 连接率 #}
 {# @partial speed_test_facts.html — facts 字典由 SpeedEvidenceContext.to_template_dict 或 recommended.speed_test 提供 #}
 {% if facts %}
-<div class="rm-speed-facts rm-speed-facts--{{ variant | default('panel') }}" role="group" aria-label="实测下载指标">
+<div class="rm-speed-facts rm-speed-facts--{{ variant | default('panel') }}" role="group" aria-label="{{ t('speed.facts.aria') }}">
   <div class="rm-speed-facts__cell rm-speed-facts__cell--time">
-    <span class="rm-speed-facts__label">测速时间</span>
+    <span class="rm-speed-facts__label"{% if i18n_enabled %} data-i18n="speed.metric.tested_at"{% endif %}>{{ t('speed.metric.tested_at') }}</span>
     <span class="rm-speed-facts__value">
       {% if facts.tested_at_iso %}
       <time datetime="{{ facts.tested_at_iso }}">{{ facts.tested_at }}</time>
       {% else %}—{% endif %}
     </span>
-    <span class="rm-speed-facts__sub">{{ facts.age_display }}{% if facts.freshness_label %} · {{ facts.freshness_label }}{% endif %}{% if facts.validity_level %} · 效力 {{ facts.validity_level }}{% endif %}</span>
+    <span class="rm-speed-facts__sub">{{ facts.age_display }}{% if facts.freshness_label %} · {{ facts.freshness_label }}{% endif %}{% if facts.validity_level %} · {{ t('speed.metric.validity', level=facts.validity_level) }}{% endif %}</span>
   </div>
 
   <div class="rm-speed-facts__cell rm-speed-facts__cell--avg">
-    <span class="rm-speed-facts__label">片段均速</span>
+    <span class="rm-speed-facts__label"{% if i18n_enabled %} data-i18n="speed.facts.avg"{% endif %}>{{ t('speed.facts.avg') }}</span>
     <span class="rm-speed-facts__value">{{ facts.avg_speed or '—' }}</span>
     <span class="rm-speed-facts__sub">{% if facts.avg_kbps %}{{ facts.avg_kbps }} KB/s{% else %}—{% endif %}</span>
   </div>
 
   <div class="rm-speed-facts__cell rm-speed-facts__cell--max">
-    <span class="rm-speed-facts__label">片段峰值</span>
+    <span class="rm-speed-facts__label"{% if i18n_enabled %} data-i18n="speed.facts.max"{% endif %}>{{ t('speed.facts.max') }}</span>
     <span class="rm-speed-facts__value">{{ facts.max_speed or '—' }}</span>
     <span class="rm-speed-facts__sub">{% if facts.max_kbps %}{{ facts.max_kbps }} KB/s{% else %}—{% endif %}</span>
   </div>
 
   <div class="rm-speed-facts__cell rm-speed-facts__cell--peers-total">
-    <span class="rm-speed-facts__label">观测 peers</span>
+    <span class="rm-speed-facts__label"{% if i18n_enabled %} data-i18n="speed.facts.peers_observed"{% endif %}>{{ t('speed.facts.peers_observed') }}</span>
     <span class="rm-speed-facts__value">{{ facts.peers_total_display | default(facts.peers_total) }}</span>
-    <span class="rm-speed-facts__sub">libtorrent 时点采样</span>
+    <span class="rm-speed-facts__sub"{% if i18n_enabled %} data-i18n="speed.facts.peers_sample"{% endif %}>{{ t('speed.facts.peers_sample') }}</span>
   </div>
 
   <div class="rm-speed-facts__cell rm-speed-facts__cell--peers-connected">
-    <span class="rm-speed-facts__label">已连 peers</span>
+    <span class="rm-speed-facts__label"{% if i18n_enabled %} data-i18n="speed.facts.peers_connected"{% endif %}>{{ t('speed.facts.peers_connected') }}</span>
     <span class="rm-speed-facts__value">{{ facts.peers_reachable_display | default(facts.peers_reachable) }}</span>
-    <span class="rm-speed-facts__sub">成功握手 peer 数</span>
+    <span class="rm-speed-facts__sub"{% if i18n_enabled %} data-i18n="speed.facts.peers_handshake"{% endif %}>{{ t('speed.facts.peers_handshake') }}</span>
   </div>
 
   <div class="rm-speed-facts__cell rm-speed-facts__cell--rate">
-    <span class="rm-speed-facts__label">连接率</span>
+    <span class="rm-speed-facts__label"{% if i18n_enabled %} data-i18n="speed.metric.connect_rate"{% endif %}>{{ t('speed.metric.connect_rate') }}</span>
     <span class="rm-speed-facts__value">{{ facts.connect_rate_pct | default('—') }}</span>
     <span class="rm-speed-facts__sub">{{ facts.connect_rate_display | default(facts.peers_pair_display) }}</span>
   </div>

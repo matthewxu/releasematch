@@ -1,0 +1,18 @@
+{# 语言切换器 — 仅 RM_SITE_I18N_ENABLED=true 时 include #}
+{# @partial lang_switcher.html — 前端 localStorage rm_locale + site.js #}
+{% if i18n_enabled %}
+<div class="rm-lang-switch" data-rm-lang-switch role="group" aria-label="{{ t('lang.switch') }}">
+  <button
+    type="button"
+    class="rm-lang-switch__btn{% if site_locale == 'en' %} is-active{% endif %}"
+    data-locale="en"
+    aria-pressed="{{ 'true' if site_locale == 'en' else 'false' }}"
+  >EN</button>
+  <button
+    type="button"
+    class="rm-lang-switch__btn{% if site_locale == 'zh' %} is-active{% endif %}"
+    data-locale="zh"
+    aria-pressed="{{ 'true' if site_locale == 'zh' else 'false' }}"
+  >中文</button>
+</div>
+{% endif %}

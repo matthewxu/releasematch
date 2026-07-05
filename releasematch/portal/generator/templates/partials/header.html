@@ -2,21 +2,23 @@
 {# @partial header.html — 顶栏导航，供 base.html include #}
 <header class="rm-header" role="banner">
   <div class="rm-container rm-header__inner">
-    <a class="rm-logo" href="/" aria-label="ReleaseMatch 首页">
+    <a class="rm-logo" href="/" aria-label="{{ t('nav.home_aria') }}">
       <span class="rm-logo__mark" aria-hidden="true">RM</span>
       <span>ReleaseMatch</span>
     </a>
 
-    <nav class="rm-nav" aria-label="主导航">
-      <a class="rm-nav__link{% if nav_active == 'home' %} rm-nav__link--active{% endif %}" href="/">首页</a>
-      <a class="rm-nav__link{% if nav_active == 'how' %} rm-nav__link--active{% endif %}" href="/trust/how-matching-works/">对版说明</a>
-      <a class="rm-nav__link{% if nav_active == 'about' %} rm-nav__link--active{% endif %}" href="/trust/about/">关于</a>
+    <nav class="rm-nav" aria-label="{{ t('nav.main') }}">
+      <a class="rm-nav__link{% if nav_active == 'home' %} rm-nav__link--active{% endif %}" href="/"{% if i18n_enabled %} data-i18n="nav.home"{% endif %}>{{ t('nav.home') }}</a>
+      <a class="rm-nav__link{% if nav_active == 'how' %} rm-nav__link--active{% endif %}" href="/trust/how-matching-works/"{% if i18n_enabled %} data-i18n="nav.how"{% endif %}>{{ t('nav.how') }}</a>
+      <a class="rm-nav__link{% if nav_active == 'about' %} rm-nav__link--active{% endif %}" href="/trust/about/"{% if i18n_enabled %} data-i18n="nav.about"{% endif %}>{{ t('nav.about') }}</a>
     </nav>
+
+    {% include 'partials/lang_switcher.html' %}
 
     <button
       class="rm-header__toggle"
       type="button"
-      aria-label="打开菜单"
+      aria-label="{{ t('nav.menu_open') }}"
       aria-expanded="false"
       data-rm-nav-toggle
     >
@@ -26,9 +28,9 @@
     </button>
   </div>
 
-  <nav class="rm-nav-mobile" data-rm-nav-mobile aria-label="移动端导航">
-    <a class="rm-nav__link" href="/">首页</a>
-    <a class="rm-nav__link" href="/trust/how-matching-works/">对版说明</a>
-    <a class="rm-nav__link" href="/trust/about/">关于</a>
+  <nav class="rm-nav-mobile" data-rm-nav-mobile aria-label="{{ t('nav.mobile') }}">
+    <a class="rm-nav__link" href="/"{% if i18n_enabled %} data-i18n="nav.home"{% endif %}>{{ t('nav.home') }}</a>
+    <a class="rm-nav__link" href="/trust/how-matching-works/"{% if i18n_enabled %} data-i18n="nav.how"{% endif %}>{{ t('nav.how') }}</a>
+    <a class="rm-nav__link" href="/trust/about/"{% if i18n_enabled %} data-i18n="nav.about"{% endif %}>{{ t('nav.about') }}</a>
   </nav>
 </header>

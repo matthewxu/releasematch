@@ -144,19 +144,22 @@ def score_item(item: Dict[str, Any], media_kind: str = _MEDIA_KIND_TV) -> float:
     return round(raw, 2)
 
 
-def _scene_compliance_clause(tier: str, scene_compliant: Optional[bool]) -> str:
+def _scene_compliance_clause(tier: str, scene_compliant: Optional[bool], *, locale: str = "zh") -> str:
     """
     L0~L2 已知组追加 Scene / P2P 合规说明（X-08）。
 
     @param tier: Group 档位
     @param scene_compliant: yaml 标记；None 表示未入库不展示
+    @param locale: en | zh
     @returns: 合规短句或空串
     """
+    from workflow.recommended.reason_i18n import reason_translate
+
     if scene_compliant is None or tier not in ("L0", "L1", "L2"):
         return ""
     if scene_compliant:
-        return "Scene 合规压制"
-    return "P2P 高质量组"
+        return reason_translate("scene_compliant", locale)
+    return reason_translate("p2p_quality", locale)
 
 
 def build_recommend_reason(
@@ -165,6 +168,7 @@ def build_recommend_reason(
     canonical_group: str = "",
     *,
     scene_compliant: Optional[bool] = None,
+    locale: str = "zh",
 ) -> str:
     """
     生成推荐理由文本（嵌入页面 HTML，供 IG）。
@@ -173,30 +177,34 @@ def build_recommend_reason(
     @param tier: Group 档位
     @param canonical_group: YAML 中的规范组名
     @param scene_compliant: Scene 合规；仅 yaml 命中时传入 True/False
+    @param locale: en | zh；生成器英文站传 en
     @returns: 一行或多行说明
     """
+    from workflow.recommended.reason_i18n import reason_separator, reason_translate
+
     parts: List[str] = []
     group = canonical_group or item.get("release_group") or "Unknown"
     if tier in ("L0", "L1"):
-        parts.append(f"Verified Group {group}（{tier} 档信誉）")
+        parts.append(reason_translate("verified_group", locale, group=group, tier=tier))
     elif tier == "L2":
-        parts.append(f"Community Group {group}（{tier} 档）")
-    compliance = _scene_compliance_clause(tier, scene_compliant)
+        parts.append(reason_translate("community_group", locale, group=group, tier=tier))
+    compliance = _scene_compliance_clause(tier, scene_compliant, locale=locale)
     if compliance:
         parts.append(compliance)
     resolution = item.get("resolution")
     if resolution:
-        parts.append(f"{resolution} 画质")
+        parts.append(reason_translate("resolution", locale, resolution=resolution))
     source = item.get("source")
     if source:
-        parts.append(f"来源 {source}")
+        parts.append(reason_translate("source", locale, source=source))
     seeders = item.get("seeders")
     if seeders is not None:
-        parts.append(f"当前 {seeders} seeders")
+        parts.append(reason_translate("seeders", locale, seeders=seeders))
     cross = item.get("cross_source_count")
     if cross and cross > 1:
-        parts.append(f"跨 {cross} 个数据源交叉验证")
-    return "；".join(parts) if parts else "综合评分最高"
+        parts.append(reason_translate("cross_verified", locale, count=cross))
+    sep = reason_separator(locale)
+    return sep.join(parts) if parts else reason_translate("default", locale)
 
 
 def _sort_key(

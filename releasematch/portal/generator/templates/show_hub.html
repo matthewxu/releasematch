@@ -2,7 +2,7 @@
 {# @template show_hub.html — 展示季选择与集列表芯片 #}
 {% extends "base.html" %}
 
-{% block title %}{{ show_title }} — 全部集数 Release 导航 | ReleaseMatch{% endblock %}
+{% block title %}{{ t('hub.title', show=show_title) }}{% endblock %}
 
 {% block meta_description %}{{ meta_description }}{% endblock %}
 
@@ -12,8 +12,8 @@
 
 {% block content %}
 <div class="rm-container">
-  <nav class="rm-breadcrumb" aria-label="面包屑">
-    <a href="/">首页</a>
+  <nav class="rm-breadcrumb" aria-label="{{ t('episode.breadcrumb') }}">
+    <a href="/"{% if i18n_enabled %} data-i18n="nav.home"{% endif %}>{{ t('nav.home') }}</a>
     <span class="rm-breadcrumb__sep" aria-hidden="true">/</span>
     <span>{{ show_title }}</span>
   </nav>
@@ -27,15 +27,15 @@
     <div>
       {% for season in seasons %}
       <section class="rm-section" aria-labelledby="season-{{ season.number }}-heading">
-        <h2 id="season-{{ season.number }}-heading">第 {{ season.number }} 季</h2>
+        <h2 id="season-{{ season.number }}-heading"{% if i18n_enabled %} data-i18n="hub.season" data-i18n-vars='{"season": {{ season.number }}}'{% endif %}>{{ t('hub.season', season=season.number) }}</h2>
         <div class="rm-episode-grid">
           {% for ep in season.episodes %}
           <a
             class="rm-episode-chip{% if ep.is_active %} rm-episode-chip--active{% endif %}"
             href="/{{ show_slug }}/s{{ season.number }}e{{ ep.number }}/"
-            aria-label="{{ show_title }} 第 {{ season.number }} 季第 {{ ep.number }} 集"
-            title="第 {{ season.number }} 季 · 第 {{ ep.number }} 集"
-          ><span class="rm-episode-chip__num">第 {{ ep.number }} 集</span></a>
+            aria-label="{{ t('hub.episode_aria', show=show_title, season=season.number, episode=ep.number) }}"
+            title="{{ t('hub.episode_title', season=season.number, episode=ep.number) }}"
+          ><span class="rm-episode-chip__num"{% if i18n_enabled %} data-i18n="hub.episode_chip" data-i18n-vars='{"episode": {{ ep.number }}}'{% endif %}>{{ t('hub.episode_chip', episode=ep.number) }}</span></a>
           {% endfor %}
         </div>
       </section>

@@ -6,8 +6,8 @@
 
 {% block og_type %}video.episode{% endblock %}
 {% block og_title %}{{ show_title }} S{{ '%02d'|format(season) }}E{{ '%02d'|format(episode) }} Sources — {{ recommended_quality }} | ReleaseMatch{% endblock %}
-{% block meta_description %}{{ show_title }} 第 {{ season }} 季第 {{ episode }} 集 Release 导航：本站 Recommended Release、{{ source_count }} 条多源对比与对版说明。{% endblock %}
-{% block og_description %}{{ show_title }} 第 {{ season }} 季第 {{ episode }} 集 Release 导航：本站 Recommended Release、{{ source_count }} 条多源对比与对版说明。{% endblock %}
+{% block meta_description %}{{ t('episode.meta_description', show=show_title, season=season, episode=episode, count=source_count) }}{% endblock %}
+{% block og_description %}{{ t('episode.meta_description', show=show_title, season=season, episode=episode, count=source_count) }}{% endblock %}
 
 {% block meta_robots %}
   {% if robots_noindex %}
@@ -27,8 +27,8 @@
 
 {% block content %}
 <div class="rm-container">
-  <nav class="rm-breadcrumb" aria-label="面包屑">
-    <a href="/">首页</a>
+  <nav class="rm-breadcrumb" aria-label="{{ t('episode.breadcrumb') }}">
+    <a href="/"{% if i18n_enabled %} data-i18n="nav.home"{% endif %}>{{ t('nav.home') }}</a>
     <span class="rm-breadcrumb__sep" aria-hidden="true">/</span>
     <a href="/{{ show_slug }}/">{{ show_title }}</a>
     <span class="rm-breadcrumb__sep" aria-hidden="true">/</span>
@@ -37,24 +37,22 @@
 
   <header class="rm-hero">
     <div class="rm-hero__meta">
-      <span>第 {{ season }} 季 · 第 {{ episode }} 集</span>
+      <span{% if i18n_enabled %} data-i18n="episode.season_episode" data-i18n-vars='{"season": {{ season }}, "episode": {{ episode }}}'{% endif %}>{{ t('episode.season_episode', season=season, episode=episode) }}</span>
       {% if air_date %}<span>{{ air_date }}</span>{% endif %}
-      <span class="rm-badge rm-badge--cross">{{ cross_source_count }}/{{ cross_source_total }} 源验证</span>
+      <span class="rm-badge rm-badge--cross">{{ t('badge.cross_page', count=cross_source_count, total=cross_source_total) }}</span>
     </div>
-    <h1 class="rm-hero__title">{{ show_title }} S{{ '%02d'|format(season) }}E{{ '%02d'|format(episode) }} — Release-Matched Sources</h1>
+    <h1 class="rm-hero__title">{{ t('episode.hero_title', show=show_title, season=season, episode=episode) }}</h1>
     <p class="rm-hero__subtitle">{{ episode_overview }}</p>
   </header>
 
   <div class="rm-main-grid rm-main-grid--with-sidebar">
     <div class="rm-main-grid__primary">
 
-      {# ★ Recommended Release — 首屏主 CTA（UX-02） #}
       {% include 'partials/recommended_block.html' %}
 
-      {# All Sources 对比表 #}
       <section class="rm-section all-sources" aria-labelledby="sources-heading">
         <div class="rm-section__header">
-          <h2 id="sources-heading">All Sources（{{ sources | length }} matched）</h2>
+          <h2 id="sources-heading"{% if i18n_enabled %} data-i18n="episode.sources_heading" data-i18n-vars='{"count": {{ sources | length }}}'{% endif %}>{{ t('episode.sources_heading', count=sources | length) }}</h2>
         </div>
 
         <div class="rm-table-wrap">
@@ -62,22 +60,21 @@
         </div>
       </section>
 
-      {# 集间导航 #}
-      <nav class="rm-episode-nav" aria-label="同季集导航">
+      <nav class="rm-episode-nav" aria-label="{{ t('episode.episode_nav') }}">
         {% if prev_episode_url %}
         <a class="rm-episode-nav__link rm-episode-nav__link--prev" href="{{ prev_episode_url }}" rel="prev">
-          <span class="rm-episode-nav__label">上一集</span>
+          <span class="rm-episode-nav__label"{% if i18n_enabled %} data-i18n="episode.prev"{% endif %}>{{ t('episode.prev') }}</span>
           <span>{{ prev_episode_label }}</span>
         </a>
         {% else %}
         <span></span>
         {% endif %}
 
-        <span class="rm-episode-nav__center">第 {{ season }} 季</span>
+        <span class="rm-episode-nav__center"{% if i18n_enabled %} data-i18n="episode.season_nav" data-i18n-vars='{"season": {{ season }}}'{% endif %}>{{ t('episode.season_nav', season=season) }}</span>
 
         {% if next_episode_url %}
         <a class="rm-episode-nav__link rm-episode-nav__link--next" href="{{ next_episode_url }}" rel="next">
-          <span class="rm-episode-nav__label">下一集</span>
+          <span class="rm-episode-nav__label"{% if i18n_enabled %} data-i18n="episode.next"{% endif %}>{{ t('episode.next') }}</span>
           <span>{{ next_episode_label }}</span>
         </a>
         {% else %}
@@ -86,21 +83,20 @@
       </nav>
     </div>
 
-    {# 侧边栏：TMDB + Watch On + 字幕链 #}
     <aside class="rm-main-grid__sidebar">
       <section class="rm-card tmdb-card" aria-labelledby="tmdb-heading">
         {% if poster_url %}
-        <img class="rm-card__poster" src="{{ poster_url }}" alt="{{ show_title }} 海报" width="300" height="450" loading="lazy">
+        <img class="rm-card__poster" src="{{ poster_url }}" alt="{{ t('episode.poster_alt', title=show_title) }}" width="300" height="450" loading="lazy">
         {% endif %}
-        <h2 class="rm-card__title" id="tmdb-heading">About This Episode</h2>
+        <h2 class="rm-card__title" id="tmdb-heading"{% if i18n_enabled %} data-i18n="episode.about"{% endif %}>{{ t('episode.about') }}</h2>
         <p class="rm-card__meta">{{ show_title }} · S{{ season }}E{{ episode }}</p>
         <p class="rm-card__text">{{ tmdb_overview }}</p>
-        <a class="rm-btn rm-btn--secondary" href="{{ tmdb_url }}" rel="external nofollow">在 TMDB 查看</a>
+        <a class="rm-btn rm-btn--secondary" href="{{ tmdb_url }}" rel="external nofollow"{% if i18n_enabled %} data-i18n="episode.tmdb_cta"{% endif %}>{{ t('episode.tmdb_cta') }}</a>
       </section>
 
       {% if streaming_providers %}
       <section class="rm-card rm-mt-0" aria-labelledby="watch-heading">
-        <h2 class="rm-card__title" id="watch-heading">Watch On</h2>
+        <h2 class="rm-card__title" id="watch-heading"{% if i18n_enabled %} data-i18n="episode.watch_on"{% endif %}>{{ t('episode.watch_on') }}</h2>
         <ul class="rm-streaming-list">
           {% for provider in streaming_providers %}
           <li><span class="rm-streaming-list__dot" aria-hidden="true"></span>{{ provider }}</li>
@@ -111,8 +107,8 @@
 
       {% if subtitle_url and recommended %}
       <section class="rm-card rm-mt-0">
-        <h2 class="rm-card__title">Matched Subtitles</h2>
-        <p class="rm-card__text">本站推荐 release 可与以下字幕页配对使用（跨站单链协同）。</p>
+        <h2 class="rm-card__title"{% if i18n_enabled %} data-i18n="episode.subtitles"{% endif %}>{{ t('episode.subtitles') }}</h2>
+        <p class="rm-card__text"{% if i18n_enabled %} data-i18n="episode.subtitles_desc"{% endif %}>{{ t('episode.subtitles_desc') }}</p>
         <a href="{{ subtitle_url }}" rel="nofollow ugc">SubtitlePortal →</a>
       </section>
       {% endif %}

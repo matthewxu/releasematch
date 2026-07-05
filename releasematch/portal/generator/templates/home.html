@@ -2,11 +2,11 @@
 {# @template home.html — 全部作品入口网格 #}
 {% extends "base.html" %}
 
-{% block title %}ReleaseMatch — Release 导航站{% endblock %}
+{% block title %}{{ t('site.title') }}{% endblock %}
 
-{% block og_title %}ReleaseMatch — Release 导航站{% endblock %}
-{% block meta_description %}影视 Release 导航：102+ 验证集槽位，Recommended Release、对版分析与多源 magnet 对比。{% endblock %}
-{% block og_description %}影视 Release 导航：102+ 验证集槽位，Recommended Release、对版分析与多源 magnet 对比。{% endblock %}
+{% block og_title %}{{ t('site.title') }}{% endblock %}
+{% block meta_description %}{{ t('site.home_meta') }}{% endblock %}
+{% block og_description %}{{ t('site.home_meta') }}{% endblock %}
 
 {% block head_extra %}
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"ReleaseMatch","url":"{{ canonical_url }}"}</script>
@@ -15,51 +15,47 @@
 {% block content %}
 <div class="rm-container">
   <header class="rm-hero rm-hero--home">
-    <p class="rm-badge rm-badge--recommended rm-mb-2">Release 导航站 · 非下载托管</p>
-    <h1 class="rm-hero__title">选对 Release，而不只是找到 Magnet</h1>
-    <p class="rm-hero__subtitle">
-      我们为每一槽位聚合多源 torrent 元数据，给出 <strong>Recommended Release</strong>、对版说明、Group 信誉与测速摘要。
-    </p>
+    <p class="rm-badge rm-badge--recommended rm-mb-2"{% if i18n_enabled %} data-i18n="home.badge"{% endif %}>{{ t('home.badge') }}</p>
+    <h1 class="rm-hero__title"{% if i18n_enabled %} data-i18n="home.hero_title"{% endif %}>{{ t('home.hero_title') }}</h1>
+    <p class="rm-hero__subtitle"{% if i18n_enabled %} data-i18n="home.hero_subtitle"{% endif %}>{{ t('home.hero_subtitle') | safe }}</p>
     <div style="margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center;">
-      <a class="rm-btn rm-btn--primary" href="#catalog-heading">浏览全部作品（{{ catalog_count }}）</a>
-      <a class="rm-btn rm-btn--ghost" href="/trust/how-matching-works/">了解对版如何工作</a>
+      <a class="rm-btn rm-btn--primary" href="#catalog-heading"{% if i18n_enabled %} data-i18n="home.cta_catalog" data-i18n-vars='{"count": {{ catalog_count }}}'{% endif %}>{{ t('home.cta_catalog', count=catalog_count) }}</a>
+      <a class="rm-btn rm-btn--ghost" href="/trust/how-matching-works/"{% if i18n_enabled %} data-i18n="home.cta_how"{% endif %}>{{ t('home.cta_how') }}</a>
     </div>
   </header>
 
   <section class="rm-features" aria-labelledby="features-heading">
-    <h2 id="features-heading" class="rm-sr-only">核心能力</h2>
+    <h2 id="features-heading" class="rm-sr-only"{% if i18n_enabled %} data-i18n="home.features_heading"{% endif %}>{{ t('home.features_heading') }}</h2>
     <article class="rm-feature">
       <div class="rm-feature__icon" aria-hidden="true">⭐</div>
-      <h3 class="rm-feature__title">Recommended Release</h3>
-      <p class="rm-feature__text">综合 Group 信誉、跨源验证与做种情况，推荐最优 release 并给出可索引的推荐理由。</p>
+      <h3 class="rm-feature__title"{% if i18n_enabled %} data-i18n="home.feature_rec_title"{% endif %}>{{ t('home.feature_rec_title') }}</h3>
+      <p class="rm-feature__text"{% if i18n_enabled %} data-i18n="home.feature_rec_text"{% endif %}>{{ t('home.feature_rec_text') }}</p>
     </article>
     <article class="rm-feature">
       <div class="rm-feature__icon" aria-hidden="true">🔍</div>
-      <h3 class="rm-feature__title">多源交叉验证</h3>
-      <p class="rm-feature__text">Jackett、EZTV、YTS、Nyaa 等源聚合去重，标注跨源一致等高置信度信号。</p>
+      <h3 class="rm-feature__title"{% if i18n_enabled %} data-i18n="home.feature_cross_title"{% endif %}>{{ t('home.feature_cross_title') }}</h3>
+      <p class="rm-feature__text"{% if i18n_enabled %} data-i18n="home.feature_cross_text"{% endif %}>{{ t('home.feature_cross_text') }}</p>
     </article>
     <article class="rm-feature">
       <div class="rm-feature__icon" aria-hidden="true">⚡</div>
-      <h3 class="rm-feature__title">测速与可用性</h3>
-      <p class="rm-feature__text">连接性测试与 seeders 日更，将实测摘要嵌入页面。</p>
+      <h3 class="rm-feature__title"{% if i18n_enabled %} data-i18n="home.feature_speed_title"{% endif %}>{{ t('home.feature_speed_title') }}</h3>
+      <p class="rm-feature__text"{% if i18n_enabled %} data-i18n="home.feature_speed_text"{% endif %}>{{ t('home.feature_speed_text') }}</p>
     </article>
   </section>
 
   {% if scarcity_entries %}
   <section class="rm-section rm-scarcity-track" aria-labelledby="scarcity-heading">
     <div class="rm-section__header">
-      <h2 id="scarcity-heading">稀缺追踪</h2>
-      <span class="rm-text-muted">{{ scarcity_count }} 部作品持续探测中</span>
+      <h2 id="scarcity-heading"{% if i18n_enabled %} data-i18n="home.scarcity_heading"{% endif %}>{{ t('home.scarcity_heading') }}</h2>
+      <span class="rm-text-muted"{% if i18n_enabled %} data-i18n="home.scarcity_count" data-i18n-vars='{"count": {{ scarcity_count }}}'{% endif %}>{{ t('home.scarcity_count', count=scarcity_count) }}</span>
     </div>
-    <p class="rm-scarcity-track__intro">
-      以下槽位在公开源暂不足 2 条 release，本站仍持续 retry；命中后将自动上架 Recommended。
-    </p>
+    <p class="rm-scarcity-track__intro"{% if i18n_enabled %} data-i18n="home.scarcity_intro"{% endif %}>{{ t('home.scarcity_intro') }}</p>
     <ul class="rm-scarcity-track__list">
       {% for item in scarcity_entries %}
       <li class="rm-scarcity-track__item">
         <span class="rm-scarcity-track__title">{{ item.label or item.title }}</span>
         <span class="rm-badge rm-badge--scarcity">
-          {% if item.failure_class == 'region_gap' %}区域缺口{% else %}公开源稀缺{% endif %}
+          {% if item.failure_class == 'region_gap' %}{{ t('home.scarcity.region_gap') }}{% else %}{{ t('home.scarcity.public') }}{% endif %}
         </span>
       </li>
       {% endfor %}
@@ -69,19 +65,20 @@
 
   <section class="rm-section" aria-labelledby="catalog-heading">
     <div class="rm-section__header">
-      <h2 id="catalog-heading">全部作品</h2>
-      <span class="rm-text-muted">{{ movie_count }} 电影 · {{ tv_count }} 剧集 · {{ catalog_count }} 入口</span>
+      <h2 id="catalog-heading"{% if i18n_enabled %} data-i18n="home.catalog_heading"{% endif %}>{{ t('home.catalog_heading') }}</h2>
+      <span class="rm-text-muted"{% if i18n_enabled %} data-i18n="home.catalog_stats" data-i18n-vars='{"movies": {{ movie_count }}, "tv": {{ tv_count }}, "total": {{ catalog_count }}}'{% endif %}>{{ t('home.catalog_stats', movies=movie_count, tv=tv_count, total=catalog_count) }}</span>
     </div>
 
     {% if catalog_entries %}
     <div class="rm-catalog-search-wrap">
-      <label class="rm-sr-only" for="catalog-search">搜索作品</label>
+      <label class="rm-sr-only" for="catalog-search">{{ t('home.search_label') }}</label>
       <input
         id="catalog-search"
         class="rm-input rm-catalog-search"
         type="search"
-        placeholder="搜索作品，如 Breaking Bad…"
+        placeholder="{{ t('home.search_placeholder') }}"
         data-rm-catalog-search
+        data-i18n-placeholder="home.search_placeholder"
         autocomplete="off"
       >
     </div>
@@ -100,9 +97,9 @@
       </a>
       {% endfor %}
     </div>
-    <p class="rm-catalog-search-empty rm-text-muted" data-rm-catalog-empty hidden>无匹配作品，请换个关键词。</p>
+    <p class="rm-catalog-search-empty rm-text-muted" data-rm-catalog-empty hidden{% if i18n_enabled %} data-i18n="home.search_empty"{% endif %}>{{ t('home.search_empty') }}</p>
     {% else %}
-    <p class="rm-text-muted">暂无 published 页面；请先运行 pipeline 扩槽与 generate all。</p>
+    <p class="rm-text-muted"{% if i18n_enabled %} data-i18n="home.catalog_empty"{% endif %}>{{ t('home.catalog_empty') }}</p>
     {% endif %}
   </section>
 </div>

@@ -4,19 +4,20 @@
   <table class="rm-table rm-table--responsive rm-table--recommended-hero{% if variant == 'movie' %} rm-table--movie{% endif %}">
     <thead>
       <tr>
-        <th scope="col">Release</th>
+        <th scope="col"{% if i18n_enabled %} data-i18n="table.release"{% endif %}>{{ t('table.release') }}</th>
         {% if variant == 'movie' %}
-        <th scope="col">Source</th>
+        <th scope="col"{% if i18n_enabled %} data-i18n="table.source"{% endif %}>{{ t('table.source') }}</th>
         {% endif %}
-        <th scope="col">Quality</th>
+        <th scope="col"{% if i18n_enabled %} data-i18n="table.quality"{% endif %}>{{ t('table.quality') }}</th>
         {% if variant == 'movie' %}
-        <th scope="col">Video</th>
-        <th scope="col">Audio</th>
+        <th scope="col"{% if i18n_enabled %} data-i18n="table.video"{% endif %}>{{ t('table.video') }}</th>
+        <th scope="col"{% if i18n_enabled %} data-i18n="table.audio"{% endif %}>{{ t('table.audio') }}</th>
         {% endif %}
-        <th scope="col">Group</th>
-        <th scope="col">Size</th>
-        <th scope="col">Seed</th>
-        <th scope="col">操作</th>
+        <th scope="col"{% if i18n_enabled %} data-i18n="table.group"{% endif %}>{{ t('table.group') }}</th>
+        <th scope="col"{% if i18n_enabled %} data-i18n="table.cross"{% endif %}>{{ t('table.cross') }}</th>
+        <th scope="col"{% if i18n_enabled %} data-i18n="table.size"{% endif %}>{{ t('table.size') }}</th>
+        <th scope="col"{% if i18n_enabled %} data-i18n="table.seed"{% endif %}>{{ t('table.seed') }}</th>
+        <th scope="col"{% if i18n_enabled %} data-i18n="table.action"{% endif %}>{{ t('table.action') }}</th>
       </tr>
     </thead>
     <tbody>

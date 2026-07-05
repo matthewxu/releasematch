@@ -143,6 +143,12 @@ def _env_bool(name: str, default: bool = False) -> bool:
 # 生成器 / dev server：页面底部展示 IG 分级 debug 面板（仅本地测试，生产应关闭）
 SHOW_IG_DEBUG: bool = _env_bool("RM_SHOW_IG_DEBUG", False)
 
+# 页面 UI 国际化：false 时整站使用 SITE_LOCALE；true 时渲染默认语言 + 前端 EN/中文 切换
+SITE_I18N_ENABLED: bool = _env_bool("RM_SITE_I18N_ENABLED", False)
+
+# 站点 UI 语言：en | zh（关闭 i18n 时为唯一语言；开启时为默认语言）
+SITE_LOCALE: str = os.getenv("RM_SITE_LOCALE", "en").strip().lower() or "en"
+
 
 def release_mysql_configured() -> bool:
     """

@@ -71,5 +71,15 @@
 | **Favicon** | `portal/static/favicon.ico` · `.svg` | `base.html` + Trust 五页静态 HTML |
 | **JSON-LD** | `episode.html` / `movie.html` / `home.html` | TVEpisode · Movie · WebSite（`build_*_schema_ld`） |
 | **C2 验收** | `scripts/seo_c2_checklist.py` | 本地 §6.1～6.3；generate 后须 sync Trust/static 进 dist |
+| **i18n en/zh** | `portal/generator/i18n.py` | `RM_SITE_I18N_ENABLED` · `RM_SITE_LOCALE`（见下） |
+
+### UI 国际化（2026-07-05 · T-SEO-06）
+
+| 环境变量 | 默认 | 说明 |
+|----------|------|------|
+| `RM_SITE_I18N_ENABLED` | `false` | `true` 时渲染默认语言 + 顶栏 EN/中文 切换（`localStorage: rm_locale`） |
+| `RM_SITE_LOCALE` | `en` | `en` 或 `zh`；关闭 i18n 时为整站唯一 UI 语言 |
+
+模板通过 `{{ t('nav.home') }}` 取文案；文案表见 `portal/generator/i18n.py` 的 `MESSAGES`。
 
 Trust 壳（About / Contact / DMCA / Privacy / How-matching-works）为 `portal/trust/` 静态页，**不**经 Jinja；部署前复制到 `portal/dist/trust/`。

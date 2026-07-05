@@ -264,6 +264,35 @@ dd:last-child {
   background: var(--rm-bg-elevated);
 }
 
+/* 语言切换（RM_SITE_I18N_ENABLED=true 时显示） */
+.rm-lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-left: auto;
+  padding: 0.15rem;
+  border-radius: var(--rm-radius-sm);
+  background: var(--rm-bg-elevated);
+  border: 1px solid var(--rm-border-subtle);
+}
+
+.rm-lang-switch__btn {
+  min-width: 2.25rem;
+  padding: 0.25rem 0.45rem;
+  border: none;
+  border-radius: calc(var(--rm-radius-sm) - 2px);
+  background: transparent;
+  color: var(--rm-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rm-lang-switch__btn.is-active {
+  color: var(--rm-text-primary);
+  background: var(--rm-bg-base);
+}
+
 .rm-header__toggle {
   display: flex;
   padding: 0.5rem;

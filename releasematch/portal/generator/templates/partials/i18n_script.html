@@ -1,0 +1,5 @@
+{# 注入前端 i18n catalog — 供 site.js 切换 UI 文案 #}
+{# @partial i18n_script.html — 需 i18n_enabled 与 i18n_catalog #}
+{% if i18n_enabled and i18n_catalog %}
+<script id="rm-i18n-data" type="application/json">{{ {"defaultLocale": site_locale, "messages": i18n_catalog} | tojson }}</script>
+{% endif %}

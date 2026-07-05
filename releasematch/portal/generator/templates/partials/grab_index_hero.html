@@ -8,13 +8,13 @@
       <span class="rm-grab-index__tagline">{{ grab.grab_index_tagline }}</span>
     </div>
     <div class="rm-grab-index__score-wrap">
-      <span class="rm-grab-index__score" aria-label="综合分">{{ grab.grab_index_score }}</span>
+      <span class="rm-grab-index__score" aria-label="{{ t('speed.grab.score_aria') }}">{{ grab.grab_index_score }}</span>
       <span class="rm-grab-index__tier">{{ grab.grab_index_tier_label }}</span>
     </div>
   </div>
   <p class="rm-grab-index__summary">{{ grab.grab_index_summary }}</p>
   {% if grab.grab_index_breakdown %}
-  <ul class="rm-grab-index__breakdown" aria-label="分项得分">
+  <ul class="rm-grab-index__breakdown" aria-label="{{ t('speed.grab.breakdown_aria') }}">
     {% for item in grab.grab_index_breakdown %}
     <li class="rm-grab-index__breakdown-item">
       <span class="rm-grab-index__breakdown-label">{{ item.label }}</span>
@@ -36,7 +36,7 @@
     </div>
     <div class="rm-grab-index__score-wrap">
       <span class="rm-grab-index__score rm-grab-index__score--pending">—</span>
-      <span class="rm-grab-index__tier">待测速</span>
+      <span class="rm-grab-index__tier"{% if i18n_enabled %} data-i18n="speed.grab.pending"{% endif %}>{{ t('speed.grab.pending') }}</span>
     </div>
   </div>
 </div>

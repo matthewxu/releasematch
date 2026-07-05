@@ -5,7 +5,7 @@
 <section class="rm-section recommended-release" aria-labelledby="recommended-heading">
   <div class="rm-section__header">
     <h2 class="rm-section__title" id="recommended-heading">
-      <span aria-hidden="true">⭐</span> Recommended Release
+      <span aria-hidden="true">⭐</span> <span{% if i18n_enabled %} data-i18n="recommended.title"{% endif %}>{{ t('recommended.title') }}</span>
     </h2>
   </div>
 
@@ -15,7 +15,7 @@
     {% endwith %}
 
     <div class="rm-release-card__reason">
-      <strong>推荐理由：</strong>{{ recommended.recommend_reason }}
+      <strong{% if i18n_enabled %} data-i18n="recommended.reason"{% endif %}>{{ t('recommended.reason') }}</strong>{{ recommended.recommend_reason }}
     </div>
 
     {% if recommended.grab_index %}
@@ -27,14 +27,14 @@
     {% if recommended.speed %}
     <div class="rm-release-card__header">
       <div class="rm-release-card__badges">
-        <span class="rm-badge rm-badge--speed" title="均速 / 峰值">{% if recommended.speed_max %}{{ recommended.speed }} / {{ recommended.speed_max }}{% else %}{{ recommended.speed }}{% endif %}</span>
+        <span class="rm-badge rm-badge--speed" title="{{ t('recommended.speed_title') }}">{% if recommended.speed_max %}{{ recommended.speed }} / {{ recommended.speed_max }}{% else %}{{ recommended.speed }}{% endif %}</span>
       </div>
     </div>
     {% endif %}
 
     {% if recommended.speed_endorsement %}
     <div class="rm-release-card__speed-endorsement">
-      <strong>实测背书：</strong>{{ recommended.speed_endorsement }}
+      <strong{% if i18n_enabled %} data-i18n="recommended.endorsement"{% endif %}>{{ t('recommended.endorsement') }}</strong>{{ recommended.speed_endorsement }}
     </div>
     {% endif %}
 
@@ -43,9 +43,9 @@
 </section>
 {% else %}
 <section class="rm-section rm-empty-state" aria-labelledby="no-recommended-heading">
-  <h2 class="rm-section__title" id="no-recommended-heading">Recommended Release 暂不可用</h2>
-  <p class="rm-text-muted">
-    公开源暂不足 2 条 release（或数据已降级），本站持续追踪。请查看下方 All Sources、稍后回访，或从首页「稀缺追踪」了解进展。
+  <h2 class="rm-section__title" id="no-recommended-heading"{% if i18n_enabled %} data-i18n="recommended.unavailable_title"{% endif %}>{{ t('recommended.unavailable_title') }}</h2>
+  <p class="rm-text-muted"{% if i18n_enabled %} data-i18n="recommended.unavailable_body"{% endif %}>
+    {{ t('recommended.unavailable_body') }}
   </p>
 </section>
 {% endif %}

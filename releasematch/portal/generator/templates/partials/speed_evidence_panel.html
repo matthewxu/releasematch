@@ -4,18 +4,18 @@
 <details class="rm-speed-evidence-wrap">
   <summary class="rm-speed-evidence-wrap__summary">
     <span class="rm-speed-evidence-wrap__icon" aria-hidden="true">⚡</span>
-    展开测速证据：均速 {{ speed_evidence.avg_speed }} · {{ speed_evidence.reachability_display | default(speed_evidence.reachability) }}
+    {{ t('speed.panel.summary', avg=speed_evidence.avg_speed, reach=speed_evidence.reachability_display | default(speed_evidence.reachability)) }}
   </summary>
 <section class="rm-section rm-speed-evidence" aria-labelledby="speed-evidence-heading">
   <div class="rm-speed-evidence__header">
     <div class="rm-speed-evidence__titles">
       <h2 class="rm-section__title" id="speed-evidence-heading">
         <span class="rm-speed-evidence__icon" aria-hidden="true">⚡</span>
-        Recommended Release 实测背书
+        <span{% if i18n_enabled %} data-i18n="speed.panel.title"{% endif %}>{{ t('speed.panel.title') }}</span>
       </h2>
       <p class="rm-speed-evidence__subtitle">{{ speed_evidence.method_note }}</p>
     </div>
-    <div class="rm-speed-evidence__badges" aria-label="Information Gain 字段">
+    <div class="rm-speed-evidence__badges" aria-label="{{ t('speed.panel.ig_aria') }}">
       {% if show_ig_debug %}
       {% for badge in speed_evidence.ig_badges %}
       <span class="rm-badge rm-badge--ig">{{ badge }}</span>
@@ -24,25 +24,24 @@
     </div>
   </div>
 
-  {# 六项核心指标：等高主展示，避免弱化到小字 meta #}
   {% with facts=speed_evidence, variant='panel' %}
   {% include 'partials/speed_test_facts.html' %}
   {% endwith %}
 
   <div class="rm-speed-evidence__freshness rm-speed-evidence__freshness--{{ speed_evidence.freshness_class }}" role="status">
     <div class="rm-speed-evidence__freshness-main">
-      <span class="rm-speed-evidence__freshness-label">数据时效</span>
+      <span class="rm-speed-evidence__freshness-label"{% if i18n_enabled %} data-i18n="speed.freshness.label"{% endif %}>{{ t('speed.freshness.label') }}</span>
       <span class="rm-speed-evidence__freshness-value">{{ speed_evidence.freshness_label }}</span>
-      <span class="rm-speed-evidence__freshness-validity">可信度 {{ speed_evidence.validity_level }}</span>
+      <span class="rm-speed-evidence__freshness-validity">{{ t('speed.freshness.validity', level=speed_evidence.validity_level) }}</span>
     </div>
     <div class="rm-speed-evidence__freshness-time">
       {% if speed_evidence.tested_at_iso %}
-      <time datetime="{{ speed_evidence.tested_at_iso }}">测速于 {{ speed_evidence.tested_at }}</time>
+      <time datetime="{{ speed_evidence.tested_at_iso }}">{{ t('speed.freshness.tested_at', time=speed_evidence.tested_at) }}</time>
       <span class="rm-speed-evidence__freshness-age">· {{ speed_evidence.age_display }}</span>
       {% else %}
-      <span>尚无测速时间记录</span>
+      <span{% if i18n_enabled %} data-i18n="speed.freshness.no_time"{% endif %}>{{ t('speed.freshness.no_time') }}</span>
       {% endif %}
-      <span class="rm-speed-evidence__freshness-ttl">· 刷新周期 {{ speed_evidence.ttl_hours }} 小时</span>
+      <span class="rm-speed-evidence__freshness-ttl">· {{ t('speed.freshness.ttl', hours=speed_evidence.ttl_hours) }}</span>
     </div>
     <p class="rm-speed-evidence__freshness-note">{{ speed_evidence.freshness_note }}</p>
   </div>
@@ -50,7 +49,7 @@
   <article class="rm-speed-evidence__panel rm-speed-evidence__panel--{{ speed_evidence.reachability_class }}">
     <div class="rm-speed-evidence__reachability-banner">
       <div class="rm-speed-evidence__reachability-head">
-        <span class="rm-speed-evidence__reachability-label">Peer 可达性</span>
+        <span class="rm-speed-evidence__reachability-label"{% if i18n_enabled %} data-i18n="speed.reach.label"{% endif %}>{{ t('speed.reach.label') }}</span>
         <span class="rm-speed-evidence__reachability-value">{{ speed_evidence.reachability_display | default(speed_evidence.reachability) }}</span>
       </div>
       <p class="rm-speed-evidence__reachability-detail">{{ speed_evidence.reachability_detail }}</p>
@@ -61,7 +60,7 @@
 
     <dl class="rm-speed-evidence__metrics">
       <div class="rm-speed-evidence__metric rm-speed-evidence__metric--highlight">
-        <dt>测速时间</dt>
+        <dt{% if i18n_enabled %} data-i18n="speed.metric.tested_at"{% endif %}>{{ t('speed.metric.tested_at') }}</dt>
         <dd>
           {% if speed_evidence.tested_at_iso %}
           <time datetime="{{ speed_evidence.tested_at_iso }}">{{ speed_evidence.tested_at }}</time>
@@ -70,43 +69,43 @@
         </dd>
       </div>
       <div class="rm-speed-evidence__metric rm-speed-evidence__metric--highlight">
-        <dt>均速 avg</dt>
+        <dt{% if i18n_enabled %} data-i18n="speed.metric.avg"{% endif %}>{{ t('speed.metric.avg') }}</dt>
         <dd>{{ speed_evidence.avg_speed }} <span class="rm-speed-evidence__metric-sub">({{ speed_evidence.avg_kbps }} KB/s)</span></dd>
       </div>
       <div class="rm-speed-evidence__metric rm-speed-evidence__metric--highlight">
-        <dt>峰值 max</dt>
+        <dt{% if i18n_enabled %} data-i18n="speed.metric.max"{% endif %}>{{ t('speed.metric.max') }}</dt>
         <dd>{{ speed_evidence.max_speed }} <span class="rm-speed-evidence__metric-sub">({{ speed_evidence.max_kbps }} KB/s{% if speed_evidence.speed_spread_display %} · {{ speed_evidence.speed_spread_display }}{% endif %})</span></dd>
       </div>
       <div class="rm-speed-evidence__metric rm-speed-evidence__metric--highlight">
-        <dt>观测 peers total</dt>
+        <dt{% if i18n_enabled %} data-i18n="speed.metric.peers_total"{% endif %}>{{ t('speed.metric.peers_total') }}</dt>
         <dd>{{ speed_evidence.peers_total_display }}</dd>
       </div>
       <div class="rm-speed-evidence__metric rm-speed-evidence__metric--highlight">
-        <dt>已连 peers</dt>
+        <dt{% if i18n_enabled %} data-i18n="speed.metric.peers_connected"{% endif %}>{{ t('speed.metric.peers_connected') }}</dt>
         <dd>{{ speed_evidence.peers_reachable_display }} <span class="rm-speed-evidence__metric-sub">（{{ speed_evidence.peers_pair_display }}）</span></dd>
       </div>
       <div class="rm-speed-evidence__metric rm-speed-evidence__metric--highlight">
-        <dt>连接率</dt>
+        <dt{% if i18n_enabled %} data-i18n="speed.metric.connect_rate"{% endif %}>{{ t('speed.metric.connect_rate') }}</dt>
         <dd>{{ speed_evidence.connect_rate_pct }} <span class="rm-speed-evidence__metric-sub">（{{ speed_evidence.connect_rate_display }}）</span></dd>
       </div>
       <div class="rm-speed-evidence__metric">
-        <dt>首包延迟</dt>
+        <dt{% if i18n_enabled %} data-i18n="speed.metric.latency"{% endif %}>{{ t('speed.metric.latency') }}</dt>
         <dd>{{ speed_evidence.latency_display }}</dd>
       </div>
       <div class="rm-speed-evidence__metric">
-        <dt>摘要入库</dt>
+        <dt{% if i18n_enabled %} data-i18n="speed.metric.summary_updated"{% endif %}>{{ t('speed.metric.summary_updated') }}</dt>
         <dd>{{ speed_evidence.updated_at }}</dd>
       </div>
     </dl>
 
     {% if speed_evidence.index_vs_measured %}
     <p class="rm-speed-evidence__compare">
-      <strong>索引 vs 实测：</strong>{{ speed_evidence.index_vs_measured }}
+      <strong{% if i18n_enabled %} data-i18n="speed.compare.label"{% endif %}>{{ t('speed.compare.label') }}</strong>{{ speed_evidence.index_vs_measured }}
     </p>
     {% endif %}
 
     <p class="rm-speed-evidence__footnote">
-      数据来自 libtorrent DHT/tracker 时点采样；<strong>均速、峰值、peers 与连接率均为同一次 {{ speed_evidence.method_note }} 结果</strong>，与 Jackett 索引 seeders 可能偏差。
+      {{ t('speed.footnote', method=speed_evidence.method_note) | safe }}
     </p>
   </article>
 </section>

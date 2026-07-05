@@ -1,12 +1,12 @@
 {# ReleaseMatch 页面基础布局 #}
 {# @template base.html — T3 生成器共用骨架：head、header、footer、静态资源 #}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ html_lang | default('en') }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}ReleaseMatch — Release 导航站{% endblock %}</title>
-  <meta name="description" content="{% block meta_description %}影视 Release 导航：Recommended Release、对版分析与多源对比。{% endblock %}">
+  <title>{% block title %}{{ t('site.title') }}{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}{{ t('site.meta_default') }}{% endblock %}">
   {% block meta_robots %}{% endblock %}
   <link rel="canonical" href="{% block canonical %}{{ canonical_url }}{% endblock %}">
   <link rel="icon" href="/static/favicon.ico" sizes="any">
@@ -16,8 +16,8 @@
   <meta property="og:site_name" content="ReleaseMatch">
   <meta property="og:type" content="{% block og_type %}website{% endblock %}">
   <meta property="og:url" content="{% block og_url %}{{ canonical_url }}{% endblock %}">
-  <meta property="og:title" content="{% block og_title %}ReleaseMatch — Release 导航站{% endblock %}">
-  <meta property="og:description" content="{% block og_description %}影视 Release 导航：Recommended Release、对版分析与多源对比。{% endblock %}">
+  <meta property="og:title" content="{% block og_title %}{{ t('site.title') }}{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}{{ t('site.meta_default') }}{% endblock %}">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="{{ self.og_title() }}">
   <meta name="twitter:description" content="{{ self.og_description() }}">
@@ -32,6 +32,7 @@
   {% endif %}
 
   {% block head_extra %}{% endblock %}
+  {% include 'partials/i18n_script.html' %}
 </head>
 <body class="rm-page">
   {% include 'partials/header.html' %}
