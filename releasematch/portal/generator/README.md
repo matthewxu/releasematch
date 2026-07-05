@@ -45,3 +45,18 @@
 - [x] `dev_server.py` — 本地开发服（`workflow.run serve`，实时读 MySQL）
 - [ ] `generate_batch.py` — 读 `priority/queue_builder.py` 队列
 - [ ] 薄页门禁与 canonical 注入（生成器内置部分已完成）
+
+---
+
+## 模板与 partial（2026-07-05）
+
+| 模板 | 说明 |
+|------|------|
+| `templates/episode.html` · `movie.html` | 槽位页壳 |
+| `partials/recommended_block.html` | Hero：**表格 → 理由 → Grab → 背书 → 折叠测速** |
+| `partials/recommended_release_table.html` | Hero REC 表格（与 Sources 同列） |
+| `partials/sources_table_row.html` | 剧集 / 电影共用表行 |
+| `partials/movie_edition_groups.html` | 电影 All Versions 按 edition 分组 |
+| `partials/speed_evidence_panel.html` | 展开测速证据（**无重复 Grab**） |
+
+上下文组装：`schema/d1_models.py` · 电影分组：`workflow/movie_editions.py` · 详见 [IG §4.1](../../docs/IG信息登记册.md#41-recommended-区块信息架构2026-07-05)。

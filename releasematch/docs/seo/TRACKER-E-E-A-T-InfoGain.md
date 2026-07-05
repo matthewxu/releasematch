@@ -53,7 +53,7 @@
 |---|------|------|------|-------|------|
 | E-01 | VPS/libtorrent 测速 | cron 每 6h | ✅ | S-06 | 有 Rec 页 96/96 summary · cron 已上线 |
 | E-02 | 测速 bake 进 HTML | 静态可爬 | ✅ | S-06 | `generate all` 120 页（118 index + 2 thin）· 有 Rec 全覆盖 |
-| E-03 | grab_index Hero | Recommended 卡片 | 🔶 | S-07 | 模板 ✅；不可达/0 peers 页 badge 弱 |
+| E-03 | grab_index Hero | Recommended 卡片（表格 → 理由 → **Grab**） | ✅ | S-07 | 折叠测速内已去重；0 peers 槽分偏弱 |
 | E-04 | speed_endorsement 文案 | 实测背书句 | 🔶 | S-07 | 有 Phase2 数据页已 bake |
 | E-05 | recommend_reason 含实测事实 | UTC + peers 对比 | ✅ | S-02 | `_merge_measured_into_recommend_reason` · 有 Rec+summary 页 |
 | E-06 | tested_at 页面展示 | 更新时间 | 🔶 | A-03 | 有 summary 页已展示；22 页无 Recommended 无测速 |
@@ -65,8 +65,8 @@
 | # | 信号 | 要求 | 状态 | IG-ID | 备注 |
 |---|------|------|------|-------|------|
 | X-01 | groups.yaml 分档 | L0~L4 | ✅ | S-05 | 98 组 |
-| X-02 | Group badge Hero | Recommended | ✅ | S-05 | |
-| X-03 | Group badge Sources 表 | 逐条 | ❌ | S-05 | T3 待做 |
+| X-02 | Group badge Hero | Recommended 表格 Group 列 | ✅ | S-05 | |
+| X-03 | Group badge Sources 表 | 逐条 | ✅ | S-05 | `sources_table_row.html` |
 | X-04 | 跨源 N/M Hero badge | 页面级 | ✅ | S-03 | 数据多为 1/3 |
 | X-05 | 跨源 confidence Sources | 单条 badge | ❌ | S-04 | |
 | X-06 | release 解析 | source/codec/res | ✅ | A-05 | |
@@ -112,7 +112,7 @@
 | 单集 L3（有 recommended + 测速） | 7~8 | 8~9 | S-06/S-07 bake + A-10 |
 | 单集 L3（有 recommended 无测速） | 5~7 | 7~8 | 测速 cron 覆盖 |
 | 单集 L3（无 recommended） | 2~4 | noindex | 保持门禁 |
-| 电影页 | 5~7 | 7~8 | 同单集 |
+| 电影页 | 6~8 | 7~9 | 多版本分组 + spec 列 + Hero Grab bake |
 | Trust 页 | — | Trust A- | Contact ✅ · lang=en ✅ |
 
 ### 3.3 IG 缺口 → 开发映射

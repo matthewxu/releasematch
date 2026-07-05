@@ -196,7 +196,7 @@ ReleaseMatch 在 **策略与后端** 上对 Google 2026 E-E-A-T / Information Ga
 | **P0** | 生成器 100% 读 DB，淘汰手写 demo 页 | 避免虚假 cross/tier | Trust ↑↑ |
 | **P0** | `recommend_reason` + `speed_endorsement` 注入实测句（A-10） | +1~2 分 | Experience ↑↑ |
 | **P1** | 补 `groups.yaml`（BB 高频组） | S-05 真实生效 | Expertise ↑ |
-| **P1** | 全 published 测速 bake + grab_index Hero | S-06/S-07 全站 | Experience ↑↑ |
+| **P1** | 全 published 测速 bake + grab_index Hero | S-06/S-07 全站 | Experience ↑↑ · **Hero 布局 2026-07-05 ✅** |
 | **P1** | Sources 表加 group_tier + cross badge | 页内 IG 密度 ↑ | Expertise ↑ |
 | **P2** | Trust 页英文化 + Contact 页 | — | Trust ↑ |
 | **P2** | C2 首批 ~20 页 GSC → 观察收录率 | — | Authority 起步 |

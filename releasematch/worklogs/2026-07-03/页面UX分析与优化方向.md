@@ -78,19 +78,22 @@ flowchart LR
 
 ### 3.2 单集页（`episode.html`）— 核心体验
 
-**信息层级（自上而下）：**
+**信息层级（自上而下 · 2026-07-05 已调整）：**
 
 1. 面包屑 → Hero（H1 + 跨源 badge）
-2. **测速证据面板**（`speed_evidence_panel.html`）
-3. **Recommended Release**（`recommended_block.html`）
-4. All Sources 表格
-5. 上/下集导航
-6. 侧边栏：TMDB / Watch On / 字幕
+2. **Recommended Release**（`recommended_block.html`）
+   - Hero 表格（Magnet 首屏可点）
+   - 推荐理由 → RM Grab 指数 → 实测背书
+   - **展开测速证据**（折叠，无重复 Grab）
+3. All Sources 表格（**不含** Hero REC 重复行）
+4. 上/下集导航
+5. 侧边栏：TMDB / Watch On / 字幕
 
 **做得好的：**
 
-- Recommended 卡片结构完整：理由、Group tier、Magnet 主按钮、规格 grid
-- 表格行 `is-recommended` 高亮；移动端 `rm-table--responsive` + JS 注入 `data-label`
+- Hero 表格与 All Sources **列结构一致**，Magnet 无需滚到下方表
+- Recommended 信息分层：理由 → Grab → 背书 → 进阶测速折叠
+- 表格行 `is-recommended` 仅在 Hero 高亮；移动端 `rm-table--responsive` + JS 注入 `data-label`
 - 集间 `prev/next` 导航符合 binge 场景
 - sticky header + 面包屑，长页不丢上下文
 
@@ -98,19 +101,21 @@ flowchart LR
 
 | 问题 | 影响 | 严重度 |
 |------|------|--------|
-| **测速面板信息过载** | 六项指标 + 可达性 + freshness + 脚注；与 Recommended 内 `speed_test_facts` **重复** | **P0** |
+| **测速面板信息过载** | 折叠区内仍含六项指标 + 可达性 + freshness | **P1**（Grab 重复已去除） |
 | **内部代号外露**（S-06、A-02、libtorrent） | 普通用户看不懂，像开发文档 | **P0** |
-| **主 CTA 被推到视口下方** | 首屏大量测速内容，「Magnet 链接」需滚动 | **P0** |
-| **`复制 Magnet` 按钮无 JS 实现** | `site.js` 未处理 `data-copy-magnet`，点击无反馈 | **P0 Bug** |
+| **主 CTA 被推到视口下方** | ~~首屏大量测速内容~~ → **已修复**：Magnet 在 Hero 表格 | ~~P0~~ ✅ UX-02 |
+| **`复制 Magnet` 按钮无 JS 实现** | Hero 改表格 Magnet 链；复制按钮已移除 | **P1** |
 | **H1/title 英文 + 正文中文混排** | 语言信号混乱，阅读节奏断裂 | P1 |
 | **All Sources 列名全英文** | 与中文 UI 不一致 | P1 |
 | **无 recommended 时** | 整页缺主模块（如 S04E03），体验空洞 | P1 |
 
 ### 3.3 电影页（`movie.html`）
 
-与单集页结构类似，差异合理（无集导航、强调「多版本」）。
+与单集页 Hero 结构一致；差异：无集导航、**All Versions 按 edition 分组**（WEB-DL / REMUX / BluRay 等），Sources 表含 **Source · Video · Audio** 列。
 
-**额外问题：** 侧边栏 TMDB 复述占比高；表格列较粗（仅 resolution），电影用户关心的 REMUX / 音轨差异未展开。
+**已落地（2026-07-05）：** `release_parser` 回填 spec · `movie_editions` 分组 · 组内「本组最佳」按 seeders（Grab 仍仅 Hero REC）。
+
+**待改进：** 侧边栏 TMDB 复述占比高；per-edition Grab 需多 hash 测速（规划）。
 
 ### 3.4 剧集 Hub（`show_hub.html`）
 
@@ -147,24 +152,26 @@ flowchart LR
 
 ## 五、测速 / IG 模块：差异化 vs 可读性
 
-测速面板是最大差异化，但目前处于 **「工程师仪表盘」** 阶段：
+**当前信息架构（2026-07-05）：**
 
 ```
+Hero 表格（Magnet）
+  ↓
+推荐理由
+  ↓
 RM Grab 指数
   ↓
-六项实测指标（panel）
+实测背书
   ↓
-Recommended 卡片内再展示 speed_test_facts（重复）
-  ↓
-可达性 / TTL / A-01~A-10 脚注
+展开测速证据（六项指标 · 无重复 Grab）
 ```
 
-**理想信息架构：**
+**理想信息架构（已基本对齐）：**
 
 | 层级 | 展示 | 受众 |
 |------|------|------|
-| **L1 首屏** | Recommended + 一行测速摘要 + Magnet CTA | 所有人 |
-| **L2 展开** | RM Grab + 六项指标 | 进阶用户 |
+| **L1 首屏** | Hero 表格 + 理由 + Grab + Magnet | 所有人 |
+| **L2 展开** | 实测背书 + 展开测速证据（六项指标） | 进阶用户 |
 | **L3 调试** | IG badge、A-01 规则、索引 vs 实测 | `?ig_debug=1` 或 debug 面板 |
 
 ---
@@ -244,17 +251,19 @@ Recommended 卡片内再展示 speed_test_facts（重复）
 
 | 字段 | 内容 |
 |------|------|
-| **文件** | `episode.html`、`movie.html` |
-| **做法** | 调整 include 顺序：Recommended 在上；或测速默认 `<details>` 折叠 |
-| **验收** | 1280×720 首屏可见「Magnet 链接」主按钮 |
+| **状态** | ✅ **2026-07-05** |
+| **文件** | `recommended_block.html` · `speed_evidence_panel.html` |
+| **做法** | Hero 表格置顶；测速 `<details>` 移至实测背书下方；折叠内去除重复 Grab |
+| **验收** | 1280×720 首屏可见 Hero 表格 **Magnet** 链 |
 
 #### UX-03：测速单层展示
 
 | 字段 | 内容 |
 |------|------|
-| **文件** | `recommended_block.html` 或 `speed_evidence_panel.html` |
-| **做法** | 去掉 Recommended 内与 panel 重复的 `speed_test_facts`；panel 保留一行摘要链到展开区 |
-| **验收** | 同页测速指标不重复出现两次 |
+| **状态** | ✅ **2026-07-05**（Grab 去重；折叠区保留六项指标） |
+| **文件** | `recommended_block.html` · `speed_evidence_panel.html` |
+| **做法** | Grab 仅 Hero 卡片一处；折叠 panel 不再含 `grab_index_hero` |
+| **验收** | 同页 RM Grab 模块不重复出现 |
 
 #### UX-04：首页客户端搜索
 

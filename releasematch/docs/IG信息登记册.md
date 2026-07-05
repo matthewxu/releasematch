@@ -1,6 +1,6 @@
 # IG 信息登记册
 
-> **日期：** 2026-07-01（v1.3）  
+> **日期：** 2026-07-01（v1.6 · 2026-07-05 页面 UX 更新）  
 > **范围：** 测试 / pipeline 全流程可获取字段，按 Information Gain 分级登记  
 > **分级标准：** [01-分支定位与流量获取.md](./01-分支定位与流量获取.md) §5.1  
 > **关联：** [speedtest-Phase1探测.md](../worklogs/2026-07-01/speedtest-Phase1探测.md)、[今日验收清单.md](../worklogs/2026-07-01/今日验收清单.md)
@@ -27,12 +27,12 @@
 | IG-ID | 信息名称 | 字段 / 产出 | 获取阶段 | 负责模块 | 存储 | 页面展示 | 状态 |
 |-------|----------|-------------|----------|----------|------|----------|------|
 | S-01 | **Recommended Release** | `is_recommended=1` + 完整 release 元数据 | 评分 | T1 `scorer.py` | `download_resources` | Hero 推荐块 | ✅ |
-| S-02 | **推荐理由** | `recommend_reason` | 评分 | T1 scorer | `download_resources` | Recommended 下方文案 | ✅ |
+| S-02 | **推荐理由** | `recommend_reason` | 评分 | T1 scorer | `download_resources` | Hero 表格下方文案 | ✅ |
 | S-03 | **跨源验证 N/M** | `cross_source_page_count/total` | 拉取 | T1 `cross_source` | FetchResult / 页面 | Hero badge「2/3 源一致」 | ✅ [§五](./IG信息登记册.md#五跨源验证-s-03--s-04计算逻辑与测试结果) |
 | S-04 | **单条跨源置信度** | `cross_source_count`、`cross_source_confidence` | 拉取 | T1 cross_source | `download_resources` | Sources 表 badge | ✅ [§五](./IG信息登记册.md#五跨源验证-s-03--s-04计算逻辑与测试结果) |
 | S-05 | **Release Group 信誉** | `group_tier`（L0~L4） | 评分 | T1 `groups.yaml` | `download_resources` | 组名旁 tier 标 | ✅ [§六](./IG信息登记册.md#六release-group-信誉-s-05--a-06计算逻辑与实现进度) |
 | S-06 | **实测下载速度** | `avg_kbps`、`max_kbps` → `recommended_speed` | 测速 P2 | T2 speedtest | `speedtest_results` → `slot_speed_summary` | 「前次测速 4.2 MB/s」 | 🔶 [§七](./IG信息登记册.md#七测速-s-06phase-2片段测速) |
-| S-07 | **Recommended 实测背书** | reachability + speed 绑定 `recommended_infohash` | 测速 P1+P2 | T2 聚合 | `slot_speed_summary` | 推荐块追加实测句 | 🔶 |
+| S-07 | **Recommended 实测背书** | reachability + speed 绑定 `recommended_infohash` | 测速 P1+P2 | T2 聚合 | `slot_speed_summary` | 实测背书句 + RM Grab 指数（仅 Hero REC hash） | 🔶 |
 | S-08 | **多地域测速** | Region Speed Map | 测速 P3 | T2 多节点 | 待建 | 地域速度表 | 📋 |
 
 ### 2.2 A 级（5~7）— 有效差异化
@@ -43,7 +43,7 @@
 | A-02 | **实测 peer 数量** | `peers_total`、`peers_reachable` | 测速 P1 | T2 speedtest | `speedtest_results` | 「观测 29 peers」 | ✅ CLI |
 | A-03 | **测速 freshness** | `tested_at` / `updated_at` | 测速 | T2 | `speedtest_results` | 「UTC 2026-07-01 更新」 | 🔶 |
 | A-04 | **对版匹配说明** | scorer 规则命中说明 | 评分 | T1 scorer | `recommend_reason` 内 | 对版段落 | ✅ |
-| A-05 | **Release 质量解析** | `resolution`、`codec`、`source` | 拉取+解析 | T0 parser | `download_resources` | Sources 表列 | ✅ |
+| A-05 | **Release 质量解析** | `resolution`、`codec`、`source`、`video_spec`、`audio_spec` | 拉取+解析 | T0 `release_parser` | `download_resources` | Hero 表 + Sources 表列 | ✅ |
 | A-06 | **压制组名** | `release_group` | 拉取+解析 | T0 parser | `download_resources` | 标题 / 组 badge | ✅ [§六](./IG信息登记册.md#六release-group-信誉-s-05--a-06计算逻辑与实现进度) |
 | A-07 | **死链过滤标记** | `status=timeout/error` | 测速 P1 | T2 | `speedtest_results` | 隐藏或灰显不可达项 | 🔶 |
 | A-08 | **匹配排序分** | `match_score` | 评分 | T1 scorer | `download_resources` | 内部排序（可不展示） | ✅ |
@@ -166,15 +166,42 @@
 
 | 页面区块 | 需要的 IG-ID | 最低 IG 等级 |
 |----------|--------------|--------------|
-| Hero Recommended | S-01, S-02, S-05, S-07 | S |
-| Hero Group tier badge | S-05 | S |
-| Hero 跨源 badge | S-03 | S |
-| Speed 摘要条 | A-01, A-03, S-06（P2） | A |
-| All Sources 表 | A-05, A-06, S-04, B-01 | A + B |
+| Hero Recommended（表格 + 理由 + Grab + 背书） | S-01, S-02, S-05, S-07, A-05 | S |
+| Hero 跨源 badge（页面 H1 区） | S-03 | S |
+| 展开测速证据（`<details>`） | S-06, A-01~A-03, A-09, A-10 | A |
+| All Sources 表（剧集） | A-05, A-06, S-04, S-05, B-01 | A + B |
+| All Versions 表（电影 · 按 edition 分组） | A-05, A-06, S-04, S-05, B-01 | A + B |
 | 侧栏 TMDB | B-06 | B |
 | Trust / 方法论 | 文字说明 IG 来源 | A |
 
 **薄页门禁：** `fetch.count >= 2` 且至少含 **1 条 S 级**（Recommended）才允许 index。
+
+### 4.1 Recommended 区块信息架构（2026-07-05）
+
+**模板：** `partials/recommended_block.html`（剧集 / 电影共用）
+
+**自上而下（L1 首屏）：**
+
+| 顺序 | 模块 | 模板 / 数据 | 说明 |
+|------|------|-------------|------|
+| 1 | **Hero 表格行** | `recommended_release_table.html` + `sources_table_row.html` | 与 All Sources **同列结构**（Release · Quality · Group · Size · Seed · **Magnet**）；电影页另含 Source / Video / Audio |
+| 2 | **推荐理由** | `recommend_reason` | 规则评分文案；E-05 渲染期可并入实测句 |
+| 3 | **RM Grab 指数** | `grab_index_hero.html`（`variant=card`） | `compute_grab_index()` · 速度 35% + 可达性 25% + 连接率 20% + 时效 20%；**仅针对 Hero REC 的 `recommended_infohash`** |
+| 4 | 均速 badge | `recommended.speed` | 有 Phase2 时展示均速 / 峰值 |
+| 5 | **实测背书** | `speed_endorsement` | S-07 一句摘要 |
+| 6 | **展开测速证据** | `speed_evidence_panel.html` | 默认折叠；**不再重复 Grab 模块**（六项指标 + 可达性 + freshness） |
+
+**All Sources 区：** Recommended 行**不上移重复**——仅在 Hero 表格展示一次（`is_recommended` 行从下方表过滤）。
+
+**电影页 All Versions（`movie.html`）：**
+
+| 能力 | 模块 | 说明 |
+|------|------|------|
+| 版本分组 | `movie_editions.group_movie_sources()` | WEB-DL / REMUX / BluRay / HDTV / CAM / 其他 |
+| 组内高亮 | `pick_edition_best()` | 按 **seeders** 标「本组最佳」（非 Grab：非 REC hash 无测速） |
+| spec 回填 | `release_parser.enrich_item_dict(force_specs=True)` | 不重拉，从 `title_raw` 解析 `video_spec` / `audio_spec` |
+
+**与 RM Grab 的关系：** Grab 描述 **一条 Hero REC** 的下载体验；电影多版本对比在 Sources 区用静态 spec + seed 辅助选版，**不等同于 per-edition Grab**（需多 hash 测速 bake，规划 P2+）。
 
 ---
 
@@ -369,11 +396,13 @@ cross_source_confidence = min(count / M, 1.0)   # 保留 3 位小数
 ```
 title_raw
   → release_parser.parse_release_title()     # A-06：正则取最后一个 - 后 token
+  → release_parser.enrich_item_dict()        # A-05：video_spec / audio_spec（电影展示 + rescore 回填）
   → ResourceItem.release_group
   → groups_registry.lookup_group()           # yaml 查 canonical + tier
   → scorer.rank_items(media_kind=tv|movie)   # 剧集 v1.1 / 电影 v1.2，见 §6.5
   → mysql_store.upsert_slot_resources()      # download_resources.group_tier 冗余
-  → recommended_block.html                   # Hero Group Badge
+  → MoviePageContext / EpisodePageContext    # 电影：movie_editions 分组（渲染期）
+  → recommended_block.html                   # Hero 表格 + 理由 + Grab + 测速折叠
 ```
 
 **权威数据源（当前）：** 本地 `groups.yaml`，运行时直读；**非** MySQL `release_groups` 表。
@@ -506,8 +535,13 @@ rescore_published_pages(media_kind="movie")
 
 | 位置 | 状态 | 模板 |
 |------|------|------|
-| Recommended Hero Group Badge | ✅ | `partials/recommended_block.html` |
-| Sources 表逐条 tier | ❌ 未做 | 待 T3 生成器 |
+| Hero 表格（Release / Quality / Group / Magnet 等） | ✅ | `recommended_release_table.html` · `sources_table_row.html` |
+| Hero 推荐理由 | ✅ | `recommended_block.html` |
+| Hero RM Grab 指数 | ✅ | `grab_index_hero.html`（`variant=card`） |
+| Hero 实测背书 | ✅ | `recommended_block.html` |
+| 展开测速证据（无重复 Grab） | ✅ | `speed_evidence_panel.html` |
+| All Sources / Versions 逐条 tier | ✅ | `episode_sources_table.html` · `movie_sources_table.html` |
+| 电影 edition 分组 + 本组最佳 | ✅ | `movie_edition_groups.html` · `workflow/movie_editions.py` |
 | `scene_compliant` / 合规率 | ❌ yaml 有字段，scorer **不读取** | 规划 |
 
 ### 6.7 groups.yaml 规模（2026-07-01）
@@ -528,16 +562,17 @@ rescore_published_pages(media_kind="movie")
 | 模块 | 状态 | 说明 |
 |------|------|------|
 | `groups.yaml` + `groups_registry.py` | ✅ | T1-G1；别名 + token 匹配 |
-| `scorer.py` 评分 / tie-break | ✅ | 已接真实 FetchService |
-| `pipeline --fetch` 写 `group_tier` | ✅ | 冗余至 `download_resources` |
-| `workflow.run recommended` | ✅ | 单槽调试 |
-| Hero Group Badge 模板 + CSS | ✅ | tier-l0~l4 色板 |
-| Sources 表 tier badge | ❌ | 仅 Recommended 卡片 |
+| `scorer.py` 评分 / tie-break | ✅ | 剧集 v1.1 / 电影 v1.2 |
+| `release_parser.py` spec 解析 | ✅ | `video_spec` / `audio_spec` · `classify_edition` |
+| `movie_editions.py` 电影分组 | ✅ | 渲染期 · 不重拉 |
+| `pipeline --fetch` / `rescore_*` 写 spec | ✅ | upsert UPDATE 含 video/audio 字段 |
+| Hero 表格 + Grab + 测速折叠 UX | ✅ | `recommended_block.html` · 2026-07-05 |
+| Sources 表 tier badge | ✅ | `sources_table_row.html` |
 | MySQL `release_groups` 表 | 🔶 | schema 有；**仅 4 条 demo seed**，未从 yaml 同步 |
 | `scene_compliant` / `compliance_rate` | ❌ | yaml 字段存在，运行时未用 |
 | cron 自动统计更新 | ❌ | 设计文档 §5.4.3 规划 |
 | PTN / mediainfo 组名提取 | ❌ | 仍 T0 正则 |
-| 生成器批量出页接 DB | 🔶 | T3 待完整 |
+| per-edition / 多 hash Grab 测速 | 📋 | 当前 Grab 仅 Hero REC |
 
 **登记含义：** S-05 标 ✅ = **评分链路已通**；距「信誉数据库 + 自动更新 + 合规率展示」仍有缺口。
 
@@ -648,10 +683,27 @@ python -m workflow.torrent_sources.speedtest.run slot \
 | Phase 2 libtorrent 测速 | ✅ |
 | 写 `speedtest_results` | ✅ |
 | 聚合 `slot_speed_summary` | ✅ |
-| 生成器 speed bar 渲染 | 📋 T3 |
-| 批量 cron Worker | 📋 |
+| RM Grab 指数 `grab_index.py` | ✅ Hero 卡片 |
+| 生成器测速 / Grab bake | ✅ `generate all` |
+| 批量 cron Worker | ✅ `--all-published` 每 6h |
 
-**登记 🔶：** 后端链路已通；页面静态 bake 待 T3 生成器。
+**登记 🔶：** 后端与页面 bake 已通；不可达 / 0 peers 槽 Grab 分偏弱；22 页无 Recommended 无测速。
+
+### 7.6 RM Grab 指数（渲染期 · S-07 子信号）
+
+**模块：** `workflow/torrent_sources/speedtest/grab_index.py`  
+**计算：** `SpeedEvidenceContext.to_template_dict()` → `compute_grab_index()`
+
+| 分项 | 权重 | 输入 |
+|------|------|------|
+| 速度 | 35% | Phase2 `avg_kbps` / `max_kbps` |
+| 可达性 | 25% | A-01 `reachability` |
+| 连接率 | 20% | A-02 peers 连接比 |
+| 时效 | 20% | A-03 `freshness_class` |
+
+**页面落点：** 仅 **Hero Recommended 卡片**（表格 → 理由 → **Grab** → 背书 → 折叠测速）；折叠面板内**不重复**展示 Grab。
+
+**局限：** 每槽仅测 `slot_speed_summary.recommended_infohash` **一条**；电影 All Versions 的「本组最佳」按 seeders，**无 per-hash Grab**。
 
 ---
 
@@ -709,3 +761,4 @@ python -m workflow.torrent_sources.speedtest.run slot \
 | v1.3 | 2026-07-01 | §七 S-06 Phase 2 + 批量成本综合评估 + benchmark JSON |
 | v1.4 | 2026-07-01 | 迁移至 `docs/IG信息登记册.md`（正式文档） |
 | v1.5 | 2026-07-05 | §6.5 scorer v1.1 剧集 / v1.2 电影分化 + `rescore_page_recommendations` 不重拉重算 |
+| v1.6 | 2026-07-05 | §4.1 Hero 表格 + Grab 信息架构；电影多版本分组；§7.6 Grab 指数；§6.8 页面 bake 状态更新 |

@@ -281,7 +281,7 @@ Google 排名看 **后者多出来的层** 是否无法从 TOP10 拼凑获得。
 {movie} {year} magnet
 ```
 
-**页面差异：** movie.html 强调 **All Versions** 多版本对比，title 用 `Sources` 强化品牌。
+**页面差异（2026-07-05 已落地）：** `movie.html` 强调 **All Versions** 多版本对比——按 WEB-DL / REMUX / BluRay 分组，Sources 表含 **Video / Audio** 列；Hero 仍 **一条** REC + RM Grab（非 per-edition Grab）。title 用 `Sources` 强化品牌。
 
 ### 6.4 语义簇 C — 画质 / 编码 / Group（L4，高 IG）
 
