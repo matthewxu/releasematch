@@ -552,7 +552,7 @@ Jackett 与 FlareSolverr 须在同一 Docker 网络（如 `jackett-net`），Jac
 http://flaresolverr:8191/
 ```
 
-完整部署与日本测试机 `172.237.11.232` 运维说明见 [jackett-remote-linode.md](./jackett-remote-linode.md) §四。
+完整部署与日本测试机 `172.236.156.193` 运维说明见 [jackett-remote-linode.md](./jackett-remote-linode.md) §四。
 
 保存后重新 **Test** 对应 Indexer（1337x 首次可能需 30~60 秒）。
 
@@ -633,7 +633,7 @@ http://flaresolverr:8191/
 | `workflow/torrent_sources/config.py` | Key 校验、`jackett_probe` |
 | `workflow/torrent_sources/accounts.example.json` | 配置模板 |
 | `workflow/torrent_sources/servers.example.json` | 海外 VPS 部署模板 |
-| `docs/jackett-remote-linode.md` | 海外 VPS 部署（当前测试机 172.237.11.232） |
+| `docs/jackett-remote-linode.md` | 海外 VPS 部署（当前测试机 172.236.156.193） |
 | `docs/jackett-stability.md` | 稳定性保障（配置规范、healthcheck、验收） |
 | `worklogs/2026-06-30/A4-Jackett安装引导.md` | 块 A 验收精简版 |
 

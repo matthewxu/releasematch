@@ -1,6 +1,6 @@
 # 06 — workflow.run 总控 CLI 使用说明
 
-> **版本：** v0.3（2026-07-04）  
+> **版本：** v0.4（2026-07-05）  
 > **入口文件：** `workflow/run.py`  
 > **调用方式：** `python -m workflow.run <子命令> [参数]`  
 > **前置：** 在 `releasematch/` 目录下执行；配置见 [05-存储与部署配置.md](./05-存储与部署配置.md)  
@@ -39,6 +39,7 @@ torrent 拉取还需配置 `workflow/torrent_sources/accounts.local.json`（从 
 | `db init` 的参数 | `python -m workflow.run db init -h` |
 | `pipeline slot` 的参数 | `python -m workflow.run pipeline slot -h` |
 | `pipeline batch` 的参数 | `python -m workflow.run pipeline batch -h` |
+| `pipeline refetch-all` 的参数 | `python -m workflow.run pipeline refetch-all -h` |
 | `query page` 的参数 | `python -m workflow.run query page -h` |
 | `generate all` 的参数 | `python -m workflow.run generate all -h` |
 | torrent 模块 CLI | `python -m workflow.torrent_sources.run -h` |
@@ -70,7 +71,8 @@ python -m workflow.run
 │   └── recommended [--tmdb ...] [--demo] [--force]
 ├── pipeline
 │   ├── slot --tmdb ... [--mode demo|live] [--fetch]
-│   └── batch [--slots-json ...] [--fetch|--no-fetch]
+│   ├── batch [--slots-json ...] [--fetch|--no-fetch]
+│   └── refetch-all [--no-force]          # 全站 published 强制重拉
 ├── query
 │   └── page [--page-id | --tmdb ...]   # 读取 Jinja2 上下文
 ├── generate
@@ -331,6 +333,28 @@ python -m workflow.run pipeline slot \
 | `--fetch` | live 时 | 调用 `FetchService` 拉取；**失败或 0 条时才回退 demo** |
 
 **前提：** `RM_STORAGE_BACKEND=mysql`，且已 `db init`（建议 `--seed`）。
+
+---
+
+#### `pipeline refetch-all` — 全站 published 强制重拉
+
+**作用：** 对 `list_published_page_ids()` 全部槽位 `force=True` 拉取 torrent → 评分 → 写库；用于 Jackett/indexer 变更后刷新 `cross_source_total` 与 magnet 列表。
+
+```bash
+python -m workflow.run pipeline refetch-all
+
+# 使用 TTL 缓存（非 force）
+python -m workflow.run pipeline refetch-all --no-force
+```
+
+**建议后续：**
+
+```bash
+python scripts/recompute_cross_source_fuzzy.py --all-published --rescore-after
+python -m workflow.run generate all
+```
+
+**等价逻辑：** `workflow/storage/pipeline.py` → `run_refetch_all_published_pipeline()`。
 
 ---
 
@@ -696,6 +720,8 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | `scripts/tmdb_warm_external_ids.py` | pipeline batch 前预热 imdb/tvdb 缓存 |
 | `scripts/tmdb_select_benchmark_slots.py` | TMDB 日导出 → benchmark slot JSON |
 | `scripts/failed_slots_merge_reports.py` | 合并 pipeline 失败报告 → 登记册 |
+| `scripts/recompute_cross_source_fuzzy.py` | 不重拉 indexer，按 infohash 重算跨源分子 |
+| `scripts/sync_jackett_vps_key.sh` | 远端 Jackett API Key → `accounts.local.json` |
 | `scripts/seo_c2_checklist.sh` | C2 SEO 本地检查（§6.1～6.3）；等价 `seo_c2_checklist.py` |
 | `scripts/deploy_cf_pages.sh` | `generate all` + 同步静态壳 + wrangler 部署 CF Pages |
 
@@ -749,3 +775,4 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | v0.2 | 2026-07-03 | 新增 `generate`、`serve`、`pipeline batch`；独立 CLI（torrent_sources、speedtest）；修正 live/fetch 与 recommended；DMHy/cn 路由；生产工作流、脚本索引与故障排查 |
 | v0.3 | 2026-07-04 | `generate all` 产出 sitemap；新增 §3.8 / §5.8 `seo_c2_checklist` C2 SEO 本地检查用法 |
 | v0.4 | 2026-07-05 | C2 本地 13 pass；§5.8/§八 更新 OG/favicon 已落地 · dist sync Trust 说明 |
+| v0.5 | 2026-07-05 | 新增 `pipeline refetch-all`；脚本索引 fuzzy 重算与 VPS Key 同步 |

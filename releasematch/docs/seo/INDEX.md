@@ -40,7 +40,7 @@
 
 | 文档 | 日期 | 说明 |
 |------|------|------|
-| *(待建)* | — | 格式见 [TRACKER §四](./TRACKER-E-E-A-T-InfoGain.md#四迭代日志) |
+| [2026-07-05-跨源扩展与全站重拉.md](./iterations/2026-07-05-跨源扩展与全站重拉.md) | 2026-07-05 | per-indexer 跨源 · 无 Rec noindex · refetch-all · VPS 迁移 |
 
 ---
 
@@ -90,6 +90,9 @@ iterations/YYYY-MM-DD-<简短主题>.md
 |------|------|------|
 | SEO C2 门禁 | `scripts/seo_c2_checklist.py` | 技术 SEO 发版前检查 |
 | IG Debug 面板 | `RM_SHOW_IG_DEBUG=1` + 生成器 | 单页 IG 字段对照登记册 |
+| 全站 force 重拉 | `python -m workflow.run pipeline refetch-all` | 更新跨源分母与 magnet |
+| fuzzy 跨源重算 | `scripts/recompute_cross_source_fuzzy.py --all-published` | 不重拉，提升 cross 分子 |
+| VPS Key 同步 | `scripts/sync_jackett_vps_key.sh` | 远端 Jackett API Key → accounts.local.json |
 | 页面 IG 估分 | `portal/generator/ig_debug.py` | 模板调试 |
 
 ---
@@ -99,3 +102,4 @@ iterations/YYYY-MM-DD-<简短主题>.md
 | 版本 | 日期 | 说明 |
 |------|------|------|
 | v1.0 | 2026-07-04 | 初建目录；基线评估 + E-E-A-T/IG 主看板 |
+| v1.1 | 2026-07-05 | 迭代记录 · refetch-all / fuzzy 工具索引 |

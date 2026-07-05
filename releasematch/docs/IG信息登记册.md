@@ -227,20 +227,26 @@
 |--------------|------|
 | `eztv` | eztv |
 | `yts` | yts |
-| `nyaa` / `nyaa:…` | nyaa |
-| `jackett:thepiratebay` / `jackett:nyaasi` | **jackett**（多个 Jackett indexer 仍算 **1 族**） |
+| `nyaa` / `nyaa:…` / `jackett:nyaasi` | **nyaa**（Jackett nyaasi 与直连 nyaa 合并） |
+| `jackett:thepiratebay` | **thepiratebay** |
+| `jackett:1337x` | **1337x** |
+| `jackett:torrentgalaxyclone` | **torrentgalaxyclone** |
+| `jackett:all` | jackett |
 
-**注意：** 同一 infohash 若同时出现在 `jackett:thepiratebay` 与 `jackett:nyaasi`，`cross_source_count` 仍为 **1**（同属 jackett 族，不重复计数）。
+**2026-07-05 变更：** Jackett 各 indexer **独立计族**（不再合并为单一 `jackett`），以便 Hero badge 分母反映 TPB/1337x 等真实参与源数。
 
-**剧集默认参与源族：** eztv、nyaa、jackett → 分母 **M = 3**  
-**电影默认参与源族：** yts、jackett → 分母 **M = 2**
+**剧集典型参与源（欧美）：** eztv + thepiratebay + nyaasi + 1337x + torrentgalaxyclone → 分母 **M 最高 6**（`source_enabled` 动态计数）  
+**电影典型参与源：** yts + 多个 Jackett indexer → 分母 **M 通常 3~5**
 
-实际分母以 `fetch_service` 中 `source_enabled`（本次真正发起请求的源族）为准：
+**回退默认分母（无 `source_enabled` 时）：** 剧集 **4**，电影 **3**（`default_source_total`）
+
+实际分母以 `fetch_service` 中 `source_enabled`（本次真正发起请求的源族/indexer）为准：
 
 ```python
-# 剧集 _fetch_tv 初始
-source_enabled = {"eztv": False, "nyaa": False, "jackett": bool(jackett_client)}
-# 欧美剧：eztv=True；nyaa 按配置尝试；jackett 有 VPS 则为 True
+# 剧集 _collect_tv_items（节选）
+source_enabled = {"eztv": False, "nyaa": False, "dmhy": False}
+_enable_jackett_indexers(source_enabled, tv_indexers)  # thepiratebay, 1337x, …
+# 欧美剧：eztv=True；各 Jackett indexer 各计 True
 ```
 
 ### 5.3 页面级 N/M（S-03）
@@ -260,7 +266,7 @@ M = |{ 源族 f : source_enabled[f]=True }|
 - `media_pages.cross_source_count` / `cross_source_total`
 - pipeline 日志：`跨源 N/M`
 
-**缓存路径差异：** `cached=True` 时无 `source_enabled`，从 items 推断 N，M 用默认值 3（剧）/ 2（电影）。
+**缓存路径差异：** `cached=True` 时无 `source_enabled`，从 items 推断 N，M 用默认值 **4**（剧）/ **3**（电影）。
 
 ### 5.4 单条跨源置信度（S-04）
 
@@ -301,7 +307,7 @@ cross_source_confidence = min(count / M, 1.0)   # 保留 3 位小数
 | 排序 tie-break | seeders → 1080p → **`cross_source_count`** → group tier |
 | `recommend_reason` | `cross_source_count > 1` 时追加「跨 N 个数据源交叉验证」 |
 | Hero badge | 展示页面 **N/M**，不直接展示单条 confidence |
-| Sources 表 | 可展示 `cross_source_count` badge（待生成器模板） |
+| Sources 表 | `cross_source_count` badge · tier badge（`sources_table_row.html`） |
 
 ### 5.6 测试结果 — Pipeline 基准（2026-06-30，7 槽 `--force`）
 
