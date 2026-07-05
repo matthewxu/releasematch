@@ -25,7 +25,7 @@ import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
-from workflow.recommended.groups_registry import infer_group_tier, lookup_group
+from workflow.recommended.groups_registry import GroupLookup, infer_group_tier, lookup_group_detail
 from workflow.torrent_sources.release_parser import edition_sort_rank
 
 # Group tier 默认权重（映射到 0~1 后乘以 _SCORE_WEIGHT_TIER）
@@ -144,13 +144,35 @@ def score_item(item: Dict[str, Any], media_kind: str = _MEDIA_KIND_TV) -> float:
     return round(raw, 2)
 
 
-def build_recommend_reason(item: Dict[str, Any], tier: str, canonical_group: str = "") -> str:
+def _scene_compliance_clause(tier: str, scene_compliant: Optional[bool]) -> str:
+    """
+    L0~L2 已知组追加 Scene / P2P 合规说明（X-08）。
+
+    @param tier: Group 档位
+    @param scene_compliant: yaml 标记；None 表示未入库不展示
+    @returns: 合规短句或空串
+    """
+    if scene_compliant is None or tier not in ("L0", "L1", "L2"):
+        return ""
+    if scene_compliant:
+        return "Scene 合规压制"
+    return "P2P 高质量组"
+
+
+def build_recommend_reason(
+    item: Dict[str, Any],
+    tier: str,
+    canonical_group: str = "",
+    *,
+    scene_compliant: Optional[bool] = None,
+) -> str:
     """
     生成推荐理由文本（嵌入页面 HTML，供 IG）。
 
     @param item: ResourceItem 字典
     @param tier: Group 档位
     @param canonical_group: YAML 中的规范组名
+    @param scene_compliant: Scene 合规；仅 yaml 命中时传入 True/False
     @returns: 一行或多行说明
     """
     parts: List[str] = []
@@ -159,6 +181,9 @@ def build_recommend_reason(item: Dict[str, Any], tier: str, canonical_group: str
         parts.append(f"Verified Group {group}（{tier} 档信誉）")
     elif tier == "L2":
         parts.append(f"Community Group {group}（{tier} 档）")
+    compliance = _scene_compliance_clause(tier, scene_compliant)
+    if compliance:
+        parts.append(compliance)
     resolution = item.get("resolution")
     if resolution:
         parts.append(f"{resolution} 画质")
@@ -236,16 +261,22 @@ def rank_items(
     paired: List[Tuple[Dict[str, Any], Order]] = []
     for it in items:
         release_group = str(it.get("release_group") or "")
-        canonical, tier = lookup_group(release_group)
-        if not canonical:
-            tier = infer_group_tier(release_group)
+        group_info: GroupLookup = lookup_group_detail(release_group)
+        canonical = group_info.canonical
+        tier = group_info.tier if canonical else infer_group_tier(release_group)
+        scene_flag = group_info.scene_compliant if canonical else None
         sc = score_item(it, media_kind=media_kind)
         order = Order(
             infohash=str(it.get("infohash") or ""),
             title_raw=str(it.get("title_raw") or ""),
             score=sc,
             is_recommended=False,
-            recommend_reason=build_recommend_reason(it, tier, canonical),
+            recommend_reason=build_recommend_reason(
+                it,
+                tier,
+                canonical,
+                scene_compliant=scene_flag,
+            ),
             group_tier=tier,
             canonical_group=canonical,
         )

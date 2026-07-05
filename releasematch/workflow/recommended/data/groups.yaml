@@ -329,6 +329,31 @@ groups:
     scene_compliant: true
     notes: 主流 Scene
 
+  # --- L1 补库：BB 测试集 / 全库高频未入库组（2026-07-05 · X-07）---
+  - name: XEBEC
+    aliases: [XEBEC]
+    tier: L1
+    scene_compliant: false
+    notes: P2P WEB-DL/H.265，BB S04 Recommended 主组
+
+  - name: FQM
+    aliases: [FQM]
+    tier: L1
+    scene_compliant: true
+    notes: 主流 Scene，美剧高频
+
+  - name: IMMERSE
+    aliases: [IMMERSE]
+    tier: L1
+    scene_compliant: true
+    notes: Scene，AMC/HBO 系剧集常见
+
+  - name: ASAP
+    aliases: [ASAP]
+    tier: L2
+    scene_compliant: true
+    notes: Scene 社区组
+
   # --- L2 P2P / 社区组 ---
   - name: ION10
     aliases: [ION10, ION]
