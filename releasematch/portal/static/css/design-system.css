@@ -2109,6 +2109,14 @@ dd:last-child {
   font-size: var(--rm-text-sm);
   color: var(--rm-text-muted);
   list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.5rem;
+}
+
+.rm-torrent-meta-wrap__facts {
+  font-size: var(--rm-text-xs);
 }
 
 .rm-torrent-meta-wrap__summary::-webkit-details-marker {

@@ -47,6 +47,14 @@ REASON_MESSAGES: Dict[str, Dict[str, str]] = {
         "en": "Cross-verified on {count} source families (S-04)",
         "zh": "跨 {count} 个源族交叉验证（S-04）",
     },
+    "swarm_size_verified": {
+        "en": "Swarm metadata {size} matches indexer (libtorrent cross-check)",
+        "zh": "swarm metadata {size} 与 indexer 体积一致（libtorrent 交叉验证）",
+    },
+    "swarm_size_mismatch": {
+        "en": "Swarm metadata {size} differs from indexer (libtorrent cross-check)",
+        "zh": "swarm metadata {size} 与 indexer 体积不一致（libtorrent 交叉验证）",
+    },
     "default": {
         "en": "Highest composite score",
         "zh": "综合评分最高",

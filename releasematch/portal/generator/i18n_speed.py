@@ -428,6 +428,37 @@ def _localize_speed_test_subset(st: Dict[str, Any], se: Dict[str, Any]) -> None:
             st[key] = se[key]
 
 
+def _refresh_recommend_reason_torrent_meta(
+    rec: Dict[str, Any],
+    torrent_meta: Optional[Dict[str, Any]],
+    locale: str,
+) -> None:
+    """
+    将 swarm 体积交叉验证句追加到 ``recommend_reason``（A-11 候选）。
+
+    @param rec: recommended 模板字典（就地修改）
+    @param torrent_meta: ``torrent_metadata.to_template_dict()`` 结果
+    @param locale: en | zh
+    @returns: None
+    """
+    if not torrent_meta:
+        return
+    size_human = str(torrent_meta.get("total_size_human") or "").strip()
+    match = str(torrent_meta.get("size_match") or "")
+    if not size_human or match not in ("ok", "mismatch"):
+        return
+
+    from workflow.recommended.reason_i18n import reason_translate
+
+    key = "swarm_size_verified" if match == "ok" else "swarm_size_mismatch"
+    clause = reason_translate(key, locale, size=size_human)
+    base = str(rec.get("recommend_reason") or "")
+    if clause in base:
+        return
+    sep = "; " if normalize_locale(locale) == "en" else "；"
+    rec["recommend_reason"] = f"{base}{sep}{clause}" if base else clause
+
+
 def _refresh_recommend_reason_measured(
     rec: Dict[str, Any],
     localized_se: Dict[str, Any],
@@ -502,6 +533,11 @@ def apply_page_locale(variables: Dict[str, Any], locale: str) -> None:
             if endorsement:
                 recommended["speed_endorsement"] = endorsement
             _refresh_recommend_reason_measured(recommended, localized, loc)
+            _refresh_recommend_reason_torrent_meta(
+                recommended,
+                variables.get("torrent_metadata"),
+                loc,
+            )
 
 
 def localize_page_variables(variables: Dict[str, Any], locale: str) -> Dict[str, Any]:

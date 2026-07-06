@@ -304,6 +304,45 @@ def _entries_for_speed_evidence(
     ]
 
 
+def _entries_for_torrent_metadata(
+    torrent_metadata: Optional[Dict[str, Any]],
+    *,
+    block: str = "Recommended Release",
+) -> List[Dict[str, Any]]:
+    """
+    IG debug：swarm torrent 结构面板（Phase 2 metadata）。
+
+    @param torrent_metadata: 模板 dict 或 None
+    @param block: 页面区块名
+    @returns: IG 登记行列表
+    """
+    if not torrent_metadata:
+        return []
+    return [
+        _ig_entry(
+            ig_id="A-11",
+            tier="A",
+            name="Swarm 体积交叉验证",
+            field="torrent_metadata.total_size + size_match",
+            value=(
+                f"{torrent_metadata.get('total_size_human')} · "
+                f"{torrent_metadata.get('size_match')}"
+            ),
+            block=block,
+            present=torrent_metadata.get("size_match") in ("ok", "mismatch"),
+        ),
+        _ig_entry(
+            ig_id="A-11",
+            tier="A",
+            name="Torrent 主视频文件",
+            field="torrent_metadata.display_name",
+            value=torrent_metadata.get("display_name"),
+            block=block,
+            present=bool(torrent_metadata.get("display_name")),
+        ),
+    ]
+
+
 def build_ig_debug_panel(
     ctx: PageContextUnion,
     template_vars: Dict[str, Any],
@@ -347,6 +386,7 @@ def build_ig_debug_panel(
 
         speed_evidence = template_vars.get("speed_evidence")
         entries.extend(_entries_for_speed_evidence(speed_evidence or {}))
+        entries.extend(_entries_for_torrent_metadata(template_vars.get("torrent_metadata")))
 
         if ctx.recommended:
             entries.extend(

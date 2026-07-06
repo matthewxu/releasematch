@@ -189,7 +189,7 @@ def _test_with_libtorrent(
                 last_download = downloaded
                 last_sample_at = now
 
-            if downloaded >= target_bytes:
+            if status.has_metadata and downloaded >= target_bytes:
                 elapsed_ms = int((now - start) * 1000)
                 download_window = now - (first_byte_at or start)
                 avg_kbps = (
@@ -226,7 +226,7 @@ def _test_with_libtorrent(
         peers_reachable = sum(1 for p in peer_list if p.flags & 1)
         downloaded = int(status.total_download or 0)
 
-        if downloaded > 0:
+        if downloaded > 0 and status.has_metadata:
             download_window = time.time() - (first_byte_at or start)
             avg_kbps = (
                 (downloaded / 1024.0) / download_window if download_window > 0 else 0.0

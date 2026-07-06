@@ -109,6 +109,7 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "en": "Torrent structure (from swarm metadata)",
         "zh": "Torrent 结构（swarm metadata）",
     },
+    "torrent.panel.files_short": {"en": "files", "zh": "个文件"},
     "torrent.panel.title": {"en": "Torrent structure", "zh": "Torrent 结构"},
     "torrent.method_note": {
         "en": "Read from swarm metadata during speed test — same fields as a .torrent info dict (not MediaInfo).",
@@ -123,7 +124,11 @@ MESSAGES: Dict[str, Dict[str, str]] = {
     "torrent.field.piece": {"en": "Piece length", "zh": "Piece 大小"},
     "torrent.field.private": {"en": "Private torrent", "zh": "Private"},
     "torrent.private.yes": {"en": "Yes", "zh": "是"},
-    "torrent.files.title": {"en": "File list", "zh": "文件列表"},
+    "torrent.files.title": {"en": "Video files", "zh": "视频文件"},
+    "torrent.files.ancillary_note": {
+        "en": "{count} non-video files hidden",
+        "zh": "另有 {count} 个非视频文件未列出",
+    },
     "torrent.extracted_at": {"en": "Extracted at", "zh": "提取时间"},
     "torrent.size_match.ok": {"en": "Matches indexer", "zh": "与 indexer 一致"},
     "torrent.size_match.mismatch": {"en": "Differs from indexer", "zh": "与 indexer 不一致"},

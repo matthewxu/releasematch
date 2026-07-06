@@ -48,7 +48,8 @@
 | A-07 | **死链过滤标记** | `status=timeout/error` | 测速 P1 | T2 | `speedtest_results` | 隐藏或灰显不可达项 | 🔶 |
 | A-08 | **匹配排序分** | `match_score` | 评分 | T1 scorer | `download_resources` | 内部排序（可不展示） | ✅ |
 | A-09 | **首包延迟** | `latency_ms` | 测速 P2 | T2 | `speedtest_results` | 高级区 | 📋 |
-| A-10 | **索引 vs 实测对比** | seeders（索引）vs peers_total（实测） | 拉取+测速 | T0+T2 | 派生文案 | 「索引 50 seeders，实测 29 peers」 | 🔶 |
+| A-10 | **索引 vs 实测对比** | seeders（索引）vs peers_total（实测） | 拉取+测速 | T0+T2 | 派生文案 | 「索引 50 seeders，实测 29 peers」 | ✅ reason |
+| A-11 | **Swarm 体积交叉验证** | `total_size_bytes` vs indexer `size_bytes` | 测速 P2 metadata | T2 | `torrent_metadata` | 面板 + reason「swarm 5.5 GB matches indexer」 | 🔶 **75/110** |
 
 ### 2.3 B 级（2~4）— 通用信息（非 IG）
 
@@ -138,6 +139,7 @@
 | tracker announce 状态 | B | 📋 |
 | peer IP / client | B~A | 📋 需 GeoIP 才有 IG |
 | metadata 下载状态 | — | 诊断 |
+| **torrent 结构 metadata** | **A-11** | ✅ Phase 2 → `torrent_metadata` 表 |
 
 ### 阶段 4：测速 Phase 2（S-06）
 
@@ -148,8 +150,9 @@
 | `latency_ms` | int | A | ✅ | A-09 |
 | `bytes_downloaded` | int | — | ✅ | 运维 |
 | `phase` | int | — | ✅ | 固定 2 |
+| `torrent_metadata.*` | 见 §7.4 | **A** | ✅ | A-11；`has_metadata` 后提取 |
 
-### 阶段 5：聚合 → 页面（T2 待建 + T3 生成器）
+### 阶段 5：聚合 → 页面（T2 + T3 生成器）
 
 | 表 / 上下文 | 字段 | IG 等级 | 页面位置 |
 |-------------|------|---------|----------|
@@ -158,6 +161,7 @@
 | `slot_speed_summary` | `updated_at` | A | 更新时间 |
 | `slot_speed_summary` | `recommended_infohash` | — | 关联 |
 | `download_resources` | 全表推荐 + sources | S/A | episode.html |
+| `torrent_metadata` | swarm 结构 + size_match | **A** | `torrent_metadata_panel.html` |
 | 静态 HTML | 上述 bake 为文本 | S/A | Googlebot 可读 |
 
 ---
@@ -169,6 +173,7 @@
 | Hero Recommended（表格 + 理由 + Grab + 背书） | S-01, S-02, S-05, S-07, A-05 | S |
 | Hero 跨源 badge（页面 H1 区） | S-03 | S |
 | 展开测速证据（`<details>`） | S-06, A-01~A-03, A-09, A-10 | A |
+| **Torrent 结构（`<details>`）** | **A-11** | A |
 | All Sources 表（剧集） | A-05, A-06, S-04, S-05, B-01 | A + B |
 | All Versions 表（电影 · 按 edition 分组） | A-05, A-06, S-04, S-05, B-01 | A + B |
 | 侧栏 TMDB | B-06 | B |
@@ -185,7 +190,8 @@
 | 顺序 | 模块 | 模板 / 数据 | 说明 |
 |------|------|-------------|------|
 | 1 | **Hero 表格行** | `recommended_release_table.html` + `sources_table_row.html` | 与 All Sources **同列结构**（Release · Quality · Group · Size · Seed · **Magnet**）；电影页另含 Source / Video / Audio |
-| 2 | **推荐理由** | `recommend_reason` | 规则评分文案；E-05 渲染期可并入实测句 |
+| 2 | **推荐理由** | `recommend_reason` | 规则评分文案；E-05 渲染期可并入 **A-10 peers** + **A-11 swarm 体积** 句 |
+| 2b | **Torrent 结构** | `torrent_metadata_panel.html` | Phase 2 swarm metadata；summary 含体积/文件数/size_match；默认折叠 |
 | 3 | **RM Grab 指数** | `grab_index_hero.html`（`variant=card`） | `compute_grab_index()` · 速度 35% + 可达性 25% + 连接率 20% + 时效 20%；**仅针对 Hero REC 的 `recommended_infohash`** |
 | 4 | 均速 badge | `recommended.speed` | 有 Phase2 时展示均速 / 峰值 |
 | 5 | **实测背书** | `speed_endorsement` | S-07 一句摘要 |
@@ -667,7 +673,32 @@ python -m workflow.torrent_sources.speedtest.run slot \
 
 **索引 vs 实测：** 索引 seeders **50** → 实测 peers **30–46**、速度 **22–50 KB/s**（2160p WEB-DL）。
 
-### 7.4 批量时间成本（综合评估）
+### 7.4 torrent 结构 metadata（A-11）
+
+> **代码：** `speedtest/torrent_metadata.py` · `speedtest/phase2_speed.py` · `scripts/speedtest_retest_no_refetch.py`  
+> **表：** `torrent_metadata` · 迁移 `schema/mysql_migrate_torrent_metadata.sql`
+
+Phase 2 在 `has_metadata` 后从 libtorrent 读取 `.torrent` info 字典，与 indexer `size_bytes` 交叉验证。
+
+| 字段 | 说明 | 页面 |
+|------|------|------|
+| `total_size_bytes` | swarm 全部文件总大小 | 面板 · summary |
+| `indexer_size_bytes` | 拉取时 indexer 体积 | 面板 |
+| `size_match` | ok / mismatch / unknown | badge + **recommend_reason** |
+| `file_count` / `primary_file` | 文件数 / 主视频 | 面板（视频列表优先） |
+| `piece_length` / `is_private` | piece / private 标记 | 面板 |
+
+**不重拉回填：**
+
+```bash
+python scripts/speedtest_retest_no_refetch.py --write --workers 5 --timeout 120 \
+  --report worklogs/YYYY-MM-DD/speedtest-retest-no-refetch.json
+python -m workflow.run generate all
+```
+
+**基线（2026-07-06）：** 115 槽测速 · **75** 写入 metadata（全 ok）· **40** dead swarm 无数据 · dist 面板 **75** 页。
+
+### 7.5 批量时间成本（综合评估）
 
 > 完整推导见 [speedtest-Phase1探测.md §五](../worklogs/2026-07-01/speedtest-Phase1探测.md#五速度与批量时间成本综合评估)
 
@@ -684,7 +715,7 @@ python -m workflow.torrent_sources.speedtest.run slot \
 
 **与 pipeline 对比（7 槽）：** 冷拉取 **507s** vs 测速 A2 **~175s** — 可独立异步跑。
 
-### 7.5 实现状态
+### 7.6 实现状态
 
 | 模块 | 状态 |
 |------|------|
@@ -736,6 +767,7 @@ python -m workflow.torrent_sources.speedtest.run slot \
 | + 跨源 + Group | + S-03, S-04, S-05 | **7~8** |
 | + Phase 1 测速 | + A-01, A-02, A-03, S-07 | **6~8** |
 | + Phase 2 测速 | + S-06, A-09 | **8~9** |
+| + swarm metadata 交叉验证 | + **A-11** | **8~9**（验证层，辅） |
 | 全栈 + 多地域 | + S-08 | **9~10** |
 
 ---
@@ -752,7 +784,8 @@ python -m workflow.torrent_sources.speedtest.run slot \
 | P1 | S-06 | 批量 `slot` cron + 增量测速 TTL | T2 |
 | P1 | A-09 | Phase 2 首包延迟页面展示 | T3 |
 | P1 | S-04 | title/fuzzy 对齐提升 hash 级跨源重叠 | T1 |
-| P1 | A-10 | 索引 vs 实测对比文案模板 | T3 生成器 |
+| P1 | A-10 | 索引 vs 实测对比文案 → **recommend_reason** | T3 | ✅ |
+| P1 | **A-11** | swarm metadata 面板 + reason 体积句 + 展示优化 | T2+T3 | 🔶 **75/110** |
 | P2 | S-05 | cron 统计 + `scene_compliant` 入推荐理由 | T1 |
 | P2 | S-05 | PTN / mediainfo 组名提取 | T0 |
 | P2 | S-08 | 多节点 Worker | T2+ |
@@ -772,3 +805,4 @@ python -m workflow.torrent_sources.speedtest.run slot \
 | v1.6 | 2026-07-05 | §4.1 Hero 表格 + Grab 信息架构；电影多版本分组；§7.6 Grab 指数；§6.8 页面 bake 状态更新 |
 | v1.7 | 2026-07-05 | groups.yaml **102** 组（X-07）；scene_compliant 静态句入 reason（X-08） |
 | v1.8 | 2026-07-06 | §5.1 S-03/S-04 语义拆分；Hero「源有结果」文案规范；TRACKER §3.2.1 质量向三轨 |
+| v1.9 | 2026-07-06 | **A-11** 登记 · §7.4 torrent metadata · §4.1 面板架构 · 基线 **75/110** |

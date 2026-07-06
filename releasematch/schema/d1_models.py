@@ -16,8 +16,14 @@ UI 映射见 d1_schema.sql 文件头注释。
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional
+
+# torrent 面板：主视频扩展名（与 speedtest/torrent_metadata 一致）
+_TORRENT_VIDEO_EXTENSIONS = frozenset(
+    {".mkv", ".mp4", ".avi", ".m4v", ".wmv", ".ts", ".m2ts", ".mov", ".webm"}
+)
 
 
 # ---------------------------------------------------------------------------
@@ -584,6 +590,51 @@ class TorrentMetadataRecord:
         )
 
 
+def _torrent_path_basename(path: str) -> str:
+    """
+    取 torrent 内文件路径的文件名（兼容 / 与 \\）。
+
+    @param path: swarm 内相对路径
+    @returns: 文件名或空串
+    """
+    normalized = (path or "").replace("\\", "/").strip()
+    if not normalized:
+        return ""
+    return normalized.rsplit("/", 1)[-1]
+
+
+def _sanitize_torrent_display_name(raw_name: str) -> str:
+    """
+    清理 torrent 根名中的 indexer 垃圾前缀（如 UIndex 文件夹名）。
+
+    @param raw_name: libtorrent torrent_name
+    @returns: 适合页面展示的短名称
+    """
+    name = re.sub(r"\s+", " ", (raw_name or "").strip())
+    if not name:
+        return ""
+    # 常见：www.UIndex.org    -    Show S01E01 ...
+    cleaned = re.sub(r"^www\.\S+\s*-\s*", "", name, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned or name
+
+
+def _is_torrent_video_path(path: str) -> bool:
+    """
+    判断路径是否为主视频类扩展名。
+
+    @param path: 文件相对路径
+    @returns: True 表示视频文件
+    """
+    base = _torrent_path_basename(path).lower()
+    if not base:
+        return False
+    dot = base.rfind(".")
+    if dot < 0:
+        return False
+    return base[dot:] in _TORRENT_VIDEO_EXTENSIONS
+
+
 @dataclass
 class TorrentMetadataContext:
     """
@@ -632,28 +683,52 @@ class TorrentMetadataContext:
         @returns: torrent_metadata_panel 渲染字段
         """
         rec = self.record
-        primary_display = rec.primary_file.rsplit("/", 1)[-1] if rec.primary_file else ""
-        if not primary_display and rec.torrent_name:
-            primary_display = rec.torrent_name
+        primary_display = _torrent_path_basename(rec.primary_file)
+        sanitized_root = _sanitize_torrent_display_name(rec.torrent_name)
+        if not primary_display and sanitized_root:
+            primary_display = sanitized_root
+        display_name = primary_display or sanitized_root
         size_match_label_key = f"torrent.size_match.{rec.size_match}"
-        files_display: List[Dict[str, Any]] = []
+        total_human = format_size_human(rec.total_size_bytes)
+
+        video_rows: List[Dict[str, Any]] = []
+        ancillary_count = 0
         for item in self.files:
+            raw_path = str(item.get("path") or "")
             size_b = int(item.get("size_bytes") or 0)
-            files_display.append(
-                {
-                    "path": str(item.get("path") or ""),
-                    "size_bytes": size_b,
-                    "size_human": format_size_human(size_b),
-                }
-            )
+            row = {
+                "path": raw_path,
+                "path_display": _torrent_path_basename(raw_path) or raw_path,
+                "size_bytes": size_b,
+                "size_human": format_size_human(size_b),
+            }
+            if _is_torrent_video_path(raw_path):
+                video_rows.append(row)
+            else:
+                ancillary_count += 1
+
+        files_display = video_rows if video_rows else [
+            {
+                "path": str(item.get("path") or ""),
+                "path_display": _torrent_path_basename(str(item.get("path") or ""))
+                or str(item.get("path") or ""),
+                "size_bytes": int(item.get("size_bytes") or 0),
+                "size_human": format_size_human(int(item.get("size_bytes") or 0)),
+            }
+            for item in self.files
+        ]
+
         return {
             "infohash_short": rec.infohash[:8] if rec.infohash else "",
             "torrent_name": rec.torrent_name,
+            "display_name": display_name,
             "total_size_bytes": rec.total_size_bytes,
-            "total_size_human": format_size_human(rec.total_size_bytes),
+            "total_size_human": total_human,
             "indexer_size_bytes": rec.indexer_size_bytes,
             "indexer_size_human": format_size_human(rec.indexer_size_bytes),
             "file_count": rec.file_count,
+            "video_file_count": len(video_rows) if video_rows else rec.file_count,
+            "ancillary_file_count": ancillary_count,
             "piece_length": rec.piece_length,
             "piece_length_human": format_size_human(rec.piece_length) if rec.piece_length else "—",
             "is_private": rec.is_private,
@@ -667,6 +742,7 @@ class TorrentMetadataContext:
             "files_display": files_display,
             "extracted_at": rec.extracted_at,
             "method_note_key": "torrent.method_note",
+            "panel_facts": f"{total_human} · {rec.file_count} files · {rec.size_match}",
         }
 
 

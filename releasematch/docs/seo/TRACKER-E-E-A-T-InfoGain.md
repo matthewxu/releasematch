@@ -1,7 +1,7 @@
 # E-E-A-T · Info Gain · SEO 跟进看板
 
 > **Living Document** — 随 SEO 迭代持续更新  
-> **创建：** 2026-07-04 · **最近更新：** 2026-07-06（质量向定义拆分 · Hero 文案语义修正）  
+> **创建：** 2026-07-04 · **最近更新：** 2026-07-06（torrent metadata 回填 · A-11 · 页面展示优化）  
 > **功能性邮箱：** `ReleaseMatch@hotmail.com`（Contact · DMCA · Privacy）  
 > **基线评估：** [2026-07-04 基线评估](./assessments/2026-07-04-E-E-A-T与Info-Gain基线评估.md)  
 > **IG 字段权威：** [IG信息登记册.md](../IG信息登记册.md)  
@@ -24,6 +24,7 @@
 | **页面 IG 估分（Debug 呈现）** | **8~9（109/120）** · 7~8（6）· 0~1（5） | Rec+测速页 **8~9** | ✅ |
 | **页面 IG 估分（质量向）** | 见 **§3.2.1** · 主轨 **7+：98/110** · S-04 验证 **8/110** · L4 Rec **12** | **主轨维持 · S-04 辅轨↑** | 🔶 |
 | **测速 bake 覆盖率** | **110/110 Rec** 有 summary | **100%**（有 Rec 页） | ✅ |
+| **torrent metadata bake** | **75/110 Rec** 有 swarm 面板 | **有 metadata 页 100%** | 🔶 |
 | **E-E-A-T 综合** | Trust B+ · Experience B+ · Expertise A- · Auth C | Trust A- · Experience A | 🟡 |
 
 ---
@@ -58,10 +59,11 @@
 | E-02 | 测速 bake 进 HTML | 静态可爬 | ✅ | S-06 | `generate all` 120 页 · **110** 有 Rec+evidence |
 | E-03 | grab_index Hero | Recommended 卡片（表格 → 理由 → **Grab**） | ✅ | S-07 | 折叠测速内已去重；0 peers 槽分偏弱 |
 | E-04 | speed_endorsement 文案 | 实测背书句 | ✅ | S-07 | Rec+summary 页已 bake；无 Rec 页已 noindex |
-| E-05 | recommend_reason 含实测事实 | UTC + peers 对比 | ✅ | S-02 | A-10 合并 **107/107 Rec** · `_merge_measured_into_recommend_reason` |
+| E-05 | recommend_reason 含实测事实 | UTC + peers 对比 + **swarm 体积验证** | ✅ | S-02 / **A-11** | A-10 peers 句 + **A-11 swarm 句** · 有 metadata 页 |
 | E-06 | tested_at 页面展示 | 更新时间 | ✅ | A-03 | 有 Rec+测速页已展示；**10** 页无 Rec 已 noindex |
 | E-07 | 索引 vs 实测 peers 对比 | 独家事实句 | ✅ | A-10 | 面板 + **已并入 recommend_reason** |
 | E-08 | thin 降级仍输出 HTML | noindex UX | ✅ | — | `list_renderable_page_ids` · thin 页 `noindex,follow` 进 dist |
+| E-09 | **torrent metadata 面板** | swarm 结构 + size 交叉验证 | 🔶 | **A-11** | **75/110 Rec** bake · 折叠 `<details>` |
 
 ### 2.3 Expertise（专业）
 
@@ -106,6 +108,7 @@
 | S-05 | Group tier | ✅ | ✅ Hero+Sources | 🔶 L4 Rec **12**（24→12） | 空组名 / 华语标题 parser |
 | S-06 | 实测速度 | ✅ | ✅ | ✅ **110/110 Rec** | cron 维持 |
 | S-07 | 实测背书 | ✅ | 🔶 | 🔶 不可达槽弱 | 琅琊榜/三体 timeout 观察 |
+| **A-11** | **Swarm 体积交叉验证** | ✅ | 🔶 | ✅ **75/75 ok** | 面板 + reason · dead swarm **40** 槽无 |
 | S-08 | 多地域测速 | 📋 | 📋 | — | P2+ |
 
 ### 3.2 页面 IG 估分目标（Debug 呈现）
@@ -153,6 +156,7 @@
 | P0 | A-01,A-03,S-07 | speed 面板 + endorsement 已渲染 | T2+T3 | ✅ 有 Rec 页 |
 | P0 | A-07 | timeout 条目隐藏 | T2+T3 | ✅ |
 | P0 | A-10 | 索引/实测句已并入 **recommend_reason** | T3 | ✅ 有 Rec 页 |
+| P1 | **A-11** | swarm metadata 回填 + 面板 bake + 展示优化 | T2+T3 | 🔶 **75/110** |
 | P1 | S-05 | 补 groups.yaml（BB 首批 4 组） | T1 | ✅ |
 | P1 | S-05 | 补 groups.yaml（MeGusta/AFG 等全库高频） | T1 | ✅ +9 组 |
 | P1 | S-05 | Sources 表 tier badge | T3 | ✅ |
@@ -188,7 +192,7 @@
 
 | 元素 | 状态 | 说明 |
 |------|------|------|
-| Information Gain | 🟡 Debug **8~9**（109）· 质量主轨 **7+：98/110** · S-04 **8** 页 | §3.2.1 |
+| Information Gain | 🟡 Debug **8~9**（109）· 质量主轨 **7+：98/110** · S-04 **8** 页 · **A-11：75** 页 | §3.2.1 |
 | Scaled Content 合规 | ✅ | 薄页门禁 + **无 Rec noindex** + sitemap 限批 |
 | Helpful Content | 🟡 | 依赖 IG 提升 |
 | Pirate Demotion 防护 | 🟡 | 独立域 + DMCA；垂直风险仍在 |
@@ -232,6 +236,7 @@
 | 2026-07-05 | T-SEO-08 | BreadcrumbList JSON-LD · episode/movie | 技术 SEO ↑ | — | schema head |
 | 2026-07-06 | fuzzy+groups | 三档宽松 fuzzy · yaml **+12** · L4 Rec **24→12** · S-04 页 **8/110** | Expertise ↑ | 主轨 7+ **98/110**（新定义） | [worklog](../../worklogs/2026-07-06/fuzzy-relaxed-and-groups-before-after.json) |
 | 2026-07-06 | 语义修订 | Hero **源有结果**（S-03）· §3.2.1 三轨 · Trust 方法论 | Trust ↑ | 消除 cross 名不副实 | [迭代](./iterations/2026-07-06-跨源语义与质量向定义.md) |
+| 2026-07-06 | metadata | Phase 2 **torrent_metadata** · 不重拉回填 **75** 槽 · 面板 + A-11 reason 句 · `generate all` | Experience ↑ | **A-11** 新登记 · S-02 补充 | [迭代](./iterations/2026-07-06-torrent-metadata回填与页面优化.md) |
 | | | | | | |
 
 **下一迭代待办（摘自基线评估 P0/P1）：**
@@ -248,6 +253,7 @@
 - [x] P1：跨源 per-indexer + 全站 `pipeline refetch-all`
 - [x] P2：`recompute_cross_source_fuzzy.py --all-published --rescore-after`（严格档无效 → **宽松三档** 已落地）
 - [x] P1：groups.yaml 补档 **+12** · L4 Rec **24→12**
+- [ ] P1：**A-11** 无 metadata **40** 槽重试或接受无面板
 - [ ] P1：release_parser 空组名 / 华语无 `-Group` 标题（剩余 **12** L4 Rec）→ **抬主轨 7+**
 - [ ] P2：S-04 验证页占比 ↑（**8/110**）— 辅轨，非质量向主门槛
 - [x] P2：Hero / Trust **跨源文案语义**与 TRACKER 质量向拆分（2026-07-06）
@@ -283,4 +289,5 @@
 | v2.0 | 2026-07-05 | 跨源 per-indexer · 无 Rec noindex · refetch-all · VPS 172.236.156.193 · 迭代文档 |
 | v2.1 | 2026-07-06 | 宽松 fuzzy 三档 · groups +12 · cross≥2 8/110 |
 | v2.2 | 2026-07-06 | §3.2.1 质量向三轨 · Hero S-03 文案 · Trust 方法论 · 迭代文档 |
+| v2.4 | 2026-07-06 | A-11 torrent metadata · E-09 面板 bake **75/110** · reason swarm 验证句 · 迭代文档 |
 | v2.3 | 2026-07-06 | X-09 链至 [13-用户互动方案](../13-用户互动方案.md) · §五 P3 待办 |

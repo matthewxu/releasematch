@@ -64,20 +64,13 @@ def ensure_torrent_metadata_table() -> dict:
     if not MIGRATE_SQL.is_file():
         return {"applied": False, "ok": False, "detail": f"缺少 {MIGRATE_SQL}"}
 
-    sql_text = MIGRATE_SQL.read_text(encoding="utf-8")
-    conn = store._connect()
-    try:
-        with conn.cursor() as cur:
-            for stmt in sql_text.split(";"):
-                chunk = stmt.strip()
-                if chunk and not chunk.startswith("--"):
-                    cur.execute(chunk)
-    finally:
-        conn.close()
-
+    result = store.execute_sql_file(MIGRATE_SQL)
     ping2 = store.ping()
-    ok = ping2.get("ok") or "torrent_metadata" not in (ping2.get("tables_missing") or [])
-    return {"applied": True, "ok": ok, "detail": "torrent_metadata migrated" if ok else ping2}
+    ok = result.get("ok") and (
+        ping2.get("ok") or "torrent_metadata" not in (ping2.get("tables_missing") or [])
+    )
+    detail = "torrent_metadata migrated" if ok else (result.get("errors") or ping2)
+    return {"applied": True, "ok": ok, "detail": detail}
 
 
 def build_parser() -> argparse.ArgumentParser:
