@@ -104,6 +104,30 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "en": "Fewer than 2 public releases (or data degraded). Check All Sources below, revisit later, or see Scarcity tracking on the home page.",
         "zh": "公开源暂不足 2 条 release（或数据已降级），本站持续追踪。请查看下方 All Sources、稍后回访，或从首页「稀缺追踪」了解进展。",
     },
+    # ── Torrent metadata（Phase 2 swarm 结构） ──
+    "torrent.panel.summary": {
+        "en": "Torrent structure (from swarm metadata)",
+        "zh": "Torrent 结构（swarm metadata）",
+    },
+    "torrent.panel.title": {"en": "Torrent structure", "zh": "Torrent 结构"},
+    "torrent.method_note": {
+        "en": "Read from swarm metadata during speed test — same fields as a .torrent info dict (not MediaInfo).",
+        "zh": "测速时从 swarm 读取 metadata，等价 .torrent info 字典（非 MediaInfo 容器解析）。",
+    },
+    "torrent.field.name": {"en": "Name", "zh": "名称"},
+    "torrent.field.total_size": {"en": "Swarm total size", "zh": "Swarm 总大小"},
+    "torrent.field.indexer_size": {"en": "Indexer reported size", "zh": "Indexer 报告大小"},
+    "torrent.field.size_match": {"en": "Size cross-check", "zh": "体积交叉验证"},
+    "torrent.field.files": {"en": "File count", "zh": "文件数"},
+    "torrent.field.primary": {"en": "Primary video file", "zh": "主视频文件"},
+    "torrent.field.piece": {"en": "Piece length", "zh": "Piece 大小"},
+    "torrent.field.private": {"en": "Private torrent", "zh": "Private"},
+    "torrent.private.yes": {"en": "Yes", "zh": "是"},
+    "torrent.files.title": {"en": "File list", "zh": "文件列表"},
+    "torrent.extracted_at": {"en": "Extracted at", "zh": "提取时间"},
+    "torrent.size_match.ok": {"en": "Matches indexer", "zh": "与 indexer 一致"},
+    "torrent.size_match.mismatch": {"en": "Differs from indexer", "zh": "与 indexer 不一致"},
+    "torrent.size_match.unknown": {"en": "Not compared", "zh": "未对比"},
     # ── 剧集页 ──
     "episode.breadcrumb": {"en": "Breadcrumb", "zh": "面包屑"},
     "episode.meta_description": {

@@ -18,6 +18,8 @@
       <strong{% if i18n_enabled %} data-i18n="recommended.reason"{% endif %}>{{ t('recommended.reason') }}</strong><span{% if i18n_enabled %} data-i18n-dynamic="recommend_reason"{% endif %}>{{ recommended.recommend_reason }}</span>
     </div>
 
+    {% include 'partials/torrent_metadata_panel.html' %}
+
     {% if recommended.grab_index %}
     {% with grab=recommended.grab_index, variant='card' %}
     {% include 'partials/grab_index_hero.html' %}

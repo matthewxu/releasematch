@@ -75,7 +75,7 @@
 | X-06 | release 解析 | source/codec/res | 🔶 | A-05 | `[GROUP]` / `...Hon3y` 尾缀 · 空组名 Rec 仍 12 L4 |
 | X-07 | BB 高频组入库 | XEBEC/FQM/IMMERSE/ASAP | ✅ | S-05 | yaml **98→102** 组 · 2026-07-05 rescore |
 | X-08 | scene_compliant | 入 reason | ✅ | S-02 | L0~L2 已知组 · Scene/P2P 短句 |
-| X-09 | 音轨/剪辑对版段落 | 人工编辑 | 📋 | — | 最高 IG，未启动 |
+| X-09 | 音轨/剪辑对版段落 | 人工编辑 + 社区 tag | 📋 | — | 最高 IG；方案见 [13-用户互动方案](../13-用户互动方案.md) · S-Community |
 
 ### 2.4 Authoritativeness（权威）
 
@@ -251,6 +251,7 @@
 - [ ] P1：release_parser 空组名 / 华语无 `-Group` 标题（剩余 **12** L4 Rec）→ **抬主轨 7+**
 - [ ] P2：S-04 验证页占比 ↑（**8/110**）— 辅轨，非质量向主门槛
 - [x] P2：Hero / Trust **跨源文案语义**与 TRACKER 质量向拆分（2026-07-06）
+- [ ] P3：X-09 用户互动（S-Community 结构化 tag → edition_notes bake）— [13-用户互动方案](../13-用户互动方案.md)
 
 ---
 
@@ -282,3 +283,4 @@
 | v2.0 | 2026-07-05 | 跨源 per-indexer · 无 Rec noindex · refetch-all · VPS 172.236.156.193 · 迭代文档 |
 | v2.1 | 2026-07-06 | 宽松 fuzzy 三档 · groups +12 · cross≥2 8/110 |
 | v2.2 | 2026-07-06 | §3.2.1 质量向三轨 · Hero S-03 文案 · Trust 方法论 · 迭代文档 |
+| v2.3 | 2026-07-06 | X-09 链至 [13-用户互动方案](../13-用户互动方案.md) · §五 P3 待办 |

@@ -44,6 +44,12 @@
 | [2026-07-06-宽松fuzzy与groups补档.md](./iterations/2026-07-06-宽松fuzzy与groups补档.md) | 2026-07-06 | 三档 fuzzy · groups +12 |
 | [2026-07-05-跨源扩展与全站重拉.md](./iterations/2026-07-05-跨源扩展与全站重拉.md) | 2026-07-05 | per-indexer · noindex · refetch-all |
 
+### 2.4 专项方案（与 SEO/IG 交叉）
+
+| 文档 | 说明 |
+|------|------|
+| [13-用户互动方案.md](../13-用户互动方案.md) | **X-09 / S-Community**：结构化 tag · edition_notes · Worker API · 分期 |
+
 ---
 
 ## 三、SEO 元素覆盖范围

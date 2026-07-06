@@ -8,7 +8,10 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from workflow.torrent_sources.speedtest.torrent_metadata import TorrentMetadataResult
 
 
 @dataclass
@@ -79,6 +82,7 @@ class FragmentSpeedResult:
     @var error: 失败时的错误信息
     @var mode: libtorrent | dry_run
     @var phase: 固定为 2
+    @var torrent_metadata: Phase 2 期间从 swarm 读取的 torrent 结构（可选）
     """
 
     infohash: str
@@ -94,10 +98,15 @@ class FragmentSpeedResult:
     mode: str = "dry_run"
     page_id: Optional[str] = None
     phase: int = 2
+    torrent_metadata: Optional[Any] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """转为 JSON 可序列化字典。"""
-        return asdict(self)
+        data = asdict(self)
+        meta = self.torrent_metadata
+        if meta is not None and hasattr(meta, "to_dict"):
+            data["torrent_metadata"] = meta.to_dict()
+        return data
 
 
 @dataclass

@@ -2098,3 +2098,94 @@ dd:last-child {
     justify-content: center;
   }
 }
+
+/* Torrent metadata panel — Phase 2 swarm 结构 */
+.rm-torrent-meta-wrap {
+  margin-top: var(--rm-space-4);
+}
+
+.rm-torrent-meta-wrap__summary {
+  cursor: pointer;
+  font-size: var(--rm-text-sm);
+  color: var(--rm-text-muted);
+  list-style: none;
+}
+
+.rm-torrent-meta-wrap__summary::-webkit-details-marker {
+  display: none;
+}
+
+.rm-torrent-meta {
+  margin-top: var(--rm-space-3);
+  padding: var(--rm-space-4);
+  border: 1px solid var(--rm-border-subtle);
+  border-radius: var(--rm-radius-md);
+  background: rgba(91, 140, 206, 0.05);
+}
+
+.rm-torrent-meta__subtitle {
+  margin: 0.25rem 0 0;
+  font-size: var(--rm-text-xs);
+  color: var(--rm-text-muted);
+}
+
+.rm-torrent-meta__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--rm-space-3);
+  margin: var(--rm-space-4) 0 0;
+}
+
+.rm-torrent-meta__metric dt {
+  font-size: var(--rm-text-xs);
+  color: var(--rm-text-muted);
+  margin-bottom: 0.15rem;
+}
+
+.rm-torrent-meta__metric dd {
+  margin: 0;
+  font-size: var(--rm-text-sm);
+}
+
+.rm-torrent-meta__metric--highlight dd {
+  font-weight: 600;
+  color: var(--rm-accent);
+}
+
+.rm-torrent-meta__file {
+  word-break: break-all;
+  font-family: var(--rm-font-mono, monospace);
+  font-size: 0.85em;
+}
+
+.rm-torrent-meta__file-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.1rem;
+  font-size: var(--rm-text-sm);
+}
+
+.rm-torrent-meta__files-title {
+  margin: var(--rm-space-4) 0 0;
+  font-size: var(--rm-text-sm);
+}
+
+.rm-torrent-meta__footnote {
+  margin: var(--rm-space-3) 0 0;
+  font-size: var(--rm-text-xs);
+}
+
+.rm-badge--torrent-match--ok {
+  color: var(--rm-recommended);
+  border-color: var(--rm-recommended-border);
+  background: var(--rm-recommended-bg);
+}
+
+.rm-badge--torrent-match--mismatch {
+  color: var(--rm-tier-l3);
+  border-color: rgba(196, 154, 108, 0.45);
+  background: rgba(196, 154, 108, 0.12);
+}
+
+.rm-badge--torrent-match--unknown {
+  color: var(--rm-text-muted);
+}

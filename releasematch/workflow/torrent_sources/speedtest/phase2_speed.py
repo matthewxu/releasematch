@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Phase 2：magnet 片段下载测速（S-06）。
+Phase 2：magnet 片段下载测速（S-06）+ torrent metadata 提取。
 
 @module workflow.torrent_sources.speedtest.phase2_speed
 @description
-  从已连接 peer 下载前 target_bytes（默认 1MB）数据，输出 avg_kbps / max_kbps / latency_ms。
+  从已连接 peer 下载前 target_bytes（默认 1MB）数据，输出 avg_kbps / max_kbps / latency_ms；
+  metadata 就绪时读取 file list / total size（等价 .torrent info）。
   未安装 libtorrent 时回退 dry-run 占位。
 """
 
@@ -13,10 +14,11 @@ from __future__ import annotations
 import shutil
 import tempfile
 import time
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from workflow.torrent_sources.speedtest.magnet_utils import build_magnet_uri, normalize_infohash
 from workflow.torrent_sources.speedtest.models import FragmentSpeedResult, SpeedTestTask
+from workflow.torrent_sources.speedtest.torrent_metadata import extract_from_handle
 
 # 默认下载目标：1 MiB
 DEFAULT_TARGET_BYTES = 1_048_576
@@ -49,13 +51,74 @@ def _sample_kbps(instant_bps: int) -> float:
     """
     if instant_bps <= 0:
         return 0.0
-    return (instant_bps / 1024.0)
+    return instant_bps / 1024.0
+
+
+def _finalize_fragment_result(
+    handle: Any,
+    session: Any,
+    *,
+    infohash: str,
+    task: SpeedTestTask,
+    avg_kbps: float,
+    peak_kbps: float,
+    latency_ms: int,
+    downloaded: int,
+    peers_reachable: int,
+    peers_total: int,
+    elapsed_ms: int,
+    result_status: str,
+    indexer_size_bytes: int,
+    error: Optional[str] = None,
+) -> FragmentSpeedResult:
+    """
+    提取 torrent metadata 后移除 torrent 并返回 Phase 2 结果。
+
+    @param handle: libtorrent handle
+    @param session: libtorrent session
+    @param infohash: 被测 infohash
+    @param task: 测速任务
+    @param avg_kbps: 平均 KiB/s
+    @param peak_kbps: 峰值 KiB/s
+    @param latency_ms: 首字节延迟
+    @param downloaded: 已下载字节
+    @param peers_reachable: 已连接 peer
+    @param peers_total: 观测 peer 总数
+    @param elapsed_ms: 总耗时
+    @param result_status: ok | timeout | error
+    @param indexer_size_bytes: indexer 报告体积
+    @param error: 可选错误文案
+    @returns: FragmentSpeedResult（含 torrent_metadata）
+    """
+    torrent_meta = extract_from_handle(
+        handle,
+        infohash,
+        page_id=task.page_id,
+        indexer_size_bytes=indexer_size_bytes,
+    )
+    session.remove_torrent(handle)
+    return FragmentSpeedResult(
+        infohash=infohash,
+        avg_kbps=round(avg_kbps, 2),
+        max_kbps=round(peak_kbps, 2),
+        latency_ms=latency_ms,
+        bytes_downloaded=downloaded,
+        peers_reachable=peers_reachable,
+        peers_total=peers_total,
+        elapsed_ms=elapsed_ms,
+        status=result_status,
+        mode="libtorrent",
+        page_id=task.page_id,
+        error=error,
+        torrent_metadata=torrent_meta,
+    )
 
 
 def _test_with_libtorrent(
     task: SpeedTestTask,
     target_bytes: int,
     magnet_uri: Optional[str] = None,
+    indexer_size_bytes: int = 0,
 ) -> FragmentSpeedResult:
     """
     使用 libtorrent 2.x 做 Phase 2 片段下载测速。
@@ -63,6 +126,7 @@ def _test_with_libtorrent(
     @param task: 测速任务
     @param target_bytes: 目标下载字节数
     @param magnet_uri: 可选完整 magnet
+    @param indexer_size_bytes: indexer size，用于 metadata 交叉验证
     @returns: FragmentSpeedResult
     """
     import libtorrent as lt  # type: ignore
@@ -127,7 +191,7 @@ def _test_with_libtorrent(
 
             if downloaded >= target_bytes:
                 elapsed_ms = int((now - start) * 1000)
-                download_window = (now - (first_byte_at or start))
+                download_window = now - (first_byte_at or start)
                 avg_kbps = (
                     (downloaded / 1024.0) / download_window if download_window > 0 else 0.0
                 )
@@ -137,19 +201,20 @@ def _test_with_libtorrent(
                 latency_ms = 0
                 if first_byte_at is not None:
                     latency_ms = int((first_byte_at - start) * 1000)
-                session.remove_torrent(handle)
-                return FragmentSpeedResult(
+                return _finalize_fragment_result(
+                    handle,
+                    session,
                     infohash=infohash,
-                    avg_kbps=round(avg_kbps, 2),
-                    max_kbps=round(peak_kbps, 2),
+                    task=task,
+                    avg_kbps=avg_kbps,
+                    peak_kbps=peak_kbps,
                     latency_ms=latency_ms,
-                    bytes_downloaded=downloaded,
+                    downloaded=downloaded,
                     peers_reachable=peers_reachable,
                     peers_total=peers_total,
                     elapsed_ms=elapsed_ms,
-                    status="ok",
-                    mode="libtorrent",
-                    page_id=task.page_id,
+                    result_status="ok",
+                    indexer_size_bytes=indexer_size_bytes,
                 )
 
             time.sleep(0.25)
@@ -170,29 +235,29 @@ def _test_with_libtorrent(
                 avg_kbps = sum(rate_samples) / len(rate_samples)
             latency_ms = int(((first_byte_at or start) - start) * 1000)
             result_status = "ok"
+            err_msg = None
         else:
             avg_kbps = 0.0
             peak_kbps = 0.0
             latency_ms = 0
-            if not status.has_metadata:
-                result_status = "timeout"
-            else:
-                result_status = "timeout"
+            result_status = "timeout"
+            err_msg = f"未在 {task.timeout_sec}s 内完成 {target_bytes} 字节下载"
 
-        session.remove_torrent(handle)
-        return FragmentSpeedResult(
+        return _finalize_fragment_result(
+            handle,
+            session,
             infohash=infohash,
-            avg_kbps=round(avg_kbps, 2),
-            max_kbps=round(peak_kbps, 2),
+            task=task,
+            avg_kbps=avg_kbps,
+            peak_kbps=peak_kbps,
             latency_ms=latency_ms,
-            bytes_downloaded=downloaded,
+            downloaded=downloaded,
             peers_reachable=peers_reachable,
             peers_total=peers_total,
             elapsed_ms=elapsed_ms,
-            status=result_status,
-            mode="libtorrent",
-            page_id=task.page_id,
-            error=None if result_status == "ok" else f"未在 {task.timeout_sec}s 内完成 {target_bytes} 字节下载",
+            result_status=result_status,
+            indexer_size_bytes=indexer_size_bytes,
+            error=err_msg,
         )
     finally:
         shutil.rmtree(save_dir, ignore_errors=True)
@@ -206,6 +271,7 @@ def test_fragment_speed(
     target_bytes: int = DEFAULT_TARGET_BYTES,
     force_dry_run: bool = False,
     magnet_uri: Optional[str] = None,
+    indexer_size_bytes: int = 0,
 ) -> FragmentSpeedResult:
     """
     Phase 2 入口：下载片段并测速。
@@ -216,6 +282,7 @@ def test_fragment_speed(
     @param target_bytes: 目标下载字节数（默认 1MB）
     @param force_dry_run: True 时跳过 libtorrent
     @param magnet_uri: 可选完整 magnet
+    @param indexer_size_bytes: indexer 体积，供 metadata size_match
     @returns: FragmentSpeedResult
     """
     task = SpeedTestTask(
@@ -231,7 +298,12 @@ def test_fragment_speed(
     try:
         import libtorrent  # noqa: F401
 
-        return _test_with_libtorrent(task, target_bytes, magnet_uri=magnet_uri)
+        return _test_with_libtorrent(
+            task,
+            target_bytes,
+            magnet_uri=magnet_uri,
+            indexer_size_bytes=indexer_size_bytes,
+        )
     except ImportError:
         return _test_dry_run(task, target_bytes)
     except Exception as exc:

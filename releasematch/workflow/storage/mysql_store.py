@@ -38,6 +38,8 @@ from schema.d1_models import (
     SlotSpeedSummary,
     SpeedEvidenceContext,
     SpeedTestResult,
+    TorrentMetadataContext,
+    TorrentMetadataRecord,
     build_catalog_id,
     build_page_id,
     is_speed_evidence_publishable,
@@ -244,6 +246,7 @@ class MySQLStore:
             "download_resources",
             "slot_speed_summary",
             "speedtest_results",
+            "torrent_metadata",
             "sync_runs",
             "download_inventory",
         ]
@@ -429,6 +432,7 @@ class MySQLStore:
         speed_evidence = self._build_speed_evidence_context(
             page_id, speed, recommended
         )
+        torrent_metadata = self._build_torrent_metadata_context(recommended)
 
         return EpisodePageContext(
             catalog=catalog,
@@ -437,6 +441,7 @@ class MySQLStore:
             recommended=recommended,
             speed_summary=speed,
             speed_evidence=speed_evidence,
+            torrent_metadata=torrent_metadata,
             canonical_url=f"https://releasematch.io{page.canonical_path}",
         )
 
@@ -518,6 +523,123 @@ class MySQLStore:
             indexed_seeders=recommended.seeders if recommended else 0,
         )
 
+    def _build_torrent_metadata_context(
+        self,
+        recommended: Optional[DownloadResource],
+    ) -> Optional[TorrentMetadataContext]:
+        """
+        加载 Recommended infohash 的 torrent 结构 metadata（测速提取）。
+
+        @param recommended: Recommended release
+        @returns: TorrentMetadataContext 或 None
+        """
+        if not recommended or not (recommended.infohash or "").strip():
+            return None
+        record = self.get_torrent_metadata(recommended.infohash)
+        if not record:
+            return None
+        ctx = TorrentMetadataContext.from_record(record)
+        if not ctx.is_publishable():
+            return None
+        return ctx
+
+    def get_torrent_metadata(self, infohash: str) -> Optional[TorrentMetadataRecord]:
+        """
+        按 infohash 读取 torrent_metadata 行。
+
+        @param infohash: 40 位 infohash
+        @returns: TorrentMetadataRecord 或 None
+        """
+        ih = (infohash or "").lower().strip()
+        if len(ih) != 40:
+            return None
+        conn = self._connect()
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT * FROM torrent_metadata WHERE infohash = %s",
+                (ih,),
+            )
+            row = cur.fetchone()
+        conn.close()
+        if not row:
+            return None
+        return TorrentMetadataRecord.from_row(_normalize_row(row))
+
+    def upsert_torrent_metadata(
+        self,
+        meta: Any,
+        *,
+        page_id: Optional[str] = None,
+    ) -> None:
+        """
+        写入或更新 torrent_metadata（Phase 2 测速提取）。
+
+        @param meta: TorrentMetadataResult 或等价 dict
+        @param page_id: 关联页面 ID
+        @returns: None
+        """
+        from workflow.torrent_sources.speedtest.torrent_metadata import TorrentMetadataResult
+
+        if isinstance(meta, TorrentMetadataResult):
+            row = meta
+        else:
+            row = TorrentMetadataResult(**meta)
+
+        now = _utc_now_str()
+        slot_page_id = page_id or row.page_id
+        conn = self._connect()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO torrent_metadata (
+                    infohash, page_id, torrent_name, total_size_bytes,
+                    file_count, piece_length, is_private,
+                    primary_file, primary_file_size_bytes, files_json,
+                    indexer_size_bytes, size_match, size_delta_bytes,
+                    status, extracted_at
+                ) VALUES (
+                    %s, %s, %s, %s,
+                    %s, %s, %s,
+                    %s, %s, %s,
+                    %s, %s, %s,
+                    %s, %s
+                )
+                ON DUPLICATE KEY UPDATE
+                    page_id=VALUES(page_id),
+                    torrent_name=VALUES(torrent_name),
+                    total_size_bytes=VALUES(total_size_bytes),
+                    file_count=VALUES(file_count),
+                    piece_length=VALUES(piece_length),
+                    is_private=VALUES(is_private),
+                    primary_file=VALUES(primary_file),
+                    primary_file_size_bytes=VALUES(primary_file_size_bytes),
+                    files_json=VALUES(files_json),
+                    indexer_size_bytes=VALUES(indexer_size_bytes),
+                    size_match=VALUES(size_match),
+                    size_delta_bytes=VALUES(size_delta_bytes),
+                    status=VALUES(status),
+                    extracted_at=VALUES(extracted_at)
+                """,
+                (
+                    row.infohash.lower(),
+                    slot_page_id,
+                    _clip_str(row.torrent_name, 1024),
+                    int(row.total_size_bytes),
+                    int(row.file_count),
+                    int(row.piece_length),
+                    1 if row.is_private else 0,
+                    _clip_str(row.primary_file, 1024),
+                    int(row.primary_file_size_bytes),
+                    row.files_json(),
+                    int(row.indexer_size_bytes),
+                    _clip_str(row.size_match, 16),
+                    int(row.size_delta_bytes),
+                    _clip_str(row.status, 16),
+                    now,
+                ),
+            )
+        conn.close()
+
     def get_movie_page_context(self, page_id: str) -> Optional[MoviePageContext]:
         """
         加载电影页完整上下文。
@@ -535,6 +657,7 @@ class MySQLStore:
         speed_evidence = self._build_speed_evidence_context(
             page_id, speed, recommended
         )
+        torrent_metadata = self._build_torrent_metadata_context(recommended)
         return MoviePageContext(
             catalog=catalog,
             page=page,
@@ -542,6 +665,7 @@ class MySQLStore:
             recommended=recommended,
             speed_summary=speed,
             speed_evidence=speed_evidence,
+            torrent_metadata=torrent_metadata,
             canonical_url=f"https://releasematch.io{page.canonical_path}",
         )
 

@@ -177,6 +177,31 @@ CREATE INDEX IF NOT EXISTS idx_st_infohash ON speedtest_results(infohash);
 CREATE INDEX IF NOT EXISTS idx_st_page ON speedtest_results(page_id, tested_at DESC);
 
 -- -----------------------------------------------------------------------------
+-- 6b. torrent_metadata — Phase 2 swarm 结构（等价 .torrent info）
+-- UI: Recommended 卡片「Torrent structure」折叠面板
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS torrent_metadata (
+    infohash                TEXT PRIMARY KEY,
+    page_id                 TEXT,
+    torrent_name            TEXT DEFAULT '',
+    total_size_bytes        INTEGER DEFAULT 0,
+    file_count              INTEGER DEFAULT 0,
+    piece_length            INTEGER DEFAULT 0,
+    is_private              INTEGER DEFAULT 0,
+    primary_file            TEXT DEFAULT '',
+    primary_file_size_bytes INTEGER DEFAULT 0,
+    files_json              TEXT DEFAULT '[]',
+    indexer_size_bytes      INTEGER DEFAULT 0,
+    size_match              TEXT DEFAULT 'unknown',
+    size_delta_bytes        INTEGER DEFAULT 0,
+    status                  TEXT DEFAULT 'ok',
+    extracted_at            TEXT NOT NULL,
+    FOREIGN KEY (page_id) REFERENCES media_pages(page_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_tm_page ON torrent_metadata(page_id);
+
+-- -----------------------------------------------------------------------------
 -- 7. sync_runs — sync Worker 批次审计（可选，便于排查上线问题）
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS sync_runs (

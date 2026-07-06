@@ -1,0 +1,87 @@
+{# Torrent 结构面板 — Phase 2 metadata 提取（等价 .torrent info） #}
+{# @partial torrent_metadata_panel.html — 参数 torrent_metadata（dict） #}
+{% if torrent_metadata %}
+<details class="rm-torrent-meta-wrap">
+  <summary class="rm-torrent-meta-wrap__summary">
+    <span class="rm-torrent-meta-wrap__icon" aria-hidden="true">📦</span>
+    <span{% if i18n_enabled %} data-i18n="torrent.panel.summary"{% endif %}>{{ t('torrent.panel.summary') }}</span>
+  </summary>
+  <section class="rm-torrent-meta" aria-labelledby="torrent-meta-heading">
+    <div class="rm-torrent-meta__header">
+      <h3 class="rm-section__title" id="torrent-meta-heading">
+        <span{% if i18n_enabled %} data-i18n="torrent.panel.title"{% endif %}>{{ t('torrent.panel.title') }}</span>
+      </h3>
+      <p class="rm-torrent-meta__subtitle"{% if i18n_enabled %} data-i18n="torrent.method_note"{% endif %}>{{ t('torrent.method_note') }}</p>
+    </div>
+
+    <dl class="rm-torrent-meta__metrics">
+      <div class="rm-torrent-meta__metric">
+        <dt{% if i18n_enabled %} data-i18n="torrent.field.name"{% endif %}>{{ t('torrent.field.name') }}</dt>
+        <dd>{{ torrent_metadata.torrent_name or torrent_metadata.primary_file_display or '—' }}</dd>
+      </div>
+      <div class="rm-torrent-meta__metric rm-torrent-meta__metric--highlight">
+        <dt{% if i18n_enabled %} data-i18n="torrent.field.total_size"{% endif %}>{{ t('torrent.field.total_size') }}</dt>
+        <dd>{{ torrent_metadata.total_size_human }}</dd>
+      </div>
+      <div class="rm-torrent-meta__metric">
+        <dt{% if i18n_enabled %} data-i18n="torrent.field.indexer_size"{% endif %}>{{ t('torrent.field.indexer_size') }}</dt>
+        <dd>{{ torrent_metadata.indexer_size_human }}</dd>
+      </div>
+      <div class="rm-torrent-meta__metric">
+        <dt{% if i18n_enabled %} data-i18n="torrent.field.size_match"{% endif %}>{{ t('torrent.field.size_match') }}</dt>
+        <dd>
+          <span class="rm-badge rm-badge--torrent-match rm-badge--torrent-match--{{ torrent_metadata.size_match }}">
+            {{ t(torrent_metadata.size_match_label_key) }}
+          </span>
+        </dd>
+      </div>
+      <div class="rm-torrent-meta__metric">
+        <dt{% if i18n_enabled %} data-i18n="torrent.field.files"{% endif %}>{{ t('torrent.field.files') }}</dt>
+        <dd>{{ torrent_metadata.file_count }}</dd>
+      </div>
+      <div class="rm-torrent-meta__metric">
+        <dt{% if i18n_enabled %} data-i18n="torrent.field.primary"{% endif %}>{{ t('torrent.field.primary') }}</dt>
+        <dd>
+          {% if torrent_metadata.primary_file_display %}
+          <span class="rm-torrent-meta__file">{{ torrent_metadata.primary_file_display }}</span>
+          <span class="rm-text-muted">· {{ torrent_metadata.primary_file_size_human }}</span>
+          {% else %}—{% endif %}
+        </dd>
+      </div>
+      <div class="rm-torrent-meta__metric">
+        <dt{% if i18n_enabled %} data-i18n="torrent.field.piece"{% endif %}>{{ t('torrent.field.piece') }}</dt>
+        <dd>{{ torrent_metadata.piece_length_human }}</dd>
+      </div>
+      {% if torrent_metadata.is_private %}
+      <div class="rm-torrent-meta__metric">
+        <dt{% if i18n_enabled %} data-i18n="torrent.field.private"{% endif %}>{{ t('torrent.field.private') }}</dt>
+        <dd>{{ t('torrent.private.yes') }}</dd>
+      </div>
+      {% endif %}
+    </dl>
+
+    {% if torrent_metadata.files_display and torrent_metadata.files_display|length > 1 %}
+    <div class="rm-torrent-meta__files">
+      <h4 class="rm-torrent-meta__files-title"{% if i18n_enabled %} data-i18n="torrent.files.title"{% endif %}>{{ t('torrent.files.title') }}</h4>
+      <ul class="rm-torrent-meta__file-list">
+        {% for f in torrent_metadata.files_display %}
+        <li>
+          <span class="rm-torrent-meta__file">{{ f.path }}</span>
+          {% if f.size_human and f.size_human != '—' %}
+          <span class="rm-text-muted">· {{ f.size_human }}</span>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if torrent_metadata.extracted_at %}
+    <p class="rm-torrent-meta__footnote rm-text-muted">
+      <span{% if i18n_enabled %} data-i18n="torrent.extracted_at"{% endif %}>{{ t('torrent.extracted_at') }}</span>
+      {{ torrent_metadata.extracted_at }}
+    </p>
+    {% endif %}
+  </section>
+</details>
+{% endif %}

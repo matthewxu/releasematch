@@ -11,6 +11,44 @@ import uuid
 from typing import Any, Dict, Optional
 
 from workflow.torrent_sources.speedtest.models import FullSpeedResult
+from workflow.torrent_sources.speedtest.torrent_metadata import (
+    TorrentMetadataResult,
+    is_metadata_publishable,
+)
+
+
+def persist_torrent_metadata(
+    meta: TorrentMetadataResult,
+    *,
+    page_id: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    将 torrent metadata 写入 MySQL torrent_metadata 表。
+
+    @param meta: Phase 2 提取结果
+    @param page_id: 页面 ID；缺省用 meta.page_id
+    @returns: 写入摘要
+    @raises RuntimeError: MySQL 未配置
+    """
+    from workflow.config import release_mysql_configured
+    from workflow.storage.mysql_store import MySQLStore
+
+    if not release_mysql_configured():
+        raise RuntimeError("MySQL 未配置；请设置 RELEASE_MYSQL_* 环境变量")
+    if not is_metadata_publishable(meta):
+        return {"written": False, "reason": meta.status, "infohash": meta.infohash}
+
+    slot_page_id = page_id or meta.page_id
+    store = MySQLStore()
+    store.upsert_torrent_metadata(meta, page_id=slot_page_id)
+    return {
+        "written": True,
+        "infohash": meta.infohash,
+        "page_id": slot_page_id,
+        "file_count": meta.file_count,
+        "total_size_bytes": meta.total_size_bytes,
+        "size_match": meta.size_match,
+    }
 
 
 def persist_speedtest_results(
@@ -74,6 +112,12 @@ def persist_speedtest_results(
         )
         summary_written = True
 
+    metadata_written = False
+    meta = full.phase2.torrent_metadata
+    if isinstance(meta, TorrentMetadataResult) and is_metadata_publishable(meta):
+        store.upsert_torrent_metadata(meta, page_id=slot_page_id)
+        metadata_written = True
+
     return {
         "page_id": slot_page_id,
         "phase1_result_id": phase1_id,
@@ -81,6 +125,7 @@ def persist_speedtest_results(
         "recommended_speed": full.recommended_speed,
         "reachability": full.reachability,
         "slot_speed_summary_written": summary_written,
+        "torrent_metadata_written": metadata_written,
     }
 
 
@@ -128,6 +173,7 @@ def speedtest_recommended_slot(
         force_dry_run=force_dry_run,
         magnet_uri=recommended.magnet_uri or None,
         skip_phase1=skip_phase1,
+        indexer_size_bytes=int(recommended.size_bytes or 0),
     )
 
     payload: Dict[str, Any] = {

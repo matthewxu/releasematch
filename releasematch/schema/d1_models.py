@@ -524,6 +524,152 @@ class SpeedTestResult:
         )
 
 
+@dataclass
+class TorrentMetadataRecord:
+    """
+    torrent_metadata 表一行 — swarm 侧 torrent 结构（等价 .torrent info）。
+
+    @var infohash: 主键，40 位小写
+    @var page_id: 最近关联页面
+    @var torrent_name: torrent 名称
+    @var total_size_bytes: 总大小
+    @var file_count: 文件数
+    @var piece_length: piece 大小
+    @var is_private: 是否 private
+    @var primary_file: 主视频文件路径
+    @var primary_file_size_bytes: 主文件大小
+    @var files_json: 文件列表 JSON
+    @var indexer_size_bytes: 入库时 indexer 体积
+    @var size_match: ok | mismatch | unknown
+    @var size_delta_bytes: total - indexer
+    @var status: ok | no_metadata | error
+    @var extracted_at: 提取时间
+    """
+
+    infohash: str
+    page_id: Optional[str] = None
+    torrent_name: str = ""
+    total_size_bytes: int = 0
+    file_count: int = 0
+    piece_length: int = 0
+    is_private: bool = False
+    primary_file: str = ""
+    primary_file_size_bytes: int = 0
+    files_json: str = "[]"
+    indexer_size_bytes: int = 0
+    size_match: str = "unknown"
+    size_delta_bytes: int = 0
+    status: str = "ok"
+    extracted_at: str = ""
+
+    @classmethod
+    def from_row(cls, row: Dict[str, Any]) -> "TorrentMetadataRecord":
+        """从 MySQL/D1 查询行构造实例。"""
+        return cls(
+            infohash=str(row.get("infohash") or ""),
+            page_id=str(row["page_id"]) if row.get("page_id") else None,
+            torrent_name=str(row.get("torrent_name") or ""),
+            total_size_bytes=int(row.get("total_size_bytes") or 0),
+            file_count=int(row.get("file_count") or 0),
+            piece_length=int(row.get("piece_length") or 0),
+            is_private=bool(row.get("is_private")),
+            primary_file=str(row.get("primary_file") or ""),
+            primary_file_size_bytes=int(row.get("primary_file_size_bytes") or 0),
+            files_json=str(row.get("files_json") or "[]"),
+            indexer_size_bytes=int(row.get("indexer_size_bytes") or 0),
+            size_match=str(row.get("size_match") or "unknown"),
+            size_delta_bytes=int(row.get("size_delta_bytes") or 0),
+            status=str(row.get("status") or "ok"),
+            extracted_at=str(row.get("extracted_at") or ""),
+        )
+
+
+@dataclass
+class TorrentMetadataContext:
+    """
+    页面 torrent 结构面板上下文 — Recommended release 绑定。
+
+    @var record: DB 行
+    @var files: 解析后的文件列表
+    """
+
+    record: TorrentMetadataRecord
+    files: List[Dict[str, Any]] = field(default_factory=list)
+
+    @classmethod
+    def from_record(cls, record: TorrentMetadataRecord) -> "TorrentMetadataContext":
+        """
+        由 DB 记录构造展示上下文。
+
+        @param record: torrent_metadata 行
+        @returns: TorrentMetadataContext
+        """
+        files: List[Dict[str, Any]] = []
+        try:
+            parsed = json.loads(record.files_json or "[]")
+            if isinstance(parsed, list):
+                files = parsed
+        except (json.JSONDecodeError, TypeError):
+            files = []
+        return cls(record=record, files=files)
+
+    def is_publishable(self) -> bool:
+        """
+        是否 bake 进静态 HTML。
+
+        @returns: True 表示可展示
+        """
+        return (
+            self.record.status == "ok"
+            and self.record.total_size_bytes > 0
+            and self.record.file_count > 0
+        )
+
+    def to_template_dict(self) -> Dict[str, Any]:
+        """
+        转为 Jinja2 partial 参数字典。
+
+        @returns: torrent_metadata_panel 渲染字段
+        """
+        rec = self.record
+        primary_display = rec.primary_file.rsplit("/", 1)[-1] if rec.primary_file else ""
+        if not primary_display and rec.torrent_name:
+            primary_display = rec.torrent_name
+        size_match_label_key = f"torrent.size_match.{rec.size_match}"
+        files_display: List[Dict[str, Any]] = []
+        for item in self.files:
+            size_b = int(item.get("size_bytes") or 0)
+            files_display.append(
+                {
+                    "path": str(item.get("path") or ""),
+                    "size_bytes": size_b,
+                    "size_human": format_size_human(size_b),
+                }
+            )
+        return {
+            "infohash_short": rec.infohash[:8] if rec.infohash else "",
+            "torrent_name": rec.torrent_name,
+            "total_size_bytes": rec.total_size_bytes,
+            "total_size_human": format_size_human(rec.total_size_bytes),
+            "indexer_size_bytes": rec.indexer_size_bytes,
+            "indexer_size_human": format_size_human(rec.indexer_size_bytes),
+            "file_count": rec.file_count,
+            "piece_length": rec.piece_length,
+            "piece_length_human": format_size_human(rec.piece_length) if rec.piece_length else "—",
+            "is_private": rec.is_private,
+            "primary_file": rec.primary_file,
+            "primary_file_display": primary_display,
+            "primary_file_size_human": format_size_human(rec.primary_file_size_bytes),
+            "size_match": rec.size_match,
+            "size_match_label_key": size_match_label_key,
+            "size_delta_bytes": rec.size_delta_bytes,
+            "files": self.files,
+            "files_display": files_display,
+            "extracted_at": rec.extracted_at,
+            "method_note_key": "torrent.method_note",
+        }
+
+
 def _format_kbps_display(kbps: float) -> str:
     """
     将 KiB/s 格式化为带单位的展示文本。
@@ -1159,6 +1305,7 @@ class EpisodePageContext:
     @var recommended: Recommended release（sources 中 is_recommended=1）
     @var speed_summary: 测速摘要条（可选，兼容旧模板）
     @var speed_evidence: 测速 IG 证据面板（S-06 / S-07 / A 级字段）
+    @var torrent_metadata: swarm torrent 结构面板（测速 metadata 提取）
     @var canonical_url: 完整 canonical URL
     """
 
@@ -1168,6 +1315,7 @@ class EpisodePageContext:
     recommended: Optional[DownloadResource] = None
     speed_summary: Optional[SlotSpeedSummary] = None
     speed_evidence: Optional[SpeedEvidenceContext] = None
+    torrent_metadata: Optional[TorrentMetadataContext] = None
     canonical_url: str = ""
 
     def to_template_context(self, site_origin: str = "https://releasematch.io") -> Dict[str, Any]:
@@ -1224,6 +1372,9 @@ class EpisodePageContext:
             "cross_source_total": self.page.cross_source_total,
             "speed_summary": self.speed_summary.to_template_dict() if self.speed_summary else None,
             "speed_evidence": self.speed_evidence.to_template_dict() if self.speed_evidence else None,
+            "torrent_metadata": self.torrent_metadata.to_template_dict()
+            if self.torrent_metadata
+            else None,
             "recommended": rec_dict,
             "recommended_quality": recommended.resolution if recommended else "",
             "sources": [s.to_template_dict() for s in self.sources],
@@ -1295,6 +1446,7 @@ class MoviePageContext:
     @var recommended: Recommended release
     @var speed_summary: 测速摘要条（可选）
     @var speed_evidence: 测速 IG 证据面板（S-06 / S-07 / A 级字段）
+    @var torrent_metadata: swarm torrent 结构面板
     @var canonical_url: canonical URL
     """
 
@@ -1304,6 +1456,7 @@ class MoviePageContext:
     recommended: Optional[DownloadResource] = None
     speed_summary: Optional[SlotSpeedSummary] = None
     speed_evidence: Optional[SpeedEvidenceContext] = None
+    torrent_metadata: Optional[TorrentMetadataContext] = None
     canonical_url: str = ""
 
     def to_template_context(self, site_origin: str = "https://releasematch.io") -> Dict[str, Any]:
@@ -1364,6 +1517,9 @@ class MoviePageContext:
             "cross_source_total": self.page.cross_source_total,
             "speed_summary": self.speed_summary.to_template_dict() if self.speed_summary else None,
             "speed_evidence": self.speed_evidence.to_template_dict() if self.speed_evidence else None,
+            "torrent_metadata": self.torrent_metadata.to_template_dict()
+            if self.torrent_metadata
+            else None,
             "recommended": rec_dict,
             "recommended_quality": recommended.resolution if recommended else "",
             "sources": source_dicts,

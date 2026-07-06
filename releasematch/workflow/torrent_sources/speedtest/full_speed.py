@@ -26,6 +26,7 @@ def run_full_speedtest(
     magnet_uri: Optional[str] = None,
     skip_phase2: bool = False,
     skip_phase1: bool = False,
+    indexer_size_bytes: int = 0,
 ) -> FullSpeedResult:
     """
     依次执行 Phase 1 连接性与 Phase 2 片段测速，并派生 S-06 / A-01 展示字段。
@@ -39,6 +40,7 @@ def run_full_speedtest(
     @param magnet_uri: 可选完整 magnet
     @param skip_phase2: True 时仅跑 Phase 1
     @param skip_phase1: True 时跳过 Phase 1，仅跑 Phase 2（TTL 内增量）
+    @param indexer_size_bytes: indexer 报告体积，供 torrent metadata 对比
     @returns: FullSpeedResult
     """
     if skip_phase1:
@@ -76,6 +78,7 @@ def run_full_speedtest(
             target_bytes=target_bytes,
             force_dry_run=force_dry_run,
             magnet_uri=magnet_uri,
+            indexer_size_bytes=indexer_size_bytes,
         )
 
     peers_for_reach = max(phase1.peers_total, phase2.peers_total)
