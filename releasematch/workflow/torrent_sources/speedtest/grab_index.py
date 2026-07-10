@@ -64,19 +64,19 @@ def _score_freshness(freshness_class: str, validity_level: str = "") -> int:
     """
     测速时效维度得分（A-03）。
 
-    @param freshness_class: fresh/valid/stale/expired/unknown
-    @param validity_level: 高/中/低
+    @param freshness_class: fresh/valid/stale/aged/unknown
+    @param validity_level: 高/中/低/待确认
     @returns: 0–100 整数分
     """
     base_map = {
         "fresh": 100,
         "valid": 78,
         "stale": 42,
-        "expired": 12,
+        "aged": 12,
         "unknown": 0,
     }
     base = base_map.get(freshness_class, 0)
-    if validity_level == "低":
+    if validity_level in ("低", "待确认"):
         base = max(0, base - 15)
     elif validity_level == "中":
         base = max(0, base - 5)
@@ -168,7 +168,10 @@ def compute_grab_index(
     elif fresh_pts >= 42:
         summary_parts.append("数据有效")
     elif fresh_pts > 0:
-        summary_parts.append("数据陈旧")
+        if freshness_class in ("aged", "expired"):
+            summary_parts.append("数据较久")
+        else:
+            summary_parts.append("数据陈旧")
 
     return {
         "grab_index_name": GRAB_INDEX_NAME,

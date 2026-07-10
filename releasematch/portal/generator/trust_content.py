@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
+from portal.generator.trust_speed_grab_content import SPEED_GRAB_BODY_EN, SPEED_GRAB_BODY_ZH
+
 # Trust 页定义：slug、SEO、正文 HTML（en / zh）
 TRUST_PAGES: List[Dict[str, Any]] = [
     {
@@ -233,6 +235,16 @@ TRUST_PAGES: List[Dict[str, Any]] = [
 <p>DMCA 通知请发至：<a href="mailto:ReleaseMatch@hotmail.com">ReleaseMatch@hotmail.com</a></p>
 <p>一般联系：<a href="/trust/contact/">联系页</a></p>
 """.strip(),
+        },
+    },
+    {
+        "slug": "speed-and-grab",
+        "title_key": "trust.speed_grab.title",
+        "meta_key": "trust.speed_grab.meta",
+        "canonical": "/trust/speed-and-grab/",
+        "body": {
+            "en": SPEED_GRAB_BODY_EN,
+            "zh": SPEED_GRAB_BODY_ZH,
         },
     },
 ]

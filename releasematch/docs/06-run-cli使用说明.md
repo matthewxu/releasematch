@@ -78,7 +78,8 @@ python -m workflow.run
 ├── generate
 │   ├── page [--page-id | --path] [--out]
 │   └── all [--out]                     # 批量生成 published 页 + 首页
-└── serve [--host] [--port]             # 本地开发服（默认 127.0.0.1:8080）
+├── serve [--host] [--port]             # 本地开发服（默认 127.0.0.1:8080，实时读 MySQL）
+└── serve-static [--host] [--port]      # 纯静态预览 portal/dist（自动 sync static）
 ```
 
 ### 2.2 独立模块 CLI（非 `workflow.run` 子命令）
@@ -447,7 +448,9 @@ python -m workflow.run generate all --show-ig-debug
 
 - 各 published 内容页 → `portal/dist/<slug>/.../index.html`
 - 首页 → `portal/dist/index.html`
-- **sitemap** → `portal/dist/sitemap.xml`（按 SEO 决策 D3：≤30 indexable 内容页 + Trust 4 + 首页）
+- **Trust 六页** → `portal/dist/trust/*/index.html`（含 `speed-and-grab`）
+- **静态壳** → `portal/dist/static/`、`404.html`、`410.html`（`static_shell.sync_static_shell`）
+- **sitemap** → `portal/dist/sitemap.xml`（按 SEO 决策 D3：≤30 indexable 内容页 + Trust 6 + 首页）
 
 **参数：**
 
@@ -482,7 +485,31 @@ python -m workflow.run serve --host 0.0.0.0 --port 8080
 
 ---
 
-### 3.8 C2 SEO 本地检查 — `scripts/seo_c2_checklist`
+### 3.8 `serve-static` — 纯静态 dist 预览
+
+**作用：** 以 `portal/dist/` 为文档根启动 HTTP 服务；启动前自动执行 `sync_static_shell()`，确保 `/static/`、`404.html`、`410.html` 可用。生成的 HTML 内已内联 i18n bootstrap，**不依赖** `/static/js/site.js` 亦可切换 EN/中文；`site.js` 加载后提供增强交互。
+
+**语法：**
+
+```bash
+# 须先 generate all（或 deploy --prepare-only）
+RM_SITE_I18N_ENABLED=true python -m workflow.run generate all
+python -m workflow.run serve-static
+python -m workflow.run serve-static --host 0.0.0.0 --port 8080
+```
+
+**与 `serve` 对比：**
+
+| 命令 | 数据源 | 双语切换 | 用途 |
+|------|--------|----------|------|
+| `serve` | MySQL 实时渲染 | 是（`/static/` 由 portal 根提供） | 开发调试、查库 |
+| `serve-static` | `portal/dist/` 静态文件 | 是（内联 bootstrap + static） | 部署前验收、SEO spot-check |
+
+**勿用** `cd portal/dist && python -m http.server` 作为默认预览方式——若未先 sync static，样式与 `site.js` 会 404（内联 i18n 仍可切换文案，但体验不完整）。
+
+---
+
+### 3.9 C2 SEO 本地检查 — `scripts/seo_c2_checklist`
 
 **作用：** 对 `portal/dist/` 执行 [页面SEO分析与优化方向.md](../worklogs/2026-07-03/页面SEO分析与优化方向.md) **§6.1～6.3** 可本地完成的检查（robots.txt、sitemap 规则、canonical 抽查、404/410、页面 head、MySQL magnet/Recommended 交叉验证等）。**§6.4 GSC** 与 **HTTPS/HSTS** 标记为 SKIP，须上线后在 Google Search Console 验收。
 
@@ -743,7 +770,7 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | 测速全为 `dry_run` | 安装 `libtorrent`（见 worklogs speedtest 文档） |
 | Nyaa/DMHy 国内超时 | 配置 SSH SOCKS 隧道，见 [nyaa-proxy-asia.md](./nyaa-proxy-asia.md) |
 | `seo_c2_checklist` FAIL：缺 OG / favicon | 确认 `generate all` 后 dist 为最新；检查 `base.html` og 块 |
-| `seo_c2_checklist` FAIL：Trust 缺 HTML / description | 先 `rsync -a portal/trust/ portal/dist/trust/` 或 `deploy_cf_pages.sh --prepare-only` |
+| `seo_c2_checklist` FAIL：Trust 缺 HTML / description | 先 `python -m workflow.run generate all`（已含 Trust + static_shell）；或 `deploy_cf_pages.sh --prepare-only` |
 | `seo_c2_checklist`：dist 不存在 | 先 `generate all` 或加 `--prepare` |
 
 ---
@@ -760,6 +787,7 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | `generate *` | `portal/generator/generate_one.py`、`render.py`、`sitemap.py` |
 | `seo_c2_checklist` | `scripts/seo_c2_checklist.py` |
 | `serve` | `portal/generator/dev_server.py` |
+| `serve-static` | `portal/generator/dev_server.py` · `static_shell.py` |
 | `torrent_sources.run *` | `workflow/torrent_sources/run.py` |
 | `speedtest.run *` | `workflow/torrent_sources/speedtest/` |
 | 配置读取 | `workflow/config.py` |
@@ -776,3 +804,4 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | v0.3 | 2026-07-04 | `generate all` 产出 sitemap；新增 §3.8 / §5.8 `seo_c2_checklist` C2 SEO 本地检查用法 |
 | v0.4 | 2026-07-05 | C2 本地 13 pass；§5.8/§八 更新 OG/favicon 已落地 · dist sync Trust 说明 |
 | v0.5 | 2026-07-05 | 新增 `pipeline refetch-all`；脚本索引 fuzzy 重算与 VPS Key 同步 |
+| v0.6 | 2026-07-10 | `generate all` 自动 `static_shell`；新增 `serve-static`；Trust 六页（含 speed-and-grab）；i18n 内联 bootstrap |

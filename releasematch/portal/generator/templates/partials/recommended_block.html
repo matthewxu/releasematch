@@ -37,6 +37,9 @@
     {% if recommended.speed_endorsement %}
     <div class="rm-release-card__speed-endorsement">
       <strong{% if i18n_enabled %} data-i18n="recommended.endorsement"{% endif %}>{{ t('recommended.endorsement') }}</strong><span{% if i18n_enabled %} data-i18n-dynamic="speed_endorsement"{% endif %}>{{ recommended.speed_endorsement }}</span>
+      {% with anchor='speed-credibility', label_key='metrics.explainer.freshness' %}
+      {% include 'partials/metrics_explainer_link.html' %}
+      {% endwith %}
     </div>
     {% endif %}
 

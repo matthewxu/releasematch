@@ -14,6 +14,9 @@
         <span{% if i18n_enabled %} data-i18n="speed.panel.title"{% endif %}>{{ t('speed.panel.title') }}</span>
       </h2>
       <p class="rm-speed-evidence__subtitle"{% if i18n_enabled %} data-i18n-dynamic="speed_method_note"{% endif %}>{{ speed_evidence.method_note }}</p>
+      {% with anchor='speed-metrics', label_key='metrics.explainer.speed' %}
+      {% include 'partials/metrics_explainer_link.html' %}
+      {% endwith %}
     </div>
     <div class="rm-speed-evidence__badges" aria-label="{{ t('speed.panel.ig_aria') }}">
       {% if show_ig_debug %}
@@ -33,6 +36,9 @@
       <span class="rm-speed-evidence__freshness-label"{% if i18n_enabled %} data-i18n="speed.freshness.label"{% endif %}>{{ t('speed.freshness.label') }}</span>
       <span class="rm-speed-evidence__freshness-value"{% if i18n_enabled %} data-i18n-dynamic="speed_freshness_label"{% endif %}>{{ speed_evidence.freshness_label }}</span>
       <span class="rm-speed-evidence__freshness-validity"{% if i18n_enabled %} data-i18n-dynamic="speed_freshness_validity_line"{% endif %}>{{ t('speed.freshness.validity', level=speed_evidence.validity_level) }}</span>
+      {% with anchor='speed-credibility', label_key='metrics.explainer.freshness' %}
+      {% include 'partials/metrics_explainer_link.html' %}
+      {% endwith %}
     </div>
     <div class="rm-speed-evidence__freshness-time">
       {% if speed_evidence.tested_at_iso %}
@@ -51,6 +57,9 @@
       <div class="rm-speed-evidence__reachability-head">
         <span class="rm-speed-evidence__reachability-label"{% if i18n_enabled %} data-i18n="speed.reach.label"{% endif %}>{{ t('speed.reach.label') }}</span>
         <span class="rm-speed-evidence__reachability-value"{% if i18n_enabled %} data-i18n-dynamic="speed_reachability_display"{% endif %}>{{ speed_evidence.reachability_display | default(speed_evidence.reachability) }}</span>
+        {% with anchor='reachability', label_key='metrics.explainer.reachability' %}
+        {% include 'partials/metrics_explainer_link.html' %}
+        {% endwith %}
       </div>
       <p class="rm-speed-evidence__reachability-detail"{% if i18n_enabled %} data-i18n-dynamic="speed_reachability_detail"{% endif %}>{{ speed_evidence.reachability_detail }}</p>
       {% if show_ig_debug %}

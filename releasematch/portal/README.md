@@ -62,7 +62,7 @@ portal/
 | 剧集 Hub | `/breaking-bad/` | 生成器 `show_hub.html` |
 | **单集 L3（核心）** | `/breaking-bad/s4e6/` | 生成器 `episode.html` |
 | 电影 | `/inception-2010/` | 生成器 `movie.html` |
-| Trust | `/trust/about/` 等 | 静态 `trust/*/index.html` |
+| Trust | `/trust/about/`、`/trust/speed-and-grab/` 等 | `generate all` → `dist/trust/*/index.html` |
 | 404 / 410 | `/404.html` | 静态壳 |
 
 ### 单集页模块顺序（对齐 01 文档 §5.5）
@@ -94,9 +94,17 @@ python -m workflow.run serve --port 8080
 **方式 B — 生成静态 HTML 到 `portal/dist/`（部署同源）：**
 
 ```bash
-python -m workflow.run generate all
-cd portal/dist && python -m http.server 8080
+# 开启双语切换时建议显式设置（默认 false 为固定英文）
+RM_SITE_I18N_ENABLED=true python -m workflow.run generate all
+
+# 推荐：自动同步 static 壳 + 内联 i18n bootstrap
+python -m workflow.run serve-static --port 8080
 ```
+
+`generate all` 末尾会调用 `static_shell.sync_static_shell()`，将 `portal/static/`、`404.html`、`410.html` 复制到 `dist/`。  
+若直接用 `cd portal/dist && python -m http.server`，须确认 `dist/static/` 已存在；否则 `/static/js/site.js` 404，顶栏 EN/中文 按钮无效（HTML 内已含内联 bootstrap 时可切换，但样式与增强交互仍依赖 static）。
+
+**方式 B 验收双语：** 浏览器打开 `http://127.0.0.1:8080/breaking-bad/s4e6/`，点击顶栏「中文」，导航、Hero、Footer 应切换；Trust 说明页 `/trust/speed-and-grab/` 正文亦随切换变化。
 
 ---
 

@@ -71,7 +71,7 @@
 
     {% if catalog_entries %}
     <div class="rm-catalog-search-wrap">
-      <label class="rm-sr-only" for="catalog-search">{{ t('home.search_label') }}</label>
+      <label class="rm-sr-only" for="catalog-search"{% if i18n_enabled %} data-i18n="home.search_label"{% endif %}>{{ t('home.search_label') }}</label>
       <input
         id="catalog-search"
         class="rm-input rm-catalog-search"

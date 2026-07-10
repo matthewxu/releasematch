@@ -596,6 +596,11 @@ dd:last-child {
   color: var(--rm-star);
 }
 
+.rm-release-card__speed-endorsement .rm-metrics-explainer-link {
+  display: block;
+  margin-top: 0.45rem;
+}
+
 .rm-release-card__speed-facts-wrap {
   margin-bottom: 1rem;
   padding: 1rem;
@@ -1245,7 +1250,12 @@ dd:last-child {
   background: rgba(251, 191, 36, 0.08);
 }
 
-.rm-speed-evidence__freshness--expired,
+.rm-speed-evidence__freshness--aged,
+.rm-speed-evidence__freshness--expired {
+  border-color: rgba(148, 163, 184, 0.45);
+  background: rgba(148, 163, 184, 0.08);
+}
+
 .rm-speed-evidence__freshness--unknown {
   border-color: rgba(248, 113, 113, 0.45);
   background: rgba(248, 113, 113, 0.08);
@@ -1321,7 +1331,8 @@ dd:last-child {
 .rm-speed-evidence__freshness-compact-value--fresh { color: #4ade80; }
 .rm-speed-evidence__freshness-compact-value--valid { color: #38bdf8; }
 .rm-speed-evidence__freshness-compact-value--stale { color: #fbbf24; }
-.rm-speed-evidence__freshness-compact-value--expired,
+.rm-speed-evidence__freshness-compact-value--aged,
+.rm-speed-evidence__freshness-compact-value--expired { color: #94a3b8; }
 .rm-speed-evidence__freshness-compact-value--unknown { color: #f87171; }
 
 .rm-speed-evidence__metric--highlight {
@@ -1717,6 +1728,71 @@ dd:last-child {
 .rm-prose a {
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+/* Trust 说明页：指标定义表格 */
+.rm-prose .rm-spec-table {
+  width: 100%;
+  margin: 1rem 0 1.5rem;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.rm-prose .rm-spec-table th,
+.rm-prose .rm-spec-table td {
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--rm-border-subtle);
+  text-align: left;
+  vertical-align: top;
+}
+
+.rm-prose .rm-spec-table thead th {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--rm-text-muted);
+  background: var(--rm-bg-elevated);
+}
+
+.rm-prose .rm-spec-table tbody tr:nth-child(even) td {
+  background: rgba(91, 140, 206, 0.04);
+}
+
+/* 内容页 → 测速/Grab 说明页链接 */
+.rm-metrics-explainer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--rm-accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.rm-metrics-explainer-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.rm-metrics-explainer-link__icon {
+  font-size: 0.85em;
+  line-height: 1;
+}
+
+.rm-grab-index__brand .rm-metrics-explainer-link {
+  margin-top: 0.35rem;
+}
+
+.rm-speed-evidence__titles .rm-metrics-explainer-link {
+  margin-top: 0.25rem;
+}
+
+.rm-speed-evidence__freshness-main .rm-metrics-explainer-link,
+.rm-speed-evidence__reachability-head .rm-metrics-explainer-link {
+  margin-left: auto;
 }
 
 /* ==========================================================================

@@ -6,9 +6,9 @@
 @module portal.generator.dev_server
 @description
   启动 HTTP 服务：
-    - /static/、/trust/、404/410 等走 portal/ 静态文件
+    - /static/、404/410 等走 portal/ 静态文件
+    - /trust/* 优先读 portal/dist/trust/（generate all 产出），否则 Jinja 动态渲染
     - 首页与槽位路径（如 /breaking-bad/s4e6/）实时读 MySQL 渲染 Jinja2
-    - 内容页 **不** 使用 portal/ 下手写 HTML（已清理，仅 dist/ 为静态产出）
 """
 
 from __future__ import annotations
@@ -28,6 +28,9 @@ from portal.generator.render import render_home_page, render_page_context
 # portal 根目录（静态资源）
 PORTAL_ROOT = PROJECT_ROOT / "portal"
 
+# generate all 产出目录（Trust 页等）
+DIST_ROOT = PROJECT_ROOT / "portal" / "dist"
+
 # DB 动态路由 slug 模式（排除 static、trust 等）
 _DB_ROUTE_RE = re.compile(r"^/([^/]+)(/s\d+e\d+)?/?$")
 
@@ -42,6 +45,7 @@ class PortalDevHandler(BaseHTTPRequestHandler):
     """
 
     portal_root: Path = PORTAL_ROOT
+    dist_root: Path = DIST_ROOT
     store: Optional[MySQLStore] = None
     site_origin: str = "http://127.0.0.1:8080"
 
@@ -59,7 +63,11 @@ class PortalDevHandler(BaseHTTPRequestHandler):
         if self._try_render_db_page(path):
             return
 
-        # 2. 静态文件回退
+        # 2. Trust 说明页：dist 优先，否则 Jinja 动态渲染
+        if self._try_serve_trust_page(path):
+            return
+
+        # 3. 静态文件回退
         self._serve_static(path)
 
     def _try_render_db_page(self, path: str) -> bool:
@@ -119,6 +127,61 @@ class PortalDevHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
         return True
 
+    def _trust_slug_from_path(self, path: str) -> Optional[str]:
+        """
+        从 URL 解析 Trust slug。
+
+        @param path: 如 /trust/speed-and-grab/ 或 /trust/speed-and-grab
+        @returns: slug 或 None
+        """
+        normalized = path.rstrip("/")
+        parts = [p for p in normalized.split("/") if p]
+        if len(parts) != 2 or parts[0] != "trust":
+            return None
+        return parts[1]
+
+    def _try_serve_trust_page(self, path: str) -> bool:
+        """
+        提供 Trust 页：先读 dist，再动态渲染 TRUST_PAGES。
+
+        @param path: URL 路径
+        @returns: 是否已响应
+        """
+        slug = self._trust_slug_from_path(path)
+        if not slug:
+            return False
+
+        dist_file = self.dist_root / "trust" / slug / "index.html"
+        if dist_file.is_file():
+            body = dist_file.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("X-RM-Source", "dist-trust")
+            self.end_headers()
+            self.wfile.write(body)
+            return True
+
+        from portal.generator.render import render_html
+        from portal.generator.render_trust import _trust_page_context
+        from portal.generator.trust_content import TRUST_PAGES
+
+        page_def = next((p for p in TRUST_PAGES if str(p.get("slug")) == slug), None)
+        if not page_def:
+            return False
+
+        origin = f"http://{self.headers.get('Host', '127.0.0.1:8080')}"
+        ctx = _trust_page_context(page_def, origin)
+        html = render_html("trust/page.html", ctx)
+        body = html.encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("X-RM-Source", "trust-render")
+        self.end_headers()
+        self.wfile.write(body)
+        return True
+
     def _serve_static(self, path: str) -> None:
         """
         从 portal/ 目录提供静态文件。
@@ -154,6 +217,38 @@ class PortalDevHandler(BaseHTTPRequestHandler):
         self.wfile.write(content)
 
 
+def run_static_server(host: str = "127.0.0.1", port: int = 8080) -> None:
+    """
+    纯静态预览：先同步 static 壳，再以 portal/dist 为根目录启动 http.server。
+
+    @param host: 监听地址
+    @param port: 端口
+    @returns: None
+    """
+    import os
+    from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+
+    from portal.generator.static_shell import sync_static_shell
+
+    result = sync_static_shell()
+    if not result.get("ok"):
+        print(f"[static] 警告：未找到 site.js（{result.get('site_js')}）")
+
+    dist = DIST_ROOT.resolve()
+    os.chdir(dist)
+    server = ThreadingHTTPServer((host, port), SimpleHTTPRequestHandler)
+    print(f"ReleaseMatch 静态预览：http://{host}:{port}/")
+    print(f"  根目录：{dist}")
+    print("  双语：页面内联 i18n 引导（不依赖 site.js）")
+    print(f"  static 壳：{result.get('static_file_count', 0)} 个文件")
+    print("  Ctrl+C 停止")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\n已停止")
+        server.shutdown()
+
+
 def run_dev_server(host: str = "127.0.0.1", port: int = 8080) -> None:
     """
     启动开发服务器（阻塞）。
@@ -167,7 +262,8 @@ def run_dev_server(host: str = "127.0.0.1", port: int = 8080) -> None:
     server = ThreadingHTTPServer((host, port), PortalDevHandler)
     print(f"ReleaseMatch Portal 开发服：http://{host}:{port}/")
     print("  DB 页面：/  /breaking-bad/s4e6/  /inception-2010/  …")
-    print("  静态资源：/static/  /trust/  /404.html")
+    print("  Trust 页：/trust/speed-and-grab/  …（dist 优先，否则动态渲染）")
+    print("  静态资源：/static/  /404.html")
     print(f"  IG debug 面板：{'开启' if SHOW_IG_DEBUG else '关闭'}（RM_SHOW_IG_DEBUG）")
     print("  Ctrl+C 停止")
     try:

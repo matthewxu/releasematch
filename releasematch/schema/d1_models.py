@@ -842,6 +842,14 @@ def _format_age_display(age_hours: float) -> str:
     return f"{days:.1f} 天前".replace(".0 天", " 天")
 
 
+# 测速可信度（A-03）时间窗口（小时）— 与 trust/speed-and-grab 说明页一致
+FRESHNESS_FRESH_HOURS: float = 24.0
+FRESHNESS_VALID_HOURS: float = 48.0
+FRESHNESS_STALE_HOURS: float = 72.0
+# 分级边界容差（秒级时间戳往返误差，使 ≤24/48/72h 按「以内」含边界）
+FRESHNESS_BOUNDARY_GRACE_HOURS: float = 1.0 / 60.0
+
+
 def compute_test_freshness(
     tested_at_raw: str,
     *,
@@ -850,8 +858,10 @@ def compute_test_freshness(
     """
     根据测速时间计算有效性等级（A-03），供页面与 debug 展示。
 
+    分级：≤24h Fresh · ≤48h Valid · ≤72h Stale · >72h Aged（较久，非断言已失效）
+
     @param tested_at_raw: MySQL tested_at / updated_at 原始值
-    @param ttl_hours: cron 增量 TTL（默认 6h，与 batch 策略一致）
+    @param ttl_hours: cron 增量 TTL（默认 6h）；仅作展示参考，不单独决定 Fresh 档位
     @returns: freshness_class、freshness_label、age_display、freshness_note 等
     """
     from datetime import datetime, timezone
@@ -875,33 +885,37 @@ def compute_test_freshness(
     age_display = _format_age_display(age_hours)
     tested_at_iso = parsed.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    if age_hours <= ttl_hours:
+    if age_hours <= FRESHNESS_FRESH_HOURS + FRESHNESS_BOUNDARY_GRACE_HOURS:
         freshness_class = "fresh"
         freshness_label = "新鲜"
         validity_level = "高"
         freshness_note = (
-            f"距测速 {age_display}，在 {ttl_hours}h TTL 内；数据可直接用于 Recommended 实测背书（S-07）。"
+            f"距测速 {age_display}（≤{int(FRESHNESS_FRESH_HOURS)}h）；"
+            f"数据可直接用于 Recommended 实测背书（S-07）。"
         )
-    elif age_hours <= 24:
+    elif age_hours <= FRESHNESS_VALID_HOURS + FRESHNESS_BOUNDARY_GRACE_HOURS:
         freshness_class = "valid"
         freshness_label = "有效"
         validity_level = "中"
         freshness_note = (
-            f"距测速 {age_display}，已超过 {ttl_hours}h cron 窗口但仍 <24h；建议参考，生产环境可安排复测。"
+            f"距测速 {age_display}（{int(FRESHNESS_FRESH_HOURS)}–{int(FRESHNESS_VALID_HOURS)}h）；"
+            f"仍可参考，建议在 cron（{ttl_hours}h TTL）窗口外安排复测。"
         )
-    elif age_hours <= 72:
+    elif age_hours <= FRESHNESS_STALE_HOURS + FRESHNESS_BOUNDARY_GRACE_HOURS:
         freshness_class = "stale"
         freshness_label = "陈旧"
         validity_level = "低"
         freshness_note = (
-            f"距测速 {age_display}（>24h）；peer/速度可能已变化，IG 背书效力降低，应优先复测。"
+            f"距测速 {age_display}（{int(FRESHNESS_VALID_HOURS)}–{int(FRESHNESS_STALE_HOURS)}h）；"
+            f"peer/速度可能已变化，IG 背书效力降低，应优先复测。"
         )
     else:
-        freshness_class = "expired"
-        freshness_label = "过期"
-        validity_level = "无效"
+        freshness_class = "aged"
+        freshness_label = "较久"
+        validity_level = "待确认"
         freshness_note = (
-            f"距测速 {age_display}（>72h）；不应再作为页面实测背书，请重新执行 slot/batch 测速。"
+            f"距测速 {age_display}（>{int(FRESHNESS_STALE_HOURS)}h）；"
+            f"swarm 状态可能已有变化，建议复测后再作主要依据（非断言已失效）。"
         )
 
     return {

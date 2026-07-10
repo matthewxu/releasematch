@@ -24,15 +24,19 @@ OUTBOUND_LINK_REL: str = "nofollow noopener noreferrer"
 # 用户生成/跨站语境出站链（如 SubtitlePortal）：在 nofollow 基础上保留 ugc
 OUTBOUND_LINK_REL_UGC: str = "nofollow ugc noopener noreferrer"
 
+# 测速可信度与 RM Grab 指数说明页（站内 Trust 页，非外出链）
+METRICS_GUIDE_PATH: str = "/trust/speed-and-grab/"
+
 
 def outbound_link_context() -> Dict[str, str]:
     """
-    注入 Jinja 模板的出站链接变量。
+    注入 Jinja 模板的链接策略变量。
 
-    @returns: 含 outbound_link_target / outbound_link_rel / outbound_link_rel_ugc 的字典
+    @returns: 含出站链 target/rel 与 metrics_guide_path 的字典
     """
     return {
         "outbound_link_target": OUTBOUND_LINK_TARGET,
         "outbound_link_rel": OUTBOUND_LINK_REL,
         "outbound_link_rel_ugc": OUTBOUND_LINK_REL_UGC,
+        "metrics_guide_path": METRICS_GUIDE_PATH,
     }

@@ -42,7 +42,8 @@
 
 - [x] `render.py` — Jinja2 渲染
 - [x] `generate_one.py` — 单页/批量 CLI（`workflow.run generate`）
-- [x] `dev_server.py` — 本地开发服（`workflow.run serve`，实时读 MySQL）
+- [x] `dev_server.py` — 本地开发服（`workflow.run serve`，实时读 MySQL；`serve-static` 预览 dist）
+- [x] `static_shell.py` — `generate all` 末尾同步 `static/`、`404.html`、`410.html` → `dist/`
 - [ ] `generate_batch.py` — 读 `priority/queue_builder.py` 队列
 - [ ] 薄页门禁与 canonical 注入（生成器内置部分已完成）
 
@@ -70,7 +71,7 @@
 | **Open Graph + Twitter** | `templates/base.html` | `og:site_name/type/url/title/description`；episode `video.episode` · movie `video.movie` |
 | **Favicon** | `portal/static/favicon.ico` · `.svg` | `base.html` + Trust 五页静态 HTML |
 | **JSON-LD** | `episode.html` / `movie.html` / `home.html` | TVEpisode · Movie · WebSite（`build_*_schema_ld`） |
-| **C2 验收** | `scripts/seo_c2_checklist.py` | 本地 §6.1～6.3；generate 后须 sync Trust/static 进 dist |
+| **C2 验收** | `scripts/seo_c2_checklist.py` | 本地 §6.1～6.3；`generate all` 已含 Trust 页 + `static_shell` 同步 |
 | **i18n en/zh** | [`docs/portal/UI国际化方案.md`](../docs/portal/UI国际化方案.md) | `RM_SITE_I18N_ENABLED` · `RM_SITE_LOCALE` · dynamic 切换 |
 
 ### UI 国际化（2026-07-05 · T-SEO-06）
@@ -83,5 +84,7 @@
 | `RM_SITE_LOCALE` | `en` | `en` 或 `zh`；关闭 i18n 时为整站唯一 UI 语言 |
 
 - 静态 UI：`portal/generator/i18n.py` → `{{ t('key') }}`
-- 动态正文（reason / 测速 / overview）：`i18n_dynamic.py` + `site.js` 的 `data-i18n-dynamic`
-- Trust 五页：由 `render_trust.py` 随 `generate all` 写入 `portal/dist/trust/`（非手写静态为主路径）
+- 动态正文（reason / 测速 / overview）：`i18n_dynamic.py` + `data-i18n-dynamic`
+- 前端切换：`partials/i18n_bootstrap.js` 内联于 HTML（不依赖 `/static/js/site.js` 即可切换）；`site.js` 在 static 可用时增强（`data-i18n-aria-label`、`rm-locale-change` 事件）
+- Trust 六页（含 `speed-and-grab`）：由 `render_trust.py` 随 `generate all` 写入 `portal/dist/trust/`
+- 静态预览：`python -m workflow.run serve-static`（启动前自动 `sync_static_shell`）

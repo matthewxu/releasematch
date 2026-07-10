@@ -6,6 +6,9 @@
     <div class="rm-grab-index__brand">
       <span class="rm-grab-index__name"{% if i18n_enabled %} data-i18n="speed.grab.name"{% endif %}>{{ grab.grab_index_name }}</span>
       <span class="rm-grab-index__tagline"{% if i18n_enabled %} data-i18n="speed.grab.tagline"{% endif %}>{{ grab.grab_index_tagline }}</span>
+      {% with anchor='grab-index', label_key='metrics.explainer.grab' %}
+      {% include 'partials/metrics_explainer_link.html' %}
+      {% endwith %}
     </div>
     <div class="rm-grab-index__score-wrap">
       <span class="rm-grab-index__score" aria-label="{{ t('speed.grab.score_aria') }}">{{ grab.grab_index_score }}</span>
@@ -33,6 +36,9 @@
     <div class="rm-grab-index__brand">
       <span class="rm-grab-index__name"{% if i18n_enabled %} data-i18n="speed.grab.name"{% endif %}>{{ grab.grab_index_name }}</span>
       <span class="rm-grab-index__tagline"{% if i18n_enabled %} data-i18n="speed.grab.tagline"{% endif %}>{{ grab.grab_index_tagline }}</span>
+      {% with anchor='grab-index', label_key='metrics.explainer.grab' %}
+      {% include 'partials/metrics_explainer_link.html' %}
+      {% endwith %}
     </div>
     <div class="rm-grab-index__score-wrap">
       <span class="rm-grab-index__score rm-grab-index__score--pending">—</span>

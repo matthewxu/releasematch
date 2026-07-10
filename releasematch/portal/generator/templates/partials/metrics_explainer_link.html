@@ -1,0 +1,6 @@
+{# 测速 / Grab 指标说明页链接 — 链至 /trust/speed-and-grab/ 锚点 #}
+{# @partial metrics_explainer_link.html — 参数 anchor（如 grab-index）、label_key #}
+<a class="rm-metrics-explainer-link" href="{{ metrics_guide_path }}#{{ anchor }}" title="{{ t('metrics.explainer.page_title') }}">
+  <span class="rm-metrics-explainer-link__icon" aria-hidden="true">ℹ️</span>
+  <span{% if i18n_enabled %} data-i18n="{{ label_key }}"{% endif %}>{{ t(label_key) }}</span>
+</a>

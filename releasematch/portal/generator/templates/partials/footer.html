@@ -14,11 +14,12 @@
       <div>
         <div class="rm-footer__heading"{% if i18n_enabled %} data-i18n="footer.trust"{% endif %}>{{ t('footer.trust') }}</div>
         <ul class="rm-footer__links">
-          <li><a href="/trust/about/">About</a></li>
-          <li><a href="/trust/how-matching-works/">How matching works</a></li>
-          <li><a href="/trust/contact/">Contact</a></li>
-          <li><a href="/trust/privacy/">Privacy</a></li>
-          <li><a href="/trust/dmca/">DMCA</a></li>
+          <li><a href="/trust/about/"{% if i18n_enabled %} data-i18n="nav.about"{% endif %}>{{ t('nav.about') }}</a></li>
+          <li><a href="/trust/how-matching-works/"{% if i18n_enabled %} data-i18n="nav.how"{% endif %}>{{ t('nav.how') }}</a></li>
+          <li><a href="/trust/speed-and-grab/"{% if i18n_enabled %} data-i18n="footer.speed_grab"{% endif %}>{{ t('footer.speed_grab') }}</a></li>
+          <li><a href="/trust/contact/"{% if i18n_enabled %} data-i18n="trust.contact.heading"{% endif %}>{{ t('trust.contact.heading') }}</a></li>
+          <li><a href="/trust/privacy/"{% if i18n_enabled %} data-i18n="trust.privacy.heading"{% endif %}>{{ t('trust.privacy.heading') }}</a></li>
+          <li><a href="/trust/dmca/"{% if i18n_enabled %} data-i18n="trust.dmca.heading"{% endif %}>{{ t('trust.dmca.heading') }}</a></li>
         </ul>
       </div>
 

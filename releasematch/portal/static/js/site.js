@@ -239,6 +239,13 @@
    * 页面 UI 国际化：读取 catalog、应用 locale、绑定切换器。
    */
   function initI18n() {
+    if (window.RM_I18N) {
+      document.addEventListener("rm-locale-change", function () {
+        initResponsiveTables();
+      });
+      return;
+    }
+
     var dataEl = document.getElementById("rm-i18n-data");
     if (!dataEl || !dataEl.textContent) {
       return;
@@ -324,6 +331,13 @@
         }
       });
 
+      document.querySelectorAll("[data-i18n-aria-label]").forEach(function (el) {
+        var aKey = el.getAttribute("data-i18n-aria-label");
+        if (aKey && bucket[aKey]) {
+          el.setAttribute("aria-label", bucket[aKey]);
+        }
+      });
+
       document.querySelectorAll("[data-i18n-dynamic]").forEach(function (el) {
         var dKey = el.getAttribute("data-i18n-dynamic");
         if (!dKey) {
@@ -373,6 +387,7 @@
         window.localStorage.setItem(storageKey, next);
         applyLocale(next);
         initResponsiveTables();
+        document.dispatchEvent(new CustomEvent("rm-locale-change", { detail: { locale: next } }));
       });
     }
 

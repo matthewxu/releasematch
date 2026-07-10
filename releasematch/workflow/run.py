@@ -389,6 +389,19 @@ def cmd_serve(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_serve_static(args: argparse.Namespace) -> int:
+    """
+    启动 portal/dist 纯静态预览（自动同步 static 壳）。
+
+    @param args: 含 host、port
+    @returns: 进程退出码
+    """
+    from portal.generator.dev_server import run_static_server
+
+    run_static_server(host=args.host, port=args.port)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """
     构建 argparse 解析器。
@@ -530,6 +543,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_serve.add_argument("--host", default="127.0.0.1")
     p_serve.add_argument("--port", type=int, default=8080)
     p_serve.set_defaults(func=cmd_serve)
+
+    p_serve_static = sub.add_parser(
+        "serve-static",
+        help="纯静态预览 portal/dist（自动同步 static，内联 i18n）",
+    )
+    p_serve_static.add_argument("--host", default="127.0.0.1")
+    p_serve_static.add_argument("--port", type=int, default=8080)
+    p_serve_static.set_defaults(func=cmd_serve_static)
 
     return parser
 

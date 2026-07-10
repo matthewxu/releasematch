@@ -52,24 +52,11 @@ parse_args() {
 }
 
 sync_static_shell() {
-  # 将 Trust 四页、404、static 资源复制到 dist（index.html 由 generate all 生成）
-  mkdir -p "${DIST}"
-
-  for item in 404.html 410.html; do
-    if [[ -f "${PORTAL}/${item}" ]]; then
-      cp "${PORTAL}/${item}" "${DIST}/${item}"
-    fi
-  done
-
-  if [[ -d "${PORTAL}/static" ]]; then
-    rsync -a "${PORTAL}/static/" "${DIST}/static/"
-  fi
-
-  if [[ -d "${PORTAL}/trust" ]]; then
-    rsync -a "${PORTAL}/trust/" "${DIST}/trust/"
-  fi
-
-  echo "[deploy] dist 静态壳已同步"
+  # 同步 404/410 与 static；Trust 页由 generate all → render_trust 写入 dist，勿用 portal/trust 覆盖
+  local py
+  py="$(resolve_python)"
+  "${py}" -c "from portal.generator.static_shell import sync_static_shell; sync_static_shell()"
+  echo "[deploy] dist 静态壳已同步（Trust 页保留 generate all 产出）"
 }
 
 resolve_python() {

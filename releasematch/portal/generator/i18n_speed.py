@@ -31,7 +31,8 @@ _FRESHNESS_VALIDITY_KEY: Dict[str, str] = {
     "fresh": "high",
     "valid": "medium",
     "stale": "low",
-    "expired": "invalid",
+    "aged": "uncertain",
+    "expired": "uncertain",  # 旧 dist 兼容，等同 aged
     "unknown": "unknown",
 }
 
@@ -101,6 +102,8 @@ def _localize_freshness(se: Dict[str, Any], locale: str) -> None:
     @returns: None
     """
     fc = str(se.get("freshness_class") or "unknown")
+    if fc == "expired":
+        fc = "aged"
     ttl = int(se.get("ttl_hours") or 6)
     age_hours = se.get("age_hours")
     age_display = _format_age_display(age_hours, locale) if age_hours is not None else se.get("age_display", "—")
@@ -304,7 +307,11 @@ def _localize_grab(se: Dict[str, Any], locale: str) -> None:
     elif fresh_pts >= 42:
         parts.append(translate("speed.grab.summary.data_valid", locale))
     elif fresh_pts > 0:
-        parts.append(translate("speed.grab.summary.data_stale", locale))
+        fc = str(se.get("freshness_class") or "")
+        if fc in ("aged", "expired"):
+            parts.append(translate("speed.grab.summary.data_aged", locale))
+        else:
+            parts.append(translate("speed.grab.summary.data_stale", locale))
 
     se["grab_index_summary"] = " · ".join(parts) if parts else translate("speed.grab.summary.empty", locale)
 

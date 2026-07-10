@@ -18,6 +18,7 @@ from workflow.storage.mysql_store import MySQLStore
 
 from portal.generator.render import render_by_page_id, render_home_page
 from portal.generator.sitemap import write_sitemap
+from portal.generator.static_shell import sync_static_shell
 
 # 默认输出根目录
 DEFAULT_OUT_ROOT = PROJECT_ROOT / "portal" / "dist"
@@ -106,6 +107,8 @@ def write_all_published(
 
     trust_result = write_trust_pages(out_root=out_root, site_origin=site_origin)
 
+    static_shell_result = sync_static_shell(out_root=out_root)
+
     indexable_generated = sum(1 for r in results if r.get("ok") and r.get("indexable"))
     noindex_generated = sum(1 for r in results if r.get("ok") and not r.get("indexable"))
 
@@ -122,6 +125,7 @@ def write_all_published(
         "hubs": hub_result,
         "sitemap": sitemap_result,
         "trust": trust_result,
+        "static_shell": static_shell_result,
     }
 
 

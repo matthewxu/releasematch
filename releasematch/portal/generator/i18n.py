@@ -297,11 +297,13 @@ MESSAGES: Dict[str, Dict[str, str]] = {
     "speed.freshness.status.fresh": {"en": "Fresh", "zh": "新鲜"},
     "speed.freshness.status.valid": {"en": "Valid", "zh": "有效"},
     "speed.freshness.status.stale": {"en": "Stale", "zh": "陈旧"},
-    "speed.freshness.status.expired": {"en": "Expired", "zh": "过期"},
+    "speed.freshness.status.aged": {"en": "Older", "zh": "较久"},
+    "speed.freshness.status.expired": {"en": "Older", "zh": "较久"},
     "speed.freshness.status.unknown": {"en": "Not tested", "zh": "未测速"},
     "speed.validity.high": {"en": "High", "zh": "高"},
     "speed.validity.medium": {"en": "Medium", "zh": "中"},
     "speed.validity.low": {"en": "Low", "zh": "低"},
+    "speed.validity.uncertain": {"en": "Uncertain", "zh": "待确认"},
     "speed.validity.invalid": {"en": "Invalid", "zh": "无效"},
     "speed.validity.unknown": {"en": "Unknown", "zh": "未知"},
     "speed.freshness.note.unknown": {
@@ -309,20 +311,24 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "zh": "尚无 libtorrent 实测记录，以下速度不可作为 IG 背书。",
     },
     "speed.freshness.note.fresh": {
-        "en": "{age}, within {ttl}h TTL; suitable for Recommended measured evidence (S-07).",
-        "zh": "距测速 {age}，在 {ttl}h TTL 内；数据可直接用于 Recommended 实测背书（S-07）。",
+        "en": "{age}, within 24h; suitable for Recommended measured evidence (S-07).",
+        "zh": "距测速 {age}（≤24h）；数据可直接用于 Recommended 实测背书（S-07）。",
     },
     "speed.freshness.note.valid": {
-        "en": "{age}, past {ttl}h cron window but <24h; use with caution, re-test in production.",
-        "zh": "距测速 {age}，已超过 {ttl}h cron 窗口但仍 <24h；建议参考，生产环境可安排复测。",
+        "en": "{age}, within 48h but past 24h; still referenceable — re-test when convenient.",
+        "zh": "距测速 {age}（24–48h）；仍可参考，建议在方便时安排复测。",
     },
     "speed.freshness.note.stale": {
-        "en": "{age} (>24h); peers/speed may have changed — lower IG confidence, re-test preferred.",
-        "zh": "距测速 {age}（>24h）；peer/速度可能已变化，IG 背书效力降低，应优先复测。",
+        "en": "{age}, within 72h but past 48h; peers/speed may have changed — re-test preferred.",
+        "zh": "距测速 {age}（48–72h）；peer/速度可能已变化，IG 背书效力降低，应优先复测。",
+    },
+    "speed.freshness.note.aged": {
+        "en": "{age}, older than 72h; swarm may have shifted — re-test before relying on it (not marked expired).",
+        "zh": "距测速 {age}（>72h）；swarm 状态可能已有变化，建议复测后再作主要依据（非断言已失效）。",
     },
     "speed.freshness.note.expired": {
-        "en": "{age} (>72h); do not use as measured evidence — re-run slot/batch speedtest.",
-        "zh": "距测速 {age}（>72h）；不应再作为页面实测背书，请重新执行 slot/batch 测速。",
+        "en": "{age}, older than 72h; swarm may have shifted — re-test before relying on it (not marked expired).",
+        "zh": "距测速 {age}（>72h）；swarm 状态可能已有变化，建议复测后再作主要依据（非断言已失效）。",
     },
     "speed.age.minutes_ago": {"en": "{minutes} min ago", "zh": "{minutes} 分钟前"},
     "speed.age.hours_ago": {"en": "{hours} hours ago", "zh": "{hours} 小时前"},
@@ -445,6 +451,7 @@ MESSAGES: Dict[str, Dict[str, str]] = {
     "speed.grab.summary.data_fresh": {"en": "Data fresh", "zh": "数据新鲜"},
     "speed.grab.summary.data_valid": {"en": "Data valid", "zh": "数据有效"},
     "speed.grab.summary.data_stale": {"en": "Data stale", "zh": "数据陈旧"},
+    "speed.grab.summary.data_aged": {"en": "Older data", "zh": "数据较久"},
     "speed.endorsement.title_named": {"en": "\"{title}\"", "zh": "「{title}」"},
     "speed.endorsement.title_default": {
         "en": "this site's Recommended release",
@@ -490,6 +497,43 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "zh": "ReleaseMatch DMCA 与版权通知政策；仅索引元数据，有效通知将 410 Gone 处理。",
     },
     "trust.dmca.heading": {"en": "DMCA / Copyright Notice", "zh": "DMCA / 版权通知"},
+    "trust.speed_grab.title": {
+        "en": "Speed Test & RM Grab Index — ReleaseMatch",
+        "zh": "测速可信度与 RM Grab 指数 — ReleaseMatch",
+    },
+    "trust.speed_grab.meta": {
+        "en": "How ReleaseMatch calculates RM Grab Index, speed credibility, peer reachability, and libtorrent segment test metrics.",
+        "zh": "ReleaseMatch 如何计算 RM Grab 指数、测速可信度、Peer 可达性与 libtorrent 片段测速指标。",
+    },
+    "trust.speed_grab.heading": {
+        "en": "Speed Test Credibility & RM Grab Index",
+        "zh": "测速可信度与 RM Grab 指数",
+    },
+    # ── 指标说明页链接（内容页各区域） ──
+    "metrics.explainer.page_title": {
+        "en": "How scores are calculated",
+        "zh": "分数如何计算",
+    },
+    "metrics.explainer.grab": {
+        "en": "How Grab Index is calculated",
+        "zh": "Grab 指数说明",
+    },
+    "metrics.explainer.freshness": {
+        "en": "Speed credibility explained",
+        "zh": "测速可信度说明",
+    },
+    "metrics.explainer.speed": {
+        "en": "Speed test metrics",
+        "zh": "测速指标说明",
+    },
+    "metrics.explainer.reachability": {
+        "en": "Reachability rules",
+        "zh": "可达性规则",
+    },
+    "footer.speed_grab": {
+        "en": "Speed & Grab scores",
+        "zh": "测速与 Grab 说明",
+    },
 }
 
 

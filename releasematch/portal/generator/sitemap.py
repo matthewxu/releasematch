@@ -28,6 +28,7 @@ TRUST_PATHS: Tuple[str, ...] = (
     "/trust/privacy/",
     "/trust/dmca/",
     "/trust/how-matching-works/",
+    "/trust/speed-and-grab/",
 )
 
 # D3：内容页上限（不含首页与 Trust）
