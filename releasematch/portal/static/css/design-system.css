@@ -2137,22 +2137,36 @@ dd:last-child {
   color: var(--rm-text-muted);
 }
 
+/* Torrent structure 专用：左列字段名、右列字段值（全站仅此面板使用该行式 KV 布局） */
 .rm-torrent-meta__metrics {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
-  gap: var(--rm-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
   margin: var(--rm-space-4) 0 0;
+  border-top: 1px solid var(--rm-border-subtle);
+}
+
+.rm-torrent-meta__metric {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 9.5rem) minmax(0, 1fr);
+  gap: 0.5rem 1rem;
+  align-items: start;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--rm-border-subtle);
 }
 
 .rm-torrent-meta__metric dt {
   font-size: var(--rm-text-xs);
+  font-weight: 500;
   color: var(--rm-text-muted);
-  margin-bottom: 0.15rem;
+  margin: 0;
 }
 
 .rm-torrent-meta__metric dd {
   margin: 0;
   font-size: var(--rm-text-sm);
+  text-align: right;
+  min-width: 0;
 }
 
 .rm-torrent-meta__metric--highlight dd {

@@ -91,7 +91,7 @@
         <h2 class="rm-card__title" id="tmdb-heading"{% if i18n_enabled %} data-i18n="episode.about"{% endif %}>{{ t('episode.about') }}</h2>
         <p class="rm-card__meta">{{ show_title }} · S{{ season }}E{{ episode }}</p>
         <p class="rm-card__text"{% if i18n_enabled %} data-i18n-dynamic="tmdb_overview"{% endif %}>{{ tmdb_overview }}</p>
-        <a class="rm-btn rm-btn--secondary" href="{{ tmdb_url }}" rel="external nofollow"{% if i18n_enabled %} data-i18n="episode.tmdb_cta"{% endif %}>{{ t('episode.tmdb_cta') }}</a>
+        <a class="rm-btn rm-btn--secondary" href="{{ tmdb_url }}" target="{{ outbound_link_target }}" rel="{{ outbound_link_rel }}"{% if i18n_enabled %} data-i18n="episode.tmdb_cta"{% endif %}>{{ t('episode.tmdb_cta') }}</a>
       </section>
 
       {% if streaming_providers %}
@@ -109,7 +109,7 @@
       <section class="rm-card rm-mt-0">
         <h2 class="rm-card__title"{% if i18n_enabled %} data-i18n="episode.subtitles"{% endif %}>{{ t('episode.subtitles') }}</h2>
         <p class="rm-card__text"{% if i18n_enabled %} data-i18n="episode.subtitles_desc"{% endif %}>{{ t('episode.subtitles_desc') }}</p>
-        <a href="{{ subtitle_url }}" rel="nofollow ugc">SubtitlePortal →</a>
+        <a href="{{ subtitle_url }}" target="{{ outbound_link_target }}" rel="{{ outbound_link_rel_ugc }}">SubtitlePortal →</a>
       </section>
       {% endif %}
     </aside>

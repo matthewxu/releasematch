@@ -73,7 +73,7 @@
         {% endif %}
         <h2 class="rm-card__title"{% if i18n_enabled %} data-i18n="movie.about"{% endif %}>{{ t('movie.about') }}</h2>
         <p class="rm-card__text"{% if i18n_enabled %} data-i18n-dynamic="tmdb_overview"{% endif %}>{{ tmdb_overview }}</p>
-        <a class="rm-btn rm-btn--secondary" href="{{ tmdb_url }}" rel="external nofollow"{% if i18n_enabled %} data-i18n="episode.tmdb_cta"{% endif %}>{{ t('episode.tmdb_cta') }}</a>
+        <a class="rm-btn rm-btn--secondary" href="{{ tmdb_url }}" target="{{ outbound_link_target }}" rel="{{ outbound_link_rel }}"{% if i18n_enabled %} data-i18n="episode.tmdb_cta"{% endif %}>{{ t('episode.tmdb_cta') }}</a>
       </section>
     </aside>
   </div>

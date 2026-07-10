@@ -601,6 +601,9 @@ class I18nRuntime:
             dynamic.update(preset)
             merged["i18n_dynamic"] = dynamic
         localize_page_variables(merged, self.locale)
+        from portal.generator.link_attrs import outbound_link_context
+
+        merged.update(outbound_link_context())
         return merged
 
 

@@ -62,11 +62,54 @@ FORBIDDEN_MEDIA_SNIPPETS: Tuple[str, ...] = (
     "dailymotion.com/embed",
 )
 
-# Magnet 链接应含 nofollow
+# Magnet 链接应含 nofollow、新窗口打开与安全 rel
 MAGNET_HREF_PATTERN = re.compile(
     r'<a\b[^>]*href=["\']magnet:[^"\']*["\'][^>]*>',
     re.IGNORECASE,
 )
+
+# 出站 http(s) 链接（排除本站 releasematch.io 与相对路径）
+EXTERNAL_HTTP_HREF_PATTERN = re.compile(
+    r'<a\b[^>]*href=["\']https?://[^"\']+["\'][^>]*>',
+    re.IGNORECASE,
+)
+
+
+def _outbound_link_tag_issues(tag: str, *, label: str) -> List[str]:
+    """
+    校验单个出站 <a> 标签是否含 nofollow、target=_blank、noopener。
+
+    @param tag: 完整 <a ...> 开标签字符串
+    @param label: 问题前缀，如路径或链接类型
+    @returns: 问题描述列表（空表示通过）
+    """
+    lower = tag.lower()
+    issues: List[str] = []
+    if "nofollow" not in lower:
+        issues.append(f"{label}: 出站链接缺 rel=nofollow")
+    if 'target="_blank"' not in lower and "target='_blank'" not in lower:
+        issues.append(f"{label}: 出站链接缺 target=_blank")
+    if "noopener" not in lower:
+        issues.append(f"{label}: 出站链接缺 rel=noopener")
+    return issues
+
+
+def _is_same_site_http_href(href: str, site_origin: str) -> bool:
+    """
+    判断 http(s) href 是否为本站 origin（不算外出链）。
+
+    @param href: a 标签 href 属性值
+    @param site_origin: 如 https://releasematch.io
+    @returns: True 表示站内链，跳过出站校验
+    """
+    try:
+        parsed = urlparse(href)
+    except ValueError:
+        return False
+    if not parsed.netloc:
+        return True
+    origin_host = urlparse(site_origin).netloc.lower()
+    return parsed.netloc.lower() == origin_host
 
 
 @dataclass
@@ -757,18 +800,32 @@ def check_6_3_content_ig(
             )
         )
 
-    # magnet nofollow
+    # magnet / 外出 http(s) 链：nofollow + 新窗口 + noopener
     magnet_issues: List[str] = []
+    external_http_issues: List[str] = []
     for path in content_paths[:20]:
         html_file = _canonical_path_to_dist_file(dist_root, path)
         if not html_file.is_file():
             continue
         html = html_file.read_text(encoding="utf-8")
         for tag in MAGNET_HREF_PATTERN.findall(html):
-            if "nofollow" not in tag.lower():
-                magnet_issues.append(f"{path}: magnet 链接缺 rel=nofollow")
+            magnet_issues.extend(_outbound_link_tag_issues(tag, label=f"{path}: magnet"))
+            if magnet_issues:
+                break
+        for tag in EXTERNAL_HTTP_HREF_PATTERN.findall(html):
+            href_match = re.search(r'href=["\']([^"\']+)["\']', tag, re.IGNORECASE)
+            if not href_match:
+                continue
+            href = href_match.group(1)
+            if _is_same_site_http_href(href, SITE_ORIGIN):
+                continue
+            external_http_issues.extend(
+                _outbound_link_tag_issues(tag, label=f"{path}: 外出 http")
+            )
+            if external_http_issues:
                 break
 
+    outbound_issues = magnet_issues + external_http_issues
     report.add(
         CheckItem(
             "6.3",
@@ -776,6 +833,15 @@ def check_6_3_content_ig(
             "Magnet 链接均为 rel=nofollow",
             "fail" if magnet_issues else "pass",
             "; ".join(magnet_issues[:5]) if magnet_issues else f"已扫 {min(len(content_paths), 20)} 页",
+        )
+    )
+    report.add(
+        CheckItem(
+            "6.3",
+            "6.3.outbound_link_policy",
+            "外出链接 target=_blank 且 rel 含 nofollow noopener",
+            "fail" if outbound_issues else "pass",
+            "; ".join(outbound_issues[:6]) if outbound_issues else f"已扫 {min(len(content_paths), 20)} 页",
         )
     )
 

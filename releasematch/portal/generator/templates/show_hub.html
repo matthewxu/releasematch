@@ -46,7 +46,7 @@
       {% if poster_url %}
       <section class="rm-card">
         <img class="rm-card__poster" src="{{ poster_url }}" alt="{{ show_title }}" loading="lazy">
-        <a class="rm-btn rm-btn--secondary" href="{{ tmdb_url }}" rel="external nofollow">TMDB</a>
+        <a class="rm-btn rm-btn--secondary" href="{{ tmdb_url }}" target="{{ outbound_link_target }}" rel="{{ outbound_link_rel }}">TMDB</a>
       </section>
       {% endif %}
     </aside>

@@ -33,5 +33,5 @@
   </td>
   <td data-label="{{ t('table.size') }}" data-sort-value="{{ item.size_bytes }}">{{ item.size_human }}</td>
   <td data-label="{{ t('table.seed') }}" data-sort-value="{{ item.seeders }}">{{ item.seeders }}</td>
-  <td data-label="{{ t('table.action') }}"><a class="rm-table__magnet" href="{{ item.magnet_uri }}" rel="nofollow"{% if i18n_enabled %} data-i18n="common.magnet"{% endif %}>{{ t('common.magnet') }}</a></td>
+  <td data-label="{{ t('table.action') }}"><a class="rm-table__magnet" href="{{ item.magnet_uri }}" target="{{ outbound_link_target }}" rel="{{ outbound_link_rel }}"{% if i18n_enabled %} data-i18n="common.magnet"{% endif %}>{{ t('common.magnet') }}</a></td>
 </tr>
