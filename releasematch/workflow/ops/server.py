@@ -114,6 +114,70 @@ def _handle_api(method: str, path: str, body: Dict[str, Any], query: Dict[str, l
         snap = WORKSPACE.set_source(result)
         return 200, {"ok": True, "result": {k: v for k, v in result.items() if k != "slots"}, "workspace": snap}
 
+    if path == "/api/source/export/ensure" and method == "POST":
+        # 默认异步：全量下载 + 增量入库；前端轮询 /api/source/export/progress
+        async_mode = bool(body.get("async", True))
+        daily = bool(body.get("daily", False))
+        if async_mode:
+            result = source_service.start_export_index_load(
+                download=bool(body.get("download", True)),
+                force_download=bool(body.get("force_download", False)),
+                force_reload=bool(body.get("force_reload", False)),
+                export_date=body.get("export_date"),
+                daily=daily,
+            )
+            return 200, result
+        result = source_service.ensure_export_index(
+            download=bool(body.get("download", True)),
+            force_download=bool(body.get("force_download", False)),
+            force_reload=bool(body.get("force_reload", False)),
+            export_date=body.get("export_date"),
+            daily=daily,
+        )
+        return 200, result
+
+    if path == "/api/source/export/progress" and method == "GET":
+        return 200, source_service.get_export_load_progress()
+
+    if path == "/api/source/export/search" and method == "POST":
+        result = source_service.search_tmdb_export(
+            q=body.get("q"),
+            media_types=body.get("media_types"),
+            pop_min=body.get("pop_min"),
+            pop_max=body.get("pop_max"),
+            exclude_adult=bool(body.get("exclude_adult", True)),
+            exclude_video=bool(body.get("exclude_video", True)),
+            limit=int(body.get("limit") or 50),
+            offset=int(body.get("offset") or 0),
+            download=bool(body.get("download", False)),
+            export_date=body.get("export_date"),
+        )
+        return 200, result
+
+    if path == "/api/source/export/add" and method == "POST":
+        built = source_service.slots_from_manual_selections(body.get("selections") or [])
+        if not built.get("ok"):
+            return 400, built
+        mode = str(body.get("mode") or "append")
+        if mode not in ("append", "replace"):
+            return 400, {"ok": False, "error": "mode 须为 append 或 replace"}
+        snap = WORKSPACE.add_slots(
+            built["slots"],
+            mode=mode,
+            source_meta={
+                "kind": built.get("kind"),
+                "meta": built.get("meta") or {},
+                "tier_counts": built.get("tier_counts") or {},
+            },
+        )
+        return 200, {
+            "ok": True,
+            "mode": mode,
+            "added": built.get("count"),
+            "slots": built.get("slots"),
+            "workspace": snap.get("workspace"),
+        }
+
     if path == "/api/filter" and method == "POST":
         if not WORKSPACE.candidates:
             return 400, {"ok": False, "error": "请先在「清单从哪来」加载或生成清单"}
@@ -264,12 +328,17 @@ def run_ops_server(*, host: str = "127.0.0.1", port: int = DEFAULT_OPS_PORT) -> 
     if host not in ("127.0.0.1", "localhost", "::1"):
         raise ValueError("Ops 控制台仅允许绑定本机（127.0.0.1），禁止公网暴露")
 
-    # 启动时确保跟踪表存在（ops_track_batches / ops_track_slots）
+    # 启动时确保 Ops / TMDB 导出相关表存在
     try:
+        from workflow.ops import tmdb_export_store
+
         ensured = ensure_tables()
-        print(f"[ops] MySQL 跟踪表就绪: ops_track_batches + ops_track_slots ({ensured})")
+        tmdb_ok = tmdb_export_store.ensure_tables()
+        print(
+            f"[ops] MySQL 就绪: ops_track_* {ensured} · tmdb_export_* {tmdb_ok}"
+        )
     except Exception as exc:  # noqa: BLE001
-        print(f"[ops] 警告: 无法初始化跟踪表（请检查 MySQL / .env）: {exc}")
+        print(f"[ops] 警告: 无法初始化 Ops/TMDB 表（请检查 MySQL / .env）: {exc}")
 
     httpd = ThreadingHTTPServer((host, port), OpsHandler)
     print(f"[ops] ReleaseMatch Ops Console → http://{host}:{port}/")

@@ -298,4 +298,44 @@ CREATE TABLE IF NOT EXISTS ops_track_slots (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   COMMENT='Ops 跟踪槽位（pipeline/generate/speedtest/门禁）';
 
+-- -----------------------------------------------------------------------------
+-- 11. tmdb_export_meta — TMDB Daily Export 入库元信息
+-- -----------------------------------------------------------------------------
+-- 策略：每天全量下载 .json.gz，MySQL 侧增量 UPSERT（ingest_mode=incremental）
+CREATE TABLE IF NOT EXISTS tmdb_export_meta (
+    id                      TINYINT UNSIGNED NOT NULL PRIMARY KEY DEFAULT 1,
+    export_date             DATE         NOT NULL COMMENT '导出日',
+    movie_count             INT UNSIGNED NOT NULL DEFAULT 0,
+    tv_count                INT UNSIGNED NOT NULL DEFAULT 0,
+    movie_gz                VARCHAR(128) DEFAULT '',
+    tv_gz                   VARCHAR(128) DEFAULT '',
+    status                  VARCHAR(16)  NOT NULL DEFAULT 'ready' COMMENT 'loading|ready',
+    ingest_mode             VARCHAR(16)  NOT NULL DEFAULT 'incremental' COMMENT 'incremental|replace',
+    last_scanned            INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '最近一次扫描行数',
+    last_deleted            INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '最近一次 prune 删除行数',
+    loaded_at               DATETIME(3)  NOT NULL,
+    updated_at              DATETIME(3)  NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='TMDB 日导出入库元信息（Ops 搜索用）';
+
+-- -----------------------------------------------------------------------------
+-- 12. tmdb_export_titles — TMDB Daily Export 标题索引（MySQL）
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS tmdb_export_titles (
+    media_type              ENUM('movie','tv') NOT NULL,
+    tmdb_id                 INT UNSIGNED NOT NULL,
+    title                   VARCHAR(512) NOT NULL,
+    title_lc                VARCHAR(512) NOT NULL COMMENT '小写标题供 LIKE 搜索',
+    popularity              DOUBLE       NOT NULL DEFAULT 0,
+    adult                   TINYINT(1)   NOT NULL DEFAULT 0,
+    video                   TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '电影 video 标记',
+    export_date             DATE         NOT NULL COMMENT '最近出现于该导出日（用于增量 prune）',
+    updated_at              DATETIME(3)  NOT NULL,
+    PRIMARY KEY (media_type, tmdb_id),
+    KEY idx_tet_media_pop (media_type, popularity),
+    KEY idx_tet_title_lc (title_lc(64)),
+    KEY idx_tet_export_date (export_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='TMDB 日导出标题表：全量下载 + UPSERT 增量入库，Ops UI 搜索筛选';
+
 SET FOREIGN_KEY_CHECKS = 1;

@@ -20,7 +20,8 @@ ReleaseMatch 工作流总控 CLI。
     generate page — MySQL → 静态 HTML（portal/dist）
     generate all  — 批量生成已发布页
     serve         — 本地开发服（DB 动态渲染 + 静态资源）
-    ops serve     — 本地运营控制台（清单→筛选→生成→上线，仅 127.0.0.1）
+    ops serve      — 本地运营控制台（清单→筛选→生成→上线，仅 127.0.0.1）
+    ops tmdb-sync  — 每天全量下载 TMDB Daily Export → MySQL 增量入库（cron）
 
   示例：
     cd releasematch && cp config.env.example .env  # 按需编辑
@@ -28,6 +29,7 @@ ReleaseMatch 工作流总控 CLI。
     cd releasematch && python -m workflow.run db seed
     cd releasematch && python -m workflow.run pipeline slot --tmdb 1396 --season 4 --episode 6
     cd releasematch && python -m workflow.run query page --page-id tv:1396:s04e06
+    cd releasematch && python -m workflow.run ops tmdb-sync
 """
 
 from __future__ import annotations
@@ -407,7 +409,7 @@ def cmd_ops(args: argparse.Namespace) -> int:
     """
     Ops 运营控制台子命令入口。
 
-    @param args: 含 ops_action、host、port
+    @param args: 含 ops_action、host、port 或 tmdb-sync 参数
     @returns: 进程退出码
     """
     action = getattr(args, "ops_action", None)
@@ -416,7 +418,25 @@ def cmd_ops(args: argparse.Namespace) -> int:
 
         run_ops_server(host=args.host, port=args.port)
         return 0
-    print("未知 ops 子命令；可用: serve")
+    if action == "tmdb-sync":
+        from workflow.ops import source_service
+
+        print(
+            "[ops tmdb-sync] 全量下载 Daily Export → "
+            f"{'TRUNCATE 全量重建' if args.full_reload else '增量 UPSERT'}…"
+        )
+        meta = source_service.daily_sync_export(
+            export_date=args.export_date,
+            force_reload=bool(args.full_reload),
+        )
+        print(
+            f"[ops tmdb-sync] ok · export_date={meta.get('export_date')} · "
+            f"movie={meta.get('movie_count'):,} · tv={meta.get('tv_count'):,} · "
+            f"mode={meta.get('ingest_mode')} · "
+            f"scanned={meta.get('last_scanned'):,} · deleted={meta.get('last_deleted'):,}"
+        )
+        return 0 if meta.get("ok") and meta.get("ready") else 1
+    print("未知 ops 子命令；可用: serve / tmdb-sync")
     return 1
 
 
@@ -576,6 +596,22 @@ def build_parser() -> argparse.ArgumentParser:
     p_ops_serve.add_argument("--host", default="127.0.0.1", help="仅允许本机")
     p_ops_serve.add_argument("--port", type=int, default=8090)
     p_ops_serve.set_defaults(func=cmd_ops)
+
+    p_ops_tmdb = ops_sub.add_parser(
+        "tmdb-sync",
+        help="每天：全量下载 TMDB Daily Export → MySQL 增量入库（适合 cron）",
+    )
+    p_ops_tmdb.add_argument(
+        "--export-date",
+        default=None,
+        help="YYYY-MM-DD；默认探测最近可用导出日",
+    )
+    p_ops_tmdb.add_argument(
+        "--full-reload",
+        action="store_true",
+        help="TRUNCATE 后全量重建（默认增量 UPSERT + prune）",
+    )
+    p_ops_tmdb.set_defaults(func=cmd_ops)
 
     return parser
 

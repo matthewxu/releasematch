@@ -25,6 +25,18 @@
       本页仅绑定 127.0.0.1，会执行本地 pipeline / generate / deploy 脚本，请勿暴露到公网或提交到 Cloudflare Pages。
     </div>
 
+    <div class="ops-progress" id="opsProgress" hidden aria-live="polite">
+      <div class="ops-progress-head">
+        <span class="ops-progress-spinner" aria-hidden="true"></span>
+        <span class="ops-progress-title" id="opsProgressTitle">处理中…</span>
+        <span class="ops-progress-pct" id="opsProgressPct"></span>
+      </div>
+      <div class="ops-progress-track">
+        <div class="ops-progress-bar" id="opsProgressBar"></div>
+      </div>
+      <div class="ops-progress-msg" id="opsProgressMsg"></div>
+    </div>
+
     <nav class="ops-steps" role="tablist" aria-label="流程四段">
       <button type="button" class="ops-step-tab" data-step="1" aria-selected="true">
         <span class="n">01</span><span class="t">清单从哪来</span>
@@ -43,7 +55,7 @@
     <!-- ① 清单从哪来 -->
     <section class="ops-panel is-active" id="panel-1" data-panel="1">
       <h2>① 清单从哪来</h2>
-      <p class="lead">对应：TMDB 日导出 + 锚点/curated → <code>tmdb-benchmark-slots.json</code>（或加载既有清单）</p>
+      <p class="lead">对应：自动生成（锚点/curated/pop）· 加载既有 JSON · <strong>从 TMDB Daily Export 搜索后手动勾选</strong></p>
       <div class="ops-grid">
         <div class="ops-card">
           <h3>生成：TMDB 日导出 + 锚点/curated</h3>
@@ -77,7 +89,71 @@
           <ul class="ops-file-list" id="fileList"></ul>
         </div>
       </div>
-      <div class="ops-metrics" id="sourceMetrics"></div>
+
+      <div class="ops-card" style="margin-top:16px">
+        <h3>手动选择：全量下载 → 增量入库 → 搜索 → 工作区</h3>
+        <p class="lead" style="margin-bottom:10px">
+          标准流程：① <strong>全量下载</strong> TMDB Daily Export，再 <strong>增量 UPSERT</strong> 入 MySQL（<code>tmdb_export_titles</code>）
+          → ② 在库内按关键词 / 类型 / pop 搜索筛选
+          → ③ 勾选后写入工作区（TV 默认 S01E01）。日同步可用 CLI：<code>python -m workflow.run ops tmdb-sync</code>。
+        </p>
+        <div class="ops-row">
+          <button type="button" id="btnEnsureExport">① 全量下载 · 增量入库</button>
+          <button type="button" class="secondary" id="btnDailySyncExport">日同步（强制重下）</button>
+          <label class="ops-field" style="flex-direction:row;align-items:center;gap:6px;margin-top:0">
+            <input type="checkbox" id="exportForceDownload" /> 强制重下文件
+          </label>
+          <label class="ops-field" style="flex-direction:row;align-items:center;gap:6px;margin-top:0">
+            <input type="checkbox" id="exportForceReload" /> 强制全量重建（TRUNCATE）
+          </label>
+          <span class="ops-badge" id="exportIndexBadge">MySQL 未入库</span>
+        </div>
+        <div class="ops-row">
+          <label class="ops-field">关键词 / TMDB ID
+            <input type="text" id="exportQ" placeholder="如 matrix / breaking / 603" style="min-width:200px" />
+          </label>
+          <label class="ops-field">media
+            <select id="exportMedia" multiple size="2">
+              <option value="movie" selected>movie</option>
+              <option value="tv" selected>tv</option>
+            </select>
+          </label>
+          <label class="ops-field">pop_min
+            <input type="number" id="exportPopMin" step="0.1" placeholder="如 8" />
+          </label>
+          <label class="ops-field">pop_max
+            <input type="number" id="exportPopMax" step="0.1" placeholder="如 150" />
+          </label>
+          <label class="ops-field">limit
+            <input type="number" id="exportLimit" value="50" min="1" max="200" />
+          </label>
+        </div>
+        <div class="ops-row">
+          <label><input type="checkbox" id="exportExcludeAdult" checked /> 排除 adult</label>
+          <label><input type="checkbox" id="exportExcludeVideo" checked /> 排除 movie.video</label>
+        </div>
+        <div class="ops-actions">
+          <button type="button" id="btnSearchExport">② 从 MySQL 搜索</button>
+          <button type="button" id="btnAddExportAppend">③ 勾选 → 追加到工作区</button>
+          <button type="button" class="secondary" id="btnAddExportReplace">③ 勾选 → 覆盖工作区</button>
+        </div>
+        <div class="ops-metrics" id="exportSearchMetrics"></div>
+        <div class="ops-table-wrap">
+          <table class="ops-table" id="exportHitTable">
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="checkAllExportHits" /></th>
+                <th>tier</th><th>title / label</th><th>page_id</th><th>media</th><th>pop</th>
+                <th>S</th><th>E</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="ops-metrics" id="sourceMetrics" style="margin-top:16px"></div>
+      <h3 style="font-size:14px;margin:0 0 8px;color:var(--ops-muted)">工作区候选清单</h3>
       <div class="ops-table-wrap">
         <table class="ops-table" id="candidateTable">
           <thead>

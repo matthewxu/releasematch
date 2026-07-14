@@ -35,7 +35,7 @@ class OpsWorkspace:
 
     def set_source(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """
-        设置清单来源结果。
+        设置清单来源结果（覆盖工作区）。
 
         @param payload: source_service 返回体（含 slots）
         @returns: 摘要
@@ -56,6 +56,66 @@ class OpsWorkspace:
             "count_after": len(self.filtered),
         }
         return self.snapshot()
+
+    def add_slots(
+        self,
+        slots: List[Dict[str, Any]],
+        *,
+        mode: str = "append",
+        source_meta: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        将手动勾选槽位写入工作区。
+
+        @param slots: 已标注 page_id / source_tier 的槽位
+        @param mode: append=按 page_id 去重合并；replace=整表替换
+        @param source_meta: 可选覆盖/合并来源元信息
+        @returns: 快照摘要
+        """
+        if mode == "replace":
+            self.candidates = list(slots)
+            self.source = {
+                "kind": (source_meta or {}).get("kind") or "tmdb_export_manual",
+                "path": (source_meta or {}).get("path"),
+                "meta": (source_meta or {}).get("meta") or {},
+                "count": len(self.candidates),
+                "tier_counts": (source_meta or {}).get("tier_counts") or {},
+            }
+        else:
+            by_id = {str(s.get("page_id")): s for s in self.candidates}
+            for slot in slots:
+                by_id[str(slot.get("page_id"))] = slot
+            self.candidates = list(by_id.values())
+            prev_kind = self.source.get("kind") or "empty"
+            self.source = {
+                **self.source,
+                "kind": (
+                    "mixed"
+                    if prev_kind not in ("", "empty", "tmdb_export_manual")
+                    else "tmdb_export_manual"
+                ),
+                "meta": {
+                    **(self.source.get("meta") or {}),
+                    **((source_meta or {}).get("meta") or {}),
+                    "last_manual_add": len(slots),
+                },
+                "count": len(self.candidates),
+            }
+            if source_meta and source_meta.get("tier_counts"):
+                self.source["tier_counts"] = source_meta.get("tier_counts")
+
+        self.filtered = list(self.candidates)
+        self.filter_meta = {
+            "count_before": len(self.candidates),
+            "count_after": len(self.filtered),
+            "note": f"manual_{mode}",
+        }
+        return {
+            "ok": True,
+            "mode": mode,
+            "added": len(slots),
+            "workspace": self.snapshot(),
+        }
 
     def apply_filter(self, **kwargs: Any) -> Dict[str, Any]:
         """

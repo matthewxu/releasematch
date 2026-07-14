@@ -157,6 +157,8 @@ python -m workflow.run query page --page-id tv:1396:s04e06
 
 # 可选：本地运营控制台（仅 127.0.0.1 · 跟踪表 MySQL ops_track_*）
 python -m workflow.run ops serve   # http://127.0.0.1:8090/
+# 可选：每天全量下载 TMDB Daily Export → MySQL 增量入库（搜索选槽用）
+python -m workflow.run ops tmdb-sync
 ```
 
 ---

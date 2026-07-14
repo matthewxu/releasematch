@@ -9,6 +9,12 @@
   /** @type {object|null} 最近一次 /api/state */
   let state = null;
 
+  /** @type {Array<object>} 最近一次日导出搜索结果 */
+  let exportHits = [];
+
+  /** 并发忙碌计数（嵌套 withBusy 时保持面板） */
+  let busyDepth = 0;
+
   /**
    * 写底部日志。
    * @param {string} msg 消息
@@ -29,6 +35,68 @@
   }
 
   /**
+   * 显示进度条。
+   * @param {string} title 标题
+   * @param {object} [opts]
+   * @param {number|null} [opts.percent] 0-100；null=不确定进度
+   * @param {string} [opts.message] 明细
+   */
+  function showProgress(title, opts) {
+    const box = document.getElementById("opsProgress");
+    const bar = document.getElementById("opsProgressBar");
+    const pctEl = document.getElementById("opsProgressPct");
+    const msgEl = document.getElementById("opsProgressMsg");
+    box.hidden = false;
+    document.getElementById("opsProgressTitle").textContent = title || "处理中…";
+    const percent = opts && opts.percent;
+    const message = (opts && opts.message) || "";
+    msgEl.textContent = message;
+    if (percent == null || Number.isNaN(percent)) {
+      bar.classList.add("is-indeterminate");
+      bar.style.width = "36%";
+      pctEl.textContent = "";
+    } else {
+      bar.classList.remove("is-indeterminate");
+      const p = Math.max(0, Math.min(100, Number(percent)));
+      bar.style.width = p + "%";
+      pctEl.textContent = Math.round(p) + "%";
+    }
+  }
+
+  /** 隐藏进度条。 */
+  function hideProgress() {
+    document.getElementById("opsProgress").hidden = true;
+    const bar = document.getElementById("opsProgressBar");
+    bar.classList.remove("is-indeterminate");
+    bar.style.width = "0%";
+  }
+
+  /**
+   * 包一层忙碌态：立即给反馈，结束后清理。
+   * @param {string} title
+   * @param {() => Promise<*>} fn
+   * @param {object} [opts] { indeterminate?: boolean }
+   */
+  async function withBusy(title, fn, opts) {
+    busyDepth += 1;
+    document.body.classList.add("ops-busy");
+    showProgress(title, {
+      percent: opts && opts.indeterminate === false ? 0 : null,
+      message: "已开始，请稍候…",
+    });
+    log(title);
+    try {
+      return await fn();
+    } finally {
+      busyDepth = Math.max(0, busyDepth - 1);
+      if (busyDepth === 0) {
+        document.body.classList.remove("ops-busy");
+        hideProgress();
+      }
+    }
+  }
+
+  /**
    * JSON API 封装。
    * @param {string} path 路径
    * @param {object} [opts] fetch 选项
@@ -46,6 +114,106 @@
       throw new Error((data && data.error) || res.statusText);
     }
     return data;
+  }
+
+  /**
+   * sleep。
+   * @param {number} ms
+   */
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
+   * 启动日导出索引加载并轮询进度直到完成。
+   * @param {object} body ensure 参数
+   * @returns {Promise<object>} 最终 progress
+   */
+  /**
+   * 格式化 badge：导出日 + 规模 + 增量统计。
+   * @param {object} meta
+   * @returns {string}
+   */
+  function formatExportBadge(meta) {
+    if (!meta || !meta.export_date) return "MySQL 未入库";
+    const mode = meta.ingest_mode || "incremental";
+    const modeTag = mode === "replace" ? "全量重建" : "增量";
+    let text =
+      `MySQL · ${meta.export_date} · movie ${meta.movie_count ?? meta.cached_movie_count ?? 0}` +
+      ` · tv ${meta.tv_count ?? meta.cached_tv_count ?? 0} · ${modeTag}`;
+    if (meta.last_deleted != null && meta.last_scanned) {
+      text += ` · 扫 ${meta.last_scanned} / 删 ${meta.last_deleted}`;
+    } else if (meta.db && meta.db.last_scanned) {
+      text += ` · 扫 ${meta.db.last_scanned} / 删 ${meta.db.last_deleted || 0}`;
+    }
+    return text;
+  }
+
+  async function ensureExportWithProgress(body) {
+    const title = body.daily
+      ? "日同步：全量下载 → 增量入库"
+      : body.force_reload
+        ? "全量重建 TMDB 导出"
+        : "全量下载 → 增量入库";
+    showProgress(title, {
+      percent: 1,
+      message: "启动后台任务…",
+    });
+    document.body.classList.add("ops-busy");
+    busyDepth += 1;
+    log(title + "…", body);
+    try {
+      const start = await api("/api/source/export/ensure", {
+        method: "POST",
+        body: { async: true, ...body },
+      });
+      if (start.already_ready && start.result) {
+        showProgress("MySQL 已是最新", { percent: 100, message: start.progress.message || "" });
+        document.getElementById("exportIndexBadge").textContent = formatExportBadge(start.result);
+        await sleep(400);
+        return start.progress;
+      }
+      for (;;) {
+        const prog = await api("/api/source/export/progress");
+        showProgress(title, {
+          percent: prog.percent != null ? prog.percent : null,
+          message: prog.message || prog.phase || "",
+        });
+        document.getElementById("exportIndexBadge").textContent =
+          prog.status === "done"
+            ? formatExportBadge({
+                export_date: prog.export_date,
+                movie_count: prog.cached_movie_count,
+                tv_count: prog.cached_tv_count,
+                ingest_mode: prog.db && prog.db.ingest_mode,
+                last_scanned: prog.db && prog.db.last_scanned,
+                last_deleted: prog.db && prog.db.last_deleted,
+              })
+            : `入库中 ${prog.percent || 0}% · ${prog.phase || ""}`;
+        if (prog.status === "done") {
+          log("日导出已同步 MySQL", {
+            export_date: prog.export_date,
+            movies: prog.cached_movie_count,
+            tv: prog.cached_tv_count,
+            ingest_mode: prog.db && prog.db.ingest_mode,
+            last_scanned: prog.db && prog.db.last_scanned,
+            last_deleted: prog.db && prog.db.last_deleted,
+            storage: "mysql",
+          });
+          return prog;
+        }
+        if (prog.status === "error") {
+          throw new Error(prog.error || prog.message || "索引加载失败");
+        }
+        await sleep(600);
+      }
+    } finally {
+      busyDepth = Math.max(0, busyDepth - 1);
+      if (busyDepth === 0) {
+        document.body.classList.remove("ops-busy");
+        hideProgress();
+      }
+    }
   }
 
   /**
@@ -311,6 +479,78 @@
   }
 
   /**
+   * 渲染日导出搜索结果表。
+   * @param {Array<object>} hits
+   * @param {number} totalMatched
+   */
+  function renderExportHits(hits, totalMatched) {
+    exportHits = hits || [];
+    renderMetrics(document.getElementById("exportSearchMetrics"), [
+      ["命中", totalMatched != null ? totalMatched : exportHits.length],
+      ["本页", exportHits.length],
+    ]);
+    const tbody = document.querySelector("#exportHitTable tbody");
+    tbody.innerHTML = exportHits
+      .map((h, idx) => {
+        const tier = h.source_tier || "pop";
+        const isTv = (h.media_type || "") === "tv";
+        const seasonCell = isTv
+          ? `<input type="number" class="export-se" data-idx="${idx}" data-field="season" value="${
+              h.season != null ? h.season : 1
+            }" min="1" style="width:56px" />`
+          : "—";
+        const episodeCell = isTv
+          ? `<input type="number" class="export-se" data-idx="${idx}" data-field="episode" value="${
+              h.episode != null ? h.episode : 1
+            }" min="1" style="width:56px" />`
+          : "—";
+        return `<tr>
+          <td><input type="checkbox" class="export-hit-check" data-idx="${idx}" /></td>
+          <td class="tier-${tier}">${tier}</td>
+          <td>${escapeHtml(h.title || h.label || "")}</td>
+          <td><code>${escapeHtml(h.page_id || "")}</code></td>
+          <td>${escapeHtml(h.media_type || "")}</td>
+          <td>${h.popularity != null ? h.popularity : "—"}</td>
+          <td>${seasonCell}</td>
+          <td>${episodeCell}</td>
+        </tr>`;
+      })
+      .join("");
+  }
+
+  /**
+   * 收集搜索结果中勾选的 selections。
+   * @returns {Array<object>}
+   */
+  function collectExportSelections() {
+    const checks = document.querySelectorAll("#exportHitTable .export-hit-check:checked");
+    const out = [];
+    checks.forEach((el) => {
+      const idx = Number(el.dataset.idx);
+      const base = exportHits[idx];
+      if (!base) return;
+      const sel = {
+        tmdb_id: base.tmdb_id,
+        media_type: base.media_type,
+        title: base.title,
+        popularity: base.popularity,
+      };
+      if (base.media_type === "tv") {
+        const sInput = document.querySelector(
+          `.export-se[data-idx="${idx}"][data-field="season"]`
+        );
+        const eInput = document.querySelector(
+          `.export-se[data-idx="${idx}"][data-field="episode"]`
+        );
+        sel.season = sInput ? Number(sInput.value || 1) : 1;
+        sel.episode = eInput ? Number(eInput.value || 1) : 1;
+      }
+      out.push(sel);
+    });
+    return out;
+  }
+
+  /**
    * 绑定事件。
    */
   function bind() {
@@ -319,7 +559,9 @@
     });
 
     document.getElementById("btnRefresh").addEventListener("click", () => {
-      refresh().catch((e) => log(String(e)));
+      withBusy("刷新状态", () => refresh(), { indeterminate: true }).catch((e) =>
+        log(String(e))
+      );
     });
 
     document.getElementById("btnBuildTmdb").addEventListener("click", async () => {
@@ -331,12 +573,17 @@
       const tv = document.getElementById("tmdbTv").value;
       if (movies !== "") body.movies = Number(movies);
       if (tv !== "") body.tv = Number(tv);
-      log("生成 TMDB 清单…", body);
       try {
-        const data = await api("/api/source/build-tmdb", { method: "POST", body });
-        log("清单已生成", data.result);
-        await refresh();
-        showStep("2");
+        await withBusy("生成 TMDB 清单（锚点/curated/pop）", async () => {
+          showProgress("生成 TMDB 清单", {
+            percent: null,
+            message: "下载导出 / 选槽中，可能需要数十秒…",
+          });
+          const data = await api("/api/source/build-tmdb", { method: "POST", body });
+          log("清单已生成", data.result);
+          await refresh();
+          showStep("2");
+        });
       } catch (e) {
         log(String(e));
       }
@@ -346,9 +593,11 @@
       const path = document.getElementById("slotsPath").value.trim();
       if (!path) return;
       try {
-        await api("/api/source/load", { method: "POST", body: { path } });
-        await refresh();
-        showStep("2");
+        await withBusy("加载 slots JSON", async () => {
+          await api("/api/source/load", { method: "POST", body: { path } });
+          await refresh();
+          showStep("2");
+        });
       } catch (e) {
         log(String(e));
       }
@@ -359,12 +608,113 @@
       if (!btn) return;
       document.getElementById("slotsPath").value = btn.dataset.path;
       try {
-        await api("/api/source/load", { method: "POST", body: { path: btn.dataset.path } });
-        await refresh();
-        showStep("2");
+        await withBusy("加载 slots JSON", async () => {
+          await api("/api/source/load", { method: "POST", body: { path: btn.dataset.path } });
+          await refresh();
+          showStep("2");
+        });
       } catch (e) {
         log(String(e));
       }
+    });
+
+    document.getElementById("btnEnsureExport").addEventListener("click", async () => {
+      try {
+        await ensureExportWithProgress({
+          download: true,
+          force_download: document.getElementById("exportForceDownload").checked,
+          force_reload: document.getElementById("exportForceReload").checked,
+          daily: false,
+        });
+      } catch (e) {
+        log(String(e));
+        hideProgress();
+        document.body.classList.remove("ops-busy");
+        busyDepth = 0;
+      }
+    });
+
+    document.getElementById("btnDailySyncExport").addEventListener("click", async () => {
+      try {
+        await ensureExportWithProgress({
+          download: true,
+          daily: true,
+          force_reload: document.getElementById("exportForceReload").checked,
+        });
+      } catch (e) {
+        log(String(e));
+        hideProgress();
+        document.body.classList.remove("ops-busy");
+        busyDepth = 0;
+      }
+    });
+
+    document.getElementById("btnSearchExport").addEventListener("click", async () => {
+      const body = {
+        q: document.getElementById("exportQ").value || null,
+        media_types: multiValues("exportMedia"),
+        exclude_adult: document.getElementById("exportExcludeAdult").checked,
+        exclude_video: document.getElementById("exportExcludeVideo").checked,
+        limit: Number(document.getElementById("exportLimit").value || 50),
+        offset: 0,
+        download: false,
+      };
+      const pmin = document.getElementById("exportPopMin").value;
+      const pmax = document.getElementById("exportPopMax").value;
+      if (pmin !== "") body.pop_min = Number(pmin);
+      if (pmax !== "") body.pop_max = Number(pmax);
+      try {
+        // 索引未就绪时先带进度加载，再搜索
+        const ready = await api("/api/source/export/progress");
+        if (!ready.ready) {
+          await ensureExportWithProgress({ download: true, force_reload: false });
+        }
+        await withBusy("从 MySQL 搜索日导出", async () => {
+          showProgress("MySQL 搜索", { percent: null, message: JSON.stringify(body) });
+          const data = await api("/api/source/export/search", { method: "POST", body });
+          if (data.meta && data.meta.export_date) {
+            document.getElementById("exportIndexBadge").textContent =
+              `MySQL · ${data.meta.export_date} · 命中 ${data.total_matched}`;
+          }
+          renderExportHits(data.hits || [], data.total_matched);
+          log("搜索完成", { total_matched: data.total_matched, page: (data.hits || []).length });
+        });
+      } catch (e) {
+        log(String(e));
+        hideProgress();
+        document.body.classList.remove("ops-busy");
+        busyDepth = 0;
+      }
+    });
+
+    document.getElementById("checkAllExportHits").addEventListener("change", (ev) => {
+      document.querySelectorAll("#exportHitTable .export-hit-check").forEach((c) => {
+        c.checked = ev.target.checked;
+      });
+    });
+
+    async function addExportSelections(mode) {
+      const selections = collectExportSelections();
+      if (!selections.length) {
+        log("请先勾选搜索结果中的条目");
+        return;
+      }
+      await withBusy(`并入工作区（${mode}）`, async () => {
+        const data = await api("/api/source/export/add", {
+          method: "POST",
+          body: { selections, mode },
+        });
+        log("已加入工作区", { added: data.added, mode: data.mode });
+        await refresh();
+      });
+    }
+
+    document.getElementById("btnAddExportAppend").addEventListener("click", () => {
+      addExportSelections("append").catch((e) => log(String(e)));
+    });
+    document.getElementById("btnAddExportReplace").addEventListener("click", () => {
+      if (!window.confirm("将用勾选结果覆盖当前工作区候选清单？")) return;
+      addExportSelections("replace").catch((e) => log(String(e)));
     });
 
     document.getElementById("btnApplyFilter").addEventListener("click", async () => {
@@ -381,9 +731,11 @@
       if (pmin !== "") body.pop_min = Number(pmin);
       if (pmax !== "") body.pop_max = Number(pmax);
       try {
-        const data = await api("/api/filter", { method: "POST", body });
-        log("筛选完成", { before: data.count_before, after: data.count_after });
-        await refresh();
+        await withBusy("应用筛选", async () => {
+          const data = await api("/api/filter", { method: "POST", body });
+          log("筛选完成", { before: data.count_before, after: data.count_after });
+          await refresh();
+        });
       } catch (e) {
         log(String(e));
       }
@@ -398,31 +750,41 @@
     document.getElementById("btnImportTrack").addEventListener("click", async () => {
       const ids = checkedPageIds();
       try {
-        const data = await api("/api/track/import", {
-          method: "POST",
-          body: { selected_page_ids: ids },
+        await withBusy("导入跟踪表", async () => {
+          const data = await api("/api/track/import", {
+            method: "POST",
+            body: { selected_page_ids: ids },
+          });
+          log("已导入跟踪表", {
+            imported: data.imported,
+            batch_id: data.batch && data.batch.meta.batch_id,
+          });
+          await refresh();
+          showStep("3");
         });
-        log("已导入跟踪表", { imported: data.imported, batch_id: data.batch && data.batch.meta.batch_id });
-        await refresh();
-        showStep("3");
       } catch (e) {
         log(String(e));
       }
     });
 
     document.getElementById("btnPipeline").addEventListener("click", async () => {
-      log("Pipeline 运行中（可能较久）…");
       try {
-        const data = await api("/api/actions/pipeline", {
-          method: "POST",
-          body: {
-            fetch: true,
-            skip_existing: document.getElementById("skipExisting").checked,
-            mode: "live",
-          },
+        await withBusy("Pipeline（Jackett 拉源，可能较久）", async () => {
+          showProgress("Pipeline 运行中", {
+            percent: null,
+            message: "拉取 / 评分 / 写库，请勿关闭页面…",
+          });
+          const data = await api("/api/actions/pipeline", {
+            method: "POST",
+            body: {
+              fetch: true,
+              skip_existing: document.getElementById("skipExisting").checked,
+              mode: "live",
+            },
+          });
+          log("Pipeline 完成", data.pipeline_report || data);
+          await refresh();
         });
-        log("Pipeline 完成", data.pipeline_report || data);
-        await refresh();
       } catch (e) {
         log(String(e));
       }
@@ -430,69 +792,78 @@
 
     document.getElementById("btnRefreshGates").addEventListener("click", async () => {
       try {
-        await api("/api/track/refresh-gates", { method: "POST", body: {} });
-        await refresh();
+        await withBusy("刷新门禁", async () => {
+          await api("/api/track/refresh-gates", { method: "POST", body: {} });
+          await refresh();
+        });
       } catch (e) {
         log(String(e));
       }
     });
 
     document.getElementById("btnGeneratePages").addEventListener("click", async () => {
-      log("Generate pages…");
       try {
-        const data = await api("/api/actions/generate", {
-          method: "POST",
-          body: { generate_all: false },
+        await withBusy("Generate 选中页", async () => {
+          const data = await api("/api/actions/generate", {
+            method: "POST",
+            body: { generate_all: false },
+          });
+          log("Generate 完成", { ok_count: data.ok_count, fail_count: data.fail_count });
+          await refresh();
         });
-        log("Generate 完成", { ok_count: data.ok_count, fail_count: data.fail_count });
-        await refresh();
       } catch (e) {
         log(String(e));
       }
     });
 
     document.getElementById("btnGenerateAll").addEventListener("click", async () => {
-      log("Generate all…");
       try {
-        await api("/api/actions/generate", { method: "POST", body: { generate_all: true } });
-        await refresh();
+        await withBusy("Generate all", async () => {
+          showProgress("Generate all", { percent: null, message: "烘焙全站静态页…" });
+          await api("/api/actions/generate", { method: "POST", body: { generate_all: true } });
+          await refresh();
+        });
       } catch (e) {
         log(String(e));
       }
     });
 
     document.getElementById("btnSpeedtest").addEventListener("click", async () => {
-      log("Speedtest 运行中…");
       try {
-        const data = await api("/api/actions/speedtest", { method: "POST", body: {} });
-        log("Speedtest 结束", { ok: data.ok, report: data.report });
-        await refresh();
+        await withBusy("测速 write", async () => {
+          showProgress("Speedtest", { percent: null, message: "批量测速进行中…" });
+          const data = await api("/api/actions/speedtest", { method: "POST", body: {} });
+          log("Speedtest 结束", { ok: data.ok, report: data.report });
+          await refresh();
+        });
       } catch (e) {
         log(String(e));
       }
     });
 
     document.getElementById("btnSeo").addEventListener("click", async () => {
-      log("seo_c2…");
       try {
-        const data = await api("/api/actions/seo", { method: "POST", body: {} });
-        log("seo_c2 结束", { ok: data.ok, returncode: data.returncode });
-        await refresh();
-        showStep("4");
+        await withBusy("seo_c2_checklist", async () => {
+          const data = await api("/api/actions/seo", { method: "POST", body: {} });
+          log("seo_c2 结束", { ok: data.ok, returncode: data.returncode });
+          await refresh();
+          showStep("4");
+        });
       } catch (e) {
         log(String(e));
       }
     });
 
     document.getElementById("btnDeployPrepare").addEventListener("click", async () => {
-      log("deploy --prepare-only…");
       try {
-        const data = await api("/api/actions/deploy", {
-          method: "POST",
-          body: { prepare_only: true },
+        await withBusy("Deploy prepare-only", async () => {
+          const data = await api("/api/actions/deploy", {
+            method: "POST",
+            body: { prepare_only: true },
+          });
+          log("prepare 结束", { ok: data.ok });
+          await refresh();
         });
-        log("prepare 结束", { ok: data.ok });
-        await refresh();
       } catch (e) {
         log(String(e));
       }
@@ -500,14 +871,16 @@
 
     document.getElementById("btnDeployReal").addEventListener("click", async () => {
       if (!window.confirm("确认执行正式 wrangler deploy？将影响公网站点。")) return;
-      log("正式 deploy…");
       try {
-        const data = await api("/api/actions/deploy", {
-          method: "POST",
-          body: { prepare_only: false },
+        await withBusy("正式 wrangler deploy", async () => {
+          showProgress("Deploy", { percent: null, message: "wrangler 上传中…" });
+          const data = await api("/api/actions/deploy", {
+            method: "POST",
+            body: { prepare_only: false },
+          });
+          log("deploy 结束", { ok: data.ok });
+          await refresh();
         });
-        log("deploy 结束", { ok: data.ok });
-        await refresh();
       } catch (e) {
         log(String(e));
       }
