@@ -767,6 +767,67 @@
       }
     });
 
+    /**
+     * ③ 一键跑生成流程：Pipeline（自动刷新门禁）→ Generate 选中页 → 测速 write。
+     * 任一步 API 失败（ok===false）即中止后续步骤；「跳过已有 ≥2 magnet」仅作用于 Pipeline。
+     */
+    document.getElementById("btnRunGenerationFlow").addEventListener("click", async () => {
+      /** @type {boolean} Pipeline 是否跳过已有 ≥2 magnet 的槽 */
+      const skipExisting = document.getElementById("skipExisting").checked;
+      try {
+        await withBusy("一键跑生成流程", async () => {
+          // 步骤 1/3：Jackett 拉源 + 写库（后端会自动 refresh_gates）
+          showProgress("一键跑生成流程 · 1/3 Pipeline", {
+            percent: 5,
+            message: "Jackett 拉取 / 评分 / 写库，请勿关闭页面…",
+          });
+          const pipeData = await api("/api/actions/pipeline", {
+            method: "POST",
+            body: {
+              fetch: true,
+              skip_existing: skipExisting,
+              mode: "live",
+            },
+          });
+          log("一键 · Pipeline 完成", pipeData.pipeline_report || pipeData);
+          await refresh();
+
+          // 步骤 2/3：烘焙选中槽静态页（非 generate all）
+          showProgress("一键跑生成流程 · 2/3 Generate", {
+            percent: 45,
+            message: "烘焙选中页静态 HTML…",
+          });
+          const genData = await api("/api/actions/generate", {
+            method: "POST",
+            body: { generate_all: false },
+          });
+          log("一键 · Generate 完成", {
+            ok_count: genData.ok_count,
+            fail_count: genData.fail_count,
+          });
+          await refresh();
+
+          // 步骤 3/3：批量测速并写回
+          showProgress("一键跑生成流程 · 3/3 测速", {
+            percent: 75,
+            message: "批量测速 write 进行中…",
+          });
+          const speedData = await api("/api/actions/speedtest", {
+            method: "POST",
+            body: {},
+          });
+          log("一键 · Speedtest 结束", { ok: speedData.ok, report: speedData.report });
+          showProgress("一键跑生成流程完成", {
+            percent: 100,
+            message: "Pipeline → Generate → 测速 均已跑完",
+          });
+          await refresh();
+        });
+      } catch (e) {
+        log("一键跑生成流程中断：" + String(e));
+      }
+    });
+
     document.getElementById("btnPipeline").addEventListener("click", async () => {
       try {
         await withBusy("Pipeline（Jackett 拉源，可能较久）", async () => {

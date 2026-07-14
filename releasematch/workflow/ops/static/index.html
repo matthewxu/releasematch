@@ -223,14 +223,16 @@
     <!-- ③ 跑生成流程 -->
     <section class="ops-panel" id="panel-3" data-panel="3">
       <h2>③ 跑生成流程</h2>
-      <p class="lead">pipeline batch/slot → MySQL 门禁（magnet + Rec）→ generate → 测速。与④共用下方跟踪表。</p>
+      <p class="lead">pipeline batch/slot → MySQL 门禁（magnet + Rec）→ generate → 测速。与④共用下方跟踪表。一键按该顺序跑选中槽。</p>
       <div class="ops-metrics" id="trackMetrics"></div>
       <div class="ops-actions">
-        <button type="button" id="btnPipeline">跑 Pipeline（Jackett 拉源）</button>
+        <!-- 一键串联：Pipeline（含门禁刷新）→ Generate 选中页 → 测速 write -->
+        <button type="button" id="btnRunGenerationFlow" title="依次：Pipeline → Generate 选中页 → 测速">一键跑生成流程</button>
+        <button type="button" class="secondary" id="btnPipeline">跑 Pipeline（Jackett 拉源）</button>
         <button type="button" class="secondary" id="btnRefreshGates">刷新门禁</button>
-        <button type="button" id="btnGeneratePages">Generate 选中页</button>
+        <button type="button" class="secondary" id="btnGeneratePages">Generate 选中页</button>
         <button type="button" class="secondary" id="btnGenerateAll">Generate all</button>
-        <button type="button" id="btnSpeedtest">测速 write</button>
+        <button type="button" class="secondary" id="btnSpeedtest">测速 write</button>
         <label style="margin-left:8px"><input type="checkbox" id="skipExisting" checked /> 跳过已有 ≥2 magnet</label>
       </div>
       <div id="trackTableHost"></div>
