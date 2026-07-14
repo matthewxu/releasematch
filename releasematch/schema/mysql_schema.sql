@@ -338,4 +338,66 @@ CREATE TABLE IF NOT EXISTS tmdb_export_titles (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   COMMENT='TMDB 日导出标题表：全量下载 + UPSERT 增量入库，Ops UI 搜索筛选';
 
+-- -----------------------------------------------------------------------------
+-- 13. tmdb_tv_series — Ops TV 剧集摘要（crawler_tmdb 拉取后入库）
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS tmdb_tv_series (
+    tmdb_id                 INT UNSIGNED NOT NULL PRIMARY KEY,
+    name                    VARCHAR(512) NOT NULL DEFAULT '',
+    original_name           VARCHAR(512) NOT NULL DEFAULT '',
+    number_of_seasons       SMALLINT UNSIGNED NULL,
+    number_of_episodes      INT UNSIGNED NULL,
+    first_air_date          DATE NULL,
+    updated_at              DATETIME(3)  NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='TMDB TV 剧集摘要（Ops 季集选型）';
+
+-- -----------------------------------------------------------------------------
+-- 14. tmdb_tv_seasons — Ops TV 季列表
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS tmdb_tv_seasons (
+    tmdb_id                 INT UNSIGNED NOT NULL,
+    season_number           SMALLINT NOT NULL COMMENT '0=Specials',
+    name                    VARCHAR(256) NOT NULL DEFAULT '',
+    episode_count           INT UNSIGNED NOT NULL DEFAULT 0,
+    air_date                DATE NULL,
+    poster_path             VARCHAR(256) NULL,
+    updated_at              DATETIME(3)  NOT NULL,
+    PRIMARY KEY (tmdb_id, season_number),
+    KEY idx_tts_tmdb (tmdb_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='TMDB TV 季列表';
+
+-- -----------------------------------------------------------------------------
+-- 15. tmdb_tv_episodes — Ops TV 分集列表
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS tmdb_tv_episodes (
+    tmdb_id                 INT UNSIGNED NOT NULL,
+    season_number           SMALLINT NOT NULL,
+    episode_number          SMALLINT UNSIGNED NOT NULL,
+    name                    VARCHAR(512) NOT NULL DEFAULT '',
+    air_date                DATE NULL,
+    runtime                 SMALLINT UNSIGNED NULL,
+    overview                VARCHAR(512) NOT NULL DEFAULT '',
+    still_path              VARCHAR(256) NULL,
+    vote_average            DOUBLE NULL,
+    updated_at              DATETIME(3)  NOT NULL,
+    PRIMARY KEY (tmdb_id, season_number, episode_number),
+    KEY idx_tte_lookup (tmdb_id, season_number)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='TMDB TV 分集列表';
+
+-- -----------------------------------------------------------------------------
+-- 16. tmdb_api_cache — crawler_tmdb 原始 API JSON 缓存（MySQL）
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS tmdb_api_cache (
+    cache_key               VARCHAR(768) NOT NULL PRIMARY KEY,
+    api_path                VARCHAR(512) NOT NULL,
+    response_json           LONGTEXT     NOT NULL,
+    created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_api_path (api_path(191))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='crawler_tmdb API 原始 JSON 缓存（Ops TV 季集拉取）';
+
 SET FOREIGN_KEY_CHECKS = 1;

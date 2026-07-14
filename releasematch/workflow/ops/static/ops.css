@@ -324,6 +324,93 @@ table.ops-table tr:hover td {
   margin: 12px 0;
 }
 
+/** TV 搜索行：季下拉 + 「季集」按钮 */
+.tv-se-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 140px;
+}
+
+.tv-se-cell select {
+  max-width: 220px;
+  font-size: 11px;
+  padding: 4px 6px;
+  background: var(--ops-bg);
+  color: var(--ops-text);
+  border: 1px solid var(--ops-border);
+  border-radius: 4px;
+}
+
+.tv-se-cell .btn-fetch-tv {
+  padding: 4px 8px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/** TV 分集批量勾选面板 */
+.tv-ep-batch {
+  min-width: 220px;
+  max-width: 420px;
+}
+
+.tv-ep-batch--empty .tv-ep-hint {
+  color: var(--ops-muted);
+  font-size: 11px;
+}
+
+.tv-ep-batch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.tv-ep-batch-actions button {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+.tv-ep-count {
+  color: var(--ops-accent);
+  font-size: 11px;
+  font-family: var(--ops-mono);
+}
+
+.tv-ep-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 160px;
+  overflow: auto;
+  padding: 4px 6px;
+  border: 1px solid var(--ops-border);
+  border-radius: 4px;
+  background: var(--ops-bg);
+}
+
+.tv-ep-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 11px;
+  line-height: 1.35;
+  cursor: pointer;
+  margin: 0;
+}
+
+.tv-ep-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tv-ep-item input {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
 .ops-file-list {
   list-style: none;
   margin: 0;

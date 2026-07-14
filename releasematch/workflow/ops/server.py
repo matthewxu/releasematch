@@ -178,6 +178,51 @@ def _handle_api(method: str, path: str, body: Dict[str, Any], query: Dict[str, l
             "workspace": snap.get("workspace"),
         }
 
+    # TV 季列表：crawler_tmdb.tv_details → 本地 data/tmdb_tv
+    if path == "/api/source/tv/seasons" and method == "POST":
+        tid = body.get("tmdb_id")
+        if tid is None:
+            return 400, {"ok": False, "error": "缺少 tmdb_id"}
+        result = source_service.fetch_tv_seasons(
+            int(tid),
+            force_refresh=bool(body.get("force_refresh", False)),
+            include_specials=bool(body.get("include_specials", False)),
+            language=body.get("language"),
+        )
+        status = 200 if result.get("ok") else 400
+        return status, result
+
+    # TV 某季分集：crawler_tmdb.tv_season_details → 本地 data/tmdb_tv
+    if path == "/api/source/tv/episodes" and method == "POST":
+        tid = body.get("tmdb_id")
+        season = body.get("season")
+        if tid is None or season is None:
+            return 400, {"ok": False, "error": "缺少 tmdb_id 或 season"}
+        result = source_service.fetch_tv_episodes(
+            int(tid),
+            int(season),
+            force_refresh=bool(body.get("force_refresh", False)),
+            language=body.get("language"),
+        )
+        status = 200 if result.get("ok") else 400
+        return status, result
+
+    # 一次拉齐：季列表 + 可选某季分集
+    if path == "/api/source/tv/catalog" and method == "POST":
+        tid = body.get("tmdb_id")
+        if tid is None:
+            return 400, {"ok": False, "error": "缺少 tmdb_id"}
+        season = body.get("season")
+        result = source_service.fetch_tv_catalog(
+            int(tid),
+            season=int(season) if season is not None else None,
+            force_refresh=bool(body.get("force_refresh", False)),
+            include_specials=bool(body.get("include_specials", False)),
+            language=body.get("language"),
+        )
+        status = 200 if result.get("ok") else 400
+        return status, result
+
     if path == "/api/filter" and method == "POST":
         if not WORKSPACE.candidates:
             return 400, {"ok": False, "error": "请先在「清单从哪来」加载或生成清单"}
@@ -331,11 +376,13 @@ def run_ops_server(*, host: str = "127.0.0.1", port: int = DEFAULT_OPS_PORT) -> 
     # 启动时确保 Ops / TMDB 导出相关表存在
     try:
         from workflow.ops import tmdb_export_store
+        from workflow.ops import tmdb_tv_store
 
         ensured = ensure_tables()
         tmdb_ok = tmdb_export_store.ensure_tables()
+        tv_ok = tmdb_tv_store.ensure_tables()
         print(
-            f"[ops] MySQL 就绪: ops_track_* {ensured} · tmdb_export_* {tmdb_ok}"
+            f"[ops] MySQL 就绪: ops_track_* {ensured} · tmdb_export_* {tmdb_ok} · tmdb_tv_* {tv_ok}"
         )
     except Exception as exc:  # noqa: BLE001
         print(f"[ops] 警告: 无法初始化 Ops/TMDB 表（请检查 MySQL / .env）: {exc}")

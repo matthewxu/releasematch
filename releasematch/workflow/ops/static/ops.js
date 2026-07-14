@@ -12,6 +12,18 @@
   /** @type {Array<object>} 最近一次日导出搜索结果 */
   let exportHits = [];
 
+  /**
+   * 前端 TV 季集缓存（key = tmdb_id）。
+   * @type {Object.<string, {seasons: Array<object>, episodesBySeason: Object.<string, Array<object>>, name?: string}>}
+   */
+  let tvCatalogById = {};
+
+  /**
+   * TV 分集多选状态：key = ``{tmdb_id}:{season}`` → 已选 episode_number 数组。
+   * @type {Object.<string, number[]>}
+   */
+  let tvEpisodeSelection = {};
+
   /** 并发忙碌计数（嵌套 withBusy 时保持面板） */
   let busyDepth = 0;
 
@@ -479,7 +491,45 @@
   }
 
   /**
+   * 分集多选缓存键。
+   * @param {number|string} tmdbId
+   * @param {number|string} season
+   * @returns {string}
+   */
+  function episodeSelKey(tmdbId, season) {
+    return String(tmdbId) + ":" + String(season);
+  }
+
+  /**
+   * 读取已选分集号（升序）。
+   * @param {number|string} tmdbId
+   * @param {number|string} season
+   * @returns {number[]}
+   */
+  function getSelectedEpisodes(tmdbId, season) {
+    const arr = tvEpisodeSelection[episodeSelKey(tmdbId, season)] || [];
+    return arr
+      .map((n) => Number(n))
+      .filter((n) => n > 0)
+      .sort((a, b) => a - b);
+  }
+
+  /**
+   * 写入已选分集号（去重排序）。
+   * @param {number|string} tmdbId
+   * @param {number|string} season
+   * @param {number[]} episodes
+   */
+  function setSelectedEpisodes(tmdbId, season, episodes) {
+    const uniq = Array.from(
+      new Set((episodes || []).map((n) => Number(n)).filter((n) => n > 0))
+    ).sort((a, b) => a - b);
+    tvEpisodeSelection[episodeSelKey(tmdbId, season)] = uniq;
+  }
+
+  /**
    * 渲染日导出搜索结果表。
+   * TV 行：Season 下拉 +「季集」；Episode 列为批量勾选面板。
    * @param {Array<object>} hits
    * @param {number} totalMatched
    */
@@ -494,59 +544,307 @@
       .map((h, idx) => {
         const tier = h.source_tier || "pop";
         const isTv = (h.media_type || "") === "tv";
-        const seasonCell = isTv
-          ? `<input type="number" class="export-se" data-idx="${idx}" data-field="season" value="${
-              h.season != null ? h.season : 1
-            }" min="1" style="width:56px" />`
-          : "—";
-        const episodeCell = isTv
-          ? `<input type="number" class="export-se" data-idx="${idx}" data-field="episode" value="${
-              h.episode != null ? h.episode : 1
-            }" min="1" style="width:56px" />`
-          : "—";
-        return `<tr>
+        const tid = h.tmdb_id;
+        const cat = tid != null ? tvCatalogById[String(tid)] : null;
+        let seasonCell = "—";
+        let episodeCell = "—";
+        if (isTv) {
+          const seasonVal = h.season != null ? Number(h.season) : 1;
+          const seasonOpts = buildSeasonOptionsHtml(cat && cat.seasons, seasonVal);
+          const epList =
+            cat && cat.episodesBySeason
+              ? cat.episodesBySeason[String(seasonVal)]
+              : null;
+          seasonCell = `<div class="tv-se-cell">
+            <select class="export-season" data-idx="${idx}" data-tmdb="${tid}" title="选择季">
+              ${seasonOpts}
+            </select>
+            <button type="button" class="secondary btn-fetch-tv" data-idx="${idx}" data-tmdb="${tid}" title="经 crawler_tmdb 拉取并写入 MySQL tmdb_tv_*">季集</button>
+          </div>`;
+          episodeCell = buildEpisodeBatchHtml(idx, tid, seasonVal, epList);
+        }
+        return `<tr data-idx="${idx}">
           <td><input type="checkbox" class="export-hit-check" data-idx="${idx}" /></td>
           <td class="tier-${tier}">${tier}</td>
           <td>${escapeHtml(h.title || h.label || "")}</td>
-          <td><code>${escapeHtml(h.page_id || "")}</code></td>
+          <td><code class="export-page-id" data-idx="${idx}">${escapeHtml(
+            h.page_id || ""
+          )}</code></td>
           <td>${escapeHtml(h.media_type || "")}</td>
           <td>${h.popularity != null ? h.popularity : "—"}</td>
           <td>${seasonCell}</td>
-          <td>${episodeCell}</td>
+          <td class="export-ep-cell" data-idx="${idx}">${episodeCell}</td>
         </tr>`;
       })
       .join("");
+    // 渲染后同步 page_id 预览（批量选集时显示条数）
+    exportHits.forEach((h, idx) => {
+      if ((h.media_type || "") === "tv") syncExportHitPageId(idx);
+    });
+  }
+
+  /**
+   * 生成季 `<option>` HTML。
+   * @param {Array<object>|null|undefined} seasons
+   * @param {number} selected
+   * @returns {string}
+   */
+  function buildSeasonOptionsHtml(seasons, selected) {
+    if (seasons && seasons.length) {
+      return seasons
+        .map((s) => {
+          const n = Number(s.season_number);
+          const label = `S${String(n).padStart(2, "0")}${
+            s.episode_count != null ? ` (${s.episode_count}ep)` : ""
+          }${s.name ? " · " + escapeHtml(String(s.name)) : ""}`;
+          return `<option value="${n}" ${n === selected ? "selected" : ""}>${label}</option>`;
+        })
+        .join("");
+    }
+    return `<option value="${selected}" selected>S${String(selected).padStart(
+      2,
+      "0"
+    )}（点「季集」拉取）</option>`;
+  }
+
+  /**
+   * 生成分集批量勾选面板 HTML。
+   * @param {number} idx 搜索行下标
+   * @param {number|string} tmdbId
+   * @param {number} season
+   * @param {Array<object>|null|undefined} episodes
+   * @returns {string}
+   */
+  function buildEpisodeBatchHtml(idx, tmdbId, season, episodes) {
+    if (!episodes || !episodes.length) {
+      return `<div class="tv-ep-batch tv-ep-batch--empty" data-idx="${idx}" data-tmdb="${tmdbId}" data-season="${season}">
+        <span class="tv-ep-hint">先点「季集」加载分集，再多选</span>
+      </div>`;
+    }
+    const selected = new Set(getSelectedEpisodes(tmdbId, season));
+    // 首次加载且未选过：默认不预勾，避免误加一整季；用户点「全选本季」
+    const checks = episodes
+      .map((ep) => {
+        const n = Number(ep.episode_number);
+        const name = ep.name ? " · " + escapeHtml(String(ep.name)) : "";
+        const checked = selected.has(n) ? "checked" : "";
+        return `<label class="tv-ep-item" title="${escapeHtml(
+          ep.name || "E" + n
+        )}">
+          <input type="checkbox" class="export-ep-check" data-idx="${idx}" data-tmdb="${tmdbId}" data-season="${season}" data-ep="${n}" ${checked} />
+          <span>E${String(n).padStart(2, "0")}${name}</span>
+        </label>`;
+      })
+      .join("");
+    const count = selected.size;
+    return `<div class="tv-ep-batch" data-idx="${idx}" data-tmdb="${tmdbId}" data-season="${season}">
+      <div class="tv-ep-batch-actions">
+        <button type="button" class="secondary btn-ep-all" data-idx="${idx}" data-tmdb="${tmdbId}" data-season="${season}">全选本季</button>
+        <button type="button" class="secondary btn-ep-none" data-idx="${idx}" data-tmdb="${tmdbId}" data-season="${season}">清空</button>
+        <span class="tv-ep-count" data-idx="${idx}">已选 ${count}</span>
+      </div>
+      <div class="tv-ep-list">${checks}</div>
+    </div>`;
+  }
+
+  /**
+   * 刷新某行分集批量面板 DOM（保留当前季选择状态）。
+   * @param {number} idx
+   * @param {number} season
+   * @param {Array<object>} episodes
+   */
+  function refreshEpisodeBatchCell(idx, season, episodes) {
+    const base = exportHits[idx];
+    if (!base) return;
+    const cell = document.querySelector(`.export-ep-cell[data-idx="${idx}"]`);
+    if (!cell) return;
+    cell.innerHTML = buildEpisodeBatchHtml(idx, base.tmdb_id, season, episodes);
+    syncExportHitPageId(idx);
+  }
+
+  /**
+   * 更新某行「已选 N」计数。
+   * @param {number} idx
+   * @param {number|string} tmdbId
+   * @param {number|string} season
+   */
+  function updateEpisodeSelectedCount(idx, tmdbId, season) {
+    const n = getSelectedEpisodes(tmdbId, season).length;
+    const el = document.querySelector(`.tv-ep-count[data-idx="${idx}"]`);
+    if (el) el.textContent = "已选 " + n;
+  }
+
+  /**
+   * 按当前季 + 批量已选集刷新 page_id 预览。
+   * @param {number} idx
+   */
+  function syncExportHitPageId(idx) {
+    const base = exportHits[idx];
+    if (!base || base.media_type !== "tv") return;
+    const sEl = document.querySelector(`.export-season[data-idx="${idx}"]`);
+    const season = sEl ? Number(sEl.value || 1) : Number(base.season || 1);
+    const selected = getSelectedEpisodes(base.tmdb_id, season);
+    base.season = season;
+    const ss = String(season).padStart(2, "0");
+    const code = document.querySelector(`.export-page-id[data-idx="${idx}"]`);
+    if (selected.length === 0) {
+      base.episode = null;
+      base.page_id = `tv:${base.tmdb_id}:s${ss}e??`;
+      base.label = `${(base.title || "").slice(0, 24)} S${ss}（未选集）`.trim();
+      if (code) code.textContent = base.page_id + " · 未选集";
+      return;
+    }
+    if (selected.length === 1) {
+      const episode = selected[0];
+      base.episode = episode;
+      const ee = String(episode).padStart(2, "0");
+      base.page_id = `tv:${base.tmdb_id}:s${ss}e${ee}`;
+      base.label = `${(base.title || "").slice(0, 24)} S${ss}E${ee}`.trim();
+      if (code) code.textContent = base.page_id;
+      return;
+    }
+    base.episode = selected[0];
+    const lo = String(selected[0]).padStart(2, "0");
+    const hi = String(selected[selected.length - 1]).padStart(2, "0");
+    base.page_id = `tv:${base.tmdb_id}:s${ss}×${selected.length}`;
+    base.label = `${(base.title || "").slice(0, 24)} S${ss} E${lo}–E${hi} (${selected.length})`.trim();
+    if (code) {
+      code.textContent = `tv:${base.tmdb_id}:s${ss}e${lo}…e${hi} ×${selected.length}`;
+    }
+  }
+
+  /**
+   * 拉取 TV 季列表并填充该行下拉；默认再拉当前季的分集。
+   * @param {number} idx 搜索结果行下标
+   * @param {object} [opts]
+   * @param {boolean} [opts.forceRefresh]
+   * @returns {Promise<void>}
+   */
+  async function fetchTvSeasonsForRow(idx, opts) {
+    const base = exportHits[idx];
+    if (!base || base.media_type !== "tv") return;
+    const tid = Number(base.tmdb_id);
+    const forceRefresh = !!(opts && opts.forceRefresh);
+    const data = await api("/api/source/tv/seasons", {
+      method: "POST",
+      body: { tmdb_id: tid, force_refresh: forceRefresh, include_specials: false },
+    });
+    const key = String(tid);
+    if (!tvCatalogById[key]) {
+      tvCatalogById[key] = { seasons: [], episodesBySeason: {}, name: "" };
+    }
+    tvCatalogById[key].seasons = data.seasons || [];
+    tvCatalogById[key].name = data.name || tvCatalogById[key].name || "";
+
+    const sEl = document.querySelector(`.export-season[data-idx="${idx}"]`);
+    const cur =
+      sEl && sEl.value
+        ? Number(sEl.value)
+        : base.season != null
+          ? Number(base.season)
+          : tvCatalogById[key].seasons[0]
+            ? Number(tvCatalogById[key].seasons[0].season_number)
+            : 1;
+    if (sEl) {
+      sEl.innerHTML = buildSeasonOptionsHtml(tvCatalogById[key].seasons, cur);
+      sEl.value = String(cur);
+    }
+    log(`TV ${tid} 季列表已就绪`, {
+      count: (data.seasons || []).length,
+      source: data.source,
+      storage: data.storage,
+    });
+    await fetchTvEpisodesForRow(idx, cur, { forceRefresh: false });
+  }
+
+  /**
+   * 拉取指定季分集并填充批量勾选面板。
+   * @param {number} idx
+   * @param {number} season
+   * @param {object} [opts]
+   * @param {boolean} [opts.forceRefresh]
+   * @param {boolean} [opts.selectAll] 拉取后自动全选本季
+   * @returns {Promise<void>}
+   */
+  async function fetchTvEpisodesForRow(idx, season, opts) {
+    const base = exportHits[idx];
+    if (!base || base.media_type !== "tv") return;
+    const tid = Number(base.tmdb_id);
+    const sn = Number(season);
+    const forceRefresh = !!(opts && opts.forceRefresh);
+    const selectAll = !!(opts && opts.selectAll);
+    const data = await api("/api/source/tv/episodes", {
+      method: "POST",
+      body: { tmdb_id: tid, season: sn, force_refresh: forceRefresh },
+    });
+    const key = String(tid);
+    if (!tvCatalogById[key]) {
+      tvCatalogById[key] = { seasons: [], episodesBySeason: {}, name: "" };
+    }
+    const episodes = data.episodes || [];
+    tvCatalogById[key].episodesBySeason[String(sn)] = episodes;
+
+    if (selectAll && episodes.length) {
+      setSelectedEpisodes(
+        tid,
+        sn,
+        episodes.map((ep) => Number(ep.episode_number))
+      );
+    }
+
+    base.season = sn;
+    refreshEpisodeBatchCell(idx, sn, episodes);
+    log(`TV ${tid} S${String(sn).padStart(2, "0")} 分集已就绪`, {
+      count: episodes.length,
+      selected: getSelectedEpisodes(tid, sn).length,
+      source: data.source,
+    });
   }
 
   /**
    * 收集搜索结果中勾选的 selections。
+   * TV：按已勾选分集展开为多条（可批量）；未选集则跳过并记日志。
    * @returns {Array<object>}
    */
   function collectExportSelections() {
     const checks = document.querySelectorAll("#exportHitTable .export-hit-check:checked");
     const out = [];
+    /** @type {string[]} */
+    const skipped = [];
     checks.forEach((el) => {
       const idx = Number(el.dataset.idx);
       const base = exportHits[idx];
       if (!base) return;
-      const sel = {
+      if (base.media_type === "tv") {
+        const sInput = document.querySelector(`.export-season[data-idx="${idx}"]`);
+        const season = sInput ? Number(sInput.value || 1) : 1;
+        const eps = getSelectedEpisodes(base.tmdb_id, season);
+        if (!eps.length) {
+          skipped.push(String(base.title || base.tmdb_id) + "（未选分集）");
+          return;
+        }
+        eps.forEach((episode) => {
+          out.push({
+            tmdb_id: base.tmdb_id,
+            media_type: "tv",
+            title: base.title,
+            popularity: base.popularity,
+            season: season,
+            episode: episode,
+          });
+        });
+        return;
+      }
+      out.push({
         tmdb_id: base.tmdb_id,
         media_type: base.media_type,
         title: base.title,
         popularity: base.popularity,
-      };
-      if (base.media_type === "tv") {
-        const sInput = document.querySelector(
-          `.export-se[data-idx="${idx}"][data-field="season"]`
-        );
-        const eInput = document.querySelector(
-          `.export-se[data-idx="${idx}"][data-field="episode"]`
-        );
-        sel.season = sInput ? Number(sInput.value || 1) : 1;
-        sel.episode = eInput ? Number(eInput.value || 1) : 1;
-      }
-      out.push(sel);
+      });
     });
+    if (skipped.length) {
+      log("以下 TV 行已勾选但未选集，已跳过", { skipped });
+    }
     return out;
   }
 
@@ -693,18 +991,119 @@
       });
     });
 
+    // TV 季集：拉取 / 全选本季 / 清空（委托到表格）
+    document.getElementById("exportHitTable").addEventListener("click", (ev) => {
+      const fetchBtn = ev.target.closest(".btn-fetch-tv");
+      if (fetchBtn) {
+        const idx = Number(fetchBtn.dataset.idx);
+        withBusy(`拉取 TV 季集 (tmdb=${fetchBtn.dataset.tmdb})`, async () => {
+          showProgress("拉取 TV 季/集", {
+            percent: null,
+            message: "crawler_tmdb → MySQL tmdb_tv_* …",
+          });
+          await fetchTvSeasonsForRow(idx, { forceRefresh: false });
+        }).catch((e) => log(String(e)));
+        return;
+      }
+
+      const allBtn = ev.target.closest(".btn-ep-all");
+      if (allBtn) {
+        const idx = Number(allBtn.dataset.idx);
+        const tid = allBtn.dataset.tmdb;
+        const season = Number(allBtn.dataset.season || 1);
+        const cat = tvCatalogById[String(tid)];
+        const eps =
+          cat && cat.episodesBySeason
+            ? cat.episodesBySeason[String(season)] || []
+            : [];
+        if (!eps.length) {
+          withBusy("先拉取分集再全选", async () => {
+            await fetchTvEpisodesForRow(idx, season, {
+              forceRefresh: false,
+              selectAll: true,
+            });
+            const rowCheck = document.querySelector(
+              `.export-hit-check[data-idx="${idx}"]`
+            );
+            if (rowCheck) rowCheck.checked = true;
+          }).catch((e) => log(String(e)));
+          return;
+        }
+        setSelectedEpisodes(
+          tid,
+          season,
+          eps.map((ep) => Number(ep.episode_number))
+        );
+        refreshEpisodeBatchCell(idx, season, eps);
+        const rowCheck = document.querySelector(`.export-hit-check[data-idx="${idx}"]`);
+        if (rowCheck) rowCheck.checked = true;
+        log(`已全选 S${String(season).padStart(2, "0")} 共 ${eps.length} 集`);
+        return;
+      }
+
+      const noneBtn = ev.target.closest(".btn-ep-none");
+      if (noneBtn) {
+        const idx = Number(noneBtn.dataset.idx);
+        const tid = noneBtn.dataset.tmdb;
+        const season = Number(noneBtn.dataset.season || 1);
+        setSelectedEpisodes(tid, season, []);
+        const cat = tvCatalogById[String(tid)];
+        const eps =
+          cat && cat.episodesBySeason
+            ? cat.episodesBySeason[String(season)] || []
+            : [];
+        refreshEpisodeBatchCell(idx, season, eps);
+        return;
+      }
+    });
+
+    document.getElementById("exportHitTable").addEventListener("change", (ev) => {
+      const t = ev.target;
+      if (!(t instanceof HTMLElement)) return;
+
+      if (t instanceof HTMLSelectElement && t.classList.contains("export-season")) {
+        const idx = Number(t.dataset.idx);
+        const season = Number(t.value || 1);
+        withBusy(`加载 S${String(season).padStart(2, "0")} 分集`, async () => {
+          await fetchTvEpisodesForRow(idx, season, { forceRefresh: false });
+        }).catch((e) => log(String(e)));
+        return;
+      }
+
+      if (t instanceof HTMLInputElement && t.classList.contains("export-ep-check")) {
+        const idx = Number(t.dataset.idx);
+        const tid = t.dataset.tmdb;
+        const season = Number(t.dataset.season || 1);
+        const ep = Number(t.dataset.ep);
+        let selected = getSelectedEpisodes(tid, season);
+        if (t.checked) {
+          if (!selected.includes(ep)) selected.push(ep);
+        } else {
+          selected = selected.filter((n) => n !== ep);
+        }
+        setSelectedEpisodes(tid, season, selected);
+        updateEpisodeSelectedCount(idx, tid, season);
+        syncExportHitPageId(idx);
+        // 选了分集则自动勾选该行，便于一键并入工作区
+        if (selected.length > 0) {
+          const rowCheck = document.querySelector(`.export-hit-check[data-idx="${idx}"]`);
+          if (rowCheck) rowCheck.checked = true;
+        }
+      }
+    });
+
     async function addExportSelections(mode) {
       const selections = collectExportSelections();
       if (!selections.length) {
-        log("请先勾选搜索结果中的条目");
+        log("请先勾选条目，并对 TV 勾选至少一个分集（或点「全选本季」）");
         return;
       }
-      await withBusy(`并入工作区（${mode}）`, async () => {
+      await withBusy(`并入工作区（${mode}，${selections.length} 条）`, async () => {
         const data = await api("/api/source/export/add", {
           method: "POST",
           body: { selections, mode },
         });
-        log("已加入工作区", { added: data.added, mode: data.mode });
+        log("已加入工作区", { added: data.added, mode: data.mode, slots: selections.length });
         await refresh();
       });
     }

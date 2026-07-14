@@ -330,13 +330,29 @@ def describe_source_logic() -> Dict[str, Any]:
             },
             {
                 "id": "manual",
-                "name": "手动：全量下载 → 增量入库 → 搜索 → 工作区",
-                "desc": "每天全量下载 Daily Export → MySQL UPSERT 增量入库 → UI 搜索筛选 → 勾选写入工作区",
+                "name": "手动：全量下载 → 增量入库 → 搜索 → 拉季集 → 工作区",
+                "desc": "Daily Export → MySQL UPSERT → UI 搜索；TV 经 crawler_tmdb 拉 seasons/episodes 选型后再写入工作区",
             },
         ],
         "cli": "python -m workflow.run ops tmdb-sync",
         "export_dir": str(DEFAULT_EXPORT_DIR.relative_to(PROJECT_ROOT)),
-        "manual_flow": ["full_download", "incremental_mysql", "ui_search", "workspace"],
+        "manual_flow": [
+            "full_download",
+            "incremental_mysql",
+            "ui_search",
+            "tv_seasons_episodes",
+            "workspace",
+        ],
+        "tv_catalog": {
+            "api": "crawler_tmdb.tv_details / tv_season_details",
+            "storage": "mysql",
+            "tables": [
+                "tmdb_tv_series",
+                "tmdb_tv_seasons",
+                "tmdb_tv_episodes",
+                "tmdb_api_cache",
+            ],
+        },
         "defaults": {
             "movie_pop_min": MOVIE_POPULARITY_MIN,
             "movie_pop_max": MOVIE_POPULARITY_MAX,
@@ -817,3 +833,84 @@ def slots_from_manual_selections(
             "storage": "mysql",
         },
     }
+
+
+def fetch_tv_seasons(
+    tmdb_id: int,
+    *,
+    force_refresh: bool = False,
+    include_specials: bool = False,
+    language: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    拉取 TV 季列表（crawler_tmdb + 本地 ``data/tmdb_tv``）。
+
+    @param tmdb_id: 剧集 ID
+    @param force_refresh: 强制刷新 TMDB
+    @param include_specials: 是否含 Specials（season 0）
+    @param language: 语言
+    @returns: 目录结果
+    """
+    from workflow.metadata.tmdb_tv_catalog import list_seasons
+
+    return list_seasons(
+        int(tmdb_id),
+        force_refresh=force_refresh,
+        include_specials=include_specials,
+        language=language,
+    )
+
+
+def fetch_tv_episodes(
+    tmdb_id: int,
+    season: int,
+    *,
+    force_refresh: bool = False,
+    language: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    拉取指定季分集列表。
+
+    @param tmdb_id: 剧集 ID
+    @param season: 季号
+    @param force_refresh: 强制刷新
+    @param language: 语言
+    @returns: 分集结果
+    """
+    from workflow.metadata.tmdb_tv_catalog import list_episodes
+
+    return list_episodes(
+        int(tmdb_id),
+        int(season),
+        force_refresh=force_refresh,
+        language=language,
+    )
+
+
+def fetch_tv_catalog(
+    tmdb_id: int,
+    *,
+    season: Optional[int] = None,
+    force_refresh: bool = False,
+    include_specials: bool = False,
+    language: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    确保本地 TV 季集目录；可选同时拉某一季分集。
+
+    @param tmdb_id: 剧集 ID
+    @param season: 可选季号
+    @param force_refresh: 强制刷新
+    @param include_specials: 含 Specials
+    @param language: 语言
+    @returns: 综合结果
+    """
+    from workflow.metadata.tmdb_tv_catalog import ensure_catalog
+
+    return ensure_catalog(
+        int(tmdb_id),
+        season=season,
+        force_refresh=force_refresh,
+        include_specials=include_specials,
+        language=language,
+    )

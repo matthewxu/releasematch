@@ -95,7 +95,8 @@
         <p class="lead" style="margin-bottom:10px">
           标准流程：① <strong>全量下载</strong> TMDB Daily Export，再 <strong>增量 UPSERT</strong> 入 MySQL（<code>tmdb_export_titles</code>）
           → ② 在库内按关键词 / 类型 / pop 搜索筛选
-          → ③ 勾选后写入工作区（TV 默认 S01E01）。日同步可用 CLI：<code>python -m workflow.run ops tmdb-sync</code>。
+          → ③ <strong>TV 点「季集」</strong>拉取后可<strong>批量勾选多集</strong>（或全选本季），再写入工作区。
+          日同步 CLI：<code>python -m workflow.run ops tmdb-sync</code>。
         </p>
         <div class="ops-row">
           <button type="button" id="btnEnsureExport">① 全量下载 · 增量入库</button>
@@ -144,7 +145,7 @@
               <tr>
                 <th><input type="checkbox" id="checkAllExportHits" /></th>
                 <th>tier</th><th>title / label</th><th>page_id</th><th>media</th><th>pop</th>
-                <th>S</th><th>E</th>
+                <th>Season</th><th>Episodes（可多选）</th>
               </tr>
             </thead>
             <tbody></tbody>
