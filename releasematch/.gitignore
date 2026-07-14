@@ -13,6 +13,7 @@ workflow/**/data/*.sqlite3
 workflow/**/data/*.jsonl
 data/tmdb_exports/*.json.gz
 data/tmdb_exports/external_ids_cache.json
+data/ops/
 
 # 环境变量文件
 .env

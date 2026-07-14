@@ -1,0 +1,358 @@
+/**
+ * Ops 控制台样式 — 对齐 portal design tokens，仅本地使用。
+ * @file workflow/ops/static/ops.css
+ */
+
+:root {
+  --ops-bg: #0a0d12;
+  --ops-surface: #12171f;
+  --ops-elevated: #1a2130;
+  --ops-border: #2a3548;
+  --ops-text: #eef1f6;
+  --ops-muted: #9aa5b8;
+  --ops-faint: #6b778c;
+  --ops-accent: #4d9fff;
+  --ops-ok: #3dd68c;
+  --ops-warn: #f5b942;
+  --ops-danger: #f07178;
+  --ops-font: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --ops-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --ops-radius: 8px;
+  --ops-max: 1280px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--ops-bg);
+  color: var(--ops-text);
+  font-family: var(--ops-font);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+a { color: var(--ops-accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.ops-shell {
+  max-width: var(--ops-max);
+  margin: 0 auto;
+  padding: 20px 20px 64px;
+}
+
+.ops-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--ops-border);
+}
+
+.ops-brand {
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.ops-sub {
+  color: var(--ops-muted);
+  margin-top: 4px;
+  font-size: 13px;
+}
+
+.ops-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--ops-border);
+  color: var(--ops-faint);
+  font-size: 11px;
+  font-family: var(--ops-mono);
+}
+
+.ops-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 900px) {
+  .ops-steps { grid-template-columns: repeat(2, 1fr); }
+}
+
+.ops-step-tab {
+  background: var(--ops-surface);
+  border: 1px solid var(--ops-border);
+  border-radius: var(--ops-radius);
+  padding: 12px 14px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--ops-text);
+}
+
+.ops-step-tab[aria-selected="true"] {
+  border-color: var(--ops-accent);
+  background: var(--ops-elevated);
+}
+
+.ops-step-tab .n {
+  font-family: var(--ops-mono);
+  color: var(--ops-faint);
+  font-size: 11px;
+}
+
+.ops-step-tab .t {
+  display: block;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+.ops-panel {
+  display: none;
+  background: var(--ops-surface);
+  border: 1px solid var(--ops-border);
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.ops-panel.is-active { display: block; }
+
+.ops-panel h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.ops-panel .lead {
+  color: var(--ops-muted);
+  margin: 0 0 16px;
+}
+
+.ops-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .ops-grid { grid-template-columns: 1fr; }
+}
+
+.ops-card {
+  background: var(--ops-elevated);
+  border: 1px solid var(--ops-border);
+  border-radius: var(--ops-radius);
+  padding: 14px;
+}
+
+.ops-card h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+
+.ops-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+label.ops-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--ops-muted);
+}
+
+input[type="text"],
+input[type="number"],
+select {
+  background: var(--ops-bg);
+  border: 1px solid var(--ops-border);
+  color: var(--ops-text);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font: inherit;
+  min-width: 120px;
+}
+
+input[type="checkbox"] {
+  accent-color: var(--ops-accent);
+}
+
+button, .ops-btn {
+  background: var(--ops-accent);
+  color: #061018;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--ops-text);
+  border: 1px solid var(--ops-border);
+}
+
+button.danger {
+  background: transparent;
+  color: var(--ops-danger);
+  border: 1px solid rgba(240, 113, 120, 0.45);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ops-logic li {
+  margin-bottom: 6px;
+  color: var(--ops-muted);
+}
+
+.ops-logic strong { color: var(--ops-text); }
+
+.ops-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 12px 0 16px;
+}
+
+.ops-metric {
+  background: var(--ops-bg);
+  border: 1px solid var(--ops-border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  min-width: 90px;
+}
+
+.ops-metric .v {
+  font-family: var(--ops-mono);
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.ops-metric .k {
+  font-size: 11px;
+  color: var(--ops-faint);
+}
+
+.ops-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--ops-border);
+  border-radius: var(--ops-radius);
+  max-height: 520px;
+}
+
+table.ops-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+table.ops-table th,
+table.ops-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--ops-border);
+  text-align: left;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+table.ops-table th {
+  position: sticky;
+  top: 0;
+  background: var(--ops-elevated);
+  color: var(--ops-muted);
+  font-weight: 600;
+  z-index: 1;
+}
+
+table.ops-table tr:hover td {
+  background: rgba(77, 159, 255, 0.06);
+}
+
+.st {
+  display: inline-block;
+  min-width: 64px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: var(--ops-mono);
+  font-size: 11px;
+  border: 1px solid var(--ops-border);
+}
+
+.st-pending { color: var(--ops-faint); }
+.st-running { color: var(--ops-accent); border-color: rgba(77, 159, 255, 0.4); }
+.st-ok, .st-skipped { color: var(--ops-ok); border-color: rgba(61, 214, 140, 0.35); }
+.st-failed { color: var(--ops-danger); border-color: rgba(240, 113, 120, 0.4); }
+
+.tier-anchor { color: var(--ops-ok); }
+.tier-curated { color: var(--ops-accent); }
+.tier-pop { color: var(--ops-warn); }
+.tier-file { color: var(--ops-muted); }
+
+.ops-log {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: var(--ops-bg);
+  border: 1px solid var(--ops-border);
+  border-radius: 6px;
+  font-family: var(--ops-mono);
+  font-size: 11px;
+  color: var(--ops-muted);
+  white-space: pre-wrap;
+  max-height: 160px;
+  overflow: auto;
+}
+
+.ops-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.ops-file-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.ops-file-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--ops-border);
+  font-family: var(--ops-mono);
+  font-size: 11px;
+}
+
+.ops-file-list button {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.ops-warn-banner {
+  background: rgba(245, 185, 66, 0.08);
+  border: 1px solid rgba(245, 185, 66, 0.35);
+  color: var(--ops-warn);
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 12px;
+}

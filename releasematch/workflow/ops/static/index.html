@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>ReleaseMatch Ops — 上线控制台</title>
+  <link rel="stylesheet" href="/ops.css" />
+</head>
+<body>
+  <div class="ops-shell">
+    <header class="ops-top">
+      <div>
+        <div class="ops-brand">ReleaseMatch Ops</div>
+        <div class="ops-sub">清单来源 → 筛选 → 跑生成流程 → 上线 · 筛选后用跟踪表贯通后两步</div>
+      </div>
+      <div>
+        <span class="ops-badge" id="activeBatchBadge">无活跃批次</span>
+        <span class="ops-badge" title="跟踪表存储">MySQL · ops_track_*</span>
+        <button type="button" class="secondary" id="btnRefresh" style="margin-left:8px">刷新状态</button>
+      </div>
+    </header>
+
+    <div class="ops-warn-banner">
+      本页仅绑定 127.0.0.1，会执行本地 pipeline / generate / deploy 脚本，请勿暴露到公网或提交到 Cloudflare Pages。
+    </div>
+
+    <nav class="ops-steps" role="tablist" aria-label="流程四段">
+      <button type="button" class="ops-step-tab" data-step="1" aria-selected="true">
+        <span class="n">01</span><span class="t">清单从哪来</span>
+      </button>
+      <button type="button" class="ops-step-tab" data-step="2" aria-selected="false">
+        <span class="n">02</span><span class="t">筛选</span>
+      </button>
+      <button type="button" class="ops-step-tab" data-step="3" aria-selected="false">
+        <span class="n">03</span><span class="t">跑生成流程</span>
+      </button>
+      <button type="button" class="ops-step-tab" data-step="4" aria-selected="false">
+        <span class="n">04</span><span class="t">上线</span>
+      </button>
+    </nav>
+
+    <!-- ① 清单从哪来 -->
+    <section class="ops-panel is-active" id="panel-1" data-panel="1">
+      <h2>① 清单从哪来</h2>
+      <p class="lead">对应：TMDB 日导出 + 锚点/curated → <code>tmdb-benchmark-slots.json</code>（或加载既有清单）</p>
+      <div class="ops-grid">
+        <div class="ops-card">
+          <h3>生成：TMDB 日导出 + 锚点/curated</h3>
+          <ul class="ops-logic" id="sourceLogic"></ul>
+          <div class="ops-row">
+            <label class="ops-field">total
+              <input type="number" id="tmdbTotal" value="20" min="7" max="500" />
+            </label>
+            <label class="ops-field">movies（可选）
+              <input type="number" id="tmdbMovies" placeholder="自动" />
+            </label>
+            <label class="ops-field">tv（可选）
+              <input type="number" id="tmdbTv" placeholder="自动" />
+            </label>
+            <label class="ops-field" style="flex-direction:row;align-items:center;gap:6px;margin-top:18px">
+              <input type="checkbox" id="tmdbDownload" checked /> 下载日导出
+            </label>
+          </div>
+          <div class="ops-actions">
+            <button type="button" id="btnBuildTmdb">生成清单并载入工作区</button>
+          </div>
+        </div>
+        <div class="ops-card">
+          <h3>或：加载已有 slots JSON</h3>
+          <div class="ops-row">
+            <label class="ops-field" style="flex:1">相对项目根路径
+              <input type="text" id="slotsPath" placeholder="worklogs/2026-07-03/tmdb-benchmark-slots.json" style="min-width:100%" />
+            </label>
+            <button type="button" id="btnLoadPath" style="margin-top:18px">加载</button>
+          </div>
+          <ul class="ops-file-list" id="fileList"></ul>
+        </div>
+      </div>
+      <div class="ops-metrics" id="sourceMetrics"></div>
+      <div class="ops-table-wrap">
+        <table class="ops-table" id="candidateTable">
+          <thead>
+            <tr>
+              <th>tier</th><th>label</th><th>page_id</th><th>media</th><th>pop</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ② 筛选 -->
+    <section class="ops-panel" id="panel-2" data-panel="2">
+      <h2>② 筛选</h2>
+      <p class="lead">收窄候选后<strong>导入跟踪表</strong>，后续生成与上线按同一表跟到底。</p>
+      <div class="ops-card">
+        <div class="ops-row">
+          <label class="ops-field">关键词
+            <input type="text" id="filterQ" placeholder="title / label / page_id" />
+          </label>
+          <label class="ops-field">media
+            <select id="filterMedia" multiple size="2">
+              <option value="tv" selected>tv</option>
+              <option value="movie" selected>movie</option>
+            </select>
+          </label>
+          <label class="ops-field">tier
+            <select id="filterTier" multiple size="4">
+              <option value="anchor" selected>anchor</option>
+              <option value="curated" selected>curated</option>
+              <option value="pop" selected>pop</option>
+              <option value="file" selected>file</option>
+            </select>
+          </label>
+          <label class="ops-field">pop_min
+            <input type="number" id="filterPopMin" step="0.1" />
+          </label>
+          <label class="ops-field">pop_max
+            <input type="number" id="filterPopMax" step="0.1" />
+          </label>
+        </div>
+        <div class="ops-row">
+          <label><input type="checkbox" id="excludePublished" /> 排除已 published（≥2 magnet）</label>
+          <label><input type="checkbox" id="excludeFailed" /> 排除失败登记册</label>
+          <label><input type="checkbox" id="onlyFailed" /> 仅失败登记册</label>
+        </div>
+        <div class="ops-actions">
+          <button type="button" id="btnApplyFilter">应用筛选</button>
+          <button type="button" class="secondary" id="btnImportTrack">导入跟踪表 → ③④</button>
+        </div>
+      </div>
+      <div class="ops-metrics" id="filterMetrics"></div>
+      <div class="ops-table-wrap">
+        <table class="ops-table" id="filteredTable">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="checkAllFiltered" checked /></th>
+              <th>tier</th><th>label</th><th>page_id</th><th>media</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ③ 跑生成流程 -->
+    <section class="ops-panel" id="panel-3" data-panel="3">
+      <h2>③ 跑生成流程</h2>
+      <p class="lead">pipeline batch/slot → MySQL 门禁（magnet + Rec）→ generate → 测速。与④共用下方跟踪表。</p>
+      <div class="ops-metrics" id="trackMetrics"></div>
+      <div class="ops-actions">
+        <button type="button" id="btnPipeline">跑 Pipeline（Jackett 拉源）</button>
+        <button type="button" class="secondary" id="btnRefreshGates">刷新门禁</button>
+        <button type="button" id="btnGeneratePages">Generate 选中页</button>
+        <button type="button" class="secondary" id="btnGenerateAll">Generate all</button>
+        <button type="button" id="btnSpeedtest">测速 write</button>
+        <label style="margin-left:8px"><input type="checkbox" id="skipExisting" checked /> 跳过已有 ≥2 magnet</label>
+      </div>
+      <div id="trackTableHost"></div>
+    </section>
+
+    <!-- ④ 上线 -->
+    <section class="ops-panel" id="panel-4" data-panel="4">
+      <h2>④ 上线</h2>
+      <p class="lead">seo_c2 门禁 → deploy（默认 prepare-only）。跟踪表与③同一批次。</p>
+      <div class="ops-metrics" id="launchMetrics"></div>
+      <div class="ops-actions">
+        <button type="button" id="btnSeo">跑 seo_c2_checklist</button>
+        <button type="button" id="btnDeployPrepare">Deploy prepare-only</button>
+        <button type="button" class="danger" id="btnDeployReal">正式 wrangler deploy</button>
+      </div>
+      <div class="ops-card" style="margin-bottom:12px">
+        <h3>批次级步骤</h3>
+        <div id="batchSteps"></div>
+      </div>
+      <div id="trackTableHost2"></div>
+    </section>
+
+    <div class="ops-log" id="opsLog">就绪。请从「清单从哪来」开始。</div>
+  </div>
+  <script src="/ops.js"></script>
+</body>
+</html>

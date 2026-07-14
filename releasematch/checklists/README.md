@@ -29,7 +29,7 @@ checklists/
 ## 使用方式
 
 1. **日常开工**：打开 `daily/每日巡检检查清单.md`，勾选 §四 四项；异常时对照 [12-手册 §四](../docs/12-日常运营执行手册.md)。
-2. **扩槽 / 新页**：`launch/上线检查清单.md` **第三篇**（单槽 pipeline → generate → 测速）。
+2. **扩槽 / 新页**：`launch/上线检查清单.md` **第三篇**（单槽 pipeline → generate → 测速）；或本地 Ops UI：`python -m workflow.run ops serve`（清单→筛选→生成→上线，跟踪表 `ops_track_*`，见 [06 §5.4b](../docs/06-run-cli使用说明.md)）。
 3. **发版前**：`daily/发版前回归检查清单.md`（固定基准槽 BB S04E06）。
 4. **正式上线**：`launch/上线检查清单.md` **第二篇**（零基础阶段 0～14）或 **第四篇**（熟手一页纸）；全部门禁通过后再 `wrangler deploy`。
 5. **留档（可选）**：复制第四篇签字表到 `instances/YYYY-MM-DD-上线.md`。

@@ -1,6 +1,6 @@
 # 06 — workflow.run 总控 CLI 使用说明
 
-> **版本：** v0.4（2026-07-05）  
+> **版本：** v0.7（2026-07-14）  
 > **入口文件：** `workflow/run.py`  
 > **调用方式：** `python -m workflow.run <子命令> [参数]`  
 > **前置：** 在 `releasematch/` 目录下执行；配置见 [05-存储与部署配置.md](./05-存储与部署配置.md)  
@@ -21,8 +21,14 @@ cd releasematch
 ```bash
 cp config.env.example .env
 # 编辑 .env，至少设置 RM_RELEASE_MYSQL_USER / RM_RELEASE_MYSQL_PASSWORD
+# 业务库名：RM_RELEASE_MYSQL_DB（默认 releasematch；勿与 RM_MYSQL_DB 混淆）
 # 批量扩槽建议额外配置 RM_TMDB_API_KEY（见 §五）
 ```
+
+| 文件 | 作用 |
+|------|------|
+| `config.env.example` | 模板，**不被**运行时加载 |
+| `.env` | 本机配置，**唯一**自动加载文件（见 `workflow/config.py`） |
 
 工作流启动时会**自动读取** `.env`（不覆盖已在 shell 中 `export` 的变量）。
 
@@ -79,7 +85,8 @@ python -m workflow.run
 │   ├── page [--page-id | --path] [--out]
 │   └── all [--out]                     # 批量生成 published 页 + 首页
 ├── serve [--host] [--port]             # 本地开发服（默认 127.0.0.1:8080，实时读 MySQL）
-└── serve-static [--host] [--port]      # 纯静态预览 portal/dist（自动 sync static）
+├── serve-static [--host] [--port]      # 纯静态预览 portal/dist（自动 sync static）
+└── ops serve [--host] [--port]         # 本地运营控制台 UI（仅 127.0.0.1）
 ```
 
 ### 2.2 独立模块 CLI（非 `workflow.run` 子命令）
@@ -679,6 +686,31 @@ python scripts/speedtest_batch_worker.py \
   --report worklogs/$(date +%Y-%m-%d)/speedtest-all-published-benchmark.json
 ```
 
+### 5.4b Ops 控制台 UI（清单 → 筛选 → 生成 → 上线）
+
+本地四段式 UI，**仅绑定 127.0.0.1**，勿部署公网：
+
+```bash
+python -m workflow.run ops serve          # http://127.0.0.1:8090/
+python -m workflow.run ops serve --port 8090
+```
+
+| 段 | 对应流程 | UI 动作 |
+|----|----------|---------|
+| ① 清单从哪来 | TMDB 日导出 + 锚点/curated → slots JSON | 生成或加载 JSON |
+| ② 筛选 | media / tier / pop / 排除 published·失败槽 | 筛选后 **导入跟踪表** |
+| ③ 跑生成流程 | pipeline → MySQL 门禁 → generate → 测速 | 跟踪表逐槽更新 |
+| ④ 上线 | seo_c2 → deploy（默认 prepare-only） | 批次级步骤 + 同一跟踪表 |
+
+跟踪批次持久化（MySQL）：
+
+| 表 | 用途 |
+|----|------|
+| `ops_track_batches` | 批次元信息、seo_c2 / deploy 状态、`is_active` |
+| `ops_track_slots` | 每槽 pipeline / generate / speedtest / 门禁缓存 |
+
+建表：随 `db init` 执行 `schema/mysql_schema.sql`；或 `ops serve` 启动时 `CREATE TABLE IF NOT EXISTS`。
+
 ### 5.5 测试评分与 torrent 拉取
 
 ```bash
@@ -759,8 +791,10 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | 现象 | 处理 |
 |------|------|
 | `RM_RELEASE_MYSQL_USER 未设置` | 配置 `.env` 或 `export RM_RELEASE_MYSQL_USER` |
-| `Unknown database` / 1049 | `python -m workflow.run db init` |
+| `Unknown database` / 1049 | `python -m workflow.run db init`（按 `RM_RELEASE_MYSQL_DB` 建库） |
 | `tables_missing` | `python -m workflow.run db init` |
+| `ops serve` 跟踪表失败 | 确认 `.env` 的 `RM_RELEASE_MYSQL_*`；先 `db status` / `db init` |
+| 连错库 / 空库 | 检查是否只配了 `RM_MYSQL_DB`；业务库必须是 `RM_RELEASE_MYSQL_DB` |
 | `query page` 页面不存在 | 先 `db seed` 或跑 `pipeline slot`；检查 `page_id` 格式 |
 | `pipeline slot` 无 items | Demo 仅内置 1396 S04E06；其他槽位需 `--mode live --fetch` |
 | `run 4c` 要求 `--test` | 必须加 `--test` 参数 |
@@ -788,6 +822,7 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | `seo_c2_checklist` | `scripts/seo_c2_checklist.py` |
 | `serve` | `portal/generator/dev_server.py` |
 | `serve-static` | `portal/generator/dev_server.py` · `static_shell.py` |
+| `ops serve` | `workflow/ops/server.py` · `track_store.py`（MySQL `ops_track_*`） |
 | `torrent_sources.run *` | `workflow/torrent_sources/run.py` |
 | `speedtest.run *` | `workflow/torrent_sources/speedtest/` |
 | 配置读取 | `workflow/config.py` |
@@ -805,3 +840,4 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | v0.4 | 2026-07-05 | C2 本地 13 pass；§5.8/§八 更新 OG/favicon 已落地 · dist sync Trust 说明 |
 | v0.5 | 2026-07-05 | 新增 `pipeline refetch-all`；脚本索引 fuzzy 重算与 VPS Key 同步 |
 | v0.6 | 2026-07-10 | `generate all` 自动 `static_shell`；新增 `serve-static`；Trust 六页（含 speed-and-grab）；i18n 内联 bootstrap |
+| v0.7 | 2026-07-14 | 新增 `ops serve` 四段式运营 UI；跟踪表 MySQL `ops_track_batches` / `ops_track_slots`；§5.4b |

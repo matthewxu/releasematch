@@ -20,6 +20,7 @@ ReleaseMatch 工作流总控 CLI。
     generate page — MySQL → 静态 HTML（portal/dist）
     generate all  — 批量生成已发布页
     serve         — 本地开发服（DB 动态渲染 + 静态资源）
+    ops serve     — 本地运营控制台（清单→筛选→生成→上线，仅 127.0.0.1）
 
   示例：
     cd releasematch && cp config.env.example .env  # 按需编辑
@@ -402,6 +403,23 @@ def cmd_serve_static(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_ops(args: argparse.Namespace) -> int:
+    """
+    Ops 运营控制台子命令入口。
+
+    @param args: 含 ops_action、host、port
+    @returns: 进程退出码
+    """
+    action = getattr(args, "ops_action", None)
+    if action == "serve":
+        from workflow.ops.server import run_ops_server
+
+        run_ops_server(host=args.host, port=args.port)
+        return 0
+    print("未知 ops 子命令；可用: serve")
+    return 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     """
     构建 argparse 解析器。
@@ -551,6 +569,13 @@ def build_parser() -> argparse.ArgumentParser:
     p_serve_static.add_argument("--host", default="127.0.0.1")
     p_serve_static.add_argument("--port", type=int, default=8080)
     p_serve_static.set_defaults(func=cmd_serve_static)
+
+    p_ops = sub.add_parser("ops", help="本地运营控制台（清单→筛选→生成→上线）")
+    ops_sub = p_ops.add_subparsers(dest="ops_action", required=True)
+    p_ops_serve = ops_sub.add_parser("serve", help="启动 Ops UI（仅 127.0.0.1）")
+    p_ops_serve.add_argument("--host", default="127.0.0.1", help="仅允许本机")
+    p_ops_serve.add_argument("--port", type=int, default=8090)
+    p_ops_serve.set_defaults(func=cmd_ops)
 
     return parser
 

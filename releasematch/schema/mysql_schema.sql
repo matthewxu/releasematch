@@ -233,4 +233,69 @@ CREATE TABLE IF NOT EXISTS download_inventory (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   COMMENT='批补 staging 表（torrent_sources 写入）';
 
+-- -----------------------------------------------------------------------------
+-- 9. ops_track_batches — Ops 跟踪批次（筛选后贯通生成/上线）
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS ops_track_batches (
+    batch_id                VARCHAR(64)  NOT NULL PRIMARY KEY COMMENT '如 20260714T020334Z-888e9ed0',
+    is_active               TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '当前活跃批次 0/1',
+    source_json             JSON         NULL COMMENT '清单来源元信息',
+    filter_json             JSON         NULL COMMENT '筛选条件元信息',
+    seo_status              VARCHAR(16)  NOT NULL DEFAULT 'pending',
+    seo_at                  DATETIME(3)  NULL,
+    seo_detail              TEXT,
+    deploy_status           VARCHAR(16)  NOT NULL DEFAULT 'pending',
+    deploy_at               DATETIME(3)  NULL,
+    deploy_detail           TEXT,
+    slot_count              INT UNSIGNED NOT NULL DEFAULT 0,
+    created_at              DATETIME(3)  NOT NULL,
+    updated_at              DATETIME(3)  NOT NULL,
+    KEY idx_ops_batch_active (is_active),
+    KEY idx_ops_batch_updated (updated_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Ops 跟踪批次（生成/上线中间表）';
+
+-- -----------------------------------------------------------------------------
+-- 10. ops_track_slots — Ops 跟踪槽位行
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS ops_track_slots (
+    id                      BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    batch_id                VARCHAR(64)  NOT NULL,
+    page_id                 VARCHAR(48)  NOT NULL COMMENT '如 tv:1396:s04e06',
+    slot_key                VARCHAR(48)  NOT NULL,
+    label                   VARCHAR(256) DEFAULT '',
+    tmdb_id                 INT UNSIGNED NOT NULL,
+    media_type              VARCHAR(16)  NOT NULL COMMENT 'tv|movie',
+    season                  SMALLINT UNSIGNED NULL,
+    episode                 SMALLINT UNSIGNED NULL,
+    title                   VARCHAR(512) DEFAULT '',
+    popularity              DOUBLE       NULL,
+    source_tier             VARCHAR(32)  NOT NULL DEFAULT 'unknown' COMMENT 'anchor|curated|pop|file',
+    selected                TINYINT(1)   NOT NULL DEFAULT 1,
+    pipeline_status         VARCHAR(16)  NOT NULL DEFAULT 'pending',
+    pipeline_at             DATETIME(3)  NULL,
+    pipeline_detail         TEXT,
+    generate_status         VARCHAR(16)  NOT NULL DEFAULT 'pending',
+    generate_at             DATETIME(3)  NULL,
+    generate_detail         TEXT,
+    speedtest_status        VARCHAR(16)  NOT NULL DEFAULT 'pending',
+    speedtest_at            DATETIME(3)  NULL,
+    speedtest_detail        TEXT,
+    magnet_count            INT          NULL,
+    has_recommended         TINYINT(1)   NULL,
+    page_status             VARCHAR(16)  NULL,
+    robots_noindex          TINYINT(1)   NULL,
+    indexable               TINYINT(1)   NULL,
+    canonical_path          VARCHAR(256) NULL,
+    error_message           TEXT,
+    created_at              DATETIME(3)  NOT NULL,
+    updated_at              DATETIME(3)  NOT NULL,
+    UNIQUE KEY uk_ops_slot_batch_page (batch_id, page_id),
+    KEY idx_ops_slot_batch (batch_id),
+    KEY idx_ops_slot_page (page_id),
+    CONSTRAINT fk_ops_slot_batch FOREIGN KEY (batch_id)
+        REFERENCES ops_track_batches(batch_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Ops 跟踪槽位（pipeline/generate/speedtest/门禁）';
+
 SET FOREIGN_KEY_CHECKS = 1;
