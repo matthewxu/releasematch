@@ -1,0 +1,87 @@
+{
+  "passed": 12,
+  "failed": 0,
+  "results": [
+    {
+      "name": "控制台首页含五段",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "④ Deploy UI 三档",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "/api/state",
+      "ok": true,
+      "detail": {
+        "slots": 2,
+        "selected": 2,
+        "batch_id": "20260719T091241Z-c2579576"
+      }
+    },
+    {
+      "name": "刷新门禁",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "③ Generate 选中槽",
+      "ok": true,
+      "detail": {
+        "ok_count": 2,
+        "fail": 0,
+        "hubs": [
+          "tv:1668:hub"
+        ]
+      }
+    },
+    {
+      "name": "④ 增量 Deploy prepare",
+      "ok": true,
+      "detail": {
+        "scope": "incremental",
+        "upload": false
+      }
+    },
+    {
+      "name": "④ 非法 scope 拒绝",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "④ 仅上传模式不传公网",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "⑤ 配置加载",
+      "ok": true,
+      "detail": {
+        "has_env": true
+      }
+    },
+    {
+      "name": "① 源文件列表",
+      "ok": true,
+      "detail": {
+        "keys": [
+          "ok",
+          "files"
+        ]
+      }
+    },
+    {
+      "name": "登录页 loginForm",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "name": "ops.js 含确认与 scope",
+      "ok": true,
+      "detail": null
+    }
+  ],
+  "note": "API镜像Ops UI；浏览器登录页已目视；未跑正式wrangler上传"
+}

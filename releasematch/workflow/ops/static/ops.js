@@ -1464,31 +1464,40 @@
       }
     });
 
-    document.getElementById("btnDeployPrepare").addEventListener("click", async () => {
-      try {
-        await withBusy("Deploy prepare-only", async () => {
-          const data = await api("/api/actions/deploy", {
-            method: "POST",
-            body: { prepare_only: true },
-          });
-          log("prepare 结束", { ok: data.ok });
-          await refresh();
-        });
-      } catch (e) {
-        log(String(e));
+    document.getElementById("btnDeployRun").addEventListener("click", async () => {
+      /**
+       * 读取 Deploy 范围与是否正式上传，调用 /api/actions/deploy。
+       */
+      const scopeEl = document.querySelector('input[name="deployScope"]:checked');
+      const scope = (scopeEl && scopeEl.value) || "incremental";
+      const upload = !!(document.getElementById("deployUpload") || {}).checked;
+      if (upload) {
+        const tip =
+          scope === "upload_only"
+            ? "确认仅 wrangler 上传当前 dist？（影响公网）"
+            : scope === "full"
+              ? "确认全量 generate all + 正式 wrangler deploy？（影响公网）"
+              : "确认增量 prepare（选中槽）+ 正式 wrangler deploy？（影响公网）";
+        if (!window.confirm(tip)) return;
       }
-    });
-
-    document.getElementById("btnDeployReal").addEventListener("click", async () => {
-      if (!window.confirm("确认执行正式 wrangler deploy？将影响公网站点。")) return;
+      const label = upload
+        ? `Deploy ${scope} + wrangler`
+        : `Deploy ${scope} prepare-only`;
       try {
-        await withBusy("正式 wrangler deploy", async () => {
-          showProgress("Deploy", { percent: null, message: "wrangler 上传中…" });
+        await withBusy(label, async () => {
+          if (upload) {
+            showProgress("Deploy", { percent: null, message: "准备 / 上传中…" });
+          }
           const data = await api("/api/actions/deploy", {
             method: "POST",
-            body: { prepare_only: false },
+            body: { scope, upload },
           });
-          log("deploy 结束", { ok: data.ok });
+          log("deploy 结束", {
+            ok: data.ok,
+            scope: data.scope,
+            upload: data.upload,
+            error: data.error,
+          });
           await refresh();
         });
       } catch (e) {

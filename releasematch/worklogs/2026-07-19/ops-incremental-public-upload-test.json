@@ -1,0 +1,108 @@
+{
+  "steps": [
+    {
+      "step": "login",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "step": "active batch",
+      "ok": true,
+      "detail": {
+        "slots": [
+          "tv:1668:s01e01",
+          "movie:244786"
+        ]
+      }
+    },
+    {
+      "step": "deploy incremental+upload",
+      "ok": true,
+      "detail": {
+        "error": null,
+        "wrangler_ok": true,
+        "detail_tail": "asematch/portal/dist\n🌀 Starting asset upload...\n🌀 Found 2 new or modified static assets to upload. Proceeding with upload...\n+ /whiplash/index.html\n+ /friends/s1e1/index.html\nUploaded 1 of 2 assets\nUploaded 2 of 2 assets\n✨ Success! Uploaded 2 files (138 already uploaded) (2.80 sec)\n\nTotal Upload: 0.34 KiB / gzip: 0.24 KiB\nUploaded releasematch (11.03 sec)\nDeployed releasematch triggers (1.20 sec)\n  https://releasematch.vscodeai.workers.dev\nCurrent Version ID: 9f84c9d9-a732-4240-8b85-98a81a095a91"
+      }
+    },
+    {
+      "step": "public /friends/s1e1/",
+      "ok": false,
+      "detail": {
+        "status": 403,
+        "rec": false
+      }
+    },
+    {
+      "step": "public /whiplash/",
+      "ok": false,
+      "detail": {
+        "status": 403,
+        "rec": false
+      }
+    },
+    {
+      "step": "public /friends/",
+      "ok": false,
+      "detail": {
+        "status": 403,
+        "rec": false
+      }
+    },
+    {
+      "step": "upload ADD probe",
+      "ok": true,
+      "detail": {
+        "error": null,
+        "detail_tail": "irectory /Users/xuli/vscodeai/releasematch/releasematch/portal/dist\n🌀 Starting asset upload...\n🌀 Found 1 new or modified static asset to upload. Proceeding with upload...\n+ /_ops_incr_probe/index.html\nUploaded 1 of 1 asset\n✨ Success! Uploaded 1 file (140 already uploaded) (1.58 sec)\n\nTotal Upload: 0.34 KiB / gzip: 0.24 KiB\nUploaded releasematch (8.40 sec)\nDeployed releasematch triggers (2.11 sec)\n  https://releasematch.vscodeai.workers.dev\nCurrent Version ID: 89472cde-dc02-47f9-8b71-0ea2cab0acc4"
+      }
+    },
+    {
+      "step": "public ADD visible",
+      "ok": false,
+      "detail": {
+        "status": 403,
+        "has_A": false,
+        "try": 10
+      }
+    },
+    {
+      "step": "upload UPDATE probe",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "step": "public UPDATE token B",
+      "ok": false,
+      "detail": {
+        "status": 403,
+        "has_B": false,
+        "has_A": false,
+        "try": 10
+      }
+    },
+    {
+      "step": "local probe gone",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "step": "upload DELETE probe",
+      "ok": true,
+      "detail": null
+    },
+    {
+      "step": "public DELETE 404",
+      "ok": false,
+      "detail": {
+        "status": 403,
+        "has_B": false,
+        "try": 12
+      }
+    }
+  ],
+  "ok": false,
+  "tokens": {
+    "A": "OPS-INCR-A-20260719T153142Z",
+    "B": "OPS-INCR-B-20260719T153142Z"
+  }
+}

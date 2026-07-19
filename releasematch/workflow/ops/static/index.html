@@ -247,12 +247,23 @@
     <!-- ④ 上线 -->
     <section class="ops-panel" id="panel-4" data-panel="4">
       <h2>④ 上线</h2>
-      <p class="lead">seo_c2 门禁 → deploy（默认 prepare-only）。跟踪表与③同一批次。</p>
+      <p class="lead">
+        seo_c2 → deploy。支持<strong>增量</strong>（仅选中槽 bake）/<strong>全量</strong>（generate all）/<strong>仅上传</strong>（dist 已就绪）。
+        wrangler 上传本身按文件 hash 增量；勾选「正式上传」才会影响公网。
+      </p>
       <div class="ops-metrics" id="launchMetrics"></div>
-      <div class="ops-actions">
-        <button type="button" id="btnSeo">跑 seo_c2_checklist</button>
-        <button type="button" id="btnDeployPrepare">Deploy prepare-only</button>
-        <button type="button" class="danger" id="btnDeployReal">正式 wrangler deploy</button>
+      <div class="ops-card" style="margin-bottom:12px">
+        <h3>Deploy 范围</h3>
+        <div class="ops-actions" style="flex-wrap:wrap;gap:12px;align-items:center">
+          <label><input type="radio" name="deployScope" value="incremental" checked /> 增量（选中槽 + home/sitemap）</label>
+          <label><input type="radio" name="deployScope" value="full" /> 全量 generate all</label>
+          <label><input type="radio" name="deployScope" value="upload_only" /> 仅 wrangler 上传</label>
+          <label style="margin-left:8px"><input type="checkbox" id="deployUpload" /> 正式 wrangler 上传（公网）</label>
+        </div>
+        <div class="ops-actions" style="margin-top:10px">
+          <button type="button" id="btnSeo">跑 seo_c2_checklist</button>
+          <button type="button" id="btnDeployRun">执行 Deploy</button>
+        </div>
       </div>
       <div class="ops-card" style="margin-bottom:12px">
         <h3>批次级步骤</h3>

@@ -11,6 +11,7 @@ Ops 第三/四段动作：生成流程与上线。
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -36,12 +37,33 @@ def _get_batch(batch_id: Optional[str] = None) -> Dict[str, Any]:
     return {"ok": True, "batch": batch}
 
 
-def _selected_slots(batch: Dict[str, Any], page_ids: Optional[List[str]] = None) -> List[Dict[str, Any]]:
-    """取 selected 槽位，可再按 page_ids 收窄。"""
-    rows = [s for s in (batch.get("slots") or []) if s.get("selected", True)]
+def _selected_slots(
+    batch: Dict[str, Any],
+    page_ids: Optional[List[str]] = None,
+    *,
+    require_selected: bool = True,
+) -> List[Dict[str, Any]]:
+    """
+    取跟踪槽位；默认可再按 page_ids 收窄。
+
+    @param batch: 批次 dict
+    @param page_ids: 可选 page_id 白名单
+    @param require_selected: True 时仅 selected；False 时可用全表再按 page_ids 滤
+    @returns: 槽位行列表
+    @description
+      若显式传入 page_ids 但批次中无匹配行，则合成仅含 page_id 的占位行，
+      便于 CLI 增量 deploy 不依赖勾选状态。
+    """
+    rows = list(batch.get("slots") or [])
+    if require_selected:
+        rows = [s for s in rows if s.get("selected", True)]
     if page_ids:
         allow = set(page_ids)
-        rows = [s for s in rows if s.get("page_id") in allow]
+        matched = [s for s in rows if s.get("page_id") in allow]
+        if matched:
+            return matched
+        # 完整注释：显式 page_ids 时允许脱离勾选，合成最小行供 generate
+        return [{"page_id": pid, "selected": True} for pid in page_ids if pid]
     return rows
 
 
@@ -526,63 +548,217 @@ def run_seo_c2(*, batch_id: Optional[str] = None) -> Dict[str, Any]:
         return {"ok": False, "error": str(exc), "batch": batch}
 
 
+def _prepare_dist_full() -> Dict[str, Any]:
+    """
+    全量准备 dist：generate all（含 home / hubs / sitemap / static 壳）。
+
+    @returns: write_all_published 摘要
+    """
+    from portal.generator.generate_one import write_all_published
+
+    return write_all_published()
+
+
+def _prepare_dist_incremental(
+    *,
+    batch_id: Optional[str] = None,
+    page_ids: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    """
+    增量准备 dist：仅 bake 跟踪表选中（或指定）槽，并刷新 home / sitemap / 静态壳。
+
+    @param batch_id: 批次 ID
+    @param page_ids: 可选 page_id 子集
+    @returns: 含 generate / home / sitemap / static_shell 的摘要
+    @description
+      wrangler 上传本身按 hash 增量；此处避免全站重 bake。
+      Hub 由 run_generate 同步；删除场景须另行从 dist 去掉路径（本函数不删文件）。
+    """
+    from portal.generator.generate_one import DEFAULT_OUT_ROOT, write_home_page
+    from portal.generator.sitemap import write_sitemap
+    from portal.generator.static_shell import sync_static_shell
+
+    gen = run_generate(
+        batch_id=batch_id,
+        page_ids=page_ids,
+        generate_all=False,
+    )
+    if not gen.get("ok"):
+        return {
+            "ok": False,
+            "error": gen.get("error") or "增量 generate 失败",
+            "generate": gen,
+        }
+
+    home_result = write_home_page()
+    sitemap_result = write_sitemap(DEFAULT_OUT_ROOT)
+    shell_result = sync_static_shell()
+    return {
+        "ok": True,
+        "generate": {
+            "ok_count": gen.get("ok_count"),
+            "fail_count": gen.get("fail_count"),
+            "hubs_generated": gen.get("hubs_generated"),
+        },
+        "home": home_result,
+        "sitemap": sitemap_result,
+        "static_shell": shell_result,
+        "batch": gen.get("batch"),
+    }
+
+
+def _run_wrangler_upload() -> Dict[str, Any]:
+    """
+    仅执行 wrangler deploy（上传当前 portal/dist，CF 侧按 hash 增量）。
+
+    @returns: returncode / detail / ok
+    """
+    if not shutil.which("wrangler"):
+        return {"ok": False, "error": "未找到 wrangler，请 npm i -g wrangler"}
+
+    proc = subprocess.run(
+        ["wrangler", "deploy"],
+        cwd=str(PROJECT_ROOT),
+        capture_output=True,
+        text=True,
+        timeout=1800,
+        check=False,
+    )
+    detail = (proc.stdout or "")[-800:] + (("\n" + proc.stderr) if proc.stderr else "")
+    detail = detail[-1200:]
+    return {
+        "ok": proc.returncode == 0,
+        "returncode": proc.returncode,
+        "detail": detail.strip(),
+    }
+
+
 def run_deploy(
     *,
     batch_id: Optional[str] = None,
-    prepare_only: bool = True,
+    page_ids: Optional[List[str]] = None,
+    scope: str = "full",
+    upload: Optional[bool] = None,
+    prepare_only: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """
-    执行 deploy_cf_pages.sh。默认仅 --prepare-only；正式 deploy 需显式关闭。
+    Ops 部署：支持全量 / 增量 prepare，以及可选正式 wrangler 上传。
 
-    @param batch_id: 批次
-    @param prepare_only: True=只准备 dist；False=真正 wrangler deploy
-    @returns: 结果
+    @param batch_id: 跟踪批次
+    @param page_ids: 增量模式下的 page_id 子集（默认选中槽）
+    @param scope: ``full`` | ``incremental`` | ``upload_only``
+    @param upload: True=执行 wrangler deploy；False=仅准备 dist
+    @param prepare_only: 兼容旧 API；若提供则 ``upload = not prepare_only``
+    @returns: 结果摘要（含 scope / upload / prepare / wrangler）
+    @description
+      - full：generate all + 壳同步（与历史 deploy_cf_pages.sh 一致）
+      - incremental：只 bake 选中槽 + home/sitemap/壳；上传仍由 wrangler 对账增量
+      - upload_only：假定 dist 已就绪，只 wrangler
     """
+    # 完整注释：兼容旧客户端只传 prepare_only
+    if upload is None:
+        if prepare_only is not None:
+            upload = not bool(prepare_only)
+        else:
+            upload = False
+
+    scope_norm = str(scope or "full").strip().lower()
+    if scope_norm in ("selected", "pages", "incr"):
+        scope_norm = "incremental"
+    if scope_norm not in ("full", "incremental", "upload_only"):
+        return {"ok": False, "error": f"未知 scope={scope!r}，应为 full|incremental|upload_only"}
+
     loaded = _get_batch(batch_id)
     if not loaded.get("ok"):
         return loaded
     batch = loaded["batch"]
-    update_batch_step(batch, "deploy", status="running", detail="")
+
+    if scope_norm == "incremental":
+        rows = _selected_slots(batch, page_ids)
+        if not rows:
+            return {
+                "ok": False,
+                "error": "增量 deploy 需要跟踪表中至少 1 个选中槽",
+                "batch": batch,
+            }
+
+    update_batch_step(
+        batch,
+        "deploy",
+        status="running",
+        detail=f"scope={scope_norm} upload={upload}",
+    )
     save_batch(batch)
 
-    script = PROJECT_ROOT / "scripts" / "deploy_cf_pages.sh"
-    if not script.is_file():
-        update_batch_step(batch, "deploy", status="failed", detail="找不到 deploy_cf_pages.sh")
-        save_batch(batch)
-        return {"ok": False, "error": "找不到 deploy_cf_pages.sh", "batch": batch}
-
-    cmd = ["bash", str(script)]
-    if prepare_only:
-        cmd.append("--prepare-only")
+    prepare_result: Dict[str, Any] = {"skipped": True}
+    wrangler_result: Dict[str, Any] = {"skipped": True}
 
     try:
-        proc = subprocess.run(
-            cmd,
-            cwd=str(PROJECT_ROOT),
-            capture_output=True,
-            text=True,
-            timeout=1800,
-            check=False,
-        )
-        ok = proc.returncode == 0
-        detail = (proc.stdout or proc.stderr or "")[-500:]
-        mode = "prepare-only" if prepare_only else "deploy"
-        update_batch_step(
-            batch,
-            "deploy",
-            status="ok" if ok else "failed",
-            detail=f"[{mode}] {detail}",
-        )
+        if scope_norm == "full":
+            prepare_result = _prepare_dist_full()
+            if isinstance(prepare_result, dict) and prepare_result.get("ok") is False:
+                raise RuntimeError(prepare_result.get("error") or "全量 prepare 失败")
+            # write_all_published 成功时通常无 ok=false；错误抛异常
+            prepare_result = {"ok": True, "mode": "full", "result": prepare_result}
+        elif scope_norm == "incremental":
+            prepare_result = _prepare_dist_incremental(
+                batch_id=batch.get("meta", {}).get("batch_id") or batch_id,
+                page_ids=page_ids,
+            )
+            if not prepare_result.get("ok"):
+                raise RuntimeError(prepare_result.get("error") or "增量 prepare 失败")
+            # run_generate 已 save_batch；重新加载以免覆盖
+            reloaded = _get_batch(batch_id)
+            if reloaded.get("ok"):
+                batch = reloaded["batch"]
+        # upload_only：跳过 prepare
+
+        if upload:
+            wrangler_result = _run_wrangler_upload()
+            if not wrangler_result.get("ok"):
+                raise RuntimeError(
+                    wrangler_result.get("error")
+                    or wrangler_result.get("detail")
+                    or "wrangler deploy 失败"
+                )
+
+        detail_parts = [f"scope={scope_norm}", f"upload={upload}"]
+        if prepare_result.get("skipped"):
+            detail_parts.append("prepare=skip")
+        elif scope_norm == "incremental":
+            g = prepare_result.get("generate") or {}
+            detail_parts.append(
+                f"prepare=incr ok={g.get('ok_count')} fail={g.get('fail_count')}"
+            )
+        else:
+            detail_parts.append("prepare=full")
+        if upload:
+            detail_parts.append("wrangler=ok")
+        detail = " | ".join(detail_parts)
+        if upload and wrangler_result.get("detail"):
+            detail = (detail + "\n" + str(wrangler_result.get("detail")))[-500:]
+
+        update_batch_step(batch, "deploy", status="ok", detail=detail)
         save_batch(batch)
         return {
-            "ok": ok,
-            "prepare_only": prepare_only,
-            "returncode": proc.returncode,
-            "detail": detail,
+            "ok": True,
+            "scope": scope_norm,
+            "upload": upload,
+            "prepare_only": not upload,
+            "prepare": prepare_result,
+            "wrangler": wrangler_result,
             "summary": summarize_batch(batch),
             "batch": batch,
         }
     except Exception as exc:  # noqa: BLE001
-        update_batch_step(batch, "deploy", status="failed", detail=str(exc))
+        update_batch_step(batch, "deploy", status="failed", detail=str(exc)[:500])
         save_batch(batch)
-        return {"ok": False, "error": str(exc), "batch": batch}
+        return {
+            "ok": False,
+            "error": str(exc),
+            "scope": scope_norm,
+            "upload": upload,
+            "prepare": prepare_result,
+            "wrangler": wrangler_result,
+            "batch": batch,
+        }

@@ -363,9 +363,16 @@ def _handle_api(
         return 200, actions.run_seo_c2(batch_id=body.get("batch_id"))
 
     if path == "/api/actions/deploy" and method == "POST":
+        # scope: full | incremental | upload_only；upload / prepare_only 控制是否 wrangler
+        scope = str(body.get("scope") or "full").strip().lower()
+        upload_arg = body.get("upload")
+        prepare_only_arg = body.get("prepare_only")
         return 200, actions.run_deploy(
             batch_id=body.get("batch_id"),
-            prepare_only=bool(body.get("prepare_only", True)),
+            page_ids=body.get("page_ids"),
+            scope=scope,
+            upload=None if upload_arg is None else bool(upload_arg),
+            prepare_only=None if prepare_only_arg is None else bool(prepare_only_arg),
         )
 
     # ── 配置：加载 / 修改 / 热加载（.env + accounts.local.json）────────
@@ -628,6 +635,10 @@ def run_ops_server(*, host: str = "127.0.0.1", port: int = DEFAULT_OPS_PORT) -> 
         print("\n[ops] stopped")
     finally:
         httpd.server_close()
+
+
+# 完整注释：CLI ``workflow.run ops serve`` 历史导入名，与 run_ops_server 等价
+serve_ops = run_ops_server
 
 
 def main(argv: Optional[list] = None) -> int:

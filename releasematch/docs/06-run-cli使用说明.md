@@ -710,11 +710,32 @@ python -m workflow.run ops tmdb-sync --full-reload   # TRUNCATE 全量重建
 | ① 清单从哪来 | TMDB 日导出 + 锚点/curated；或 **全量下载→增量入库→搜索→工作区** | 自动生成 / 加载 JSON / `ops tmdb-sync` + UI 手动选槽 |
 | ② 筛选 | media / tier / pop / 排除 published·失败槽 | 筛选后 **导入跟踪表** |
 | ③ 跑生成流程 | pipeline → MySQL 门禁 → generate → 测速 | 跟踪表逐槽更新；**测速 write 成功后自动 regenerate**（bake Grab/测速面板） |
-| ④ 上线 | seo_c2 → deploy（默认 prepare-only） | 批次级步骤 + 同一跟踪表 |
+| ④ 上线 | seo_c2 → deploy（增量/全量/仅上传 + 可选 wrangler） | 批次级步骤 + 同一跟踪表 |
 | ⑤ 配置 | `.env`（MySQL/站点/Ops）+ `accounts.local.json`（数据源） | 分文件加载/保存；热加载到当前进程（无需重启） |
 
+**④ Deploy 范围（Ops UI / API）：**
+
+| scope | 行为 | 典型用途 |
+|-------|------|----------|
+| `incremental`（默认） | 只 bake 跟踪表**选中槽** + home/sitemap/静态壳 | 单批扩槽、测速后发版 |
+| `full` | `generate all`（全站） | 模板/CSS/全局变更 |
+| `upload_only` | 不 regenerate，只 `wrangler deploy` | dist 已就绪；或删文件后对账下线 |
+
+勾选「正式 wrangler 上传」才会动公网；未勾选 = 仅 prepare。  
+`POST /api/actions/deploy`：`{ "scope": "incremental\|full\|upload_only", "upload": true|false }`（兼容旧字段 `prepare_only`）。  
+CLI 等价：
+
+```bash
+bash scripts/deploy_cf_pages.sh --prepare-only                          # 全量 prepare
+bash scripts/deploy_cf_pages.sh --mode incremental --page-ids tv:1668:s01e01,movie:244786
+bash scripts/deploy_cf_pages.sh --mode upload-only                      # 仅上传当前 dist
+```
+
+**说明：** wrangler 上传按文件 hash **增量传**；本次 dist 中不存在的路径会在对账时从线上移除（删除场景：先从 dist 去掉再 upload）。  
+入口函数：`workflow.ops.server.serve_ops`（= `run_ops_server`）。
+
 **剧集 Hub：** `ensure_slot_page` / Ops generate 会确保 `tv:{tmdb}:hub` 存在并 regenerate，避免只有 `/show/s1e1/` 而 `/{slug}/` 404。  
-**静态资源缓存：** 生成页链接带 `design-system.css?v={{ static_asset_version }}`（CSS 内容 hash），避免旧样式残留。  
+**静态资源缓存：** 生成页链接带 `design-system.css?v={{ static_asset_version }}`（CSS/JS 内容 hash），避免旧样式/脚本残留。  
 **TMDB 海报/简介：** 建槽时一次性写入 `media_catalog.poster_path` / `overview` / `overview_zh`（单集另写 `media_pages`）；日常 magnet / 测速**不再重拉**。存量补齐：
 
 ```bash
@@ -820,7 +841,7 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | `scripts/recompute_cross_source_fuzzy.py` | 不重拉 indexer，按 infohash 重算跨源分子 |
 | `scripts/sync_jackett_vps_key.sh` | 远端 Jackett API Key → `accounts.local.json` |
 | `scripts/seo_c2_checklist.sh` | C2 SEO 本地检查（§6.1～6.3）；等价 `seo_c2_checklist.py` |
-| `scripts/deploy_cf_pages.sh` | `generate all` + 同步静态壳 + wrangler 部署 CF Pages |
+| `scripts/deploy_cf_pages.sh` | `--mode full\|incremental\|upload-only`；`--prepare-only`；增量需 `--page-ids`；wrangler 按 hash 增量上传 |
 
 ---
 
@@ -886,3 +907,4 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | v0.11 | 2026-07-19 | 数据源只认 `accounts.local.json`；`.env`/Ops 表单移除 JACKETT_* 等重叠项 |
 | v0.12 | 2026-07-19 | Ops 测速成功后自动 regenerate；剧集 Hub `ensure_show_hub_page`；CSS `?v=` 缓存破坏；剧集表固定列宽 |
 | v0.13 | 2026-07-19 | TMDB 海报/简介一次性入库（`meta enrich`）；generate 默认不再 live 打 overview API |
+| v0.14 | 2026-07-19 | Ops/CLI 增量·全量·仅上传 deploy；`serve_ops` 别名；公网增量更新/新增/删除验收 |
