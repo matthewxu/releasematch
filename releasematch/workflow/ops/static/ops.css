@@ -77,12 +77,16 @@ a:hover { text-decoration: underline; }
 
 .ops-steps {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 8px;
   margin-bottom: 18px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
+  .ops-steps { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 700px) {
   .ops-steps { grid-template-columns: repeat(2, 1fr); }
 }
 
@@ -530,4 +534,114 @@ body.ops-busy button:not(.ops-step-tab) {
 body.ops-busy .ops-step-tab {
   pointer-events: auto;
   opacity: 1;
+}
+
+/* ── 配置页 ─────────────────────────────────────────────── */
+
+.ops-config-grid {
+  margin-top: 12px;
+  align-items: start;
+}
+
+.ops-config-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 560px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.ops-config-group-title {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--ops-accent);
+  margin: 4px 0 0;
+  letter-spacing: 0.02em;
+}
+
+.ops-config-field {
+  display: grid;
+  grid-template-columns: minmax(120px, 160px) 1fr;
+  gap: 8px 12px;
+  align-items: start;
+}
+
+.ops-config-field label {
+  color: var(--ops-muted);
+  font-size: 12px;
+  line-height: 1.35;
+  padding-top: 8px;
+}
+
+.ops-config-field label .ops-config-key {
+  display: block;
+  font-family: var(--ops-mono);
+  font-size: 10px;
+  color: var(--ops-faint);
+  margin-top: 2px;
+  word-break: break-all;
+}
+
+.ops-config-field input {
+  width: 100%;
+  background: var(--ops-bg);
+  border: 1px solid var(--ops-border);
+  border-radius: 6px;
+  color: var(--ops-text);
+  padding: 8px 10px;
+  font-family: var(--ops-mono);
+  font-size: 12px;
+}
+
+.ops-config-field input:focus {
+  outline: none;
+  border-color: var(--ops-accent);
+}
+
+.ops-config-hint {
+  grid-column: 2;
+  font-size: 11px;
+  color: var(--ops-faint);
+  margin-top: -4px;
+}
+
+.ops-mono-input {
+  width: 100%;
+  background: var(--ops-bg);
+  border: 1px solid var(--ops-border);
+  border-radius: 6px;
+  color: var(--ops-text);
+  padding: 10px 12px;
+  font-family: var(--ops-mono);
+  font-size: 12px;
+  line-height: 1.4;
+  resize: vertical;
+}
+
+.ops-mono-input:focus {
+  outline: none;
+  border-color: var(--ops-accent);
+}
+
+.ops-config-raw {
+  margin-top: 16px;
+  border-top: 1px solid var(--ops-border);
+  padding-top: 12px;
+}
+
+.ops-config-raw summary {
+  cursor: pointer;
+  color: var(--ops-muted);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 900px) {
+  .ops-config-field {
+    grid-template-columns: 1fr;
+  }
+  .ops-config-hint {
+    grid-column: 1;
+  }
 }

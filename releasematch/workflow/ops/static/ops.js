@@ -230,7 +230,7 @@
 
   /**
    * 切换流程面板。
-   * @param {string} step 1-4
+   * @param {string} step 1-5
    */
   function showStep(step) {
     document.querySelectorAll(".ops-step-tab").forEach((btn) => {
@@ -239,6 +239,142 @@
     document.querySelectorAll(".ops-panel").forEach((panel) => {
       panel.classList.toggle("is-active", panel.dataset.panel === step);
     });
+    if (String(step) === "5") {
+      loadConfig().catch((e) => log(String(e)));
+    }
+  }
+
+  /**
+   * 最近一次配置包（/api/config）。
+   * @type {object|null}
+   */
+  let configBundle = null;
+
+  /**
+   * 更新顶栏配置徽章。
+   * @param {object|null} status /api/config.status
+   */
+  function renderConfigStatusBadge(status) {
+    const el = document.getElementById("configStatusBadge");
+    if (!el) return;
+    if (!status) {
+      el.textContent = "配置 · …";
+      return;
+    }
+    const mysqlOk = status.release_mysql_configured;
+    const jackettOk = status.jackett_key_configured;
+    const parts = [];
+    parts.push(mysqlOk ? "MySQL✓" : "MySQL✗");
+    parts.push(jackettOk ? "Jackett✓" : "Jackett✗");
+    el.textContent = "配置 · " + parts.join(" · ");
+    el.title = JSON.stringify(status);
+  }
+
+  /**
+   * 渲染 .env 表单字段。
+   * @param {Array<object>} fields 字段定义+当前值
+   */
+  function renderConfigEnvFields(fields) {
+    const host = document.getElementById("configEnvFields");
+    if (!host) return;
+    let html = "";
+    let lastGroup = "";
+    (fields || []).forEach((f) => {
+      if (f.group !== lastGroup) {
+        lastGroup = f.group;
+        html += `<div class="ops-config-group-title">${escapeHtml(f.group)}</div>`;
+      }
+      const inputType = f.secret ? "password" : "text";
+      html += `<div class="ops-config-field">
+        <label for="cfg-${escapeHtml(f.key)}">${escapeHtml(f.label)}
+          <span class="ops-config-key">${escapeHtml(f.key)}</span>
+        </label>
+        <input type="${inputType}" id="cfg-${escapeHtml(f.key)}"
+          data-env-key="${escapeHtml(f.key)}"
+          value="${escapeHtml(f.value == null ? "" : String(f.value))}"
+          autocomplete="off" />
+        ${f.hint ? `<div class="ops-config-hint">${escapeHtml(f.hint)} · 来源 ${escapeHtml(f.source || "")}</div>` : `<div class="ops-config-hint">来源 ${escapeHtml(f.source || "")}</div>`}
+      </div>`;
+    });
+    host.innerHTML = html || "<p class='lead'>无字段</p>";
+  }
+
+  /**
+   * 从配置表单收集键值。
+   * @returns {Object.<string, string>}
+   */
+  function collectEnvFormValues() {
+    /** @type {Object.<string, string>} */
+    const values = {};
+    document.querySelectorAll("#configEnvFields [data-env-key]").forEach((input) => {
+      const key = input.getAttribute("data-env-key");
+      if (key) values[key] = input.value;
+    });
+    return values;
+  }
+
+  /**
+   * 用 /api/config 响应填充配置页。
+   * @param {object} bundle get_config_bundle 结果
+   */
+  function applyConfigBundle(bundle) {
+    configBundle = bundle;
+    const env = bundle.env || {};
+    const accounts = bundle.accounts || {};
+    const status = bundle.status || {};
+    document.getElementById("configEnvPath").textContent = env.path || ".env";
+    document.getElementById("configAccountsPath").textContent =
+      accounts.path || "workflow/torrent_sources/accounts.local.json";
+    const badge = document.getElementById("configAccountsBadge");
+    if (accounts.using_example) {
+      badge.textContent = "正在读 example（请保存为 local）";
+    } else if (accounts.exists_local) {
+      badge.textContent = "accounts.local.json";
+    } else {
+      badge.textContent = "未找到 local";
+    }
+    renderConfigEnvFields(env.fields || []);
+    document.getElementById("configEnvRaw").value = env.raw || "";
+    try {
+      document.getElementById("configAccountsRaw").value = JSON.stringify(
+        accounts.data || {},
+        null,
+        2
+      );
+    } catch (_) {
+      document.getElementById("configAccountsRaw").value = "";
+    }
+    renderConfigStatusBadge(status);
+    const probe = status.jackett_probe || {};
+    renderMetrics(document.getElementById("configMetrics"), [
+      [".env", env.exists ? "已存在" : "缺失"],
+      ["accounts.local", accounts.exists_local ? "已存在" : "缺失"],
+      ["Release MySQL", status.release_mysql_configured ? "已配置" : "未配置"],
+      ["Jackett Key", status.jackett_key_configured ? "已配置" : "未配置"],
+      [
+        "Jackett 探测",
+        probe.skipped
+          ? "跳过"
+          : probe.reachable
+            ? "可达 " + (probe.status_code || "")
+            : "不可达",
+      ],
+      ["后端", status.storage_backend || "—"],
+    ]);
+  }
+
+  /**
+   * 从磁盘加载配置到 UI。
+   * @returns {Promise<object>}
+   */
+  async function loadConfig() {
+    const data = await api("/api/config");
+    applyConfigBundle(data);
+    log("配置已从磁盘加载", {
+      env: data.env && data.env.path,
+      accounts: data.accounts && data.accounts.path,
+    });
+    return data;
   }
 
   /**
@@ -1345,9 +1481,104 @@
         log(String(e));
       }
     });
+
+    // ── ⑤ 配置 ──────────────────────────────────────────
+    document.getElementById("btnConfigLoad").addEventListener("click", () => {
+      withBusy("从磁盘加载配置", () => loadConfig(), { indeterminate: true }).catch((e) =>
+        log(String(e))
+      );
+    });
+
+    document.getElementById("btnConfigInit").addEventListener("click", async () => {
+      try {
+        await withBusy("从模板初始化缺失配置文件", async () => {
+          const data = await api("/api/config/init", {
+            method: "POST",
+            body: { which: "both" },
+          });
+          if (data.config) applyConfigBundle(data.config);
+          log("初始化完成", { env: data.env, accounts: data.accounts });
+        });
+      } catch (e) {
+        log(String(e));
+      }
+    });
+
+    document.getElementById("btnConfigReload").addEventListener("click", async () => {
+      try {
+        await withBusy("加载配置到当前进程", async () => {
+          const data = await api("/api/config/reload", { method: "POST", body: {} });
+          if (data.config) applyConfigBundle(data.config);
+          log("已热加载到进程", data.runtime);
+        });
+      } catch (e) {
+        log(String(e));
+      }
+    });
+
+    document.getElementById("btnConfigSaveEnv").addEventListener("click", async () => {
+      try {
+        await withBusy("保存 .env 并加载到进程", async () => {
+          const values = collectEnvFormValues();
+          const data = await api("/api/config/env", {
+            method: "POST",
+            body: { values: values, reload: true },
+          });
+          if (data.config) applyConfigBundle(data.config);
+          log("已保存 .env", {
+            updated_keys: data.updated_keys,
+            runtime: data.runtime,
+          });
+        });
+      } catch (e) {
+        log(String(e));
+      }
+    });
+
+    document.getElementById("btnConfigSaveEnvRaw").addEventListener("click", async () => {
+      try {
+        await withBusy("保存 .env 全文并加载", async () => {
+          const raw = document.getElementById("configEnvRaw").value;
+          const data = await api("/api/config/env", {
+            method: "POST",
+            body: { raw: raw, reload: true },
+          });
+          if (data.config) applyConfigBundle(data.config);
+          log("已保存 .env 全文", { key_count: data.key_count, runtime: data.runtime });
+        });
+      } catch (e) {
+        log(String(e));
+      }
+    });
+
+    document.getElementById("btnConfigSaveAccounts").addEventListener("click", async () => {
+      try {
+        await withBusy("保存 accounts.local.json 并加载", async () => {
+          const text = document.getElementById("configAccountsRaw").value;
+          let parsed;
+          try {
+            parsed = JSON.parse(text);
+          } catch (err) {
+            throw new Error("accounts JSON 解析失败: " + err.message);
+          }
+          const data = await api("/api/config/accounts", {
+            method: "POST",
+            body: { data: parsed, reload: true },
+          });
+          if (data.config) applyConfigBundle(data.config);
+          log("已保存 accounts.local.json", { path: data.path, runtime: data.runtime });
+        });
+      } catch (e) {
+        log(String(e));
+      }
+    });
   }
 
   bind();
   loadFiles().catch((e) => log(String(e)));
   refresh().catch((e) => log(String(e)));
+  // 顶栏配置徽章：静默拉取一次
+  loadConfig().catch(() => {
+    /* 缺 MySQL 时仍可能读 .env；忽略首屏失败 */
+  });
 })();

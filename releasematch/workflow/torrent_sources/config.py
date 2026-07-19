@@ -14,16 +14,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict
 
-from workflow.config import (
-    DMHY_BASE_URL,
-    EZTV_BASE_URL,
-    JACKETT_API_KEY,
-    JACKETT_BASE_URL,
-    NYAA_BASE_URL,
-    TORRENT_MIN_INTERVAL_SEC,
-    TORRENT_SEEDERS_TTL_HOURS,
-    YTS_BASE_URL,
-)
+import workflow.config as wc
 
 MODULE_DIR: Path = Path(__file__).resolve().parent
 DATA_DIR: Path = MODULE_DIR / "data"
@@ -106,26 +97,26 @@ def load_accounts_config(path: Path | None = None) -> Dict[str, Any]:
     with open(cfg_path, encoding="utf-8-sig") as f:
         data: Dict[str, Any] = json.load(f)
 
-    # 环境变量覆盖 JSON
-    if JACKETT_API_KEY:
-        data.setdefault("jackett", {})["api_key"] = JACKETT_API_KEY
-    data.setdefault("jackett", {}).setdefault("base_url", JACKETT_BASE_URL)
-    data.setdefault("eztv", {}).setdefault("base_url", EZTV_BASE_URL)
-    data.setdefault("yts", {}).setdefault("base_url", YTS_BASE_URL)
-    data.setdefault("nyaa", {}).setdefault("base_url", NYAA_BASE_URL)
+    # 环境变量覆盖 JSON（经 workflow.config 模块属性，支持 Ops 热加载）
+    if wc.JACKETT_API_KEY:
+        data.setdefault("jackett", {})["api_key"] = wc.JACKETT_API_KEY
+    data.setdefault("jackett", {}).setdefault("base_url", wc.JACKETT_BASE_URL)
+    data.setdefault("eztv", {}).setdefault("base_url", wc.EZTV_BASE_URL)
+    data.setdefault("yts", {}).setdefault("base_url", wc.YTS_BASE_URL)
+    data.setdefault("nyaa", {}).setdefault("base_url", wc.NYAA_BASE_URL)
     data.setdefault("nyaa", {}).setdefault("enabled", True)
     data.setdefault("nyaa", {}).setdefault("mirrors", [])
     data.setdefault("nyaa_live_action", {}).setdefault("enabled", True)
     data.setdefault("nyaa_live_action", {}).setdefault("category", "4_0")
     if not data.get("nyaa_live_action", {}).get("base_url"):
         data.setdefault("nyaa_live_action", {})["base_url"] = data.get("nyaa", {}).get(
-            "base_url", NYAA_BASE_URL
+            "base_url", wc.NYAA_BASE_URL
         )
     data.setdefault("nyaa_anime", {}).setdefault("enabled", True)
     data.setdefault("nyaa_anime", {}).setdefault("category", "1_0")
     if not data.get("nyaa_anime", {}).get("base_url"):
         data.setdefault("nyaa_anime", {})["base_url"] = data.get("nyaa", {}).get(
-            "base_url", NYAA_BASE_URL
+            "base_url", wc.NYAA_BASE_URL
         )
     data.setdefault("cn_sources", {}).setdefault(
         "jackett", ["dmhy", "mikan", "acgrip"]
@@ -133,9 +124,9 @@ def load_accounts_config(path: Path | None = None) -> Dict[str, Any]:
     data.setdefault("cn_sources", {}).setdefault(
         "direct", ["dmhy", "nyaa_live_action", "nyaa_anime"]
     )
-    data.setdefault("dmhy", {}).setdefault("base_url", DMHY_BASE_URL)
+    data.setdefault("dmhy", {}).setdefault("base_url", wc.DMHY_BASE_URL)
     data.setdefault("dmhy", {}).setdefault("enabled", True)
     data.setdefault("dmhy", {}).setdefault("mirrors", [])
-    data.setdefault("rate_limit", {})["min_interval_sec"] = TORRENT_MIN_INTERVAL_SEC
-    data.setdefault("cache", {})["seeders_ttl_hours"] = TORRENT_SEEDERS_TTL_HOURS
+    data.setdefault("rate_limit", {})["min_interval_sec"] = wc.TORRENT_MIN_INTERVAL_SEC
+    data.setdefault("cache", {})["seeders_ttl_hours"] = wc.TORRENT_SEEDERS_TTL_HOURS
     return data

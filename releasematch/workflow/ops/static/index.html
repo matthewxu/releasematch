@@ -12,11 +12,12 @@
     <header class="ops-top">
       <div>
         <div class="ops-brand">ReleaseMatch Ops</div>
-        <div class="ops-sub">清单来源 → 筛选 → 跑生成流程 → 上线 · 筛选后用跟踪表贯通后两步</div>
+        <div class="ops-sub">清单来源 → 筛选 → 跑生成流程 → 上线 · 配置可热加载到本进程</div>
       </div>
       <div>
         <span class="ops-badge" id="activeBatchBadge">无活跃批次</span>
         <span class="ops-badge" title="跟踪表存储">MySQL · ops_track_*</span>
+        <span class="ops-badge" id="configStatusBadge" title="配置就绪状态">配置 · …</span>
         <button type="button" class="secondary" id="btnRefresh" style="margin-left:8px">刷新状态</button>
       </div>
     </header>
@@ -37,7 +38,7 @@
       <div class="ops-progress-msg" id="opsProgressMsg"></div>
     </div>
 
-    <nav class="ops-steps" role="tablist" aria-label="流程四段">
+    <nav class="ops-steps" role="tablist" aria-label="流程与配置">
       <button type="button" class="ops-step-tab" data-step="1" aria-selected="true">
         <span class="n">01</span><span class="t">清单从哪来</span>
       </button>
@@ -49,6 +50,9 @@
       </button>
       <button type="button" class="ops-step-tab" data-step="4" aria-selected="false">
         <span class="n">04</span><span class="t">上线</span>
+      </button>
+      <button type="button" class="ops-step-tab" data-step="5" aria-selected="false">
+        <span class="n">05</span><span class="t">配置</span>
       </button>
     </nav>
 
@@ -256,7 +260,46 @@
       <div id="trackTableHost2"></div>
     </section>
 
-    <div class="ops-log" id="opsLog">就绪。请从「清单从哪来」开始。</div>
+    <!-- ⑤ 配置 -->
+    <section class="ops-panel" id="panel-5" data-panel="5">
+      <h2>⑤ 配置</h2>
+      <p class="lead">
+        加载 / 修改项目根 <code>.env</code> 与 <code>workflow/torrent_sources/accounts.local.json</code>。
+        保存时可<strong>热加载到当前 ops 进程</strong>（无需重启）。本机绑定，密钥明文展示便于编辑。
+      </p>
+      <div class="ops-metrics" id="configMetrics"></div>
+      <div class="ops-actions">
+        <button type="button" id="btnConfigLoad">从磁盘加载</button>
+        <button type="button" class="secondary" id="btnConfigInit">从模板初始化缺失文件</button>
+        <button type="button" class="secondary" id="btnConfigReload">仅加载到进程（不写盘）</button>
+        <button type="button" id="btnConfigSaveEnv">保存 .env 并加载</button>
+        <button type="button" id="btnConfigSaveAccounts">保存 accounts 并加载</button>
+      </div>
+      <div class="ops-grid ops-config-grid">
+        <div class="ops-card">
+          <h3>.env（表单）</h3>
+          <p class="lead" style="margin-bottom:10px">路径：<code id="configEnvPath">.env</code></p>
+          <div id="configEnvFields" class="ops-config-fields"></div>
+          <details class="ops-config-raw">
+            <summary>高级：编辑 .env 全文</summary>
+            <textarea id="configEnvRaw" rows="14" spellcheck="false" class="ops-mono-input"></textarea>
+            <div class="ops-actions" style="margin-top:8px">
+              <button type="button" class="secondary" id="btnConfigSaveEnvRaw">保存全文并加载</button>
+            </div>
+          </details>
+        </div>
+        <div class="ops-card">
+          <h3>accounts.local.json</h3>
+          <p class="lead" style="margin-bottom:10px">
+            路径：<code id="configAccountsPath">workflow/torrent_sources/accounts.local.json</code>
+            <span class="ops-badge" id="configAccountsBadge">…</span>
+          </p>
+          <textarea id="configAccountsRaw" rows="28" spellcheck="false" class="ops-mono-input"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <div class="ops-log" id="opsLog">就绪。请从「清单从哪来」开始；缺配置时先打开「配置」。</div>
   </div>
   <script src="/ops.js"></script>
 </body>

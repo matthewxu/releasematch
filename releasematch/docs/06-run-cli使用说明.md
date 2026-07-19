@@ -689,9 +689,9 @@ python scripts/speedtest_batch_worker.py \
   --report worklogs/$(date +%Y-%m-%d)/speedtest-all-published-benchmark.json
 ```
 
-### 5.4b Ops 控制台 UI（清单 → 筛选 → 生成 → 上线）
+### 5.4b Ops 控制台 UI（清单 → 筛选 → 生成 → 上线 → 配置）
 
-本地四段式 UI，**仅绑定 127.0.0.1**，勿部署公网：
+本地五段式 UI，**仅绑定 127.0.0.1**，勿部署公网：
 
 ```bash
 python -m workflow.run ops serve          # http://127.0.0.1:8090/
@@ -708,6 +708,17 @@ python -m workflow.run ops tmdb-sync --full-reload   # TRUNCATE 全量重建
 | ② 筛选 | media / tier / pop / 排除 published·失败槽 | 筛选后 **导入跟踪表** |
 | ③ 跑生成流程 | pipeline → MySQL 门禁 → generate → 测速 | 跟踪表逐槽更新 |
 | ④ 上线 | seo_c2 → deploy（默认 prepare-only） | 批次级步骤 + 同一跟踪表 |
+| ⑤ 配置 | `.env` + `accounts.local.json` | **从磁盘加载 / 修改保存 / 热加载到当前进程**（无需重启 `ops serve`） |
+
+配置 API（本机）：
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/api/config` | 加载 `.env` 字段 + accounts JSON + 就绪状态 |
+| `POST` | `/api/config/env` | `values` 表单合并写入，或 `raw` 全文覆盖；默认 `reload=true` |
+| `POST` | `/api/config/accounts` | body.`data` 写入 `accounts.local.json` |
+| `POST` | `/api/config/reload` | 仅从磁盘 `.env` 覆盖加载到进程（不写盘） |
+| `POST` | `/api/config/init` | 从 `config.env.example` / `accounts.example.json` 复制缺失文件 |
 
 跟踪批次持久化（MySQL）：
 
@@ -829,7 +840,7 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | `seo_c2_checklist` | `scripts/seo_c2_checklist.py` |
 | `serve` | `portal/generator/dev_server.py` |
 | `serve-static` | `portal/generator/dev_server.py` · `static_shell.py` |
-| `ops serve` | `workflow/ops/server.py` · `track_store.py`（MySQL `ops_track_*`） |
+| `ops serve` | `workflow/ops/server.py` · `track_store.py`（MySQL `ops_track_*`）· `config_service.py`（`.env` / accounts） |
 | `ops tmdb-sync` | `workflow/ops/source_service.py` · `tmdb_export_store.py`（全量下载 → UPSERT 增量） |
 | `torrent_sources.run *` | `workflow/torrent_sources/run.py` |
 | `speedtest.run *` | `workflow/torrent_sources/speedtest/` |
@@ -850,3 +861,4 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | v0.6 | 2026-07-10 | `generate all` 自动 `static_shell`；新增 `serve-static`；Trust 六页（含 speed-and-grab）；i18n 内联 bootstrap |
 | v0.7 | 2026-07-14 | 新增 `ops serve` 四段式运营 UI；跟踪表 MySQL `ops_track_batches` / `ops_track_slots`；§5.4b |
 | v0.8 | 2026-07-14 | Ops 手动选槽：全量下载 Daily Export → MySQL `tmdb_export_*` 增量 UPSERT；新增 `ops tmdb-sync`；UI 搜索→工作区 |
+| v0.9 | 2026-07-19 | Ops ⑤ 配置：加载/修改 `.env` 与 `accounts.local.json`，`/api/config*` 热加载到当前进程 |

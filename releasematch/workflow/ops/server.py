@@ -4,7 +4,7 @@ Ops 本地 HTTP 服务 — 四段式运营控制台。
 
 @module workflow.ops.server
 @description
-  仅绑定 127.0.0.1。提供 JSON API + 单页 UI。
+  仅绑定 127.0.0.1。提供 JSON API + 单页 UI（含配置加载/修改/热加载）。
   CLI: python -m workflow.run ops serve [--port 8090]
 """
 
@@ -21,6 +21,7 @@ from urllib.parse import parse_qs, urlparse
 from workflow.config import PROJECT_ROOT
 from workflow.ops import DEFAULT_OPS_PORT
 from workflow.ops import actions
+from workflow.ops import config_service
 from workflow.ops import source_service
 from workflow.ops.track_store import (
     ensure_tables,
@@ -288,6 +289,62 @@ def _handle_api(method: str, path: str, body: Dict[str, Any], query: Dict[str, l
             prepare_only=bool(body.get("prepare_only", True)),
         )
 
+    # ── 配置：加载 / 修改 / 热加载（.env + accounts.local.json）────────
+    if path == "/api/config" and method == "GET":
+        return 200, config_service.get_config_bundle()
+
+    if path == "/api/config/env" and method == "POST":
+        # body.values: 表单键值；或 body.raw: 全文覆盖
+        if body.get("raw") is not None:
+            result = config_service.save_env_raw(
+                str(body.get("raw") or ""),
+                reload=bool(body.get("reload", True)),
+            )
+        else:
+            result = config_service.save_env_values(
+                body.get("values") or {},
+                reload=bool(body.get("reload", True)),
+            )
+        status = 200 if result.get("ok") else 400
+        if result.get("ok"):
+            result["config"] = config_service.get_config_bundle()
+        return status, result
+
+    if path == "/api/config/accounts" and method == "POST":
+        if "data" not in body:
+            return 400, {"ok": False, "error": "缺少 data（accounts JSON 对象）"}
+        result = config_service.save_accounts_data(
+            body.get("data"),
+            reload=bool(body.get("reload", True)),
+        )
+        status = 200 if result.get("ok") else 400
+        if result.get("ok"):
+            result["config"] = config_service.get_config_bundle()
+        return status, result
+
+    if path == "/api/config/reload" and method == "POST":
+        runtime = config_service.apply_runtime_reload()
+        return 200, {
+            "ok": True,
+            "runtime": runtime,
+            "config": config_service.get_config_bundle(),
+        }
+
+    if path == "/api/config/init" and method == "POST":
+        # 从模板复制缺失的 .env / accounts.local.json
+        which = str(body.get("which") or "both")
+        out: Dict[str, Any] = {"ok": True, "env": None, "accounts": None}
+        if which in ("both", "env"):
+            out["env"] = config_service.ensure_env_file_from_example()
+            if not out["env"].get("ok"):
+                return 400, {"ok": False, "error": out["env"].get("error"), **out}
+        if which in ("both", "accounts"):
+            out["accounts"] = config_service.ensure_accounts_local_from_example()
+            if not out["accounts"].get("ok"):
+                return 400, {"ok": False, "error": out["accounts"].get("error"), **out}
+        out["config"] = config_service.get_config_bundle()
+        return 200, out
+
     return 404, {"ok": False, "error": f"未知 API: {method} {path}"}
 
 
@@ -389,7 +446,7 @@ def run_ops_server(*, host: str = "127.0.0.1", port: int = DEFAULT_OPS_PORT) -> 
 
     httpd = ThreadingHTTPServer((host, port), OpsHandler)
     print(f"[ops] ReleaseMatch Ops Console → http://{host}:{port}/")
-    print("[ops] 四段：清单从哪来 → 筛选 → 跑生成流程 → 上线（跟踪表 = MySQL）")
+    print("[ops] 五段：清单 → 筛选 → 生成 → 上线 → 配置（.env / accounts 可热加载）")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
