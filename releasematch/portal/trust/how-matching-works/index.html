@@ -26,11 +26,12 @@
       </ol>
       <h2>Recommended Release</h2>
       <p>For each slot (e.g. Breaking Bad S04E06), the engine scores all candidates and marks the top pick as recommended, with an embedded <code>recommend_reason</code> on the page.</p>
-      <h2>Thin-page gate</h2>
+      <h2>When we publish a page</h2>
+      <p>We only ask search engines to discover pages that have enough verified releases to be useful:</p>
       <ul>
-        <li>0 magnets: no page</li>
-        <li>1 magnet: noindex</li>
-        <li>≥2 magnets with IG modules: eligible for index</li>
+        <li><strong>No verified releases yet</strong> — we do not publish a page</li>
+        <li><strong>Only one verified release</strong> — the page may be available to visitors, but we ask search engines not to list it yet</li>
+        <li><strong>Two or more verified releases</strong>, with a Recommended pick and comparison notes — the page may appear in search</li>
       </ul>
       <p><a href="/breaking-bad/s4e6/">See an example page →</a></p>
     </div>

@@ -86,11 +86,12 @@ TRUST_PAGES: List[Dict[str, Any]] = [
 </ul>
 <h2>Recommended Release</h2>
 <p>For each slot (e.g. Breaking Bad S04E06), the engine scores all candidates and marks the top pick as recommended, with an embedded <code>recommend_reason</code> on the page.</p>
-<h2>Thin-page gate</h2>
+<h2>When we publish a page</h2>
+<p>We only ask search engines to discover pages that have enough verified releases to be useful:</p>
 <ul>
-  <li>0 magnets: no page</li>
-  <li>1 magnet: noindex</li>
-  <li>≥2 magnets with IG modules: eligible for index</li>
+  <li><strong>No verified releases yet</strong> — we do not publish a page</li>
+  <li><strong>Only one verified release</strong> — the page may be available to visitors, but we ask search engines not to list it yet</li>
+  <li><strong>Two or more verified releases</strong>, with a Recommended pick and comparison notes — the page may appear in search</li>
 </ul>
 <p><a href="/breaking-bad/s4e6/">See an example page →</a></p>
 """.strip(),
@@ -111,11 +112,12 @@ TRUST_PAGES: List[Dict[str, Any]] = [
 </ul>
 <h2>Recommended Release</h2>
 <p>每个槽位（如 Breaking Bad S04E06），引擎对全部候选打分并标记最优为推荐，页面嵌入可索引的 <code>recommend_reason</code>。</p>
-<h2>薄页门禁</h2>
+<h2>何时发布页面</h2>
+<p>我们只让有足够对版信息的页面进入搜索，避免信息过少的页面被收录：</p>
 <ul>
-  <li>0 条 magnet：不生成页面</li>
-  <li>1 条 magnet：noindex</li>
-  <li>≥2 条 magnet 且含 IG 模块：可 index</li>
+  <li><strong>尚无可用 release</strong> — 不发布页面</li>
+  <li><strong>仅有 1 条可用 release</strong> — 页面可供浏览，但暂不请求搜索引擎收录</li>
+  <li><strong>至少 2 条可用 release</strong>，且有 Recommended 与对比说明 — 才考虑进入搜索</li>
 </ul>
 <p><a href="/breaking-bad/s4e6/">查看示例页 →</a></p>
 """.strip(),
