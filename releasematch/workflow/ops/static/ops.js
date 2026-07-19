@@ -116,10 +116,15 @@
    */
   async function api(path, opts) {
     const res = await fetch(path, {
+      credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       ...opts,
       body: opts && opts.body ? JSON.stringify(opts.body) : undefined,
     });
+    if (res.status === 401 && path !== "/api/auth/status") {
+      window.location.replace("/login.html");
+      throw new Error("未登录或会话已过期");
+    }
     const data = await res.json();
     if (!res.ok || data.ok === false) {
       log("API 失败 " + path, data);
@@ -996,6 +1001,15 @@
       withBusy("刷新状态", () => refresh(), { indeterminate: true }).catch((e) =>
         log(String(e))
       );
+    });
+
+    document.getElementById("btnLogout").addEventListener("click", async () => {
+      try {
+        await api("/api/auth/logout", { method: "POST", body: {} });
+      } catch (_) {
+        /* 即使失败也跳转登录页 */
+      }
+      window.location.replace("/login.html");
     });
 
     document.getElementById("btnBuildTmdb").addEventListener("click", async () => {

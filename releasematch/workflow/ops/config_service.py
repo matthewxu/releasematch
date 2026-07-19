@@ -135,6 +135,26 @@ ENV_FIELD_DEFS: tuple[EnvFieldDef, ...] = (
     ),
     EnvFieldDef("RM_SITE_I18N_ENABLED", "站点", "I18N 开关", hint="0/1", default="0"),
     EnvFieldDef("RM_SITE_LOCALE", "站点", "默认语言", hint="en | zh", default="en"),
+    EnvFieldDef(
+        "RM_OPS_PASSWORD",
+        "Ops 登录",
+        "控制台密码",
+        secret=True,
+        hint="非空则启用登录门禁；改密后旧会话失效",
+    ),
+    EnvFieldDef(
+        "RM_OPS_SESSION_HOURS",
+        "Ops 登录",
+        "会话时长(小时)",
+        default="72",
+    ),
+    EnvFieldDef(
+        "RM_OPS_AUTH_DISABLED",
+        "Ops 登录",
+        "关闭门禁",
+        hint="1=关闭（仅本机排障）；默认 0",
+        default="0",
+    ),
     EnvFieldDef("RM_D1_DATABASE_NAME", "Cloudflare D1", "D1 库名", default="releasematch"),
     EnvFieldDef("RM_D1_BINDING", "Cloudflare D1", "Binding", default="DB"),
     EnvFieldDef(
@@ -534,9 +554,19 @@ def apply_runtime_reload() -> Dict[str, Any]:
     """
     从磁盘 ``.env`` 覆盖加载到 ``os.environ`` 并刷新 ``workflow.config`` 常量。
 
+    @description 改密后清除 Ops 登录会话，避免旧 Cookie 继续有效。
     @returns: ok / env_path / release_mysql_configured / 摘要字段
     """
+    # 改密前指纹，用于判断是否需要清会话
+    from workflow.ops import auth as ops_auth
+
+    prev_fp = ops_auth.password_fingerprint(ops_auth.get_ops_password())
     env_path = reload_runtime_config(overwrite_environ=True)
+    new_fp = ops_auth.password_fingerprint(ops_auth.get_ops_password())
+    cleared = 0
+    if prev_fp != new_fp:
+        cleared = ops_auth.clear_all_sessions()
+
     from workflow import config as cfg
 
     return {
@@ -547,4 +577,6 @@ def apply_runtime_reload() -> Dict[str, Any]:
         "site_origin": cfg.SITE_ORIGIN,
         "jackett_base_url": cfg.JACKETT_BASE_URL,
         "jackett_key_configured": is_jackett_api_key_configured(cfg.JACKETT_API_KEY),
+        "ops_auth_required": ops_auth.is_auth_required(),
+        "sessions_cleared": cleared,
     }

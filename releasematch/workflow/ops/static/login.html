@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>ReleaseMatch Ops — 登录</title>
+  <link rel="stylesheet" href="/ops.css" />
+</head>
+<body class="ops-login-body">
+  <div class="ops-login-shell">
+    <div class="ops-login-card">
+      <div class="ops-brand">ReleaseMatch Ops</div>
+      <p class="ops-login-lead">输入控制台密码以继续。密码来自 <code>RM_OPS_PASSWORD</code>（.env）。</p>
+      <form id="loginForm" class="ops-login-form" autocomplete="current-password">
+        <label class="ops-field" for="opsPassword">密码
+          <input type="password" id="opsPassword" name="password" required autofocus />
+        </label>
+        <button type="submit" id="btnLogin">登录</button>
+      </form>
+      <p class="ops-login-error" id="loginError" hidden></p>
+      <p class="ops-login-hint" id="loginHint"></p>
+    </div>
+  </div>
+  <script src="/login.js"></script>
+</body>
+</html>

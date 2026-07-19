@@ -702,6 +702,8 @@ python -m workflow.run ops tmdb-sync
 python -m workflow.run ops tmdb-sync --full-reload   # TRUNCATE 全量重建
 ```
 
+**登录门禁：** 在 `.env` 设置 `RM_OPS_PASSWORD`（非空）后启用；未登录访问 `/` 跳转 `/login.html`。会话 Cookie `rm_ops_session`（HttpOnly，默认 72h，可用 `RM_OPS_SESSION_HOURS` 调整）。排障可设 `RM_OPS_AUTH_DISABLED=1` 关闭门禁。
+
 | 段 | 对应流程 | UI 动作 |
 |----|----------|---------|
 | ① 清单从哪来 | TMDB 日导出 + 锚点/curated；或 **全量下载→增量入库→搜索→工作区** | 自动生成 / 加载 JSON / `ops tmdb-sync` + UI 手动选槽 |
@@ -710,10 +712,13 @@ python -m workflow.run ops tmdb-sync --full-reload   # TRUNCATE 全量重建
 | ④ 上线 | seo_c2 → deploy（默认 prepare-only） | 批次级步骤 + 同一跟踪表 |
 | ⑤ 配置 | `.env` + `accounts.local.json` | **从磁盘加载 / 修改保存 / 热加载到当前进程**（无需重启 `ops serve`） |
 
-配置 API（本机）：
+配置 / 登录 API（本机）：
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
+| `GET` | `/api/auth/status` | 是否需登录、是否已认证（公开） |
+| `POST` | `/api/auth/login` | body.`password`；成功写 Cookie |
+| `POST` | `/api/auth/logout` | 清除会话 Cookie |
 | `GET` | `/api/config` | 加载 `.env` 字段 + accounts JSON + 就绪状态 |
 | `POST` | `/api/config/env` | `values` 表单合并写入，或 `raw` 全文覆盖；默认 `reload=true` |
 | `POST` | `/api/config/accounts` | body.`data` 写入 `accounts.local.json` |
@@ -781,6 +786,9 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | `RM_RELEASE_MYSQL_*` | 所有 `db`、`pipeline`、`query`、`generate` | 见 `config.env.example` |
 | `RM_SITE_ORIGIN` | `query page`、`generate` 的 canonical URL | `https://releasematch.io` |
 | `RM_SHOW_IG_DEBUG` | `generate`、`serve` | `0`；CLI 可用 `--show-ig-debug` 覆盖 |
+| `RM_OPS_PASSWORD` | `ops serve` | 非空启用登录门禁 |
+| `RM_OPS_SESSION_HOURS` | `ops serve` | 会话小时数，默认 `72` |
+| `RM_OPS_AUTH_DISABLED` | `ops serve` | `1` 关闭门禁（仅排障） |
 | `RM_TMDB_DATA_MODE` | metadata 解析 | `standalone` |
 | `RM_TMDB_API_KEY` | `pipeline batch` 预热、`tmdb_warm_external_ids.py` | 可选，批量扩槽推荐 |
 | `RM_TMDB_CORS_PROXY` | 国内 TMDB API 代理 | 可选 |
@@ -840,7 +848,7 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | `seo_c2_checklist` | `scripts/seo_c2_checklist.py` |
 | `serve` | `portal/generator/dev_server.py` |
 | `serve-static` | `portal/generator/dev_server.py` · `static_shell.py` |
-| `ops serve` | `workflow/ops/server.py` · `track_store.py`（MySQL `ops_track_*`）· `config_service.py`（`.env` / accounts） |
+| `ops serve` | `workflow/ops/server.py` · `auth.py`（`RM_OPS_PASSWORD`）· `track_store.py` · `config_service.py` |
 | `ops tmdb-sync` | `workflow/ops/source_service.py` · `tmdb_export_store.py`（全量下载 → UPSERT 增量） |
 | `torrent_sources.run *` | `workflow/torrent_sources/run.py` |
 | `speedtest.run *` | `workflow/torrent_sources/speedtest/` |
@@ -862,3 +870,4 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | v0.7 | 2026-07-14 | 新增 `ops serve` 四段式运营 UI；跟踪表 MySQL `ops_track_batches` / `ops_track_slots`；§5.4b |
 | v0.8 | 2026-07-14 | Ops 手动选槽：全量下载 Daily Export → MySQL `tmdb_export_*` 增量 UPSERT；新增 `ops tmdb-sync`；UI 搜索→工作区 |
 | v0.9 | 2026-07-19 | Ops ⑤ 配置：加载/修改 `.env` 与 `accounts.local.json`，`/api/config*` 热加载到当前进程 |
+| v0.10 | 2026-07-19 | Ops 登录门禁：`RM_OPS_PASSWORD` + Cookie 会话；`/login.html` |

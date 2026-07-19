@@ -645,3 +645,83 @@ body.ops-busy .ops-step-tab {
     grid-column: 1;
   }
 }
+
+/* ── 登录页 ─────────────────────────────────────────────── */
+
+.ops-login-body {
+  min-height: 100vh;
+  background:
+    radial-gradient(1200px 600px at 20% -10%, #1a2a44 0%, transparent 55%),
+    radial-gradient(900px 500px at 90% 10%, #152033 0%, transparent 50%),
+    var(--ops-bg);
+}
+
+.ops-login-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.ops-login-card {
+  width: min(420px, 100%);
+  background: var(--ops-surface);
+  border: 1px solid var(--ops-border);
+  border-radius: var(--ops-radius);
+  padding: 28px 24px 22px;
+}
+
+.ops-login-lead {
+  color: var(--ops-muted);
+  font-size: 13px;
+  margin: 10px 0 18px;
+  line-height: 1.5;
+}
+
+.ops-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ops-login-form .ops-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--ops-muted);
+  font-size: 12px;
+}
+
+.ops-login-form input[type="password"] {
+  width: 100%;
+  background: var(--ops-bg);
+  border: 1px solid var(--ops-border);
+  border-radius: 6px;
+  color: var(--ops-text);
+  padding: 10px 12px;
+  font-family: var(--ops-mono);
+  font-size: 14px;
+}
+
+.ops-login-form input[type="password"]:focus {
+  outline: none;
+  border-color: var(--ops-accent);
+}
+
+.ops-login-form button[type="submit"] {
+  margin-top: 4px;
+}
+
+.ops-login-error {
+  margin: 12px 0 0;
+  color: var(--ops-danger);
+  font-size: 13px;
+}
+
+.ops-login-hint {
+  margin: 14px 0 0;
+  color: var(--ops-faint);
+  font-size: 12px;
+  line-height: 1.45;
+}

@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Ops 本地 HTTP 服务 — 四段式运营控制台。
+Ops 本地 HTTP 服务 — 运营控制台。
 
 @module workflow.ops.server
 @description
   仅绑定 127.0.0.1。提供 JSON API + 单页 UI（含配置加载/修改/热加载）。
+  可选 ``RM_OPS_PASSWORD`` 登录门禁（Cookie 会话）。
   CLI: python -m workflow.run ops serve [--port 8090]
 """
 
@@ -15,12 +16,13 @@ import mimetypes
 import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlparse
 
 from workflow.config import PROJECT_ROOT
 from workflow.ops import DEFAULT_OPS_PORT
 from workflow.ops import actions
+from workflow.ops import auth as ops_auth
 from workflow.ops import config_service
 from workflow.ops import source_service
 from workflow.ops.track_store import (
@@ -38,13 +40,29 @@ from workflow.ops.workspace import WORKSPACE
 OPS_STATIC_DIR: Path = Path(__file__).resolve().parent / "static"
 
 
-def _json_response(handler: BaseHTTPRequestHandler, status: int, payload: Any) -> None:
-    """写入 JSON 响应。"""
+def _json_response(
+    handler: BaseHTTPRequestHandler,
+    status: int,
+    payload: Any,
+    *,
+    extra_headers: Optional[List[Tuple[str, str]]] = None,
+) -> None:
+    """
+    写入 JSON 响应。
+
+    @param handler: HTTP 处理器
+    @param status: 状态码
+    @param payload: JSON 可序列化对象
+    @param extra_headers: 额外响应头（如 Set-Cookie）
+    """
     body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
     handler.send_response(status)
     handler.send_header("Content-Type", "application/json; charset=utf-8")
     handler.send_header("Content-Length", str(len(body)))
     handler.send_header("Cache-Control", "no-store")
+    if extra_headers:
+        for key, value in extra_headers:
+            handler.send_header(key, value)
     handler.end_headers()
     handler.wfile.write(body)
 
@@ -60,7 +78,27 @@ def _read_json_body(handler: BaseHTTPRequestHandler) -> Dict[str, Any]:
     return json.loads(raw.decode("utf-8"))
 
 
-def _handle_api(method: str, path: str, body: Dict[str, Any], query: Dict[str, list]) -> Tuple[int, Any]:
+def _request_authenticated(handler: BaseHTTPRequestHandler) -> bool:
+    """
+    判断当前请求是否已通过登录门禁。
+
+    @param handler: 请求处理器
+    @returns: 无需门禁或会话有效时为 True
+    """
+    if not ops_auth.is_auth_required():
+        return True
+    token = ops_auth.parse_session_cookie(handler.headers.get("Cookie"))
+    return ops_auth.verify_session(token)
+
+
+def _handle_api(
+    method: str,
+    path: str,
+    body: Dict[str, Any],
+    query: Dict[str, list],
+    *,
+    cookie_header: Optional[str] = None,
+) -> Tuple[int, Any, Optional[List[Tuple[str, str]]]]:
     """
     路由 API。
 
@@ -68,8 +106,49 @@ def _handle_api(method: str, path: str, body: Dict[str, Any], query: Dict[str, l
     @param path: 如 /api/state
     @param body: POST JSON
     @param query: querystring
-    @returns: (status, payload)
+    @param cookie_header: Cookie 头（登录态）
+    @returns: (status, payload, extra_headers|None)
     """
+    # ── 认证（公开）────────────────────────────────────────
+    if path == "/api/auth/status" and method == "GET":
+        return 200, ops_auth.auth_status(cookie_header=cookie_header), None
+
+    if path == "/api/auth/login" and method == "POST":
+        if not ops_auth.is_auth_required():
+            return (
+                200,
+                {
+                    "ok": True,
+                    "authenticated": True,
+                    "auth_required": False,
+                    "message": "未启用登录门禁（未设置 RM_OPS_PASSWORD）",
+                },
+                None,
+            )
+        password = str(body.get("password") or "")
+        if not ops_auth.check_password(password):
+            return 401, {"ok": False, "error": "密码错误", "authenticated": False}, None
+        token, max_age = ops_auth.create_session()
+        return (
+            200,
+            {
+                "ok": True,
+                "authenticated": True,
+                "auth_required": True,
+                "session_hours": ops_auth.get_session_hours(),
+            },
+            [("Set-Cookie", ops_auth.build_set_cookie(token, max_age))],
+        )
+
+    if path == "/api/auth/logout" and method == "POST":
+        token = ops_auth.parse_session_cookie(cookie_header)
+        ops_auth.revoke_session(token)
+        return (
+            200,
+            {"ok": True, "authenticated": False},
+            [("Set-Cookie", ops_auth.build_clear_cookie())],
+        )
+
     if path == "/api/state" and method == "GET":
         batch = load_active_batch()
         return 200, {
@@ -348,9 +427,24 @@ def _handle_api(method: str, path: str, body: Dict[str, Any], query: Dict[str, l
     return 404, {"ok": False, "error": f"未知 API: {method} {path}"}
 
 
+def _unpack_api_result(
+    result: Tuple[Any, ...],
+) -> Tuple[int, Any, Optional[List[Tuple[str, str]]]]:
+    """
+    兼容 ``_handle_api`` 返回 2 元组或 3 元组。
+
+    @param result: (status, payload) 或 (status, payload, headers)
+    @returns: 统一三元组
+    """
+    status = int(result[0])
+    payload = result[1]
+    extra = result[2] if len(result) > 2 else None
+    return status, payload, extra
+
+
 class OpsHandler(BaseHTTPRequestHandler):
     """
-    Ops HTTP 处理器：静态页 + /api/*。
+    Ops HTTP 处理器：静态页 + /api/* + 可选登录门禁。
 
     @description 仅供 localhost 使用。
     """
@@ -359,14 +453,68 @@ class OpsHandler(BaseHTTPRequestHandler):
         """简化访问日志。"""
         print(f"[ops] {self.address_string()} - {format % args}")
 
+    def _cookie_header(self) -> Optional[str]:
+        """读取请求 Cookie 头。"""
+        return self.headers.get("Cookie")
+
+    def _require_auth_or_reject(self, path: str) -> bool:
+        """
+        若需登录且未通过，写入 401 JSON 并返回 True（调用方应 return）。
+
+        @param path: 请求 path
+        @returns: True 表示已拒绝
+        """
+        if not ops_auth.is_auth_required():
+            return False
+        if ops_auth.is_public_path(path):
+            return False
+        if _request_authenticated(self):
+            return False
+        _json_response(
+            self,
+            401,
+            {
+                "ok": False,
+                "error": "未登录或会话已过期",
+                "authenticated": False,
+                "auth_required": True,
+                "login_path": "/login.html",
+            },
+        )
+        return True
+
+    def _redirect(self, location: str, status: int = 302) -> None:
+        """
+        HTTP 重定向。
+
+        @param location: 目标 URL
+        @param status: 302/303
+        """
+        self.send_response(status)
+        self.send_header("Location", location)
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def do_GET(self) -> None:  # noqa: N802
         """处理 GET。"""
         parsed = urlparse(self.path)
         path = parsed.path
+
         if path.startswith("/api/"):
+            if self._require_auth_or_reject(path):
+                return
             try:
-                status, payload = _handle_api("GET", path, {}, parse_qs(parsed.query))
-                _json_response(self, status, payload)
+                status, payload, extra = _unpack_api_result(
+                    _handle_api(
+                        "GET",
+                        path,
+                        {},
+                        parse_qs(parsed.query),
+                        cookie_header=self._cookie_header(),
+                    )
+                )
+                _json_response(self, status, payload, extra_headers=extra)
             except Exception as exc:  # noqa: BLE001
                 _json_response(
                     self,
@@ -375,14 +523,29 @@ class OpsHandler(BaseHTTPRequestHandler):
                 )
             return
 
+        # 控制台首页：未登录则跳转登录页
         if path in ("/", "/index.html"):
+            if ops_auth.is_auth_required() and not _request_authenticated(self):
+                self._redirect("/login.html")
+                return
             self._serve_file(OPS_STATIC_DIR / "index.html", "text/html; charset=utf-8")
             return
 
-        # /static/ops.css → ops/static/
+        # 登录页始终可访问
+        if path == "/login.html":
+            # 已登录则回控制台
+            if _request_authenticated(self) and ops_auth.is_auth_required():
+                self._redirect("/")
+                return
+            self._serve_file(OPS_STATIC_DIR / "login.html", "text/html; charset=utf-8")
+            return
+
+        # 静态资源：ops.js 需登录（避免未授权读到控制台逻辑）；css/login.js 公开
         rel = path.lstrip("/")
         if rel.startswith("static/"):
             rel = rel[len("static/") :]
+        if rel == "ops.js" and self._require_auth_or_reject("/" + rel):
+            return
         file_path = OPS_STATIC_DIR / rel
         if file_path.is_file() and OPS_STATIC_DIR in file_path.resolve().parents:
             ctype = mimetypes.guess_type(str(file_path))[0] or "application/octet-stream"
@@ -398,10 +561,20 @@ class OpsHandler(BaseHTTPRequestHandler):
         if not path.startswith("/api/"):
             _json_response(self, 404, {"ok": False, "error": "not found"})
             return
+        if self._require_auth_or_reject(path):
+            return
         try:
             body = _read_json_body(self)
-            status, payload = _handle_api("POST", path, body, parse_qs(parsed.query))
-            _json_response(self, status, payload)
+            status, payload, extra = _unpack_api_result(
+                _handle_api(
+                    "POST",
+                    path,
+                    body,
+                    parse_qs(parsed.query),
+                    cookie_header=self._cookie_header(),
+                )
+            )
+            _json_response(self, status, payload, extra_headers=extra)
         except Exception as exc:  # noqa: BLE001
             _json_response(
                 self,
@@ -443,6 +616,8 @@ def run_ops_server(*, host: str = "127.0.0.1", port: int = DEFAULT_OPS_PORT) -> 
         )
     except Exception as exc:  # noqa: BLE001
         print(f"[ops] 警告: 无法初始化 Ops/TMDB 表（请检查 MySQL / .env）: {exc}")
+
+    print(ops_auth.startup_auth_message())
 
     httpd = ThreadingHTTPServer((host, port), OpsHandler)
     print(f"[ops] ReleaseMatch Ops Console → http://{host}:{port}/")
