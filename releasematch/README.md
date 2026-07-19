@@ -73,7 +73,7 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 
-# 2. 配置 Jackett Key（编辑 accounts.local.json 或设置 JACKETT_API_KEY）
+# 2. 配置 Jackett Key（编辑 accounts.local.json；数据源勿再写 .env）
 
 # 3. Phase 0：验证四源连通性（Python，跨平台）
 python scripts/poc_phase0.py

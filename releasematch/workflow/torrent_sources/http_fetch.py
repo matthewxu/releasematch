@@ -37,12 +37,17 @@ def proxy_settings_from_config(cfg: Optional[Dict[str, Any]]) -> ProxySettings:
     """
     从 accounts 配置与环境变量解析 ProxySettings。
 
-    环境变量优先级：TORRENT_PROXY > TORRENT_HTTP_PROXY > ALL_PROXY > HTTPS_PROXY
+    @description
+      **优先** ``accounts.local.json`` 的 ``proxy.url``（数据源真相源）。
+      仅当 JSON 未配置 url 时，回退环境变量：
+      ``TORRENT_PROXY`` > ``TORRENT_HTTP_PROXY`` > ``ALL_PROXY`` > ``HTTPS_PROXY``
+      （便于一次性排查，勿再写入 ``.env`` 与 accounts 双轨）。
 
     @param cfg: accounts JSON 中的 proxy 段；可为 None
     @returns: ProxySettings
     """
     block = dict(cfg or {})
+    accounts_url = str(block.get("url") or "").strip()
     env_url = (
         os.getenv("TORRENT_PROXY")
         or os.getenv("TORRENT_HTTP_PROXY")
@@ -50,7 +55,7 @@ def proxy_settings_from_config(cfg: Optional[Dict[str, Any]]) -> ProxySettings:
         or os.getenv("HTTPS_PROXY")
         or ""
     ).strip()
-    url = env_url or str(block.get("url") or "").strip() or None
+    url = accounts_url or env_url or None
     enabled = block.get("enabled", True)
     if isinstance(enabled, str):
         enabled = enabled.lower() not in ("0", "false", "no")

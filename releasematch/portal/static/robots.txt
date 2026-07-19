@@ -1,8 +1,11 @@
-# ReleaseMatch robots.txt（C0 占位 — C2 前勿大规模提交 sitemap）
+# ReleaseMatch robots.txt
+# 当前：全站禁止爬取（软上线）。确认后改为 Allow + 取消注释 Sitemap。
+# 开关：.env 中 RM_BLOCK_CRAWLERS=1（配合页面 noindex）；开放时设 0 并恢复下方 Allow/Sitemap。
+
 User-agent: *
-Allow: /
+Disallow: /
 
-# C2 前验证集未就绪时可临时禁止全站抓取（按需取消注释）
-# Disallow: /
-
-Sitemap: https://releasematch.io/sitemap.xml
+# --- 开放爬取时使用（并设置 RM_BLOCK_CRAWLERS=0，重新 generate + deploy）---
+# User-agent: *
+# Allow: /
+# Sitemap: https://releasematch.com/sitemap.xml

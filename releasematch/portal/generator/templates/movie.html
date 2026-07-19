@@ -10,7 +10,8 @@
 {% block og_description %}{{ t('movie.meta_description', title=movie_title, year=year, count=source_count) }}{% endblock %}
 
 {% block meta_robots %}
-  {% if robots_noindex %}
+  {% if block_crawlers|default(false) %}
+  {% elif robots_noindex %}
   <meta name="robots" content="noindex,follow">
   {% else %}
   <meta name="robots" content="index,follow">

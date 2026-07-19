@@ -5,7 +5,7 @@
 #
 # 用法：
 #   bash scripts/start_ssh_socks_tunnel.sh
-#   VPS_HOST=172.236.156.193 LOCAL_PORT=1080 bash scripts/start_ssh_socks_tunnel.sh
+#   VPS_HOST=172.238.20.52 LOCAL_PORT=1080 bash scripts/start_ssh_socks_tunnel.sh
 #
 # 成功后设置：
 #   export TORRENT_PROXY=socks5h://127.0.0.1:1080
@@ -14,7 +14,7 @@
 set -euo pipefail
 
 # VPS 公网 IP
-VPS_HOST="${VPS_HOST:-172.236.156.193}"
+VPS_HOST="${VPS_HOST:-172.238.20.52}"
 # SSH 用户
 VPS_USER="${VPS_USER:-root}"
 # 本机 SOCKS5 监听端口

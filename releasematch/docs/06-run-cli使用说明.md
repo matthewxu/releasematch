@@ -28,11 +28,12 @@ cp config.env.example .env
 | 文件 | 作用 |
 |------|------|
 | `config.env.example` | 模板，**不被**运行时加载 |
-| `.env` | 本机配置，**唯一**自动加载文件（见 `workflow/config.py`） |
+| `.env` | 本机配置：MySQL / 站点 / Ops / TMDB（见 `workflow/config.py`） |
+| `accounts.local.json` | **数据源唯一真相源**：Jackett / 代理 / 源站（勿与 `.env` 双写 JACKETT_*） |
 
 工作流启动时会**自动读取** `.env`（不覆盖已在 shell 中 `export` 的变量）。
 
-torrent 拉取还需配置 `workflow/torrent_sources/accounts.local.json`（从 `accounts.example.json` 复制，填入 Jackett API Key 等）。
+torrent 拉取配置 `workflow/torrent_sources/accounts.local.json`（从 `accounts.example.json` 复制，填入 Jackett API Key 等）。
 
 ### 1.3 查看帮助
 
@@ -710,7 +711,7 @@ python -m workflow.run ops tmdb-sync --full-reload   # TRUNCATE 全量重建
 | ② 筛选 | media / tier / pop / 排除 published·失败槽 | 筛选后 **导入跟踪表** |
 | ③ 跑生成流程 | pipeline → MySQL 门禁 → generate → 测速 | 跟踪表逐槽更新 |
 | ④ 上线 | seo_c2 → deploy（默认 prepare-only） | 批次级步骤 + 同一跟踪表 |
-| ⑤ 配置 | `.env` + `accounts.local.json` | **从磁盘加载 / 修改保存 / 热加载到当前进程**（无需重启 `ops serve`） |
+| ⑤ 配置 | `.env`（MySQL/站点/Ops）+ `accounts.local.json`（数据源） | 分文件加载/保存；热加载到当前进程（无需重启） |
 
 配置 / 登录 API（本机）：
 
@@ -784,8 +785,9 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 |------|---------|------------|
 | `RM_STORAGE_BACKEND` | `pipeline`、`query`、`generate` | `mysql` |
 | `RM_RELEASE_MYSQL_*` | 所有 `db`、`pipeline`、`query`、`generate` | 见 `config.env.example` |
-| `RM_SITE_ORIGIN` | `query page`、`generate` 的 canonical URL | `https://releasematch.io` |
+| `RM_SITE_ORIGIN` | `query page`、`generate` 的 canonical URL | `https://releasematch.com` |
 | `RM_SHOW_IG_DEBUG` | `generate`、`serve` | `0`；CLI 可用 `--show-ig-debug` 覆盖 |
+| `RM_BLOCK_CRAWLERS` | `generate` | `1`=全站 noindex（软上线）；开放收录前改 `0` 并恢复 `portal/static/robots.txt` Allow+Sitemap |
 | `RM_OPS_PASSWORD` | `ops serve` | 非空启用登录门禁 |
 | `RM_OPS_SESSION_HOURS` | `ops serve` | 会话小时数，默认 `72` |
 | `RM_OPS_AUTH_DISABLED` | `ops serve` | `1` 关闭门禁（仅排障） |
@@ -871,3 +873,4 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | v0.8 | 2026-07-14 | Ops 手动选槽：全量下载 Daily Export → MySQL `tmdb_export_*` 增量 UPSERT；新增 `ops tmdb-sync`；UI 搜索→工作区 |
 | v0.9 | 2026-07-19 | Ops ⑤ 配置：加载/修改 `.env` 与 `accounts.local.json`，`/api/config*` 热加载到当前进程 |
 | v0.10 | 2026-07-19 | Ops 登录门禁：`RM_OPS_PASSWORD` + Cookie 会话；`/login.html` |
+| v0.11 | 2026-07-19 | 数据源只认 `accounts.local.json`；`.env`/Ops 表单移除 JACKETT_* 等重叠项 |

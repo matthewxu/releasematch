@@ -31,7 +31,7 @@
 | 渲染 | Jinja2 SSG → `portal/dist/` | ✅ 爬虫友好 |
 | 托管 | Cloudflare Pages（`wrangler.toml`） | ✅ 静态首屏 |
 | URL | DB `canonical_path`，强制 trailing slash | ✅ |
-| Canonical origin | `RM_SITE_ORIGIN`（默认 `https://releasematch.io`） | ✅ |
+| Canonical origin | `RM_SITE_ORIGIN`（默认 `https://releasematch.com`） | ✅ |
 | 开发预览 | `workflow.run serve` 动态渲染 | ⚠️ 非生产，SEO 以 dist 为准 |
 
 ### 1.2 页面规模
@@ -181,7 +181,7 @@
 | **排除** | `robots_noindex` 页、404、410、IG debug 模式 |
 | **格式** | `<loc>` + `<lastmod>`（取 DB `updated_at` ISO8601）；单文件 ≤500 URL，超出用 sitemap index |
 | **入口** | `python -m workflow.run generate all` 末尾调用；`deploy_cf_pages.sh` 确保复制到 dist 根 |
-| **验收** | `curl https://releasematch.io/sitemap.xml` 返回 200；URL 数与 DB indexable 一致 |
+| **验收** | `curl https://releasematch.com/sitemap.xml` 返回 200；URL 数与 DB indexable 一致 |
 
 #### T-SEO-02：410 Gone 页 + DMCA 流程 — ✅ HTML · ⏸ CF HTTP 410
 
@@ -278,7 +278,7 @@
 
 ### 6.4 GSC 操作（C2-2）
 
-1. 添加属性 `releasematch.io`（DNS TXT 推荐）
+1. 添加属性 `releasematch.com`（DNS TXT 推荐）
 2. 提交 sitemap（首批按 D3 决策，建议 ≤30 URL）
 3. URL Inspection：验证集 Top 20 手动「请求编入索引」
 4. 记录 baseline：Coverage、Crawl stats、Core Web Vitals

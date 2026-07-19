@@ -1,5 +1,5 @@
 {
-  "_comment": "Jackett / 直连源配置模板。复制为 accounts.local.json 并填入真实 api_key。远程 VPS 见 docs/jackett-remote-linode.md；日韩源见 docs/nyaa-proxy-asia.md。",
+  "_comment": "数据源唯一真相源（勿与 .env 的 JACKETT_* 双写）。复制为 accounts.local.json 并填入真实 api_key。远程 VPS 见 docs/jackett-remote-linode.md；日韩源见 docs/nyaa-proxy-asia.md。",
   "proxy": {
     "_comment": "国内直连 Nyaa/DMHy 失败时，经本机 SSH SOCKS 隧道回退（scripts/start_ssh_socks_tunnel.sh）",
     "enabled": true,

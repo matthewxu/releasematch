@@ -265,8 +265,9 @@
     <section class="ops-panel" id="panel-5" data-panel="5">
       <h2>⑤ 配置</h2>
       <p class="lead">
-        加载 / 修改项目根 <code>.env</code> 与 <code>workflow/torrent_sources/accounts.local.json</code>。
-        保存时可<strong>热加载到当前 ops 进程</strong>（无需重启）。本机绑定，密钥明文展示便于编辑。
+        <code>.env</code>：MySQL / 站点 / Ops / TMDB。
+        <code>accounts.local.json</code>：<strong>数据源唯一真相源</strong>（Jackett URL/Key、proxy、indexer）。
+        保存可<strong>热加载到当前进程</strong>。勿在 .env 再写 JACKETT_*。
       </p>
       <div class="ops-metrics" id="configMetrics"></div>
       <div class="ops-actions">
@@ -278,7 +279,7 @@
       </div>
       <div class="ops-grid ops-config-grid">
         <div class="ops-card">
-          <h3>.env（表单）</h3>
+          <h3>.env（表单 · 非数据源）</h3>
           <p class="lead" style="margin-bottom:10px">路径：<code id="configEnvPath">.env</code></p>
           <div id="configEnvFields" class="ops-config-fields"></div>
           <details class="ops-config-raw">
@@ -290,7 +291,7 @@
           </details>
         </div>
         <div class="ops-card">
-          <h3>accounts.local.json</h3>
+          <h3>accounts.local.json（数据源）</h3>
           <p class="lead" style="margin-bottom:10px">
             路径：<code id="configAccountsPath">workflow/torrent_sources/accounts.local.json</code>
             <span class="ops-badge" id="configAccountsBadge">…</span>

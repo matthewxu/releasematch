@@ -10,7 +10,9 @@
 {% block og_description %}{{ t('episode.meta_description', show=show_title, season=season, episode=episode, count=source_count) }}{% endblock %}
 
 {% block meta_robots %}
-  {% if robots_noindex %}
+  {% if block_crawlers|default(false) %}
+  {# 由 base.html 统一输出 noindex；此处不写 index #}
+  {% elif robots_noindex %}
   <meta name="robots" content="noindex,follow">
   {% else %}
   <meta name="robots" content="index,follow">

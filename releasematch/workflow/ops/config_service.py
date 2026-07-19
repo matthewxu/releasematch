@@ -6,6 +6,7 @@ Ops 配置读写服务 — ``.env`` 与 ``accounts.local.json``。
 @description
   供本地 Ops 控制台加载 / 修改 / 热加载运行配置。
   仅本机使用；写入路径限定在项目根 ``.env`` 与 torrent_sources 账户文件。
+  ``.env``：MySQL / 站点 / Ops / TMDB；**数据源（Jackett 等）只改 accounts JSON**。
 """
 
 from __future__ import annotations
@@ -124,7 +125,7 @@ ENV_FIELD_DEFS: tuple[EnvFieldDef, ...] = (
         "RM_SITE_ORIGIN",
         "站点",
         "Site Origin",
-        default="https://releasematch.io",
+        default="https://releasematch.com",
     ),
     EnvFieldDef(
         "RM_SHOW_IG_DEBUG",
@@ -132,6 +133,13 @@ ENV_FIELD_DEFS: tuple[EnvFieldDef, ...] = (
         "IG Debug",
         hint="0/1；生产务必 0",
         default="0",
+    ),
+    EnvFieldDef(
+        "RM_BLOCK_CRAWLERS",
+        "站点",
+        "禁止爬虫",
+        hint="1=全站 noindex；须配合 robots.txt Disallow；确认后改 0",
+        default="1",
     ),
     EnvFieldDef("RM_SITE_I18N_ENABLED", "站点", "I18N 开关", hint="0/1", default="0"),
     EnvFieldDef("RM_SITE_LOCALE", "站点", "默认语言", hint="en | zh", default="en"),
@@ -157,35 +165,7 @@ ENV_FIELD_DEFS: tuple[EnvFieldDef, ...] = (
     ),
     EnvFieldDef("RM_D1_DATABASE_NAME", "Cloudflare D1", "D1 库名", default="releasematch"),
     EnvFieldDef("RM_D1_BINDING", "Cloudflare D1", "Binding", default="DB"),
-    EnvFieldDef(
-        "JACKETT_BASE_URL",
-        "数据源",
-        "Jackett URL",
-        default="http://127.0.0.1:9117",
-    ),
-    EnvFieldDef("JACKETT_API_KEY", "数据源", "Jackett API Key", secret=True),
-    EnvFieldDef("EZTV_BASE_URL", "数据源", "EZTV", default="https://eztvx.to"),
-    EnvFieldDef("YTS_BASE_URL", "数据源", "YTS", default="https://yts.mx"),
-    EnvFieldDef("NYAA_BASE_URL", "数据源", "Nyaa", default="https://nyaa.si"),
-    EnvFieldDef("DMHY_BASE_URL", "数据源", "DMHy", default="https://share.dmhy.org"),
-    EnvFieldDef(
-        "TORRENT_PROXY",
-        "数据源",
-        "Torrent Proxy",
-        hint="如 socks5h://127.0.0.1:1080",
-    ),
-    EnvFieldDef(
-        "TORRENT_MIN_INTERVAL_SEC",
-        "数据源",
-        "最小请求间隔(秒)",
-        default="2.0",
-    ),
-    EnvFieldDef(
-        "TORRENT_SEEDERS_TTL_HOURS",
-        "数据源",
-        "Seeders 缓存 TTL(小时)",
-        default="6",
-    ),
+    # 数据源（Jackett / 代理 / 源站 URL）只在 accounts.local.json 编辑，勿再写入 .env
 )
 
 # 白名单键集合（快速校验）
@@ -389,22 +369,18 @@ def _status_snapshot() -> Dict[str, Any]:
     """
     汇总配置就绪状态（供 UI 徽章）。
 
+    @description Jackett 状态只读 ``accounts.local.json``（经 ``load_accounts_config``）。
     @returns: mysql / jackett / 文件存在性等
     """
     disk = read_dotenv_map()
-    jackett_url = (
-        disk.get("JACKETT_BASE_URL")
-        or os.environ.get("JACKETT_BASE_URL")
-        or "http://127.0.0.1:9117"
-    )
-    jackett_key = disk.get("JACKETT_API_KEY") or os.environ.get("JACKETT_API_KEY") or ""
-    # 合并 accounts 内 key（若 env 未设）
+    jackett_url = "http://127.0.0.1:9117"
+    jackett_key = ""
     try:
         acc = load_accounts_config()
-        if not jackett_key:
-            jackett_key = str((acc.get("jackett") or {}).get("api_key") or "")
-        if (acc.get("jackett") or {}).get("base_url"):
-            jackett_url = str(acc["jackett"]["base_url"])
+        jackett = acc.get("jackett") or {}
+        jackett_key = str(jackett.get("api_key") or "")
+        if jackett.get("base_url"):
+            jackett_url = str(jackett["base_url"])
     except Exception:  # noqa: BLE001
         pass
 
@@ -569,14 +545,25 @@ def apply_runtime_reload() -> Dict[str, Any]:
 
     from workflow import config as cfg
 
+    # Jackett 摘要来自 accounts，避免与 .env 残留键混淆
+    jackett_url = ""
+    jackett_key_ok = False
+    try:
+        acc = load_accounts_config()
+        jackett = acc.get("jackett") or {}
+        jackett_url = str(jackett.get("base_url") or "")
+        jackett_key_ok = is_jackett_api_key_configured(str(jackett.get("api_key") or ""))
+    except Exception:  # noqa: BLE001
+        pass
+
     return {
         "ok": True,
         "env_path": _rel_to_project(env_path) if env_path else None,
         "release_mysql_configured": release_mysql_configured(),
         "storage_backend": cfg.STORAGE_BACKEND,
         "site_origin": cfg.SITE_ORIGIN,
-        "jackett_base_url": cfg.JACKETT_BASE_URL,
-        "jackett_key_configured": is_jackett_api_key_configured(cfg.JACKETT_API_KEY),
+        "jackett_base_url": jackett_url,
+        "jackett_key_configured": jackett_key_ok,
         "ops_auth_required": ops_auth.is_auth_required(),
         "sessions_cleared": cleared,
     }

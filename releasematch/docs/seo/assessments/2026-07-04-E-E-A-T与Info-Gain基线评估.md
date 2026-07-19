@@ -75,7 +75,7 @@ ReleaseMatch 在 **策略与后端** 上对 Google 2026 E-E-A-T / Information Ga
 
 **现状：**
 
-- 独立域名 `releasematch.io`，与字幕站隔离 ✅
+- 独立域名 `releasematch.com`，与字幕站隔离 ✅
 - **GSC 未提交、CF Pages 正式上线暂缓** → 零搜索可见度
 - 无外链建设执行、无 Stremio 插件（T4 规划）、无社区引用
 - 114~118 页规模对冷启动域仍偏大

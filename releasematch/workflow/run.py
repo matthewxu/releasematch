@@ -47,15 +47,12 @@ if str(_ROOT) not in sys.path:
 
 from workflow.config import (  # noqa: E402
     D1_DATABASE_NAME,
-    EZTV_BASE_URL,
-    JACKETT_BASE_URL,
     PROJECT_ROOT,
     RELEASE_MYSQL_DB,
     RELEASE_MYSQL_HOST,
     SITE_ORIGIN,
     STORAGE_BACKEND,
     TMDB_DATA_MODE,
-    YTS_BASE_URL,
     ensure_project_dirs,
     release_mysql_configured,
 )
@@ -78,6 +75,20 @@ def cmd_status(_args: argparse.Namespace) -> int:
         if db_detail.get("ok"):
             db_detail["row_counts"] = store.count_rows()
 
+    # 数据源端点以 accounts.local.json 为准（勿读 .env 残留 JACKETT_*）
+    endpoints: dict = {"jackett": "", "eztv": "", "yts": ""}
+    try:
+        from workflow.torrent_sources.config import load_accounts_config
+
+        acc = load_accounts_config()
+        endpoints = {
+            "jackett": str((acc.get("jackett") or {}).get("base_url") or ""),
+            "eztv": str((acc.get("eztv") or {}).get("base_url") or ""),
+            "yts": str((acc.get("yts") or {}).get("base_url") or ""),
+        }
+    except Exception as exc:  # noqa: BLE001
+        endpoints["error"] = str(exc)
+
     summary = {
         "project_root": str(PROJECT_ROOT),
         "site_origin": SITE_ORIGIN,
@@ -92,11 +103,7 @@ def cmd_status(_args: argparse.Namespace) -> int:
             "database_name": D1_DATABASE_NAME,
             "note": "生产部署；本地测试使用 mysql",
         },
-        "endpoints": {
-            "jackett": JACKETT_BASE_URL,
-            "eztv": EZTV_BASE_URL,
-            "yts": YTS_BASE_URL,
-        },
+        "endpoints": endpoints,
         "modules": {
             "torrent_sources": "mvp",
             "recommended": "active",

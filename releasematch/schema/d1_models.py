@@ -1408,7 +1408,7 @@ class EpisodePageContext:
     torrent_metadata: Optional[TorrentMetadataContext] = None
     canonical_url: str = ""
 
-    def to_template_context(self, site_origin: str = "https://releasematch.io") -> Dict[str, Any]:
+    def to_template_context(self, site_origin: str = "https://releasematch.com") -> Dict[str, Any]:
         """
         组装 episode.html 渲染上下文。
 
@@ -1549,7 +1549,7 @@ class MoviePageContext:
     torrent_metadata: Optional[TorrentMetadataContext] = None
     canonical_url: str = ""
 
-    def to_template_context(self, site_origin: str = "https://releasematch.io") -> Dict[str, Any]:
+    def to_template_context(self, site_origin: str = "https://releasematch.com") -> Dict[str, Any]:
         """
         组装 movie.html 渲染上下文。
 
@@ -1659,7 +1659,7 @@ class ShowHubPageContext:
     active_episode: Optional[int] = None
     canonical_url: str = ""
 
-    def to_template_context(self, site_origin: str = "https://releasematch.io") -> Dict[str, Any]:
+    def to_template_context(self, site_origin: str = "https://releasematch.com") -> Dict[str, Any]:
         """
         组装 show_hub.html 渲染上下文。
 

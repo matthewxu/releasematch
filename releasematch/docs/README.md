@@ -17,7 +17,7 @@
 |------|----------------|----------------|
 | **流量核心** | SEO：`subtitles` 意图 | SEO：`download` / `magnet` 意图 |
 | 核心资产 | 100GB SRT + 元数据 | 清单/索引（magnet + 元数据） |
-| 主路由 | `/subtitle/`（字幕主域） | `/` 根路径（**独立域**，如 `releasematch.io/breaking-bad/s4e6/`） |
+| 主路由 | `/subtitle/`（字幕主域） | `/` 根路径（**独立域**，如 `releasematch.com/breaking-bad/s4e6/`） |
 | 工作流 | Step 0–5, 8 | Step 4c（`releasematch/workflow/torrent_sources`） |
 
 **独立开发目录：** [releasematch/](../releasematch/) — 与 `subtitle-portal`、`tmdbpy/workflow/opensubtitles` 隔离。

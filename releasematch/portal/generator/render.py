@@ -57,7 +57,7 @@ def context_to_template_vars(
     @param show_ig_debug: 覆盖 RM_SHOW_IG_DEBUG；None 时读配置
     @returns: Jinja2 render 参数字典
     """
-    from workflow.config import SHOW_IG_DEBUG
+    from workflow.config import BLOCK_CRAWLERS, SHOW_IG_DEBUG
 
     from portal.generator.ig_debug import build_ig_debug_panel
 
@@ -66,6 +66,7 @@ def context_to_template_vars(
     variables = ctx.to_template_context(site_origin=site_origin)
     enabled = SHOW_IG_DEBUG if show_ig_debug is None else show_ig_debug
     variables["show_ig_debug"] = enabled
+    variables["block_crawlers"] = BLOCK_CRAWLERS
     variables["ig_debug"] = build_ig_debug_panel(ctx, variables) if enabled else None
     return merge_render_context(variables)
 
@@ -126,7 +127,7 @@ def render_home_page(
     """
     from datetime import datetime, timezone
 
-    from workflow.config import SHOW_IG_DEBUG
+    from workflow.config import BLOCK_CRAWLERS, SHOW_IG_DEBUG
 
     from workflow.storage.failed_slots_store import list_scarcity_home_entries
 
@@ -136,7 +137,7 @@ def render_home_page(
     scarcity_entries = list_scarcity_home_entries(limit=8)
     context = {
         "nav_active": "home",
-        "canonical_url": f"{site_origin.rstrip('/')}/" if site_origin else "https://releasematch.io/",
+        "canonical_url": f"{site_origin.rstrip('/')}/" if site_origin else "https://releasematch.com/",
         "catalog_entries": entries,
         "catalog_count": len(entries),
         "movie_count": movie_count,
@@ -145,6 +146,7 @@ def render_home_page(
         "scarcity_count": len(scarcity_entries),
         "year": str(datetime.now(timezone.utc).year),
         "show_ig_debug": SHOW_IG_DEBUG if show_ig_debug is None else show_ig_debug,
+        "block_crawlers": BLOCK_CRAWLERS,
         "ig_debug": None,
     }
     return render_html("home.html", context)

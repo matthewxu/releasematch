@@ -7,7 +7,9 @@
 {% block meta_description %}{{ meta_description }}{% endblock %}
 
 {% block meta_robots %}
-<meta name="robots" content="noindex,follow">
+  {% if not block_crawlers|default(false) %}
+  <meta name="robots" content="noindex,follow">
+  {% endif %}
 {% endblock %}
 
 {% block content %}

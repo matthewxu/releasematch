@@ -26,6 +26,7 @@ from workflow.config import (
     RELEASE_MYSQL_PASSWORD,
     RELEASE_MYSQL_PORT,
     RELEASE_MYSQL_USER,
+    SITE_ORIGIN,
     release_mysql_configured,
 )
 from schema.d1_models import (
@@ -442,7 +443,7 @@ class MySQLStore:
             speed_summary=speed,
             speed_evidence=speed_evidence,
             torrent_metadata=torrent_metadata,
-            canonical_url=f"https://releasematch.io{page.canonical_path}",
+            canonical_url=(SITE_ORIGIN.rstrip("/") + page.canonical_path),
         )
 
     def _load_page_bundle(
@@ -666,7 +667,7 @@ class MySQLStore:
             speed_summary=speed,
             speed_evidence=speed_evidence,
             torrent_metadata=torrent_metadata,
-            canonical_url=f"https://releasematch.io{page.canonical_path}",
+            canonical_url=(SITE_ORIGIN.rstrip("/") + page.canonical_path),
         )
 
     def get_show_hub_page_context(
@@ -728,7 +729,7 @@ class MySQLStore:
             seasons=seasons,
             active_season=active_season,
             active_episode=active_episode,
-            canonical_url=f"https://releasematch.io{page.canonical_path}",
+            canonical_url=(SITE_ORIGIN.rstrip("/") + page.canonical_path),
         )
 
     def get_catalog_by_slug(self, slug: str) -> Optional[MediaCatalog]:

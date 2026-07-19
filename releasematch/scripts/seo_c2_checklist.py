@@ -36,7 +36,12 @@ from portal.generator.sitemap import (  # noqa: E402
     DEFAULT_MAX_CONTENT_URLS,
     TRUST_PATHS,
 )
-from workflow.config import PROJECT_ROOT, SHOW_IG_DEBUG, SITE_ORIGIN  # noqa: E402
+from workflow.config import (  # noqa: E402
+    BLOCK_CRAWLERS,
+    PROJECT_ROOT,
+    SHOW_IG_DEBUG,
+    SITE_ORIGIN,
+)
 
 CheckStatus = Literal["pass", "fail", "warn", "skip"]
 
@@ -68,7 +73,7 @@ MAGNET_HREF_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-# 出站 http(s) 链接（排除本站 releasematch.io 与相对路径）
+# 出站 http(s) 链接（排除本站 releasematch.com 与相对路径）
 EXTERNAL_HTTP_HREF_PATTERN = re.compile(
     r'<a\b[^>]*href=["\']https?://[^"\']+["\'][^>]*>',
     re.IGNORECASE,
@@ -99,7 +104,7 @@ def _is_same_site_http_href(href: str, site_origin: str) -> bool:
     判断 http(s) href 是否为本站 origin（不算外出链）。
 
     @param href: a 标签 href 属性值
-    @param site_origin: 如 https://releasematch.io
+    @param site_origin: 如 https://releasematch.com
     @returns: True 表示站内链，跳过出站校验
     """
     try:
@@ -356,10 +361,11 @@ def check_6_1_technical(report: CheckReport, dist_root: Path, site_origin: str) 
     @param dist_root: dist 根目录
     @param site_origin: RM_SITE_ORIGIN
     """
-    # robots.txt + Sitemap 指向
+    # robots.txt：软上线 Disallow，或开放时 Sitemap
+    # 爬虫只认根路径 /robots.txt；static 副本仅作备份
     robots_candidates = [
-        dist_root / "static" / "robots.txt",
         dist_root / "robots.txt",
+        dist_root / "static" / "robots.txt",
         PROJECT_ROOT / "portal" / "static" / "robots.txt",
     ]
     robots_file = next((p for p in robots_candidates if p.is_file()), None)
@@ -368,16 +374,51 @@ def check_6_1_technical(report: CheckReport, dist_root: Path, site_origin: str) 
             CheckItem(
                 "6.1",
                 "6.1.robots_txt",
-                "robots.txt 存在且声明 Sitemap",
+                "robots.txt 存在且规则正确",
                 "fail",
                 "未找到 robots.txt（请先 --prepare 或 generate all）",
             )
         )
     else:
         text = robots_file.read_text(encoding="utf-8")
-        sitemap_lines = [ln for ln in text.splitlines() if ln.strip().lower().startswith("sitemap:")]
+        active_lines = [
+            ln.strip()
+            for ln in text.splitlines()
+            if ln.strip() and not ln.strip().startswith("#")
+        ]
+        sitemap_lines = [ln for ln in active_lines if ln.lower().startswith("sitemap:")]
+        disallow_all = any(
+            ln.lower().startswith("disallow:") and ln.split(":", 1)[-1].strip() == "/"
+            for ln in active_lines
+        )
         expected_sitemap = f"{site_origin.rstrip('/')}/sitemap.xml"
-        if not sitemap_lines:
+        if BLOCK_CRAWLERS:
+            if disallow_all and not sitemap_lines:
+                report.add(
+                    CheckItem(
+                        "6.1",
+                        "6.1.robots_txt",
+                        "robots.txt 禁止爬取（RM_BLOCK_CRAWLERS=1）",
+                        "pass",
+                        f"Disallow: / · {robots_file}",
+                    )
+                )
+            else:
+                report.add(
+                    CheckItem(
+                        "6.1",
+                        "6.1.robots_txt",
+                        "robots.txt 禁止爬取（RM_BLOCK_CRAWLERS=1）",
+                        "fail",
+                        "期望生效 Disallow: / 且无未注释 Sitemap 行",
+                        {
+                            "file": str(robots_file),
+                            "disallow_all": disallow_all,
+                            "sitemap_lines": sitemap_lines,
+                        },
+                    )
+                )
+        elif not sitemap_lines:
             report.add(
                 CheckItem(
                     "6.1",
@@ -556,11 +597,22 @@ def check_6_1_technical(report: CheckReport, dist_root: Path, site_origin: str) 
             )
         )
 
-    # 生成页不应含 IG debug 全站 noindex（抽查首页）
+    # 首页 robots：软上线期望 noindex；开放时不应有意外 noindex
     home_file = dist_root / "index.html"
     if home_file.is_file():
         home_html = home_file.read_text(encoding="utf-8")
-        if 'content="noindex,nofollow"' in home_html and SHOW_IG_DEBUG:
+        has_noindex = 'content="noindex,nofollow"' in home_html
+        if BLOCK_CRAWLERS:
+            report.add(
+                CheckItem(
+                    "6.1",
+                    "6.1.block_crawlers_html",
+                    "首页含全站 noindex（RM_BLOCK_CRAWLERS=1）",
+                    "pass" if has_noindex else "fail",
+                    "首页含 noindex,nofollow" if has_noindex else "首页缺少 noindex,nofollow",
+                )
+            )
+        elif has_noindex and SHOW_IG_DEBUG:
             report.add(
                 CheckItem(
                     "6.1",
@@ -570,16 +622,27 @@ def check_6_1_technical(report: CheckReport, dist_root: Path, site_origin: str) 
                     "首页含 noindex,nofollow",
                 )
             )
-        elif 'content="noindex,nofollow"' in home_html:
+        elif has_noindex:
             report.add(
                 CheckItem(
                     "6.1",
                     "6.1.ig_debug_html",
                     "首页无意外 noindex,nofollow",
                     "warn",
-                    "首页含 noindex,nofollow（请确认非 IG debug）",
+                    "首页含 noindex,nofollow（请确认非 IG debug / 非 BLOCK_CRAWLERS）",
                 )
             )
+
+    if BLOCK_CRAWLERS:
+        report.add(
+            CheckItem(
+                "6.1",
+                "6.1.block_crawlers",
+                "RM_BLOCK_CRAWLERS 软上线模式",
+                "pass",
+                "当前禁止爬取；开放收录前设 RM_BLOCK_CRAWLERS=0 并恢复 robots Allow+Sitemap",
+            )
+        )
 
     report.add(
         CheckItem(
@@ -587,7 +650,7 @@ def check_6_1_technical(report: CheckReport, dist_root: Path, site_origin: str) 
             "6.1.https_hsts",
             "HTTPS + HSTS",
             "skip",
-            "仅生产域名 releasematch.io 可验；本地 dist 检查不涉及",
+            "仅生产域名 releasematch.com 可验；本地 dist 检查不涉及",
         )
     )
 
@@ -621,7 +684,10 @@ def check_6_2_page_head(
         if not fields.get("description"):
             content_issues.append(f"{path}: 缺 meta description")
         robots = (fields.get("robots") or "").lower()
-        if "noindex" in robots:
+        if BLOCK_CRAWLERS:
+            if "noindex" not in robots:
+                content_issues.append(f"{path}: 软上线期望 noindex")
+        elif "noindex" in robots:
             content_issues.append(f"{path}: sitemap 页不应 noindex")
         if not fields.get("canonical"):
             content_issues.append(f"{path}: 缺 canonical")
@@ -629,11 +695,15 @@ def check_6_2_page_head(
         if missing_og:
             content_issues.append(f"{path}: 缺 OG {missing_og}")
 
+    head_title = (
+        "单集/电影：title、description、robots、canonical、OG"
+        + ("（软上线 noindex）" if BLOCK_CRAWLERS else "")
+    )
     report.add(
         CheckItem(
             "6.2",
             "6.2.content_head",
-            "单集/电影：title、description、robots、canonical、OG",
+            head_title,
             "fail" if content_issues else "pass",
             "; ".join(content_issues[:8]) if content_issues else f"已验 {min(len(content_paths), 15)} 个内容页",
             {"checked": min(len(content_paths), 15), "issues": content_issues},

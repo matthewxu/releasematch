@@ -78,7 +78,7 @@ def apply_environ_to_module() -> None:
     global RELEASE_MYSQL_HOST, RELEASE_MYSQL_PORT, RELEASE_MYSQL_DB
     global RELEASE_MYSQL_USER, RELEASE_MYSQL_PASSWORD
     global D1_DATABASE_NAME, D1_BINDING, SITE_ORIGIN
-    global SHOW_IG_DEBUG, SITE_I18N_ENABLED, SITE_LOCALE
+    global SHOW_IG_DEBUG, BLOCK_CRAWLERS, SITE_I18N_ENABLED, SITE_LOCALE
 
     # standalone: JSON 清单；mysql: 只读 TMDB 元数据库
     TMDB_DATA_MODE = os.getenv("RM_TMDB_DATA_MODE", "standalone")
@@ -107,15 +107,14 @@ def apply_environ_to_module() -> None:
     MYSQL_USER = os.getenv("RM_MYSQL_USER", "")
     MYSQL_PASSWORD = os.getenv("RM_MYSQL_PASSWORD", "")
 
-    # 数据源默认端点 / Key
+    # 数据源默认值（仅当 accounts JSON 缺键时由 load_accounts_config 补齐；
+    # 正式配置写 accounts.local.json，勿依赖 .env 双写）
     JACKETT_BASE_URL = os.getenv("JACKETT_BASE_URL", "http://127.0.0.1:9117")
     JACKETT_API_KEY = os.getenv("JACKETT_API_KEY", "")
     EZTV_BASE_URL = os.getenv("EZTV_BASE_URL", "https://eztvx.to")
     YTS_BASE_URL = os.getenv("YTS_BASE_URL", "https://yts.lt")
     NYAA_BASE_URL = os.getenv("NYAA_BASE_URL", "https://nyaa.si")
-    # 动漫花园 RSS
     DMHY_BASE_URL = os.getenv("DMHY_BASE_URL", "https://share.dmhy.org")
-    # 直连失败回退代理
     TORRENT_PROXY = os.getenv("TORRENT_PROXY", os.getenv("TORRENT_HTTP_PROXY", ""))
     TORRENT_MIN_INTERVAL_SEC = float(os.getenv("TORRENT_MIN_INTERVAL_SEC", "2.0"))
     TORRENT_SEEDERS_TTL_HOURS = int(os.getenv("TORRENT_SEEDERS_TTL_HOURS", "6"))
@@ -132,9 +131,11 @@ def apply_environ_to_module() -> None:
     D1_DATABASE_NAME = os.getenv("RM_D1_DATABASE_NAME", "releasematch")
     D1_BINDING = os.getenv("RM_D1_BINDING", "DB")
     # 站点 canonical origin
-    SITE_ORIGIN = os.getenv("RM_SITE_ORIGIN", "https://releasematch.io")
+    SITE_ORIGIN = os.getenv("RM_SITE_ORIGIN", "https://releasematch.com")
     # 页面 IG debug 面板
     SHOW_IG_DEBUG = _env_bool("RM_SHOW_IG_DEBUG", False)
+    # 1=全站禁止爬虫（页面 noindex + 须配合 robots.txt Disallow）
+    BLOCK_CRAWLERS = _env_bool("RM_BLOCK_CRAWLERS", False)
     # UI 国际化开关
     SITE_I18N_ENABLED = _env_bool("RM_SITE_I18N_ENABLED", False)
     # 默认 UI 语言
@@ -210,8 +211,9 @@ D1_SCHEMA_FILE: Path = SCHEMA_DIR / "d1_schema.sql"
 D1_SEED_DEMO_FILE: Path = SCHEMA_DIR / "d1_seed_demo.sql"
 
 # 站点与生成器开关
-SITE_ORIGIN: str = "https://releasematch.io"
+SITE_ORIGIN: str = "https://releasematch.com"
 SHOW_IG_DEBUG: bool = False
+BLOCK_CRAWLERS: bool = False
 SITE_I18N_ENABLED: bool = False
 SITE_LOCALE: str = "en"
 

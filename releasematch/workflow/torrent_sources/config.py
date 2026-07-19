@@ -89,6 +89,13 @@ def load_accounts_config(path: Path | None = None) -> Dict[str, Any]:
     """
     加载 Jackett 等数据源配置。
 
+    @description
+      **真相源为 accounts JSON**（``accounts.local.json`` / example）。
+      ``workflow.config`` / ``.env`` 中的 JACKETT_*、源站 URL、限速等仅在 JSON
+      **缺键**时补默认值；不再用 ``.env`` 覆盖已写入 JSON 的字段。
+      临时排障仍可在 shell ``export JACKETT_API_KEY=...``：仅当 JSON 的 Key
+      未配置（空/占位符）时才会采用。
+
     @param path: 配置文件路径；默认 accounts.local.json 或 example
     @returns: 配置字典
     """
@@ -97,10 +104,13 @@ def load_accounts_config(path: Path | None = None) -> Dict[str, Any]:
     with open(cfg_path, encoding="utf-8-sig") as f:
         data: Dict[str, Any] = json.load(f)
 
-    # 环境变量覆盖 JSON（经 workflow.config 模块属性，支持 Ops 热加载）
-    if wc.JACKETT_API_KEY:
-        data.setdefault("jackett", {})["api_key"] = wc.JACKETT_API_KEY
-    data.setdefault("jackett", {}).setdefault("base_url", wc.JACKETT_BASE_URL)
+    jackett = data.setdefault("jackett", {})
+    # JSON 优先；仅 Key 未配置时允许环境变量补齐（CI / 一次性排查）
+    if not is_jackett_api_key_configured(str(jackett.get("api_key") or "")):
+        if wc.JACKETT_API_KEY:
+            jackett["api_key"] = wc.JACKETT_API_KEY
+    jackett.setdefault("base_url", wc.JACKETT_BASE_URL)
+
     data.setdefault("eztv", {}).setdefault("base_url", wc.EZTV_BASE_URL)
     data.setdefault("yts", {}).setdefault("base_url", wc.YTS_BASE_URL)
     data.setdefault("nyaa", {}).setdefault("base_url", wc.NYAA_BASE_URL)
@@ -127,6 +137,10 @@ def load_accounts_config(path: Path | None = None) -> Dict[str, Any]:
     data.setdefault("dmhy", {}).setdefault("base_url", wc.DMHY_BASE_URL)
     data.setdefault("dmhy", {}).setdefault("enabled", True)
     data.setdefault("dmhy", {}).setdefault("mirrors", [])
-    data.setdefault("rate_limit", {})["min_interval_sec"] = wc.TORRENT_MIN_INTERVAL_SEC
-    data.setdefault("cache", {})["seeders_ttl_hours"] = wc.TORRENT_SEEDERS_TTL_HOURS
+
+    # 限速 / 缓存：JSON 已有则保留，缺省才用 workflow.config 默认
+    rate = data.setdefault("rate_limit", {})
+    rate.setdefault("min_interval_sec", wc.TORRENT_MIN_INTERVAL_SEC)
+    cache = data.setdefault("cache", {})
+    cache.setdefault("seeders_ttl_hours", wc.TORRENT_SEEDERS_TTL_HOURS)
     return data

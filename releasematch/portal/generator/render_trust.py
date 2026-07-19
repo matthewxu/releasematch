@@ -16,7 +16,7 @@ from typing import Any, Dict, List
 from portal.generator.i18n import build_i18n_runtime, merge_render_context
 from portal.generator.render import render_html
 from portal.generator.trust_content import TRUST_PAGES
-from workflow.config import PROJECT_ROOT, SITE_ORIGIN
+from workflow.config import BLOCK_CRAWLERS, PROJECT_ROOT, SITE_ORIGIN
 
 
 def _trust_page_context(page_def: Dict[str, Any], site_origin: str) -> Dict[str, Any]:
@@ -40,6 +40,7 @@ def _trust_page_context(page_def: Dict[str, Any], site_origin: str) -> Dict[str,
         "canonical_url": f"{site_origin.rstrip('/')}{page_def['canonical']}",
         "year": "2026",
         "show_ig_debug": False,
+        "block_crawlers": BLOCK_CRAWLERS,
         "ig_debug": None,
     }
     runtime = build_i18n_runtime()

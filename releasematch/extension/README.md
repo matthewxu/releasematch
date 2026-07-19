@@ -26,4 +26,4 @@ extension/
 
 ## 与字幕站关系
 
-**无关联。** 扩展仅与 `releasematch.io` 域通信（`host_permissions`）。
+**无关联。** 扩展仅与 `releasematch.com` 域通信（`host_permissions`）。

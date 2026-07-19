@@ -38,6 +38,7 @@ PY
 }
 
 main() {
+  mkdir -p "${CONFIG_DIR}"
   write_indexer_json "dmhy" "https://share.dmhy.org/"
   write_indexer_json "1337x" "https://1337x.to/"
   write_indexer_json "torrentgalaxyclone" "https://torrentgalaxy.one/"

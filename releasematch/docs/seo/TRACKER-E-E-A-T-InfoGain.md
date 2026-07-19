@@ -47,7 +47,7 @@
 | T-08 | 410 Gone | DMCA 下架 | ✅ | C2 | `portal/410.html` |
 | T-09 | Trust 页 `lang=en` | 与内容页一致 | ✅ | C2 | 五页 Trust 已英文化 |
 | T-10 | 演示页与 DB 一致 | 禁用手写 demo | ✅ | T3 | 已删 `portal/` 手写内容页；仅 `dist/` + `serve` |
-| T-11 | 独立域名隔离 | 规避 SRA | ✅ | — | releasematch.io |
+| T-11 | 独立域名隔离 | 规避 SRA | ✅ | — | releasematch.com |
 
 ### 2.2 Experience（经验）
 

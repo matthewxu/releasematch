@@ -2,7 +2,7 @@
 
 > **路径：** `releasematch/portal/`  
 > **部署：** Cloudflare Pages + Workers（**独立 CF 项目**，不与 subtitle-portal 共享）  
-> **域名示例：** `releasematch.io`  
+> **域名示例：** `releasematch.com`  
 > **优先级：** C0（Trust 壳）→ **T3（页面生成器）** → C1（验证集 20 页）
 
 ---
@@ -111,13 +111,13 @@ python -m workflow.run serve-static --port 8080
 ## 目标 URL 结构
 
 ```
-releasematch.io/                              首页
-releasematch.io/breaking-bad/                 剧集 hub
-releasematch.io/breaking-bad/s4e6/            单集（L3）
-releasematch.io/inception-2010/               电影页
-releasematch.io/how-matching-works/           Trust / 链接诱饵（T4-2）
-releasematch.io/dmca/                         DMCA
-releasematch.io/about/                        About
+releasematch.com/                              首页
+releasematch.com/breaking-bad/                 剧集 hub
+releasematch.com/breaking-bad/s4e6/            单集（L3）
+releasematch.com/inception-2010/               电影页
+releasematch.com/how-matching-works/           Trust / 链接诱饵（T4-2）
+releasematch.com/dmca/                         DMCA
+releasematch.com/about/                        About
 /api/v1/sources?tmdb=&s=&e=                   Stremio API（T4）
 ```
 
@@ -145,5 +145,5 @@ releasematch.io/about/                        About
 
 ## 跨站协同（仅 1 链）
 
-字幕站单集页正文 → 链接到 `https://releasematch.io/{slug}/s{s}e{e}/`  
+字幕站单集页正文 → 链接到 `https://releasematch.com/{slug}/s{s}e{e}/`  
 **禁止** sitewide 互链、相同模板换 Logo。
