@@ -1,0 +1,60 @@
+{
+  "_comment": "本地服务器凭据，含 SSH 密码与 Jackett API Key，勿提交 Git",
+  "jackett_vps_japan": {
+    "_comment": "日本测试服务器 — Jackett + FlareSolverr Docker 部署（2026-07-05 迁移至 172.236.156.193）",
+    "label": "日本测试服务器",
+    "host": "172.236.156.193",
+    "ssh": {
+      "user": "root",
+      "password": "Release@2026&acb",
+      "port": 22
+    },
+    "os": "Debian 12",
+    "services": {
+      "jackett": {
+        "_comment": "Torznab 聚合；配置卷 /opt/jackett/config，API Key 见 ServerConfig.json",
+        "docker_name": "jackett",
+        "image": "linuxserver/jackett:latest",
+        "port": 9117,
+        "public_url": "http://172.236.156.193:9117",
+        "dashboard_url": "http://172.236.156.193:9117/UI/Dashboard",
+        "config_path": "/opt/jackett/config",
+        "server_config": "/opt/jackett/config/Jackett/ServerConfig.json",
+        "network": "jackett-net",
+        "api_key": "k2nbosekikkkcwmzm7pvroyxgtwl3qdg"
+      },
+      "flaresolverr": {
+        "_comment": "1337x / TorrentGalaxy 等 Cloudflare 站点必备；仅绑定本机 8191",
+        "docker_name": "flaresolverr",
+        "image": "ghcr.io/flaresolverr/flaresolverr:latest",
+        "port": 8191,
+        "bind": "127.0.0.1:8191",
+        "network": "jackett-net",
+        "jackett_flaresolverr_url": "http://flaresolverr:8191/",
+        "max_timeout_ms": 55000
+      },
+      "ssh_socks_tunnel": {
+        "_comment": "本机 ssh -D SOCKS5，Nyaa 直连失败时回退；VPS 无需额外代理服务",
+        "command": "ssh -N -D 127.0.0.1:1080 root@172.236.156.193",
+        "script": "scripts/start_ssh_socks_tunnel.sh",
+        "local_proxy_url": "socks5h://127.0.0.1:1080",
+        "env_var": "TORRENT_PROXY"
+      }
+    },
+    "indexers": [
+      "1337x",
+      "torrentgalaxyclone",
+      "nyaasi",
+      "thepiratebay",
+      "eztv",
+      "dmhy"
+    ],
+    "deploy_notes": {
+      "_comment": "一键远程安装（在本机 releasematch 目录执行）",
+      "one_click": "bash scripts/deploy_jackett_vps.sh",
+      "remote_only": "bash scripts/remote/install_jackett_stack.sh",
+      "force_recreate": "FORCE_RECREATE=1 bash scripts/deploy_jackett_vps.sh",
+      "local_socks_tunnel": "bash scripts/start_ssh_socks_tunnel.sh"
+    }
+  }
+}

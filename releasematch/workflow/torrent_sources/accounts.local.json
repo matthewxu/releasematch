@@ -1,0 +1,117 @@
+{
+  "_comment": "本地 Jackett / 直连源凭据；勿提交 Git。远程 VPS 详情见 servers.local.json",
+  "proxy": {
+    "_comment": "Nyaa 直连失败时走 SSH SOCKS 隧道；先 bash scripts/start_ssh_socks_tunnel.sh",
+    "enabled": true,
+    "url": "socks5h://127.0.0.1:1080",
+    "use_when_direct_fails": true
+  },
+  "jackett": {
+    "_comment": "日本测试 VPS Jackett；base_url 指向 172.236.156.193:9117",
+    "base_url": "http://172.236.156.193:9117",
+    "api_key": "k2nbosekikkkcwmzm7pvroyxgtwl3qdg",
+    "indexers": {
+      "tv": [
+        "thepiratebay",
+        "nyaasi",
+        "1337x",
+        "torrentgalaxyclone"
+      ],
+      "movie": [
+        "yts",
+        "1337x",
+        "torrentgalaxyclone",
+        "thepiratebay"
+      ],
+      "jp_tv": [
+        "nyaasi",
+        "thepiratebay"
+      ],
+      "kr_tv": [
+        "nyaasi",
+        "thepiratebay"
+      ],
+      "jp_movie": [
+        "nyaasi",
+        "yts"
+      ],
+      "kr_movie": [
+        "nyaasi",
+        "yts"
+      ],
+      "cn_tv": [
+        "dmhy",
+        "mikan",
+        "acgrip",
+        "nyaasi",
+        "thepiratebay",
+        "torrentgalaxyclone",
+        "1337x"
+      ],
+      "cn_movie": [
+        "dmhy",
+        "nyaasi",
+        "1337x",
+        "thepiratebay"
+      ]
+    }
+  },
+  "eztv": {
+    "base_url": "https://eztvx.to"
+  },
+  "yts": {
+    "base_url": "https://yts.lt"
+  },
+  "nyaa": {
+    "base_url": "https://nyaa.si",
+    "enabled": true,
+    "mirrors": [
+      "https://nyaa.iss.ink"
+    ]
+  },
+  "nyaa_live_action": {
+    "enabled": true,
+    "category": "4_0",
+    "base_url": "https://nyaa.si",
+    "mirrors": [
+      "https://nyaa.iss.ink"
+    ]
+  },
+  "nyaa_anime": {
+    "_comment": "Layer 2D 国漫/动漫区 Nyaa c=1_0",
+    "enabled": true,
+    "category": "1_0",
+    "base_url": "https://nyaa.si",
+    "mirrors": [
+      "https://nyaa.iss.ink"
+    ]
+  },
+  "cn_sources": {
+    "_comment": "仅华语向源；cn_probe_sources.py 只测此列表，不含 TPB/1337x",
+    "jackett": [
+      "dmhy",
+      "mikan",
+      "acgrip"
+    ],
+    "direct": [
+      "dmhy",
+      "nyaa_live_action",
+      "nyaa_anime"
+    ]
+  },
+  "dmhy": {
+    "_comment": "Layer 2F：动漫花园 RSS（华语剧/国漫中文搜索第一手）",
+    "enabled": true,
+    "base_url": "https://share.dmhy.org",
+    "mirrors": [],
+    "sort_id": 0,
+    "team_id": 0,
+    "order": "date-desc"
+  },
+  "rate_limit": {
+    "min_interval_sec": 2.0
+  },
+  "cache": {
+    "seeders_ttl_hours": 6
+  }
+}
