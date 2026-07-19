@@ -1465,6 +1465,106 @@ class MySQLStore:
             return build_page_id(tmdb_id, "movie", page_type="movie")
         return build_page_id(tmdb_id, "tv", season=season, episode=episode)
 
+    def ensure_show_hub_page(
+        self,
+        tmdb_id: int,
+        *,
+        title: Optional[str] = None,
+        slug: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """
+        确保剧集 Hub 行 ``tv:{tmdb_id}:hub`` 存在（canonical ``/{slug}/``）。
+
+        @param tmdb_id: TMDB 剧集 ID
+        @param title: 可选标题（用于生成 slug）
+        @param slug: 可选已解析 slug；缺省时从 catalog / slot 元数据推断
+        @returns: hub_page_id、canonical_path、是否新建
+        """
+        from workflow.metadata.external_ids import resolve_external_ids
+        from workflow.metadata.slot_catalog import (
+            canonical_path_for_slot,
+            get_slot_catalog_meta,
+            slugify_title,
+        )
+
+        catalog_id = build_catalog_id(tmdb_id, "tv")
+        hub_page_id = build_page_id(tmdb_id, "tv", page_type="show_hub")
+        slot_meta = get_slot_catalog_meta(tmdb_id) or {}
+        ext = resolve_external_ids(tmdb_id, "tv", title=title)
+        resolved_title = slot_meta.get("title") or ext.get("title") or title or f"TMDB {tmdb_id}"
+        resolved_slug = (
+            slug
+            or slot_meta.get("slug")
+            or slugify_title(str(resolved_title), year=slot_meta.get("year"))
+        )
+        hub_canonical = canonical_path_for_slot(
+            {"slug": resolved_slug, "media_kind": "tv"}
+        )
+        now = _utc_now_str()
+        created = False
+        conn = self._connect()
+        with conn.cursor() as cur:
+            # Hub 依赖 catalog；无则先占位
+            cur.execute(
+                "SELECT slug FROM media_catalog WHERE catalog_id = %s LIMIT 1",
+                (catalog_id,),
+            )
+            cat_row = cur.fetchone()
+            if cat_row and cat_row.get("slug"):
+                hub_canonical = canonical_path_for_slot(
+                    {"slug": cat_row["slug"], "media_kind": "tv"}
+                )
+            elif not cat_row:
+                tmdb_url = f"https://www.themoviedb.org/tv/{tmdb_id}"
+                cur.execute(
+                    """
+                    INSERT INTO media_catalog (
+                        catalog_id, tmdb_id, media_kind, slug, title, overview, year,
+                        runtime_minutes, poster_path, tmdb_url, streaming_providers,
+                        subtitle_url_pattern, updated_at
+                    ) VALUES (
+                        %s, %s, 'tv', %s, %s, '', %s,
+                        NULL, '', %s, '[]', '', %s
+                    )
+                    """,
+                    (
+                        catalog_id,
+                        tmdb_id,
+                        resolved_slug,
+                        resolved_title,
+                        slot_meta.get("year"),
+                        tmdb_url,
+                        now,
+                    ),
+                )
+            cur.execute(
+                "SELECT page_id FROM media_pages WHERE page_id = %s LIMIT 1",
+                (hub_page_id,),
+            )
+            if not cur.fetchone():
+                cur.execute(
+                    """
+                    INSERT INTO media_pages (
+                        page_id, catalog_id, page_type, season, episode, episode_title,
+                        air_date, overview, cross_source_count, cross_source_total,
+                        prev_season, prev_episode, next_season, next_episode,
+                        magnet_count, page_status, robots_noindex, canonical_path,
+                        subtitle_url, generated_at, updated_at
+                    ) VALUES (
+                        %s, %s, 'show_hub', NULL, NULL, '', NULL, '', 0, 3,
+                        NULL, NULL, NULL, NULL, 0, 'published', 1, %s, '', NULL, %s
+                    )
+                    """,
+                    (hub_page_id, catalog_id, hub_canonical, now),
+                )
+                created = True
+        conn.close()
+        return {
+            "hub_page_id": hub_page_id,
+            "canonical_path": hub_canonical,
+            "created": created,
+        }
+
     def ensure_slot_page(
         self,
         tmdb_id: int,
@@ -1481,7 +1581,9 @@ class MySQLStore:
         @param season: 季号（剧集）
         @param episode: 集号（剧集）
         @param title: 可选 slot 标题（无 catalog 元数据时生成 slug）
-        @returns: catalog_id、page_id 及是否新建
+        @returns: catalog_id、page_id 及是否新建；剧集另含 hub 信息
+        @description
+          剧集会同步 ``ensure_show_hub_page``，避免只有 ``/sNeN/`` 而无 ``/{slug}/`` Hub。
         """
         from workflow.metadata.external_ids import resolve_external_ids
         from workflow.metadata.slot_catalog import (
@@ -1567,11 +1669,19 @@ class MySQLStore:
                 )
                 created_page = True
         conn.close()
+
+        hub_info: Dict[str, Any] = {}
+        if media_kind == "tv":
+            hub_info = self.ensure_show_hub_page(
+                tmdb_id, title=resolved_title, slug=slug
+            )
+
         return {
             "catalog_id": catalog_id,
             "page_id": page_id,
             "created_catalog": created_catalog,
             "created_page": created_page,
+            "hub": hub_info,
         }
 
     def page_has_resources(self, page_id: str, min_magnets: int = 2) -> bool:

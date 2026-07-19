@@ -1,15 +1,15 @@
-{# 剧集页 All Sources 表 #}
+{# 剧集页 All Sources 表 — 与 Recommended 共用 rm-col-* 固定列宽 #}
 {# @partial episode_sources_table.html — 参数 sources；Recommended 行已在 Hero 区展示，此处跳过 #}
-<table class="rm-table rm-table--responsive rm-table--sortable" data-rm-table-sort>
+<table class="rm-table rm-table--responsive rm-table--sortable rm-table--episode" data-rm-table-sort>
   <thead>
     <tr>
-      <th scope="col"{% if i18n_enabled %} data-i18n="table.release"{% endif %}>{{ t('table.release') }}</th>
-      <th scope="col"{% if i18n_enabled %} data-i18n="table.quality"{% endif %}>{{ t('table.quality') }}</th>
-      <th scope="col"{% if i18n_enabled %} data-i18n="table.group"{% endif %}>{{ t('table.group') }}</th>
-      <th scope="col"{% if i18n_enabled %} data-i18n="table.cross"{% endif %}>{{ t('table.cross') }}</th>
-      <th scope="col"><button type="button" class="rm-table__sort" data-sort-key="size" data-sort-type="number"{% if i18n_enabled %} data-i18n="table.size"{% endif %}>{{ t('table.size') }}</button></th>
-      <th scope="col"><button type="button" class="rm-table__sort is-active" data-sort-key="seed" data-sort-type="number"{% if i18n_enabled %} data-i18n="table.seed"{% endif %}>{{ t('table.seed') }}</button></th>
-      <th scope="col"{% if i18n_enabled %} data-i18n="table.action"{% endif %}>{{ t('table.action') }}</th>
+      <th scope="col" class="rm-col-release"{% if i18n_enabled %} data-i18n="table.release"{% endif %}>{{ t('table.release') }}</th>
+      <th scope="col" class="rm-col-quality"{% if i18n_enabled %} data-i18n="table.quality"{% endif %}>{{ t('table.quality') }}</th>
+      <th scope="col" class="rm-col-group"{% if i18n_enabled %} data-i18n="table.group"{% endif %}>{{ t('table.group') }}</th>
+      <th scope="col" class="rm-col-cross"{% if i18n_enabled %} data-i18n="table.cross"{% endif %}>{{ t('table.cross') }}</th>
+      <th scope="col" class="rm-col-size"><button type="button" class="rm-table__sort" data-sort-key="size" data-sort-type="number"{% if i18n_enabled %} data-i18n="table.size"{% endif %}>{{ t('table.size') }}</button></th>
+      <th scope="col" class="rm-col-seed"><button type="button" class="rm-table__sort is-active" data-sort-key="seed" data-sort-type="number"{% if i18n_enabled %} data-i18n="table.seed"{% endif %}>{{ t('table.seed') }}</button></th>
+      <th scope="col" class="rm-col-action"{% if i18n_enabled %} data-i18n="table.action"{% endif %}>{{ t('table.action') }}</th>
     </tr>
   </thead>
   <tbody>

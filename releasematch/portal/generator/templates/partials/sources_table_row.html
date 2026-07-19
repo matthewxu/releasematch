@@ -1,7 +1,7 @@
-{# Sources 表单行 — episode / movie 共用，与 All Sources 列结构一致 #}
+{# Sources 表单行 — episode / movie 共用；剧集行带 rm-col-* 与表头列宽对齐 #}
 {# @partial sources_table_row.html — 参数 item、variant（episode|movie） #}
 <tr{% if item.is_recommended %} class="is-recommended"{% elif item.is_edition_pick %} class="is-edition-pick"{% endif %}>
-  <td class="rm-table__release" data-label="{{ t('table.release') }}">
+  <td class="rm-table__release rm-col-release" data-label="{{ t('table.release') }}">
     {{ item.title_raw }}
     {% if item.is_recommended %}
     <span class="rm-badge rm-badge--recommended"{% if i18n_enabled %} data-i18n="badge.recommended"{% endif %}>{{ t('badge.recommended') }}</span>
@@ -12,26 +12,26 @@
   {% if variant == 'movie' %}
   <td data-label="{{ t('table.source') }}">{{ item.source or '—' }}</td>
   {% endif %}
-  <td data-label="{{ t('table.quality') }}" data-sort-value="{{ item.resolution }}">{{ item.resolution or '—' }}</td>
+  <td class="rm-col-quality" data-label="{{ t('table.quality') }}" data-sort-value="{{ item.resolution }}">{{ item.resolution or '—' }}</td>
   {% if variant == 'movie' %}
   <td data-label="{{ t('table.video') }}">{{ item.video_spec or item.codec or '—' }}</td>
   <td data-label="{{ t('table.audio') }}">{{ item.audio_spec or '—' }}</td>
   {% endif %}
-  <td data-label="{{ t('table.group') }}">
+  <td class="rm-col-group" data-label="{{ t('table.group') }}">
     {% if item.release_group %}
     <span class="rm-badge rm-badge--tier-{{ item.group_tier | lower }}" title="{{ t('badge.group_tier_title', tier=item.group_tier) }}">{{ item.release_group }} · {{ item.group_tier }}</span>
     {% else %}
     <span class="rm-text-muted">—</span>
     {% endif %}
   </td>
-  <td data-label="{{ t('table.cross') }}" data-sort-value="{{ item.cross_source_count }}">
+  <td class="rm-col-cross" data-label="{{ t('table.cross') }}" data-sort-value="{{ item.cross_source_count }}">
     {% if item.cross_source_count and item.cross_source_count > 1 %}
     <span class="rm-badge rm-badge--cross" title="{{ t('badge.cross_item_title', count=item.cross_source_count) }}">{{ item.cross_source_count }}/{{ cross_source_total | default(3) }}</span>
     {% else %}
     <span class="rm-text-muted" title="{{ t('badge.cross_single_title') }}">1</span>
     {% endif %}
   </td>
-  <td data-label="{{ t('table.size') }}" data-sort-value="{{ item.size_bytes }}">{{ item.size_human }}</td>
-  <td data-label="{{ t('table.seed') }}" data-sort-value="{{ item.seeders }}">{{ item.seeders }}</td>
-  <td data-label="{{ t('table.action') }}"><a class="rm-table__magnet" href="{{ item.magnet_uri }}" target="{{ outbound_link_target }}" rel="{{ outbound_link_rel }}"{% if i18n_enabled %} data-i18n="common.magnet"{% endif %}>{{ t('common.magnet') }}</a></td>
+  <td class="rm-col-size" data-label="{{ t('table.size') }}" data-sort-value="{{ item.size_bytes }}">{{ item.size_human }}</td>
+  <td class="rm-col-seed" data-label="{{ t('table.seed') }}" data-sort-value="{{ item.seeders }}">{{ item.seeders }}</td>
+  <td class="rm-col-action" data-label="{{ t('table.action') }}"><a class="rm-table__magnet" href="{{ item.magnet_uri }}" target="{{ outbound_link_target }}" rel="{{ outbound_link_rel }}"{% if i18n_enabled %} data-i18n="common.magnet"{% endif %}>{{ t('common.magnet') }}</a></td>
 </tr>

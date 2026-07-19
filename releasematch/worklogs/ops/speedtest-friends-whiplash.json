@@ -1,0 +1,70 @@
+{
+  "meta": {
+    "strategy": "A2",
+    "target_bytes": 262144,
+    "phase1_timeout_sec": 20,
+    "phase2_timeout_sec": 30,
+    "workers": 1,
+    "write_mysql": true,
+    "ttl_hours": 6,
+    "force": false,
+    "phase2_only": false,
+    "started_at": "2026-07-19T10:15:04.367354+00:00",
+    "finished_at": "2026-07-19T10:15:50.501727+00:00",
+    "total_wall_sec": 46.135,
+    "slot_count": 2,
+    "estimated_serial_a2_sec": 50
+  },
+  "summary": {
+    "succeeded": 2,
+    "errors": 0,
+    "skipped_ttl": 0,
+    "phase2_only_ok": 0
+  },
+  "results": [
+    {
+      "page_id": "tv:1668:s01e01",
+      "label": "tv:1668:s01e01",
+      "status": "ok",
+      "elapsed_sec": 24.123,
+      "phase1_elapsed_ms": 12047,
+      "phase2_elapsed_ms": 6076,
+      "peers_total": 43,
+      "avg_kbps": 32.18,
+      "max_kbps": 506.99,
+      "recommended_speed": "32 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "tv:1668:s01e01",
+        "phase1_result_id": "33a87813-529d-4895-941c-c543ac12d35a",
+        "phase2_result_id": "35ba4be2-a4f0-49e9-a1d7-592fb71def65",
+        "recommended_speed": "32 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true,
+        "torrent_metadata_written": true
+      }
+    },
+    {
+      "page_id": "movie:244786",
+      "label": "movie:244786",
+      "status": "ok",
+      "elapsed_sec": 22.013,
+      "phase1_elapsed_ms": 1001,
+      "phase2_elapsed_ms": 16005,
+      "peers_total": 28,
+      "avg_kbps": 27.71,
+      "max_kbps": 105.54,
+      "recommended_speed": "28 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "movie:244786",
+        "phase1_result_id": "080f0658-1a2f-493c-86c7-0e9076f34201",
+        "phase2_result_id": "1bf8c3b8-5256-42c7-95e9-29051ab690fe",
+        "recommended_speed": "28 KB/s",
+        "reachability": "高",
+        "slot_speed_summary_written": true,
+        "torrent_metadata_written": true
+      }
+    }
+  ]
+}

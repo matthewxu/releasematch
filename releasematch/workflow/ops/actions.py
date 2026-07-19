@@ -291,6 +291,7 @@ def run_generate(
 
     ok_n = 0
     fail_n = 0
+    hub_ids: List[str] = []
     for row in rows:
         page_id = row["page_id"]
         update_slot_stage(batch, page_id, "generate", status="running")
@@ -307,6 +308,13 @@ def run_generate(
             if ok:
                 update_slot_stage(batch, page_id, "generate", status="ok", detail=path)
                 ok_n += 1
+                # 剧集单页 generate 后同步 Hub，避免 /{slug}/ 404
+                if str(page_id).startswith("tv:") and ":s" in str(page_id):
+                    parts = str(page_id).split(":")
+                    if len(parts) >= 2 and parts[1].isdigit():
+                        hub_id = f"tv:{parts[1]}:hub"
+                        if hub_id not in hub_ids:
+                            hub_ids.append(hub_id)
             else:
                 update_slot_stage(
                     batch, page_id, "generate", status="failed", detail=str(out)
@@ -317,11 +325,27 @@ def run_generate(
             fail_n += 1
         save_batch(batch)
 
+    hubs_generated: List[str] = []
+    for hub_id in hub_ids:
+        try:
+            from workflow.storage.mysql_store import MySQLStore
+
+            store = MySQLStore()
+            # 从 page_id 解析 tmdb，确保 hub 行存在
+            tmdb_id = int(hub_id.split(":")[1])
+            store.ensure_show_hub_page(tmdb_id)
+            hout = write_page_html(page_id=hub_id)
+            if isinstance(hout, dict) and hout.get("ok", True):
+                hubs_generated.append(hub_id)
+        except Exception:  # noqa: BLE001 — Hub 失败不阻断 episode 结果
+            pass
+
     return {
         "ok": fail_n == 0,
         "mode": "pages",
         "ok_count": ok_n,
         "fail_count": fail_n,
+        "hubs_generated": hubs_generated,
         "summary": summarize_batch(batch),
         "batch": batch,
     }
@@ -386,10 +410,15 @@ def run_speedtest(
                 detail=detail[:200],
             )
         save_batch(batch)
+        # 测速写入后 bake 静态页，否则线上仍无 Grab/测速面板
+        regen: Dict[str, Any] = {}
+        if ok:
+            regen = run_generate(batch_id=batch["meta"]["batch_id"], page_ids=ids)
         return {
-            "ok": ok,
+            "ok": ok and bool(regen.get("ok", True)),
             "returncode": proc.returncode,
             "report": str(report_path.relative_to(PROJECT_ROOT)),
+            "regenerate": regen,
             "summary": summarize_batch(batch),
             "batch": batch,
         }

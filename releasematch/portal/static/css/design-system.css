@@ -166,9 +166,17 @@ dd:last-child {
 }
 
 @media (min-width: 900px) {
+  /*
+   * 与电影页（Whiplash）同一布局契约：主栏可收缩，不因表格 min-content 撑破
+   * --rm-max-width / --rm-sidebar-width。
+   */
   .rm-main-grid--with-sidebar {
-    grid-template-columns: 1fr var(--rm-sidebar-width);
+    grid-template-columns: minmax(0, 1fr) var(--rm-sidebar-width);
     align-items: start;
+  }
+
+  .rm-main-grid__primary {
+    min-width: 0;
   }
 }
 
@@ -524,6 +532,76 @@ dd:last-child {
   font-size: 0.72rem;
 }
 
+/*
+ * 剧集 Recommended / All Sources：共用固定列宽契约（table-layout:fixed），
+ * 两表列对齐；禁止 ellipsis，长文案换行；表宽始终 100% 不横向拖动。
+ */
+.rm-table--episode {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.rm-table--episode th,
+.rm-table--episode td {
+  overflow: visible;
+  text-overflow: unset;
+  vertical-align: top;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* 列宽百分比：Recommended 与 All Sources 必须一致 */
+.rm-table--episode .rm-col-release {
+  width: 38%;
+}
+
+.rm-table--episode .rm-col-quality {
+  width: 10%;
+}
+
+.rm-table--episode .rm-col-group {
+  width: 14%;
+}
+
+.rm-table--episode .rm-col-cross {
+  width: 9%;
+}
+
+.rm-table--episode .rm-col-size {
+  width: 10%;
+}
+
+.rm-table--episode .rm-col-seed {
+  width: 8%;
+}
+
+.rm-table--episode .rm-col-action {
+  width: 11%;
+}
+
+.rm-table--episode .rm-table__release {
+  max-width: none;
+}
+
+/* Group badge 允许在固定列宽内换行，避免整表被撑宽 */
+.rm-table--episode .rm-col-group .rm-badge {
+  white-space: normal;
+  display: inline-block;
+  max-width: 100%;
+  line-height: 1.25;
+}
+
+.rm-table--movie {
+  table-layout: auto;
+  width: 100%;
+}
+
+.rm-table--movie th,
+.rm-table--movie td {
+  overflow: visible;
+  text-overflow: unset;
+}
+
 .rm-release-card .rm-speed-evidence-wrap {
   margin-top: 1rem;
   margin-bottom: 0;
@@ -793,7 +871,7 @@ dd:last-child {
   font-size: 0.78rem;
   color: var(--rm-text-primary);
   max-width: 280px;
-  word-break: break-all;
+  word-break: break-word;
 }
 
 .rm-table__magnet {

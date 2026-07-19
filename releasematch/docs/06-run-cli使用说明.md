@@ -709,9 +709,12 @@ python -m workflow.run ops tmdb-sync --full-reload   # TRUNCATE 全量重建
 |----|----------|---------|
 | ① 清单从哪来 | TMDB 日导出 + 锚点/curated；或 **全量下载→增量入库→搜索→工作区** | 自动生成 / 加载 JSON / `ops tmdb-sync` + UI 手动选槽 |
 | ② 筛选 | media / tier / pop / 排除 published·失败槽 | 筛选后 **导入跟踪表** |
-| ③ 跑生成流程 | pipeline → MySQL 门禁 → generate → 测速 | 跟踪表逐槽更新 |
+| ③ 跑生成流程 | pipeline → MySQL 门禁 → generate → 测速 | 跟踪表逐槽更新；**测速 write 成功后自动 regenerate**（bake Grab/测速面板） |
 | ④ 上线 | seo_c2 → deploy（默认 prepare-only） | 批次级步骤 + 同一跟踪表 |
 | ⑤ 配置 | `.env`（MySQL/站点/Ops）+ `accounts.local.json`（数据源） | 分文件加载/保存；热加载到当前进程（无需重启） |
+
+**剧集 Hub：** `ensure_slot_page` / Ops generate 会确保 `tv:{tmdb}:hub` 存在并 regenerate，避免只有 `/show/s1e1/` 而 `/{slug}/` 404。  
+**静态资源缓存：** 生成页链接带 `design-system.css?v={{ static_asset_version }}`（CSS 内容 hash），避免旧样式残留。
 
 配置 / 登录 API（本机）：
 
@@ -874,3 +877,4 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | v0.9 | 2026-07-19 | Ops ⑤ 配置：加载/修改 `.env` 与 `accounts.local.json`，`/api/config*` 热加载到当前进程 |
 | v0.10 | 2026-07-19 | Ops 登录门禁：`RM_OPS_PASSWORD` + Cookie 会话；`/login.html` |
 | v0.11 | 2026-07-19 | 数据源只认 `accounts.local.json`；`.env`/Ops 表单移除 JACKETT_* 等重叠项 |
+| v0.12 | 2026-07-19 | Ops 测速成功后自动 regenerate；剧集 Hub `ensure_show_hub_page`；CSS `?v=` 缓存破坏；剧集表固定列宽 |

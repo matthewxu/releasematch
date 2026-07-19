@@ -662,11 +662,30 @@ def build_i18n_runtime() -> I18nRuntime:
     return I18nRuntime(enabled=SITE_I18N_ENABLED, locale=SITE_LOCALE)
 
 
+def static_asset_version() -> str:
+    """
+    根据 design-system.css 内容生成短 hash，用作静态资源缓存破坏参数。
+
+    @returns: 10 位十六进制版本串；读文件失败时回退为固定占位
+    """
+    import hashlib
+    from pathlib import Path
+
+    css_path = Path(__file__).resolve().parents[1] / "static" / "css" / "design-system.css"
+    try:
+        return hashlib.md5(css_path.read_bytes()).hexdigest()[:10]
+    except OSError:
+        return "dev"
+
+
 def merge_render_context(context: Dict[str, Any]) -> Dict[str, Any]:
     """
-    渲染前统一注入 i18n（供 render.py / 首页等调用）。
+    渲染前统一注入 i18n 与静态资源版本（供 render.py / 首页等调用）。
 
     @param context: 模板变量 dict
     @returns: 注入 i18n 后的 dict
     """
-    return build_i18n_runtime().merge_context(context)
+    merged = build_i18n_runtime().merge_context(context)
+    # 完整注释：页面 CSS/JS 链接依赖此版本号，避免旧样式（如 ellipsis）被缓存
+    merged["static_asset_version"] = static_asset_version()
+    return merged
