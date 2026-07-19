@@ -70,7 +70,15 @@
     <aside class="rm-main-grid__sidebar">
       <section class="rm-card">
         {% if poster_url %}
-        <img class="rm-card__poster" src="{{ poster_url }}" alt="{{ t('movie.poster_alt', title=movie_title) }}" loading="lazy">
+        <img
+          class="rm-card__poster rm-lazy-poster"
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='450'%3E%3Crect fill='%2318181b' width='100%25' height='100%25'/%3E%3C/svg%3E"
+          data-rm-lazy-src="{{ poster_url }}"
+          alt="{{ t('movie.poster_alt', title=movie_title) }}"
+          width="300"
+          height="450"
+          decoding="async"
+        >
         {% endif %}
         <h2 class="rm-card__title"{% if i18n_enabled %} data-i18n="movie.about"{% endif %}>{{ t('movie.about') }}</h2>
         <p class="rm-card__text"{% if i18n_enabled %} data-i18n-dynamic="tmdb_overview"{% endif %}>{{ tmdb_overview }}</p>

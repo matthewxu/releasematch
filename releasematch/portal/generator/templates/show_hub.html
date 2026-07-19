@@ -47,7 +47,15 @@
     <aside>
       {% if poster_url %}
       <section class="rm-card">
-        <img class="rm-card__poster" src="{{ poster_url }}" alt="{{ show_title }}" loading="lazy">
+        <img
+          class="rm-card__poster rm-lazy-poster"
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='450'%3E%3Crect fill='%2318181b' width='100%25' height='100%25'/%3E%3C/svg%3E"
+          data-rm-lazy-src="{{ poster_url }}"
+          alt="{{ show_title }}"
+          width="300"
+          height="450"
+          decoding="async"
+        >
         <a class="rm-btn rm-btn--secondary" href="{{ tmdb_url }}" target="{{ outbound_link_target }}" rel="{{ outbound_link_rel }}">TMDB</a>
       </section>
       {% endif %}

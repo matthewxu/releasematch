@@ -714,7 +714,14 @@ python -m workflow.run ops tmdb-sync --full-reload   # TRUNCATE 全量重建
 | ⑤ 配置 | `.env`（MySQL/站点/Ops）+ `accounts.local.json`（数据源） | 分文件加载/保存；热加载到当前进程（无需重启） |
 
 **剧集 Hub：** `ensure_slot_page` / Ops generate 会确保 `tv:{tmdb}:hub` 存在并 regenerate，避免只有 `/show/s1e1/` 而 `/{slug}/` 404。  
-**静态资源缓存：** 生成页链接带 `design-system.css?v={{ static_asset_version }}`（CSS 内容 hash），避免旧样式残留。
+**静态资源缓存：** 生成页链接带 `design-system.css?v={{ static_asset_version }}`（CSS 内容 hash），避免旧样式残留。  
+**TMDB 海报/简介：** 建槽时一次性写入 `media_catalog.poster_path` / `overview` / `overview_zh`（单集另写 `media_pages`）；日常 magnet / 测速**不再重拉**。存量补齐：
+
+```bash
+python -m workflow.run meta migrate-overview-zh   # 旧库补列
+python -m workflow.run meta enrich --all-empty    # 空则补
+python -m workflow.run meta enrich --page-id tv:1668:s01e01
+```
 
 配置 / 登录 API（本机）：
 
@@ -878,3 +885,4 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | v0.10 | 2026-07-19 | Ops 登录门禁：`RM_OPS_PASSWORD` + Cookie 会话；`/login.html` |
 | v0.11 | 2026-07-19 | 数据源只认 `accounts.local.json`；`.env`/Ops 表单移除 JACKETT_* 等重叠项 |
 | v0.12 | 2026-07-19 | Ops 测速成功后自动 regenerate；剧集 Hub `ensure_show_hub_page`；CSS `?v=` 缓存破坏；剧集表固定列宽 |
+| v0.13 | 2026-07-19 | TMDB 海报/简介一次性入库（`meta enrich`）；generate 默认不再 live 打 overview API |

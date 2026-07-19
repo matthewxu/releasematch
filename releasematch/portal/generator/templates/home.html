@@ -86,7 +86,16 @@
       {% for entry in catalog_entries %}
       <a class="rm-show-card" href="{{ entry.href }}">
         {% if entry.poster_url %}
-        <img class="rm-show-card__img" src="{{ entry.poster_url }}" alt="{{ entry.title }}" width="342" height="513" loading="lazy">
+        {# 占位 SVG；真实 URL 在 data-rm-lazy-src，由 site.js IntersectionObserver 滚入视口后再加载 #}
+        <img
+          class="rm-show-card__img rm-lazy-poster"
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='342' height='513'%3E%3Crect fill='%2318181b' width='100%25' height='100%25'/%3E%3C/svg%3E"
+          data-rm-lazy-src="{{ entry.poster_url }}"
+          alt="{{ entry.title }}"
+          width="342"
+          height="513"
+          decoding="async"
+        >
         {% else %}
         <div class="rm-show-card__img rm-show-card__img--placeholder" aria-hidden="true">{{ entry.title[:1] }}</div>
         {% endif %}

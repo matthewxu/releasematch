@@ -556,6 +556,27 @@ def localize_page_variables(variables: Dict[str, Any], locale: str) -> Dict[str,
     @returns: 就地更新后的 variables
     """
     loc = normalize_locale(locale)
+    # 简介：优先用 MySQL 双语字段
+    overview_en = str(variables.get("overview_en") or "").strip()
+    overview_zh = str(variables.get("overview_zh") or "").strip()
+    if loc == "zh" and overview_zh:
+        for key in (
+            "episode_overview",
+            "tmdb_overview",
+            "movie_overview",
+            "show_overview",
+        ):
+            if key in variables:
+                variables[key] = overview_zh
+    elif loc == "en" and overview_en:
+        for key in (
+            "episode_overview",
+            "tmdb_overview",
+            "movie_overview",
+            "show_overview",
+        ):
+            if key in variables:
+                variables[key] = overview_en
     if loc == "zh":
         return variables
     apply_page_locale(variables, loc)

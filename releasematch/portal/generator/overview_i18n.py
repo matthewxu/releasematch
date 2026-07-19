@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-TMDB 简介双语解析（生成期）。
+TMDB 简介双语解析（生成期，优先读 MySQL）。
 
 @module portal.generator.overview_i18n
 @description
-  ``RM_SITE_I18N_ENABLED=true`` 时，尝试从 TMDB API 拉取 en-US / zh-CN overview；
-  失败时回退到 MySQL 已存简介并按脚本推断语言。
+  ``RM_SITE_I18N_ENABLED=true`` 时，从模板上下文的 ``overview_en`` / ``overview_zh``
+  （已由 pipeline 一次性写入 MySQL）组装双语 payload；**默认不再 live 打 TMDB**。
+  仅当两侧皆空且环境变量 ``RM_OVERVIEW_LIVE_TMDB=1`` 时才回退 API。
 """
 
 from __future__ import annotations
 
+import os
 import re
 from typing import Any, Dict, Optional
 
@@ -37,13 +39,13 @@ def _fetch_tmdb_overview(
     episode: Optional[int] = None,
 ) -> str:
     """
-    从 TMDB API 拉取指定语言的 overview。
+    从 TMDB API 拉取指定语言的 overview（仅排障回退路径）。
 
     @param tmdb_id: TMDB 作品 ID
     @param media_kind: tv | movie
     @param language: en-US | zh-CN
     @param season: 剧集季号（单集页）
-    @param episode: 剧集集号（单集页）
+    @param episode: 剧集集号
     @returns: overview 文本；失败时空串
     """
     from workflow.metadata.tmdb_api import TmdbApiClient
@@ -72,13 +74,11 @@ def resolve_bilingual_overviews(
     """
     解析页面上下文中各 overview 字段的 en/zh 版本。
 
-    @param ctx: 未本地化的 Jinja 模板变量
+    @param ctx: 未本地化的 Jinja 模板变量（含 overview_en / overview_zh）
     @returns: ``{field_key: {en, zh}}``；无内容时省略键
     """
-    tmdb_id = int(ctx.get("tmdb_id") or 0)
-    media_kind = str(ctx.get("media_kind") or "tv")
-    season = ctx.get("season")
-    episode = ctx.get("episode")
+    db_en = str(ctx.get("overview_en") or "").strip()
+    db_zh = str(ctx.get("overview_zh") or "").strip()
 
     field_sources: Dict[str, str] = {}
     for key in (
@@ -88,34 +88,46 @@ def resolve_bilingual_overviews(
         "show_overview",
     ):
         val = str(ctx.get(key) or "").strip()
-        if val:
-            field_sources[key] = val
+        if val or db_en or db_zh:
+            field_sources[key] = val or db_en or db_zh
 
     if not field_sources:
         return {}
 
     api_en = ""
     api_zh = ""
-    if tmdb_id > 0:
-        api_en = _fetch_tmdb_overview(
-            tmdb_id=tmdb_id,
-            media_kind=media_kind,
-            language="en-US",
-            season=int(season) if season is not None else None,
-            episode=int(episode) if episode is not None else None,
-        )
-        api_zh = _fetch_tmdb_overview(
-            tmdb_id=tmdb_id,
-            media_kind=media_kind,
-            language="zh-CN",
-            season=int(season) if season is not None else None,
-            episode=int(episode) if episode is not None else None,
-        )
+    live = str(os.environ.get("RM_OVERVIEW_LIVE_TMDB") or "").strip() in (
+        "1",
+        "true",
+        "TRUE",
+        "yes",
+        "YES",
+    )
+    if live and not (db_en and db_zh):
+        tmdb_id = int(ctx.get("tmdb_id") or 0)
+        media_kind = str(ctx.get("media_kind") or "tv")
+        season = ctx.get("season")
+        episode = ctx.get("episode")
+        if tmdb_id > 0:
+            api_en = _fetch_tmdb_overview(
+                tmdb_id=tmdb_id,
+                media_kind=media_kind,
+                language="en-US",
+                season=int(season) if season is not None else None,
+                episode=int(episode) if episode is not None else None,
+            )
+            api_zh = _fetch_tmdb_overview(
+                tmdb_id=tmdb_id,
+                media_kind=media_kind,
+                language="zh-CN",
+                season=int(season) if season is not None else None,
+                episode=int(episode) if episode is not None else None,
+            )
 
     out: Dict[str, Dict[str, str]] = {}
     for key, stored in field_sources.items():
-        en = api_en or (stored if not _looks_chinese(stored) else "")
-        zh = api_zh or (stored if _looks_chinese(stored) else "")
+        en = db_en or api_en or (stored if not _looks_chinese(stored) else "")
+        zh = db_zh or api_zh or (stored if _looks_chinese(stored) else "")
         if not en and stored and not _looks_chinese(stored):
             en = stored
         if not zh and stored and _looks_chinese(stored):

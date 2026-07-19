@@ -1,7 +1,7 @@
 /**
  * ReleaseMatch 站点交互脚本
  * @file site.js
- * @description 移动端导航、响应式表格、Magnet 复制、首页目录搜索。
+ * @description 移动端导航、响应式表格、Magnet 复制、首页目录搜索、海报视口懒加载。
  */
 
 (function () {
@@ -401,6 +401,72 @@
   }
 
   /**
+   * 海报视口懒加载：多屏列表仅在滚入视口（含少量预取边距）时才设置 src 发起请求。
+   * 使用 data-rm-lazy-src；无 IntersectionObserver 时回退为立即加载。
+   */
+  function initLazyPosters() {
+    var nodes = document.querySelectorAll("img[data-rm-lazy-src]");
+    if (!nodes.length) {
+      return;
+    }
+
+    /**
+     * 将 data-rm-lazy-src 写入 img.src 并标记加载完成样式。
+     * @param {HTMLImageElement} img - 目标图片元素
+     */
+    function loadImg(img) {
+      var url = img.getAttribute("data-rm-lazy-src");
+      if (!url) {
+        return;
+      }
+      img.removeAttribute("data-rm-lazy-src");
+      img.addEventListener(
+        "load",
+        function () {
+          img.classList.add("is-loaded");
+        },
+        { once: true }
+      );
+      img.addEventListener(
+        "error",
+        function () {
+          img.classList.add("is-error");
+        },
+        { once: true }
+      );
+      img.src = url;
+    }
+
+    if (!("IntersectionObserver" in window)) {
+      nodes.forEach(loadImg);
+      return;
+    }
+
+    var observer = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) {
+            return;
+          }
+          var img = entry.target;
+          observer.unobserve(img);
+          loadImg(img);
+        });
+      },
+      {
+        root: null,
+        /* 提前约一屏边距开始加载，避免刚滑入才空白过久 */
+        rootMargin: "200px 0px",
+        threshold: 0.01,
+      }
+    );
+
+    nodes.forEach(function (img) {
+      observer.observe(img);
+    });
+  }
+
+  /**
    * 页面 DOM 就绪后执行全部初始化。
    */
   function init() {
@@ -410,6 +476,7 @@
     initCopyMagnet();
     initCatalogSearch();
     initTableSort();
+    initLazyPosters();
   }
 
   if (document.readyState === "loading") {

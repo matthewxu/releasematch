@@ -1559,10 +1559,24 @@ class MySQLStore:
                 )
                 created = True
         conn.close()
+
+        # Hub 创建后补齐作品海报/简介（空则补）
+        display_meta: Dict[str, Any] = {}
+        try:
+            display_meta = self.enrich_tmdb_display_meta(
+                tmdb_id=tmdb_id,
+                media_kind="tv",
+                page_id=hub_page_id,
+                force=False,
+            )
+        except Exception as exc:  # noqa: BLE001
+            display_meta = {"ok": False, "error": str(exc)}
+
         return {
             "hub_page_id": hub_page_id,
             "canonical_path": hub_canonical,
             "created": created,
+            "display_meta": display_meta,
         }
 
     def ensure_slot_page(
@@ -1676,13 +1690,479 @@ class MySQLStore:
                 tmdb_id, title=resolved_title, slug=slug
             )
 
+        # 首次建槽：空则补 TMDB 海报/简介（缺 Key 不阻断）
+        display_meta: Dict[str, Any] = {}
+        try:
+            display_meta = self.enrich_tmdb_display_meta(
+                tmdb_id=tmdb_id,
+                media_kind=media_kind,
+                season=season,
+                episode=episode,
+                page_id=page_id,
+                force=False,
+            )
+        except Exception as exc:  # noqa: BLE001 — 展示元数据失败不阻断建槽
+            display_meta = {"ok": False, "error": str(exc)}
+
         return {
             "catalog_id": catalog_id,
             "page_id": page_id,
             "created_catalog": created_catalog,
             "created_page": created_page,
             "hub": hub_info,
+            "display_meta": display_meta,
         }
+
+    def ensure_overview_zh_columns(self) -> Dict[str, Any]:
+        """
+        幂等补齐 ``overview_zh`` 列（旧库迁移）。
+
+        @returns: 是否已应用变更的摘要
+        """
+        added: List[str] = []
+        conn = self._connect()
+        try:
+            with conn.cursor() as cur:
+                for table in ("media_catalog", "media_pages"):
+                    cur.execute(
+                        """
+                        SELECT COUNT(*) AS n FROM information_schema.COLUMNS
+                        WHERE TABLE_SCHEMA = DATABASE()
+                          AND TABLE_NAME = %s AND COLUMN_NAME = 'overview_zh'
+                        """,
+                        (table,),
+                    )
+                    row = cur.fetchone() or {}
+                    if int(row.get("n") or 0) > 0:
+                        continue
+                    cur.execute(
+                        f"ALTER TABLE `{table}` "
+                        "ADD COLUMN overview_zh TEXT NULL "
+                        "COMMENT '简介（zh-CN）' AFTER overview"
+                    )
+                    added.append(table)
+            conn.commit()
+        finally:
+            conn.close()
+        return {"ok": True, "added": added}
+
+    def upsert_catalog_display_meta(
+        self,
+        catalog_id: str,
+        *,
+        poster_path: str = "",
+        overview_en: str = "",
+        overview_zh: str = "",
+        title: Optional[str] = None,
+        year: Optional[int] = None,
+        runtime_minutes: Optional[int] = None,
+        force: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        补齐作品级海报/简介（默认仅写空字段）。
+
+        @param catalog_id: media_catalog 主键
+        @param poster_path: TMDB poster_path
+        @param overview_en: 英文简介
+        @param overview_zh: 中文简介
+        @param title: 可选标题（仅空时写）
+        @param year: 可选年份
+        @param runtime_minutes: 可选片长
+        @param force: True 时覆盖已有非空字段
+        @returns: 更新字段列表
+        """
+        self.ensure_overview_zh_columns()
+        conn = self._connect()
+        updated: List[str] = []
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT poster_path, overview, overview_zh, title, year, runtime_minutes
+                    FROM media_catalog WHERE catalog_id = %s LIMIT 1
+                    """,
+                    (catalog_id,),
+                )
+                row = cur.fetchone()
+                if not row:
+                    return {"ok": False, "error": "catalog_not_found", "updated": []}
+
+                sets: List[str] = []
+                vals: List[Any] = []
+
+                def _need(cur_val: Any, new_val: Any) -> bool:
+                    """判断是否应写入新值。"""
+                    if new_val in (None, ""):
+                        return False
+                    if force:
+                        return True
+                    return cur_val in (None, "")
+
+                if _need(row.get("poster_path"), poster_path):
+                    sets.append("poster_path = %s")
+                    vals.append(poster_path)
+                    updated.append("poster_path")
+                if _need(row.get("overview"), overview_en):
+                    sets.append("overview = %s")
+                    vals.append(overview_en)
+                    updated.append("overview")
+                if _need(row.get("overview_zh"), overview_zh):
+                    sets.append("overview_zh = %s")
+                    vals.append(overview_zh)
+                    updated.append("overview_zh")
+                if title and _need(row.get("title"), title):
+                    # 占位标题 TMDB {id} 时允许用真实标题替换
+                    cur_title = str(row.get("title") or "")
+                    if force or cur_title.startswith("TMDB ") or not cur_title:
+                        sets.append("title = %s")
+                        vals.append(title)
+                        updated.append("title")
+                if year is not None and _need(row.get("year"), year):
+                    sets.append("year = %s")
+                    vals.append(year)
+                    updated.append("year")
+                if runtime_minutes is not None and _need(
+                    row.get("runtime_minutes"), runtime_minutes
+                ):
+                    sets.append("runtime_minutes = %s")
+                    vals.append(runtime_minutes)
+                    updated.append("runtime_minutes")
+
+                if not sets:
+                    return {"ok": True, "updated": [], "skipped": True}
+
+                sets.append("updated_at = %s")
+                vals.append(_utc_now_str())
+                vals.append(catalog_id)
+                cur.execute(
+                    f"UPDATE media_catalog SET {', '.join(sets)} WHERE catalog_id = %s",
+                    tuple(vals),
+                )
+            conn.commit()
+        finally:
+            conn.close()
+        return {"ok": True, "updated": updated}
+
+    def upsert_page_display_meta(
+        self,
+        page_id: str,
+        *,
+        overview_en: str = "",
+        overview_zh: str = "",
+        episode_title: str = "",
+        air_date: Optional[str] = None,
+        force: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        补齐槽位级简介/集标题（默认仅写空字段）。
+
+        @param page_id: media_pages 主键
+        @param overview_en: 英文简介
+        @param overview_zh: 中文简介
+        @param episode_title: 单集标题
+        @param air_date: 播出日 YYYY-MM-DD
+        @param force: True 时覆盖已有非空字段
+        @returns: 更新字段列表
+        """
+        self.ensure_overview_zh_columns()
+        conn = self._connect()
+        updated: List[str] = []
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT overview, overview_zh, episode_title, air_date
+                    FROM media_pages WHERE page_id = %s LIMIT 1
+                    """,
+                    (page_id,),
+                )
+                row = cur.fetchone()
+                if not row:
+                    return {"ok": False, "error": "page_not_found", "updated": []}
+
+                sets: List[str] = []
+                vals: List[Any] = []
+
+                def _need(cur_val: Any, new_val: Any) -> bool:
+                    """判断是否应写入新值。"""
+                    if new_val in (None, ""):
+                        return False
+                    if force:
+                        return True
+                    return cur_val in (None, "")
+
+                if _need(row.get("overview"), overview_en):
+                    sets.append("overview = %s")
+                    vals.append(overview_en)
+                    updated.append("overview")
+                if _need(row.get("overview_zh"), overview_zh):
+                    sets.append("overview_zh = %s")
+                    vals.append(overview_zh)
+                    updated.append("overview_zh")
+                if _need(row.get("episode_title"), episode_title):
+                    sets.append("episode_title = %s")
+                    vals.append(episode_title)
+                    updated.append("episode_title")
+                if air_date and _need(row.get("air_date"), air_date):
+                    sets.append("air_date = %s")
+                    vals.append(air_date)
+                    updated.append("air_date")
+
+                if not sets:
+                    return {"ok": True, "updated": [], "skipped": True}
+
+                sets.append("updated_at = %s")
+                vals.append(_utc_now_str())
+                vals.append(page_id)
+                cur.execute(
+                    f"UPDATE media_pages SET {', '.join(sets)} WHERE page_id = %s",
+                    tuple(vals),
+                )
+            conn.commit()
+        finally:
+            conn.close()
+        return {"ok": True, "updated": updated}
+
+    def enrich_tmdb_display_meta(
+        self,
+        *,
+        tmdb_id: int,
+        media_kind: str,
+        season: Optional[int] = None,
+        episode: Optional[int] = None,
+        page_id: Optional[str] = None,
+        force: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        从 TMDB 拉取海报/简介并空则补写入 MySQL。
+
+        @param tmdb_id: TMDB ID
+        @param media_kind: tv | movie
+        @param season: 剧集季号
+        @param episode: 剧集集号
+        @param page_id: 可选页主键；缺省时按槽位解析
+        @param force: True 时覆盖已有展示字段
+        @returns: 拉取与写入摘要
+        """
+        from workflow.metadata.tmdb_api import (
+            TmdbApiClient,
+            fetch_display_metadata,
+            fetch_episode_display_metadata,
+        )
+
+        self.ensure_overview_zh_columns()
+        catalog_id = build_catalog_id(tmdb_id, media_kind)
+        resolved_page_id = page_id or self.resolve_page_id(
+            tmdb_id, media_kind, season, episode
+        )
+        client = TmdbApiClient()
+        if not client.configured():
+            return {
+                "ok": False,
+                "skipped": True,
+                "reason": "tmdb_api_key_missing",
+                "catalog_id": catalog_id,
+                "page_id": resolved_page_id,
+            }
+
+        # 若非 force 且作品海报+双语简介已齐，跳过作品级 API
+        need_catalog = force
+        need_episode = False
+        conn = self._connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT poster_path, overview, overview_zh
+                    FROM media_catalog WHERE catalog_id = %s LIMIT 1
+                    """,
+                    (catalog_id,),
+                )
+                cat = cur.fetchone() or {}
+                if force or not (
+                    str(cat.get("poster_path") or "").strip()
+                    and (
+                        str(cat.get("overview") or "").strip()
+                        or str(cat.get("overview_zh") or "").strip()
+                    )
+                ):
+                    need_catalog = True
+
+                if media_kind == "tv" and season is not None and episode is not None:
+                    cur.execute(
+                        """
+                        SELECT overview, overview_zh, episode_title
+                        FROM media_pages WHERE page_id = %s LIMIT 1
+                        """,
+                        (resolved_page_id,),
+                    )
+                    pg = cur.fetchone() or {}
+                    if force or not (
+                        str(pg.get("overview") or "").strip()
+                        or str(pg.get("overview_zh") or "").strip()
+                    ):
+                        need_episode = True
+                elif media_kind == "movie":
+                    cur.execute(
+                        """
+                        SELECT overview, overview_zh FROM media_pages
+                        WHERE page_id = %s LIMIT 1
+                        """,
+                        (resolved_page_id,),
+                    )
+                    pg = cur.fetchone() or {}
+                    if force or not (
+                        str(pg.get("overview") or "").strip()
+                        or str(pg.get("overview_zh") or "").strip()
+                    ):
+                        need_episode = True  # 电影页镜像 catalog overview
+        finally:
+            conn.close()
+
+        catalog_result: Dict[str, Any] = {"skipped": True}
+        page_result: Dict[str, Any] = {"skipped": True}
+        show_meta: Optional[Dict[str, Any]] = None
+
+        if need_catalog:
+            show_meta = fetch_display_metadata(
+                tmdb_id, media_kind, client=client
+            )
+            if show_meta:
+                catalog_result = self.upsert_catalog_display_meta(
+                    catalog_id,
+                    poster_path=str(show_meta.get("poster_path") or ""),
+                    overview_en=str(show_meta.get("overview_en") or ""),
+                    overview_zh=str(show_meta.get("overview_zh") or ""),
+                    title=show_meta.get("title"),
+                    year=show_meta.get("year"),
+                    runtime_minutes=show_meta.get("runtime_minutes"),
+                    force=force,
+                )
+            else:
+                catalog_result = {"ok": False, "error": "fetch_display_failed"}
+
+        if need_episode and media_kind == "tv" and season is not None and episode is not None:
+            ep_meta = fetch_episode_display_metadata(
+                tmdb_id, int(season), int(episode), client=client
+            )
+            if ep_meta:
+                page_result = self.upsert_page_display_meta(
+                    resolved_page_id,
+                    overview_en=str(ep_meta.get("overview_en") or ""),
+                    overview_zh=str(ep_meta.get("overview_zh") or ""),
+                    episode_title=str(ep_meta.get("episode_title") or ""),
+                    air_date=ep_meta.get("air_date"),
+                    force=force,
+                )
+            else:
+                page_result = {"ok": False, "error": "fetch_episode_failed"}
+        elif need_episode and media_kind == "movie":
+            # 电影页 overview 空时镜像 catalog
+            if show_meta is None and need_catalog is False:
+                show_meta = fetch_display_metadata(
+                    tmdb_id, media_kind, client=client
+                )
+            en = str((show_meta or {}).get("overview_en") or "")
+            zh = str((show_meta or {}).get("overview_zh") or "")
+            if not en or not zh:
+                conn = self._connect()
+                try:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "SELECT overview, overview_zh FROM media_catalog "
+                            "WHERE catalog_id = %s LIMIT 1",
+                            (catalog_id,),
+                        )
+                        crow = cur.fetchone() or {}
+                        en = en or str(crow.get("overview") or "")
+                        zh = zh or str(crow.get("overview_zh") or "")
+                finally:
+                    conn.close()
+            page_result = self.upsert_page_display_meta(
+                resolved_page_id,
+                overview_en=en,
+                overview_zh=zh,
+                force=force,
+            )
+
+        # Hub 页：把 catalog overview 镜像到 hub page（空则补）
+        if media_kind == "tv":
+            hub_id = build_page_id(tmdb_id, "tv", page_type="show_hub")
+            conn = self._connect()
+            try:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT overview, overview_zh FROM media_catalog "
+                        "WHERE catalog_id = %s LIMIT 1",
+                        (catalog_id,),
+                    )
+                    crow = cur.fetchone() or {}
+            finally:
+                conn.close()
+            self.upsert_page_display_meta(
+                hub_id,
+                overview_en=str(crow.get("overview") or ""),
+                overview_zh=str(crow.get("overview_zh") or ""),
+                force=force,
+            )
+
+        return {
+            "ok": True,
+            "catalog_id": catalog_id,
+            "page_id": resolved_page_id,
+            "catalog": catalog_result,
+            "page": page_result,
+            "force": force,
+        }
+
+    def list_pages_needing_display_meta(self, *, limit: int = 500) -> List[Dict[str, Any]]:
+        """
+        列出海报或简介仍缺的页面（供 meta enrich --all-empty）。
+
+        @param limit: 最大返回条数
+        @returns: 含 page_id / tmdb_id / media_kind / season / episode 的字典列表
+        """
+        self.ensure_overview_zh_columns()
+        conn = self._connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT p.page_id, c.tmdb_id, c.media_kind, p.page_type,
+                           p.season, p.episode,
+                           c.poster_path, c.overview AS cat_overview,
+                           c.overview_zh AS cat_overview_zh,
+                           p.overview AS page_overview,
+                           p.overview_zh AS page_overview_zh
+                    FROM media_pages p
+                    JOIN media_catalog c ON c.catalog_id = p.catalog_id
+                    WHERE p.page_type IN ('episode', 'movie', 'show_hub')
+                      AND (
+                        IFNULL(c.poster_path, '') = ''
+                        OR (
+                          IFNULL(c.overview, '') = ''
+                          AND IFNULL(c.overview_zh, '') = ''
+                        )
+                        OR (
+                          p.page_type = 'episode'
+                          AND IFNULL(p.overview, '') = ''
+                          AND IFNULL(p.overview_zh, '') = ''
+                        )
+                        OR (
+                          p.page_type = 'movie'
+                          AND IFNULL(p.overview, '') = ''
+                          AND IFNULL(p.overview_zh, '') = ''
+                        )
+                      )
+                    ORDER BY p.updated_at DESC
+                    LIMIT %s
+                    """,
+                    (int(limit),),
+                )
+                rows = cur.fetchall() or []
+        finally:
+            conn.close()
+        return [dict(r) for r in rows]
 
     def page_has_resources(self, page_id: str, min_magnets: int = 2) -> bool:
         """

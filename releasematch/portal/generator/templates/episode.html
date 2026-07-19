@@ -88,7 +88,15 @@
     <aside class="rm-main-grid__sidebar">
       <section class="rm-card tmdb-card" aria-labelledby="tmdb-heading">
         {% if poster_url %}
-        <img class="rm-card__poster" src="{{ poster_url }}" alt="{{ t('episode.poster_alt', title=show_title) }}" width="300" height="450" loading="lazy">
+        <img
+          class="rm-card__poster rm-lazy-poster"
+          src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='450'%3E%3Crect fill='%2318181b' width='100%25' height='100%25'/%3E%3C/svg%3E"
+          data-rm-lazy-src="{{ poster_url }}"
+          alt="{{ t('episode.poster_alt', title=show_title) }}"
+          width="300"
+          height="450"
+          decoding="async"
+        >
         {% endif %}
         <h2 class="rm-card__title" id="tmdb-heading"{% if i18n_enabled %} data-i18n="episode.about"{% endif %}>{{ t('episode.about') }}</h2>
         <p class="rm-card__meta">{{ show_title }} · S{{ season }}E{{ episode }}</p>

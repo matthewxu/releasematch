@@ -48,7 +48,8 @@ CREATE TABLE IF NOT EXISTS media_catalog (
                             CHECK (media_kind IN ('tv','movie')),
     slug                    TEXT NOT NULL UNIQUE, -- URL slug：breaking-bad, inception-2010
     title                   TEXT NOT NULL,        -- 作品主标题
-    overview                TEXT DEFAULT '',      -- 剧集/电影简介（Hub Hero 副标题）
+    overview                TEXT DEFAULT '',      -- 剧集/电影简介 en-US（Hub Hero 副标题）
+    overview_zh             TEXT DEFAULT '',      -- 剧集/电影简介 zh-CN
     year                    INTEGER,              -- 上映/首播年
     runtime_minutes         INTEGER,              -- 电影片长（分钟）；剧集可为 NULL
     poster_path             TEXT DEFAULT '',      -- TMDB poster path，渲染时拼 w300 URL
@@ -74,7 +75,8 @@ CREATE TABLE IF NOT EXISTS media_pages (
     episode                 INTEGER,              -- 集号；电影/hub 为 NULL
     episode_title           TEXT DEFAULT '',      -- 单集名，如 Cornered
     air_date                TEXT DEFAULT '',      -- 播出日 YYYY-MM-DD
-    overview                TEXT DEFAULT '',      -- 槽位级简介（可覆盖 catalog）
+    overview                TEXT DEFAULT '',      -- 槽位级简介 en-US（可覆盖 catalog）
+    overview_zh             TEXT DEFAULT '',      -- 槽位级简介 zh-CN
     cross_source_count      INTEGER NOT NULL DEFAULT 0,  -- Hero badge 分子
     cross_source_total      INTEGER NOT NULL DEFAULT 3,  -- Hero badge 分母
     prev_season             INTEGER,              -- 集间导航上一集

@@ -22,6 +22,8 @@ ReleaseMatch 工作流总控 CLI。
     serve         — 本地开发服（DB 动态渲染 + 静态资源）
     ops serve      — 本地运营控制台（清单→筛选→生成→上线，仅 127.0.0.1）
     ops tmdb-sync  — 每天全量下载 TMDB Daily Export → MySQL 增量入库（cron）
+    meta enrich    — 一次性补齐海报/简介（空则补；日常 magnet/测速无需再跑）
+    meta migrate-overview-zh — 旧库补 overview_zh 列
 
   示例：
     cd releasematch && cp config.env.example .env  # 按需编辑
@@ -30,6 +32,7 @@ ReleaseMatch 工作流总控 CLI。
     cd releasematch && python -m workflow.run pipeline slot --tmdb 1396 --season 4 --episode 6
     cd releasematch && python -m workflow.run query page --page-id tv:1396:s04e06
     cd releasematch && python -m workflow.run ops tmdb-sync
+    cd releasematch && python -m workflow.run meta enrich --all-empty
 """
 
 from __future__ import annotations
@@ -414,6 +417,170 @@ def cmd_serve_static(args: argparse.Namespace) -> int:
 
 def cmd_ops(args: argparse.Namespace) -> int:
     """
+    Ops 子命令分发。
+
+    @param args: 解析后的参数
+    @returns: 退出码
+    """
+    from workflow.ops import source_service
+    from workflow.ops.server import serve_ops
+
+    if args.ops_action == "serve":
+        serve_ops(host=args.host, port=args.port)
+        return 0
+
+    if args.ops_action == "tmdb-sync":
+        meta = source_service.daily_sync_export(
+            export_date=args.export_date,
+            full_reload=bool(args.full_reload),
+        )
+        print(
+            f"[ops tmdb-sync] ok · export_date={meta.get('export_date')} · "
+            f"movie={meta.get('movie_count'):,} · tv={meta.get('tv_count'):,} · "
+            f"mode={meta.get('ingest_mode')} · "
+            f"scanned={meta.get('last_scanned'):,} · deleted={meta.get('last_deleted'):,}"
+        )
+        return 0 if meta.get("ok") and meta.get("ready") else 1
+
+    print(f"未知 ops 动作: {args.ops_action}", file=sys.stderr)
+    return 1
+
+
+def cmd_meta(args: argparse.Namespace) -> int:
+    """
+    TMDB 展示元数据：迁移列 / 空则补海报与简介。
+
+    @param args: 解析后的参数
+    @returns: 退出码
+    """
+    from workflow.storage.mysql_store import MySQLStore
+
+    store = MySQLStore()
+    ping = store.ping()
+    if not ping.get("ok"):
+        print(json.dumps({"ok": False, "step": "db_ping", "detail": ping}, ensure_ascii=False))
+        return 1
+
+    if args.meta_action == "migrate-overview-zh":
+        result = store.ensure_overview_zh_columns()
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0 if result.get("ok") else 1
+
+    if args.meta_action != "enrich":
+        print(f"未知 meta 动作: {args.meta_action}", file=sys.stderr)
+        return 1
+
+    force = bool(args.force)
+    results: list = []
+    ok_n = 0
+    fail_n = 0
+
+    if args.page_id:
+        page_id = str(args.page_id).strip()
+        # 从 page_id 解析槽位
+        parts = page_id.split(":")
+        if len(parts) < 2 or not parts[1].isdigit():
+            print(json.dumps({"ok": False, "error": f"bad page_id: {page_id}"}, ensure_ascii=False))
+            return 1
+        tmdb_id = int(parts[1])
+        if parts[0] == "movie":
+            media_kind = "movie"
+            season = None
+            episode = None
+        else:
+            media_kind = "tv"
+            season = None
+            episode = None
+            if len(parts) >= 3 and parts[2] != "hub":
+                # tv:1668:s01e01
+                slot = parts[2]
+                if slot.startswith("s") and "e" in slot:
+                    try:
+                        s_part, e_part = slot[1:].split("e", 1)
+                        season = int(s_part)
+                        episode = int(e_part)
+                    except ValueError:
+                        season = None
+                        episode = None
+        out = store.enrich_tmdb_display_meta(
+            tmdb_id=tmdb_id,
+            media_kind=media_kind,
+            season=season,
+            episode=episode,
+            page_id=page_id,
+            force=force,
+        )
+        results.append(out)
+        if out.get("ok"):
+            ok_n += 1
+        else:
+            fail_n += 1
+    elif args.all_empty:
+        rows = store.list_pages_needing_display_meta(limit=int(args.limit))
+        # 按 catalog 去重作品级拉取，再按页补
+        seen_catalog: set = set()
+        for row in rows:
+            tmdb_id = int(row["tmdb_id"])
+            media_kind = str(row["media_kind"])
+            page_type = str(row.get("page_type") or "")
+            season = row.get("season")
+            episode = row.get("episode")
+            page_id = str(row["page_id"])
+            catalog_key = f"{media_kind}:{tmdb_id}"
+            # show_hub 只走 catalog；episode/movie 带 season/episode
+            if page_type == "show_hub":
+                if catalog_key in seen_catalog and not force:
+                    # 仍镜像 hub overview
+                    out = store.enrich_tmdb_display_meta(
+                        tmdb_id=tmdb_id,
+                        media_kind="tv",
+                        page_id=page_id,
+                        force=force,
+                    )
+                else:
+                    out = store.enrich_tmdb_display_meta(
+                        tmdb_id=tmdb_id,
+                        media_kind="tv",
+                        page_id=page_id,
+                        force=force,
+                    )
+                    seen_catalog.add(catalog_key)
+            else:
+                out = store.enrich_tmdb_display_meta(
+                    tmdb_id=tmdb_id,
+                    media_kind=media_kind,
+                    season=int(season) if season is not None else None,
+                    episode=int(episode) if episode is not None else None,
+                    page_id=page_id,
+                    force=force,
+                )
+                seen_catalog.add(catalog_key)
+            results.append({"page_id": page_id, **out})
+            if out.get("ok"):
+                ok_n += 1
+            else:
+                fail_n += 1
+    else:
+        print(
+            "请指定 --page-id 或 --all-empty",
+            file=sys.stderr,
+        )
+        return 1
+
+    summary = {
+        "ok": fail_n == 0,
+        "ok_count": ok_n,
+        "fail_count": fail_n,
+        "force": force,
+        "results": results[:20],
+        "results_truncated": len(results) > 20,
+    }
+    print(json.dumps(summary, ensure_ascii=False, indent=2, default=str))
+    return 0 if fail_n == 0 else 1
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """
     Ops 运营控制台子命令入口。
 
     @param args: 含 ops_action、host、port 或 tmdb-sync 参数
@@ -619,6 +786,36 @@ def build_parser() -> argparse.ArgumentParser:
         help="TRUNCATE 后全量重建（默认增量 UPSERT + prune）",
     )
     p_ops_tmdb.set_defaults(func=cmd_ops)
+
+    p_meta = sub.add_parser("meta", help="TMDB 海报/简介入库（空则补）")
+    meta_sub = p_meta.add_subparsers(dest="meta_action", required=True)
+    p_meta_mig = meta_sub.add_parser(
+        "migrate-overview-zh",
+        help="旧库补 media_catalog/media_pages.overview_zh 列",
+    )
+    p_meta_mig.set_defaults(func=cmd_meta)
+    p_meta_enrich = meta_sub.add_parser(
+        "enrich",
+        help="拉取 TMDB 海报与中英简介写入 MySQL（默认仅补空字段）",
+    )
+    p_meta_enrich.add_argument("--page-id", default=None, help="如 tv:1668:s01e01")
+    p_meta_enrich.add_argument(
+        "--all-empty",
+        action="store_true",
+        help="扫描海报/简介仍缺的页面并补齐",
+    )
+    p_meta_enrich.add_argument(
+        "--force",
+        action="store_true",
+        help="覆盖已有海报/简介",
+    )
+    p_meta_enrich.add_argument(
+        "--limit",
+        type=int,
+        default=500,
+        help="--all-empty 最大页数（默认 500）",
+    )
+    p_meta_enrich.set_defaults(func=cmd_meta)
 
     return parser
 

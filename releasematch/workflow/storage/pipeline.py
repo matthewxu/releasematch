@@ -151,6 +151,18 @@ def run_slot_pipeline(
     ensure_result = store.ensure_slot_page(
         tmdb_id, media_kind, season, episode, title=title
     )
+    # ensure_slot_page 已空则补展示元数据；此处再调用一次幂等（旧路径/显式保障）
+    try:
+        store.enrich_tmdb_display_meta(
+            tmdb_id=tmdb_id,
+            media_kind=media_kind,
+            season=season,
+            episode=episode,
+            page_id=page_id,
+            force=False,
+        )
+    except Exception:  # noqa: BLE001 — 展示元数据失败不阻断 magnet pipeline
+        pass
 
     items: List[Dict[str, Any]] = []
     fetch_note = ""

@@ -1723,6 +1723,21 @@ dd:last-child {
   background: var(--rm-bg-elevated);
 }
 
+/* 视口懒加载海报：未写入真实 src 前保持占位底色，加载完成后淡入 */
+.rm-lazy-poster {
+  background: var(--rm-bg-elevated);
+  opacity: 0.92;
+  transition: opacity 0.25s ease;
+}
+
+.rm-lazy-poster.is-loaded {
+  opacity: 1;
+}
+
+.rm-lazy-poster.is-error {
+  opacity: 0.55;
+}
+
 .rm-show-card__img--placeholder {
   display: flex;
   align-items: center;

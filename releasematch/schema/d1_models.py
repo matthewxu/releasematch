@@ -166,7 +166,8 @@ class MediaCatalog:
     @var media_kind: tv | movie
     @var slug: URL slug
     @var title: 作品标题
-    @var overview: 简介
+    @var overview: 简介（en-US）
+    @var overview_zh: 简介（zh-CN）
     @var year: 年份
     @var runtime_minutes: 电影片长
     @var poster_path: TMDB poster path
@@ -182,6 +183,7 @@ class MediaCatalog:
     slug: str
     title: str
     overview: str = ""
+    overview_zh: str = ""
     year: Optional[int] = None
     runtime_minutes: Optional[int] = None
     poster_path: str = ""
@@ -206,6 +208,7 @@ class MediaCatalog:
             slug=str(row["slug"]),
             title=str(row["title"]),
             overview=str(row.get("overview") or ""),
+            overview_zh=str(row.get("overview_zh") or ""),
             year=int(row["year"]) if row.get("year") is not None else None,
             runtime_minutes=int(row["runtime_minutes"]) if row.get("runtime_minutes") is not None else None,
             poster_path=str(row.get("poster_path") or ""),
@@ -228,7 +231,8 @@ class MediaPage:
     @var episode: 集号
     @var episode_title: 单集标题
     @var air_date: 播出日
-    @var overview: 槽位简介
+    @var overview: 槽位简介（en-US）
+    @var overview_zh: 槽位简介（zh-CN）
     @var cross_source_count: Hero 跨源 badge 分子
     @var cross_source_total: Hero 跨源 badge 分母
     @var prev_season: 上一集季号
@@ -253,6 +257,7 @@ class MediaPage:
     episode_title: str = ""
     air_date: str = ""
     overview: str = ""
+    overview_zh: str = ""
     cross_source_count: int = 0
     cross_source_total: int = 4
     prev_season: Optional[int] = None
@@ -316,6 +321,7 @@ class MediaPage:
             episode_title=str(row.get("episode_title") or ""),
             air_date=str(row.get("air_date") or ""),
             overview=str(row.get("overview") or ""),
+            overview_zh=str(row.get("overview_zh") or ""),
             cross_source_count=int(row.get("cross_source_count") or 0),
             cross_source_total=int(row.get("cross_source_total") or 3),
             prev_season=int(row["prev_season"]) if row.get("prev_season") is not None else None,
@@ -1446,7 +1452,9 @@ class EpisodePageContext:
         show_hub_url = f"{origin}{hub_path}" if origin else hub_path
         season_num = self.page.season or 0
         episode_num = self.page.episode or 0
-        overview = self.page.overview or self.catalog.overview or ""
+        overview_en = self.page.overview or self.catalog.overview or ""
+        overview_zh = self.page.overview_zh or self.catalog.overview_zh or ""
+        overview = overview_en
 
         return {
             "show_title": self.catalog.title,
@@ -1457,7 +1465,9 @@ class EpisodePageContext:
             "episode": self.page.episode,
             "episode_title": self.page.episode_title,
             "air_date": self.page.air_date,
-            "episode_overview": self.page.overview or self.catalog.overview,
+            "episode_overview": overview_en,
+            "overview_en": overview_en,
+            "overview_zh": overview_zh,
             "cross_source_count": self.page.cross_source_count,
             "cross_source_total": self.page.cross_source_total,
             "speed_summary": self.speed_summary.to_template_dict() if self.speed_summary else None,
@@ -1482,7 +1492,7 @@ class EpisodePageContext:
                 else None
             ),
             "poster_url": self.catalog.poster_url(),
-            "tmdb_overview": self.page.overview,
+            "tmdb_overview": overview_en,
             "tmdb_url": (
                 f"https://www.themoviedb.org/tv/{self.catalog.tmdb_id}"
                 f"/season/{self.page.season}/episode/{self.page.episode}"
@@ -1594,7 +1604,9 @@ class MoviePageContext:
         canonical = self.canonical_url or (
             f"{origin}{self.page.canonical_path}" if origin else self.page.canonical_path
         )
-        overview = self.page.overview or self.catalog.overview or ""
+        overview_en = self.page.overview or self.catalog.overview or ""
+        overview_zh = self.page.overview_zh or self.catalog.overview_zh or ""
+        overview = overview_en
         year = self.catalog.year or ""
         return {
             "movie_title": self.catalog.title,
@@ -1602,7 +1614,9 @@ class MoviePageContext:
             "media_kind": self.catalog.media_kind,
             "year": year,
             "runtime": runtime,
-            "movie_overview": overview,
+            "movie_overview": overview_en,
+            "overview_en": overview_en,
+            "overview_zh": overview_zh,
             "cross_source_count": self.page.cross_source_count,
             "cross_source_total": self.page.cross_source_total,
             "speed_summary": self.speed_summary.to_template_dict() if self.speed_summary else None,
@@ -1616,7 +1630,7 @@ class MoviePageContext:
             "source_editions": source_editions,
             "source_count": len(source_dicts),
             "poster_url": self.catalog.poster_url(),
-            "tmdb_overview": self.page.overview or self.catalog.overview,
+            "tmdb_overview": overview_en,
             "tmdb_url": self.catalog.tmdb_url,
             "canonical_url": canonical,
             "schema_ld": build_movie_schema_ld(
@@ -1681,12 +1695,16 @@ class ShowHubPageContext:
         canonical = self.canonical_url or (
             f"{origin}{self.page.canonical_path}" if origin else self.page.canonical_path
         )
+        overview_en = self.page.overview or self.catalog.overview or ""
+        overview_zh = self.page.overview_zh or self.catalog.overview_zh or ""
         return {
             "show_title": self.catalog.title,
             "show_slug": self.catalog.slug,
             "tmdb_id": self.catalog.tmdb_id,
             "media_kind": self.catalog.media_kind,
-            "show_overview": self.page.overview or self.catalog.overview,
+            "show_overview": overview_en,
+            "overview_en": overview_en,
+            "overview_zh": overview_zh,
             "seasons": seasons_out,
             "poster_url": self.catalog.poster_url(),
             "tmdb_url": self.catalog.tmdb_url,

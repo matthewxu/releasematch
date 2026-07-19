@@ -664,18 +664,30 @@ def build_i18n_runtime() -> I18nRuntime:
 
 def static_asset_version() -> str:
     """
-    根据 design-system.css 内容生成短 hash，用作静态资源缓存破坏参数。
+    根据 design-system.css 与 site.js 内容生成短 hash，用作静态资源缓存破坏参数。
 
     @returns: 10 位十六进制版本串；读文件失败时回退为固定占位
     """
     import hashlib
     from pathlib import Path
 
-    css_path = Path(__file__).resolve().parents[1] / "static" / "css" / "design-system.css"
-    try:
-        return hashlib.md5(css_path.read_bytes()).hexdigest()[:10]
-    except OSError:
+    static_root = Path(__file__).resolve().parents[1] / "static"
+    # 完整注释：CSS/JS 任一变更都需换 ?v=，避免海报懒加载等脚本被 CDN/浏览器旧缓存
+    asset_paths = (
+        static_root / "css" / "design-system.css",
+        static_root / "js" / "site.js",
+    )
+    digest = hashlib.md5()
+    read_any = False
+    for path in asset_paths:
+        try:
+            digest.update(path.read_bytes())
+            read_any = True
+        except OSError:
+            continue
+    if not read_any:
         return "dev"
+    return digest.hexdigest()[:10]
 
 
 def merge_render_context(context: Dict[str, Any]) -> Dict[str, Any]:

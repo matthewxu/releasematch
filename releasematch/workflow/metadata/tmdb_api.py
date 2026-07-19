@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-TMDB REST API — external_ids 解析（CORS Proxy + 本地缓存）。
+TMDB REST API — external_ids 与展示元数据（海报/简介）。
 
 @module workflow.metadata.tmdb_api
 @description
   参考 tmdbpy/workflow/W004_metadata_crawler.py 与 crawler_tmdb/api_config.py：
     - 经 Cloudflare CORS Proxy（api.weidaohang.org/cp/?apiurl=...）访问 TMDB v3
     - 补全 imdb_id / tvdb_id / title / year，提升 Jackett/YTS 命中率
+    - 一次性拉取 poster_path + overview(en/zh) 写入 MySQL，后续 magnet 更新不再重拉
 
   环境变量：
     RM_TMDB_API_KEY / TMDB_API_KEY
@@ -363,3 +364,102 @@ def enrich_external_ids(
     if ext.get("source") == "standalone_missing" and ext.get("title"):
         ext["source"] = "slot_title"
     return ext
+
+
+def fetch_display_metadata(
+    tmdb_id: int,
+    media_kind: str = "movie",
+    *,
+    client: Optional[TmdbApiClient] = None,
+) -> Optional[Dict[str, Any]]:
+    """
+    拉取作品级展示元数据（海报 + 中英简介），不写入 external_ids 磁盘缓存。
+
+    @param tmdb_id: TMDB 作品 ID
+    @param media_kind: movie | tv
+    @param client: 可选复用客户端
+    @returns: poster_path / overview_en / overview_zh / title / year / runtime_minutes；失败 None
+    """
+    api_client = client or TmdbApiClient()
+    if not api_client.configured():
+        return None
+
+    kind = "movie" if media_kind == "movie" else "tv"
+    path = f"/{kind}/{tmdb_id}"
+    data_en = api_client._get_json(api_client._build_target_url(path, language="en-US"))
+    if not data_en:
+        return None
+    data_zh = api_client._get_json(api_client._build_target_url(path, language="zh-CN")) or {}
+
+    if kind == "movie":
+        title = str(data_en.get("title") or data_en.get("original_title") or "")
+        year = _parse_year(data_en.get("release_date"))
+        runtime = data_en.get("runtime")
+    else:
+        title = str(data_en.get("name") or data_en.get("original_name") or "")
+        year = _parse_year(data_en.get("first_air_date"))
+        runtime = None
+        ep_run = data_en.get("episode_run_time")
+        if isinstance(ep_run, list) and ep_run:
+            try:
+                runtime = int(ep_run[0])
+            except (TypeError, ValueError):
+                runtime = None
+
+    poster = str(data_en.get("poster_path") or data_zh.get("poster_path") or "").strip()
+    overview_en = str(data_en.get("overview") or "").strip()
+    overview_zh = str(data_zh.get("overview") or "").strip()
+
+    return {
+        "tmdb_id": tmdb_id,
+        "media_kind": kind,
+        "title": title or None,
+        "year": year,
+        "runtime_minutes": int(runtime) if runtime not in (None, "", 0) else None,
+        "poster_path": poster,
+        "overview_en": overview_en,
+        "overview_zh": overview_zh,
+        "source": "tmdb_api_display",
+    }
+
+
+def fetch_episode_display_metadata(
+    tmdb_id: int,
+    season: int,
+    episode: int,
+    *,
+    client: Optional[TmdbApiClient] = None,
+) -> Optional[Dict[str, Any]]:
+    """
+    拉取单集展示元数据（中英简介、集标题、播出日）。
+
+    @param tmdb_id: TMDB 剧集 ID
+    @param season: 季号
+    @param episode: 集号
+    @param client: 可选复用客户端
+    @returns: overview_en / overview_zh / episode_title / air_date；失败 None
+    """
+    api_client = client or TmdbApiClient()
+    if not api_client.configured():
+        return None
+
+    path = f"/tv/{tmdb_id}/season/{season}/episode/{episode}"
+    data_en = api_client._get_json(api_client._build_target_url(path, language="en-US"))
+    if not data_en:
+        return None
+    data_zh = api_client._get_json(api_client._build_target_url(path, language="zh-CN")) or {}
+
+    air = str(data_en.get("air_date") or data_zh.get("air_date") or "").strip()
+    title_en = str(data_en.get("name") or "").strip()
+    title_zh = str(data_zh.get("name") or "").strip()
+
+    return {
+        "tmdb_id": tmdb_id,
+        "season": season,
+        "episode": episode,
+        "episode_title": title_en or title_zh,
+        "air_date": air or None,
+        "overview_en": str(data_en.get("overview") or "").strip(),
+        "overview_zh": str(data_zh.get("overview") or "").strip(),
+        "source": "tmdb_api_episode_display",
+    }
