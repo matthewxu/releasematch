@@ -1,7 +1,7 @@
 # E-E-A-T · Info Gain · SEO 跟进看板
 
 > **Living Document** — 随 SEO 迭代持续更新  
-> **创建：** 2026-07-04 · **最近更新：** 2026-07-06（torrent metadata 回填 · A-11 · 页面展示优化）  
+> **创建：** 2026-07-04 · **最近更新：** 2026-07-19（Workers/.com 软上线 · 禁止爬取 · seo_c2 16 pass）  
 > **功能性邮箱：** `ReleaseMatch@hotmail.com`（Contact · DMCA · Privacy）  
 > **基线评估：** [2026-07-04 基线评估](./assessments/2026-07-04-E-E-A-T与Info-Gain基线评估.md)  
 > **IG 字段权威：** [IG信息登记册.md](../IG信息登记册.md)  
@@ -18,9 +18,10 @@
 | **内容轨** | C2 SEO 冷启动 | C3 沙盒观察 | 🟡 |
 | **published 页** | **117**（indexable） | — | ✅ |
 | **sitemap URL 数** | ≤36（+Contact） | 维持 ≤30 内容页 + Trust | ✅ |
-| **GSC** | 未提交 | C2 门禁通过后提交 | ⏸ |
-| **CF Pages 生产** | 暂缓 | C2 本地门禁通过后 deploy | ⏸ |
-| **C2 本地 SEO 门禁** | **13 pass / 0 fail**（§6.1～6.3） | deploy + GSC | ✅ 本地 |
+| **GSC** | 未提交 | 开放爬取后再验属性 + 提交 sitemap | ⏸ 软上线 |
+| **CF / Workers 生产** | ✅ `releasematch.com` + workers.dev | 维持 deploy | ✅ deploy |
+| **禁止爬取** | `RM_BLOCK_CRAWLERS=1` · `/robots.txt` `Disallow: /` · 全站 noindex | 确认后开放 | ✅ 软上线 |
+| **C2 本地 SEO 门禁** | **16 pass / 0 fail**（§6.1～6.3） | 开放收录后 GSC | ✅ 本地 |
 | **页面 IG 估分（Debug 呈现）** | **8~9（109/120）** · 7~8（6）· 0~1（5） | Rec+测速页 **8~9** | ✅ |
 | **页面 IG 估分（质量向）** | 见 **§3.2.1** · 主轨 **7+：98/110** · S-04 验证 **8/110** · L4 Rec **12** | **主轨维持 · S-04 辅轨↑** | 🔶 |
 | **测速 bake 覆盖率** | **110/110 Rec** 有 summary | **100%**（有 Rec 页） | ✅ |
@@ -83,7 +84,7 @@
 
 | # | 信号 | 要求 | 状态 | 备注 |
 |---|------|------|------|------|
-| A-01 | GSC 属性 + sitemap 提交 | C2 后 | ⏸ | |
+| A-01 | GSC 属性 + sitemap 提交 | 开放爬取后 | ⏸ | 软上线禁爬期间勿提交 |
 | A-02 | 自然外链 | 持续 | ❌ | 未启动 |
 | A-03 | Stremio 插件 | T4 | 📋 | 09 文档 |
 | A-04 | 社区/Reddit  presence | 长期 | ❌ | |
@@ -177,8 +178,8 @@
 
 | 元素 | 状态 | 文档/工具 | 下一动作 |
 |------|------|-----------|----------|
-| sitemap.xml | ✅ ≤35 URL | `portal/generator/sitemap.py` | C2 后提交 GSC |
-| robots.txt | ✅ | dist | — |
+| sitemap.xml | ✅ 37 URL（未对爬虫宣告） | `portal/generator/sitemap.py` | 开放后提交 GSC |
+| robots.txt | ✅ 根路径 `Disallow: /` | `portal/dist/robots.txt` + static 副本 | 爬虫只认 `/robots.txt` |
 | canonical | ✅ | 生成器 | — |
 | 薄页 robots | ✅ | `is_indexable()` · **无 Rec → noindex** | — |
 | Hub noindex | ✅ | D2 决策 | — |
