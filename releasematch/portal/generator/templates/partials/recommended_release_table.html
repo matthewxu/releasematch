@@ -6,12 +6,12 @@
       <tr>
         <th scope="col" class="rm-col-release"{% if i18n_enabled %} data-i18n="table.release"{% endif %}>{{ t('table.release') }}</th>
         {% if variant == 'movie' %}
-        <th scope="col" class="rm-col-source"{% if i18n_enabled %} data-i18n="table.source"{% endif %}>{{ t('table.source') }}</th>
+        <th scope="col"{% if i18n_enabled %} data-i18n="table.source"{% endif %}>{{ t('table.source') }}</th>
         {% endif %}
         <th scope="col" class="rm-col-quality"{% if i18n_enabled %} data-i18n="table.quality"{% endif %}>{{ t('table.quality') }}</th>
         {% if variant == 'movie' %}
-        <th scope="col" class="rm-col-video"{% if i18n_enabled %} data-i18n="table.video"{% endif %}>{{ t('table.video') }}</th>
-        <th scope="col" class="rm-col-audio"{% if i18n_enabled %} data-i18n="table.audio"{% endif %}>{{ t('table.audio') }}</th>
+        <th scope="col"{% if i18n_enabled %} data-i18n="table.video"{% endif %}>{{ t('table.video') }}</th>
+        <th scope="col"{% if i18n_enabled %} data-i18n="table.audio"{% endif %}>{{ t('table.audio') }}</th>
         {% endif %}
         <th scope="col" class="rm-col-group"{% if i18n_enabled %} data-i18n="table.group"{% endif %}>{{ t('table.group') }}</th>
         <th scope="col" class="rm-col-cross"{% if i18n_enabled %} data-i18n="table.cross"{% endif %}>{{ t('table.cross') }}</th>

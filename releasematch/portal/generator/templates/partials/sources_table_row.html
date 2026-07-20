@@ -10,12 +10,12 @@
     {% endif %}
   </td>
   {% if variant == 'movie' %}
-  <td class="rm-col-source" data-label="{{ t('table.source') }}">{{ item.source or '—' }}</td>
+  <td data-label="{{ t('table.source') }}">{{ item.source or '—' }}</td>
   {% endif %}
   <td class="rm-col-quality" data-label="{{ t('table.quality') }}" data-sort-value="{{ item.resolution }}">{{ item.resolution or '—' }}</td>
   {% if variant == 'movie' %}
-  <td class="rm-col-video" data-label="{{ t('table.video') }}">{{ item.video_spec or item.codec or '—' }}</td>
-  <td class="rm-col-audio" data-label="{{ t('table.audio') }}">{{ item.audio_spec or '—' }}</td>
+  <td data-label="{{ t('table.video') }}">{{ item.video_spec or item.codec or '—' }}</td>
+  <td data-label="{{ t('table.audio') }}">{{ item.audio_spec or '—' }}</td>
   {% endif %}
   <td class="rm-col-group" data-label="{{ t('table.group') }}">
     {% if item.release_group %}

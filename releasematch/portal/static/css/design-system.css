@@ -592,94 +592,14 @@ dd:last-child {
 }
 
 .rm-table--movie {
-  table-layout: fixed;
+  table-layout: auto;
   width: 100%;
-  max-width: 100%;
 }
 
 .rm-table--movie th,
 .rm-table--movie td {
-  overflow: hidden;
-  text-overflow: unset;
-  vertical-align: top;
-  word-break: normal;
-  overflow-wrap: break-word;
-  /* 10 列桌面侧栏下默认 1rem 水平 padding 会挤爆 Action */
-  padding: 0.55rem 0.35rem;
-  font-size: 0.8rem;
-}
-
-/* 表头保持单词完整；过窄时靠列宽与字号压缩，避免 SOU/RCE 式拆字 */
-.rm-table--movie thead th {
-  white-space: nowrap;
-  font-size: 0.62rem;
-  letter-spacing: 0.04em;
-  padding: 0.5rem 0.3rem;
-}
-
-/* 电影多 Source/Video/Audio 三列；固定比例 + 换行，避免横向滚动 */
-.rm-table--movie .rm-col-release {
-  width: 26%;
-}
-
-.rm-table--movie .rm-col-source {
-  width: 9%;
-}
-
-.rm-table--movie .rm-col-quality {
-  width: 8%;
-}
-
-.rm-table--movie .rm-col-video {
-  width: 8%;
-}
-
-.rm-table--movie .rm-col-audio {
-  width: 8%;
-}
-
-.rm-table--movie .rm-col-group {
-  width: 12%;
-}
-
-.rm-table--movie .rm-col-cross {
-  width: 6%;
-}
-
-.rm-table--movie .rm-col-size {
-  width: 7%;
-}
-
-.rm-table--movie .rm-col-seed {
-  width: 6%;
-}
-
-.rm-table--movie .rm-col-action {
-  width: 10%;
-  word-break: normal;
-  overflow-wrap: normal;
   overflow: visible;
-}
-
-.rm-table--movie .rm-table__release {
-  max-width: none;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-}
-
-.rm-table--movie .rm-col-group .rm-badge,
-.rm-table--movie .rm-table__release .rm-badge {
-  white-space: normal;
-  display: inline-block;
-  max-width: 100%;
-  line-height: 1.25;
-}
-
-/* 电影表容器：长文案列内换行，不出现横向滚动条 */
-.rm-table-wrap--movie,
-.rm-table-wrap--recommended-hero:has(.rm-table--movie),
-.rm-table-wrap:has(.rm-table--movie) {
-  overflow-x: hidden;
+  text-overflow: unset;
 }
 
 .rm-release-card .rm-speed-evidence-wrap {
