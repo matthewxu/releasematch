@@ -1,0 +1,38 @@
+{
+  "swarm_parse_selftest": "OK",
+  "published_with_recommended": 112,
+  "torrent_metadata_rows": 95,
+  "missing_metadata": 17,
+  "missing_page_ids": [
+    "movie:1241752",
+    "movie:1297842",
+    "movie:1359685",
+    "movie:137051",
+    "movie:1522333",
+    "movie:47612",
+    "movie:911345",
+    "tv:1412:s01e01",
+    "tv:1418:s01e01",
+    "tv:44217:s01e01",
+    "tv:4604:s01e01",
+    "tv:46952:s01e01",
+    "tv:502:s01e01",
+    "tv:549:s01e01",
+    "tv:60735:s01e01",
+    "tv:82452:s01e01",
+    "tv:97113:s01e01"
+  ],
+  "size_match_stored": {
+    "ok": 95
+  },
+  "size_match_revalidated": {
+    "ok": 95
+  },
+  "dist_pages_with_torrent_meta_panel": 95,
+  "generate_all": "ok",
+  "notes": [
+    "本轮 force 回填 20 槽：14 ok / 6 timeout；仅 3 槽拿到可发布 metadata（多数 ok 未 has_metadata）",
+    "不可达/无 peer 槽无法从 swarm 取结构，需换时段或 magnet 再试",
+    "speedtest_retest_no_refetch --generate-all 已修正为 workflow.run generate all"
+  ]
+}

@@ -20,6 +20,7 @@
 
   # 测速后 regenerate 全站
   python scripts/speedtest_retest_no_refetch.py --write --generate-all
+  # 等价：python -m workflow.run generate all
 """
 
 from __future__ import annotations
@@ -119,7 +120,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--generate-all",
         action="store_true",
-        help="测速完成后 python -m portal.generator.run generate all",
+        help="测速完成后 python -m workflow.run generate all",
     )
     return parser
 
@@ -216,8 +217,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.generate_all and args.write:
         import subprocess
 
+        # 正确入口是 workflow.run（portal.generator.run 不存在）
         gen = subprocess.run(
-            [sys.executable, "-m", "portal.generator.run", "generate", "all"],
+            [sys.executable, "-m", "workflow.run", "generate", "all"],
             cwd=str(_ROOT),
             check=False,
         )

@@ -1,0 +1,1197 @@
+{
+  "ok": true,
+  "count": 122,
+  "generated": 122,
+  "indexable_generated": 117,
+  "noindex_generated": 5,
+  "out_root": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist",
+  "pages": [
+    {
+      "ok": true,
+      "page_id": "movie:1007757",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/swapped/index.html",
+      "canonical_path": "/swapped/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1084242",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/zootopia-2/index.html",
+      "canonical_path": "/zootopia-2/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1122573",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/in-the-grey/index.html",
+      "canonical_path": "/in-the-grey/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:120",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/lord-of-the-rings-fellowship-2001/index.html",
+      "canonical_path": "/lord-of-the-rings-fellowship-2001/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1202033",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/enola-holmes-3/index.html",
+      "canonical_path": "/enola-holmes-3/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1217584",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/torrente-presidente/index.html",
+      "canonical_path": "/torrente-presidente/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:122",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/lord-of-the-rings-return-of-the-king-2003/index.html",
+      "canonical_path": "/lord-of-the-rings-return-of-the-king-2003/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1228710",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/the-mandalorian-and-grogu/index.html",
+      "canonical_path": "/the-mandalorian-and-grogu/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1239134",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/भत-बगल/index.html",
+      "canonical_path": "/भत-बगल/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1241752",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/rita/index.html",
+      "canonical_path": "/rita/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1242898",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/predator-badlands/index.html",
+      "canonical_path": "/predator-badlands/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1280738",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/火遮眼/index.html",
+      "canonical_path": "/火遮眼/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1288341",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/seven-snipers/index.html",
+      "canonical_path": "/seven-snipers/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1297842",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/goat/index.html",
+      "canonical_path": "/goat/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:13",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/forrest-gump/index.html",
+      "canonical_path": "/forrest-gump/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1301310",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/zombies-of-the-third-reich/index.html",
+      "canonical_path": "/zombies-of-the-third-reich/",
+      "show_ig_debug": false,
+      "indexable": false
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1304313",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/lee-cronins-the-mummy/index.html",
+      "canonical_path": "/lee-cronins-the-mummy/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1311031",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/劇場版鬼滅の刃無限城編-第一章-猗窩座再来/index.html",
+      "canonical_path": "/劇場版鬼滅の刃無限城編-第一章-猗窩座再来/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1315772",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/minions-monsters/index.html",
+      "canonical_path": "/minions-monsters/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1327819",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/hoppers/index.html",
+      "canonical_path": "/hoppers/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1359685",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/el-mal/index.html",
+      "canonical_path": "/el-mal/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1367220",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/கரபப/index.html",
+      "canonical_path": "/கரபப/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:137051",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/midnight-matinee/index.html",
+      "canonical_path": "/midnight-matinee/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1380291",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/tom-clancys-jack-ryan-ghost-war/index.html",
+      "canonical_path": "/tom-clancys-jack-ryan-ghost-war/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1392469",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/ककटल-२/index.html",
+      "canonical_path": "/ककटल-२/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1397385",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/little-brother/index.html",
+      "canonical_path": "/little-brother/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:140638",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/pussycat-pussycat-i-love-you/index.html",
+      "canonical_path": "/pussycat-pussycat-i-love-you/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1419406",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/捕风追影/index.html",
+      "canonical_path": "/捕风追影/",
+      "show_ig_debug": false,
+      "indexable": false
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1430077",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/hokum/index.html",
+      "canonical_path": "/hokum/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1439930",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/the-punisher-one-last-kill/index.html",
+      "canonical_path": "/the-punisher-one-last-kill/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1477317",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/your-fault-london/index.html",
+      "canonical_path": "/your-fault-london/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1515729",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/blast/index.html",
+      "canonical_path": "/blast/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1522333",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/carry-on-jatta-4/index.html",
+      "canonical_path": "/carry-on-jatta-4/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:155",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/the-dark-knight-2008/index.html",
+      "canonical_path": "/the-dark-knight-2008/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:157336",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/interstellar-2014/index.html",
+      "canonical_path": "/interstellar-2014/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:1694978",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/chum/index.html",
+      "canonical_path": "/chum/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:238",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/the-godfather/index.html",
+      "canonical_path": "/the-godfather/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:244786",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/whiplash/index.html",
+      "canonical_path": "/whiplash/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:27205",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/inception-2010/index.html",
+      "canonical_path": "/inception-2010/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:278",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/the-shawshank-redemption/index.html",
+      "canonical_path": "/the-shawshank-redemption/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:28322",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/vacanze-per-un-massacro/index.html",
+      "canonical_path": "/vacanze-per-un-massacro/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:301528",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/toy-story-4/index.html",
+      "canonical_path": "/toy-story-4/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:404574",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/人妻観察委員会/index.html",
+      "canonical_path": "/人妻観察委員会/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:405871",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/令嬢肉奴隷/index.html",
+      "canonical_path": "/令嬢肉奴隷/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:424",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/schindlers-list/index.html",
+      "canonical_path": "/schindlers-list/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:454639",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/masters-of-the-universe/index.html",
+      "canonical_path": "/masters-of-the-universe/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:47612",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/au-bonheur-des-dames/index.html",
+      "canonical_path": "/au-bonheur-des-dames/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:479787",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/버려진-청춘/index.html",
+      "canonical_path": "/버려진-청춘/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:535167",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/the-wandering-earth-2019/index.html",
+      "canonical_path": "/the-wandering-earth-2019/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:550",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/fight-club-1999/index.html",
+      "canonical_path": "/fight-club-1999/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:603",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/the-matrix-1999/index.html",
+      "canonical_path": "/the-matrix-1999/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:614945",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/voicemails-for-isabelle/index.html",
+      "canonical_path": "/voicemails-for-isabelle/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:680",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/pulp-fiction-1994/index.html",
+      "canonical_path": "/pulp-fiction-1994/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:687163",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/project-hail-mary/index.html",
+      "canonical_path": "/project-hail-mary/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:755898",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/war-of-the-worlds/index.html",
+      "canonical_path": "/war-of-the-worlds/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:769",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/goodfellas/index.html",
+      "canonical_path": "/goodfellas/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:83533",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/avatar-fire-and-ash/index.html",
+      "canonical_path": "/avatar-fire-and-ash/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:840464",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/greenland-2-migration/index.html",
+      "canonical_path": "/greenland-2-migration/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:862",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/toy-story/index.html",
+      "canonical_path": "/toy-story/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:911345",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/viking/index.html",
+      "canonical_path": "/viking/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:949536",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/kill-code/index.html",
+      "canonical_path": "/kill-code/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:969681",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/spider-man-brand-new-day/index.html",
+      "canonical_path": "/spider-man-brand-new-day/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:976912",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/graphic-desires/index.html",
+      "canonical_path": "/graphic-desires/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "movie:980431",
+      "template": "movie.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/avatar-aang-the-last-airbender/index.html",
+      "canonical_path": "/avatar-aang-the-last-airbender/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:124364:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/from/s1e1/index.html",
+      "canonical_path": "/from/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:1396:s04e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/breaking-bad/s4e1/index.html",
+      "canonical_path": "/breaking-bad/s4e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:1396:s04e02",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/breaking-bad/s4e2/index.html",
+      "canonical_path": "/breaking-bad/s4e2/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:1396:s04e03",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/breaking-bad/s4e3/index.html",
+      "canonical_path": "/breaking-bad/s4e3/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:1396:s04e04",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/breaking-bad/s4e4/index.html",
+      "canonical_path": "/breaking-bad/s4e4/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:1396:s04e05",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/breaking-bad/s4e5/index.html",
+      "canonical_path": "/breaking-bad/s4e5/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:1396:s04e06",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/breaking-bad/s4e6/index.html",
+      "canonical_path": "/breaking-bad/s4e6/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:1396:s04e07",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/breaking-bad/s4e7/index.html",
+      "canonical_path": "/breaking-bad/s4e7/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:1396:s04e08",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/breaking-bad/s4e8/index.html",
+      "canonical_path": "/breaking-bad/s4e8/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:1399:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/game-of-thrones/s1e1/index.html",
+      "canonical_path": "/game-of-thrones/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:1408:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/house/s1e1/index.html",
+      "canonical_path": "/house/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:1412:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/arrow/s1e1/index.html",
+      "canonical_path": "/arrow/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:1418:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/the-big-bang-theory/s1e1/index.html",
+      "canonical_path": "/the-big-bang-theory/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:1431:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/csi-crime-scene-investigation/s1e1/index.html",
+      "canonical_path": "/csi-crime-scene-investigation/s1e1/",
+      "show_ig_debug": false,
+      "indexable": false
+    },
+    {
+      "ok": true,
+      "page_id": "tv:1433:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/american-dad/s1e1/index.html",
+      "canonical_path": "/american-dad/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:1434:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/family-guy/s1e1/index.html",
+      "canonical_path": "/family-guy/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:1622:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/supernatural/s1e1/index.html",
+      "canonical_path": "/supernatural/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:1668:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/friends/s1e1/index.html",
+      "canonical_path": "/friends/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:1911:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/bones/s1e1/index.html",
+      "canonical_path": "/bones/s1e1/",
+      "show_ig_debug": false,
+      "indexable": false
+    },
+    {
+      "ok": true,
+      "page_id": "tv:2288:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/prison-break/s1e1/index.html",
+      "canonical_path": "/prison-break/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:232393:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/6-lovers/s1e1/index.html",
+      "canonical_path": "/6-lovers/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:273240:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/off-campus/s1e1/index.html",
+      "canonical_path": "/off-campus/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:2734:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/law-order-special-victims-unit/s1e1/index.html",
+      "canonical_path": "/law-order-special-victims-unit/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:278178:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/i-will-find-you/s1e1/index.html",
+      "canonical_path": "/i-will-find-you/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:284631:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/रख/s1e1/index.html",
+      "canonical_path": "/रख/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:290138:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/गरम-चकतसलय/s1e1/index.html",
+      "canonical_path": "/गरम-चकतसलय/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:299167:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/dutton-ranch/s1e1/index.html",
+      "canonical_path": "/dutton-ranch/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:303493:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/ซรส/s1e1/index.html",
+      "canonical_path": "/ซรส/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:322430:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/the-polygamist/s1e1/index.html",
+      "canonical_path": "/the-polygamist/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:34307:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/shameless/s1e1/index.html",
+      "canonical_path": "/shameless/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:37680:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/suits/s1e1/index.html",
+      "canonical_path": "/suits/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:4057:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/criminal-minds/s1e1/index.html",
+      "canonical_path": "/criminal-minds/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:44217:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/vikings/s1e1/index.html",
+      "canonical_path": "/vikings/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:456:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/the-simpsons/s1e1/index.html",
+      "canonical_path": "/the-simpsons/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:45952:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/hunterhunter/s1e1/index.html",
+      "canonical_path": "/hunterhunter/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:4604:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/smallville/s1e1/index.html",
+      "canonical_path": "/smallville/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:4614:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/ncis/s1e1/index.html",
+      "canonical_path": "/ncis/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:46952:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/the-blacklist/s1e1/index.html",
+      "canonical_path": "/the-blacklist/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:502:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/sesame-street/s1e1/index.html",
+      "canonical_path": "/sesame-street/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:549:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/law-order/s1e1/index.html",
+      "canonical_path": "/law-order/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:5920:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/the-mentalist/s1e1/index.html",
+      "canonical_path": "/the-mentalist/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:60625:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/rick-and-morty/s1e1/index.html",
+      "canonical_path": "/rick-and-morty/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:60735:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/the-flash/s1e1/index.html",
+      "canonical_path": "/the-flash/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:63174:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/lucifer/s1e1/index.html",
+      "canonical_path": "/lucifer/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:64197:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/nirvana-in-fire/s1e1/index.html",
+      "canonical_path": "/nirvana-in-fire/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:66732:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/stranger-things/s1e1/index.html",
+      "canonical_path": "/stranger-things/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:71790:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/swat/s1e1/index.html",
+      "canonical_path": "/swat/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:71912:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/the-witcher/s1e1/index.html",
+      "canonical_path": "/the-witcher/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:73586:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/yellowstone/s1e1/index.html",
+      "canonical_path": "/yellowstone/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:764:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/midsomer-murders/s1e1/index.html",
+      "canonical_path": "/midsomer-murders/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:76479:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/the-boys/s1e1/index.html",
+      "canonical_path": "/the-boys/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:79744:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/the-rookie/s1e1/index.html",
+      "canonical_path": "/the-rookie/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:82452:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/avatar-the-last-airbender/s1e1/index.html",
+      "canonical_path": "/avatar-the-last-airbender/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:82856:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/the-mandalorian/s1e1/index.html",
+      "canonical_path": "/the-mandalorian/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:90761:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/the-untamed/s1e1/index.html",
+      "canonical_path": "/the-untamed/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:94997:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/house-of-the-dragon/s1e1/index.html",
+      "canonical_path": "/house-of-the-dragon/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    },
+    {
+      "ok": true,
+      "page_id": "tv:95842:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/joy-of-life/s1e1/index.html",
+      "canonical_path": "/joy-of-life/s1e1/",
+      "show_ig_debug": false,
+      "indexable": false
+    },
+    {
+      "ok": true,
+      "page_id": "tv:97113:s01e01",
+      "template": "episode.html",
+      "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/three-body-problem/s1e1/index.html",
+      "canonical_path": "/three-body-problem/s1e1/",
+      "show_ig_debug": false,
+      "indexable": true
+    }
+  ],
+  "errors": [],
+  "home": {
+    "ok": true,
+    "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/index.html",
+    "catalog_count": 110
+  },
+  "hubs": {
+    "ok": true,
+    "count": 2,
+    "generated": 2,
+    "pages": [
+      {
+        "ok": true,
+        "page_id": "tv:1396:hub",
+        "template": "show_hub.html",
+        "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/breaking-bad/index.html",
+        "canonical_path": "/breaking-bad/",
+        "show_ig_debug": false
+      },
+      {
+        "ok": true,
+        "page_id": "tv:1668:hub",
+        "template": "show_hub.html",
+        "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/friends/index.html",
+        "canonical_path": "/friends/",
+        "show_ig_debug": false
+      }
+    ],
+    "errors": []
+  },
+  "sitemap": {
+    "ok": true,
+    "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/sitemap.xml",
+    "url_count": 37,
+    "content_url_count": 30,
+    "max_content_urls": 30
+  },
+  "trust": {
+    "ok": true,
+    "count": 6,
+    "generated": 6,
+    "pages": [
+      {
+        "ok": true,
+        "slug": "about",
+        "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/trust/about/index.html"
+      },
+      {
+        "ok": true,
+        "slug": "how-matching-works",
+        "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/trust/how-matching-works/index.html"
+      },
+      {
+        "ok": true,
+        "slug": "contact",
+        "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/trust/contact/index.html"
+      },
+      {
+        "ok": true,
+        "slug": "privacy",
+        "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/trust/privacy/index.html"
+      },
+      {
+        "ok": true,
+        "slug": "dmca",
+        "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/trust/dmca/index.html"
+      },
+      {
+        "ok": true,
+        "slug": "speed-and-grab",
+        "output_file": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/trust/speed-and-grab/index.html"
+      }
+    ],
+    "errors": []
+  },
+  "static_shell": {
+    "ok": true,
+    "out_root": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist",
+    "portal_root": "/Users/xuli/vscodeai/releasematch/releasematch/portal",
+    "copied": [
+      "404.html",
+      "410.html",
+      "static/",
+      "robots.txt"
+    ],
+    "static_file_count": 5,
+    "site_js": "/Users/xuli/vscodeai/releasematch/releasematch/portal/dist/static/js/site.js",
+    "robots_root": true
+  }
+}
