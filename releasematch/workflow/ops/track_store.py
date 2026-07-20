@@ -389,6 +389,109 @@ def create_batch(
     return batch
 
 
+def append_slots_to_active_batch(slots: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    将槽位追加到当前活跃跟踪批（已存在的 page_id 跳过）。
+
+    @param slots: 跟踪行或原始 slot（会经 make_track_row 规范化）
+    @returns: {ok, batch, added, skipped_existing, batch_id}
+    @description
+      无活跃批时返回 ok=False，由调用方改走 create_batch。
+      用于页面台账「加入当前跟踪批」重跑，不新建假全库批次。
+    """
+    store = _ensure()
+    active_id = get_active_batch_id()
+    if not active_id:
+        return {"ok": False, "error": "无活跃跟踪批次；请先导入筛选结果或勾选「新建批次」"}
+
+    rows: List[Dict[str, Any]] = []
+    for item in slots:
+        if "stages" in item and "gate" in item:
+            rows.append(item)
+        else:
+            tier = str(item.get("source_tier") or "inventory")
+            rows.append(make_track_row(item, source_tier=tier))
+            # 保留调用方显式 page_id（如 show_hub）
+            if item.get("page_id"):
+                rows[-1]["page_id"] = str(item["page_id"])
+                rows[-1]["slot_key"] = str(item.get("slot_key") or item["page_id"])
+
+    now = _utc_now_str()
+    added: List[str] = []
+    skipped: List[str] = []
+    conn = store._connect()
+    try:
+        with conn.cursor() as cur:
+            for row in rows:
+                page_id = str(row["page_id"])
+                cur.execute(
+                    """
+                    SELECT id FROM ops_track_slots
+                    WHERE batch_id = %s AND page_id = %s LIMIT 1
+                    """,
+                    (active_id, page_id),
+                )
+                if cur.fetchone():
+                    skipped.append(page_id)
+                    continue
+                cur.execute(
+                    """
+                    INSERT INTO ops_track_slots (
+                        batch_id, page_id, slot_key, label, tmdb_id, media_type,
+                        season, episode, title, popularity, source_tier, selected,
+                        pipeline_status, generate_status, speedtest_status,
+                        created_at, updated_at
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s, %s,
+                        'pending', 'pending', 'pending',
+                        %s, %s
+                    )
+                    """,
+                    (
+                        active_id,
+                        page_id,
+                        row.get("slot_key") or page_id,
+                        str(row.get("label") or "")[:256],
+                        int(row["tmdb_id"]),
+                        str(row.get("media_type") or "tv")[:16],
+                        row.get("season"),
+                        row.get("episode"),
+                        str(row.get("title") or "")[:512],
+                        row.get("popularity"),
+                        str(row.get("source_tier") or "inventory")[:32],
+                        1 if row.get("selected", True) else 0,
+                        now,
+                        now,
+                    ),
+                )
+                added.append(page_id)
+            cur.execute(
+                """
+                UPDATE ops_track_batches
+                SET slot_count = (
+                      SELECT COUNT(*) FROM ops_track_slots WHERE batch_id = %s
+                    ),
+                    updated_at = %s
+                WHERE batch_id = %s
+                """,
+                (active_id, now, active_id),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+    batch = load_batch(active_id)
+    return {
+        "ok": True,
+        "batch_id": active_id,
+        "batch": batch,
+        "added": added,
+        "skipped_existing": skipped,
+        "created_new_batch": False,
+    }
+
+
 def save_batch(batch: Dict[str, Any], **_ignored: Any) -> str:
     """
     将内存中的批次写回 MySQL（整批 upsert）。

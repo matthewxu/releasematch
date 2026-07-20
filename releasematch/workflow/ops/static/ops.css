@@ -77,7 +77,7 @@ a:hover { text-decoration: underline; }
 
 .ops-steps {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 8px;
   margin-bottom: 18px;
 }
@@ -326,6 +326,51 @@ table.ops-table tr:hover td {
   flex-wrap: wrap;
   gap: 8px;
   margin: 12px 0;
+}
+
+/** 台账分页条 */
+.ops-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 8px 0;
+}
+
+.ops-pagination-info {
+  font-size: 13px;
+  color: var(--ops-muted);
+  min-width: 7em;
+}
+
+.ops-pagination-goto {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin: 0 !important;
+}
+
+.ops-pagination-goto input {
+  width: 64px;
+  min-width: 64px;
+}
+
+/** 每页行数：预设下拉 + 可填数字 */
+.ops-pagesize {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ops-pagesize select {
+  width: auto;
+  min-width: 88px;
+}
+
+.ops-pagesize input[type="number"] {
+  width: 72px;
+  min-width: 72px;
 }
 
 /** TV 搜索行：季下拉 + 「季集」按钮 */

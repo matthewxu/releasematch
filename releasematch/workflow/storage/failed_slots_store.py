@@ -57,16 +57,27 @@ def parse_page_id(page_id: str) -> Optional[Dict[str, Any]]:
     """
     从 page_id 反解析 slot 最小字段。
 
-    @param page_id: 如 movie:424、tv:34307:s01e01
-    @returns: 含 tmdb_id、media_type、season、episode 的字典
+    @param page_id: 如 movie:424、tv:34307:s01e01、tv:1396:hub
+    @returns: 含 tmdb_id、media_type、可选 season/episode、page_type 的字典
     """
     import re
 
     if page_id.startswith("movie:"):
         try:
-            return {"tmdb_id": int(page_id.split(":", 1)[1]), "media_type": "movie"}
+            return {
+                "tmdb_id": int(page_id.split(":", 1)[1]),
+                "media_type": "movie",
+                "page_type": "movie",
+            }
         except ValueError:
             return None
+    hub_match = re.match(r"^tv:(\d+):hub$", page_id, re.IGNORECASE)
+    if hub_match:
+        return {
+            "tmdb_id": int(hub_match.group(1)),
+            "media_type": "tv",
+            "page_type": "show_hub",
+        }
     match = re.match(r"^tv:(\d+):s(\d+)e(\d+)$", page_id, re.IGNORECASE)
     if match:
         return {
@@ -74,6 +85,7 @@ def parse_page_id(page_id: str) -> Optional[Dict[str, Any]]:
             "media_type": "tv",
             "season": int(match.group(2)),
             "episode": int(match.group(3)),
+            "page_type": "episode",
         }
     return None
 

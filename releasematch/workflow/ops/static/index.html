@@ -12,11 +12,12 @@
     <header class="ops-top">
       <div>
         <div class="ops-brand">ReleaseMatch Ops</div>
-        <div class="ops-sub">清单来源 → 筛选 → 跑生成流程 → 上线 · 配置可热加载到本进程</div>
+        <div class="ops-sub">页面台账（media_pages）→ 清单 → 筛选 → 生成 → 上线 · ops_track 为批次工单</div>
       </div>
       <div>
         <span class="ops-badge" id="activeBatchBadge">无活跃批次</span>
-        <span class="ops-badge" title="跟踪表存储">MySQL · ops_track_*</span>
+        <span class="ops-badge" title="统管真源">MySQL · media_pages</span>
+        <span class="ops-badge" title="批次工单">ops_track_*</span>
         <span class="ops-badge" id="configStatusBadge" title="配置就绪状态">配置 · …</span>
         <button type="button" class="secondary" id="btnRefresh" style="margin-left:8px">刷新状态</button>
         <button type="button" class="secondary" id="btnLogout" style="margin-left:8px" title="退出登录">退出</button>
@@ -40,7 +41,10 @@
     </div>
 
     <nav class="ops-steps" role="tablist" aria-label="流程与配置">
-      <button type="button" class="ops-step-tab" data-step="1" aria-selected="true">
+      <button type="button" class="ops-step-tab" data-step="0" aria-selected="true">
+        <span class="n">00</span><span class="t">页面台账</span>
+      </button>
+      <button type="button" class="ops-step-tab" data-step="1" aria-selected="false">
         <span class="n">01</span><span class="t">清单从哪来</span>
       </button>
       <button type="button" class="ops-step-tab" data-step="2" aria-selected="false">
@@ -57,10 +61,100 @@
       </button>
     </nav>
 
+    <!-- ⓪ 页面台账：media_pages 统管 -->
+    <section class="ops-panel is-active" id="panel-0" data-panel="0">
+      <h2>⓪ 页面台账</h2>
+      <p class="lead">
+        统管真源是 <strong>media_pages</strong>（draft / thin / published），不是 ops_track。
+        ① 段搜的是 TMDB 候选；此处搜的是<strong>已入库页面</strong>。可下线（改库 + 删 dist + 可选公网对账）或加入跟踪批重跑。
+      </p>
+      <div class="ops-metrics" id="inventoryStats"></div>
+      <div class="ops-card">
+        <div class="ops-row">
+          <label class="ops-field">搜索
+            <input type="text" id="invQ" placeholder="title / slug / page_id / path" />
+          </label>
+          <label class="ops-field">status
+            <select id="invStatus">
+              <option value="">全部</option>
+              <option value="published">published</option>
+              <option value="thin">thin</option>
+              <option value="draft">draft</option>
+            </select>
+          </label>
+          <label class="ops-field">page_type
+            <select id="invPageType">
+              <option value="">全部</option>
+              <option value="episode">episode</option>
+              <option value="movie">movie</option>
+              <option value="show_hub">show_hub</option>
+            </select>
+          </label>
+          <label class="ops-field">每页行数
+            <span class="ops-pagesize">
+              <select id="invPageSizePreset" title="常用行数" aria-label="每页行数预设">
+                <option value="25">25</option>
+                <option value="50" selected>50</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+                <option value="custom">自定义</option>
+              </select>
+              <input
+                type="number"
+                id="invPageSize"
+                value="50"
+                min="1"
+                max="500"
+                title="可直接填写 1–500"
+                aria-label="每页行数"
+              />
+            </span>
+          </label>
+        </div>
+        <div class="ops-actions">
+          <button type="button" id="btnInvSearch">搜索台账</button>
+          <button type="button" class="secondary" id="btnInvUnpublish">下线勾选（改库+删 dist）</button>
+          <button type="button" class="secondary" id="btnInvUnpublishUpload">下线并正式上传</button>
+          <button type="button" class="secondary" id="btnInvAddTrack">加入当前跟踪批</button>
+          <label style="margin-left:8px"><input type="checkbox" id="invNewBatch" /> 新建批次</label>
+        </div>
+      </div>
+      <div class="ops-metrics" id="inventoryListMetrics"></div>
+      <div class="ops-table-wrap">
+        <table class="ops-table" id="inventoryTable">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="checkAllInv" /></th>
+              <th>status</th>
+              <th>title</th>
+              <th>page_id</th>
+              <th>type</th>
+              <th>magnet</th>
+              <th>Rec</th>
+              <th title="generated_at：最近静态 bake；下线后仍保留">上线</th>
+              <th title="updated_at：含下线 / pipeline / 元数据变更">更新</th>
+              <th>path</th>
+              <th>最近工单</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="ops-pagination" id="inventoryPagination" aria-label="台账分页">
+        <button type="button" class="secondary" id="btnInvPrev" disabled>上一页</button>
+        <span class="ops-pagination-info" id="invPageInfo">第 1 / 1 页</span>
+        <button type="button" class="secondary" id="btnInvNext" disabled>下一页</button>
+        <label class="ops-field ops-pagination-goto">跳转
+          <input type="number" id="invPageJump" min="1" value="1" />
+        </label>
+        <button type="button" class="secondary" id="btnInvGoto">Go</button>
+      </div>
+    </section>
+
     <!-- ① 清单从哪来 -->
-    <section class="ops-panel is-active" id="panel-1" data-panel="1">
+    <section class="ops-panel" id="panel-1" data-panel="1">
       <h2>① 清单从哪来</h2>
-      <p class="lead">对应：自动生成（锚点/curated/pop）· 加载既有 JSON · <strong>从 TMDB Daily Export 搜索后手动勾选</strong></p>
+      <p class="lead">对应：自动生成（锚点/curated/pop）· 加载既有 JSON · <strong>从 TMDB Daily Export 搜索后手动勾选</strong>（搜的是候选标题库，不是已上线台账）</p>
       <div class="ops-grid">
         <div class="ops-card">
           <h3>生成：TMDB 日导出 + 锚点/curated</h3>
@@ -175,7 +269,7 @@
     <!-- ② 筛选 -->
     <section class="ops-panel" id="panel-2" data-panel="2">
       <h2>② 筛选</h2>
-      <p class="lead">收窄候选后<strong>导入跟踪表</strong>，后续生成与上线按同一表跟到底。</p>
+      <p class="lead">收窄候选后<strong>导入跟踪表</strong>（ops_track 工单）。「排除已 published」对照统管表 media_pages；导入时若与 published 重叠会警告。</p>
       <div class="ops-card">
         <div class="ops-row">
           <label class="ops-field">关键词

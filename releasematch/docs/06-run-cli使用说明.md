@@ -690,9 +690,9 @@ python scripts/speedtest_batch_worker.py \
   --report worklogs/$(date +%Y-%m-%d)/speedtest-all-published-benchmark.json
 ```
 
-### 5.4b Ops 控制台 UI（清单 → 筛选 → 生成 → 上线 → 配置）
+### 5.4b Ops 控制台 UI（页面台账 → 清单 → 筛选 → 生成 → 上线 → 配置）
 
-本地五段式 UI，**仅绑定 127.0.0.1**，勿部署公网：
+本地六段式 UI，**仅绑定 127.0.0.1**，勿部署公网：
 
 ```bash
 python -m workflow.run ops serve          # http://127.0.0.1:8090/
@@ -707,11 +707,28 @@ python -m workflow.run ops tmdb-sync --full-reload   # TRUNCATE 全量重建
 
 | 段 | 对应流程 | UI 动作 |
 |----|----------|---------|
-| ① 清单从哪来 | TMDB 日导出 + 锚点/curated；或 **全量下载→增量入库→搜索→工作区** | 自动生成 / 加载 JSON / `ops tmdb-sync` + UI 手动选槽 |
-| ② 筛选 | media / tier / pop / 排除 published·失败槽 | 筛选后 **导入跟踪表** |
+| ⓪ 页面台账 | **统管表 `media_pages`**：draft/thin/published 统计、搜索、下线、加入工单 | 搜已入库页；下线=改库+删 dist（可选 wrangler） |
+| ① 清单从哪来 | TMDB 日导出 + 锚点/curated；或 **全量下载→增量入库→搜索→工作区** | 自动生成 / 加载 JSON / `ops tmdb-sync` + UI 手动选槽（候选，非台账） |
+| ② 筛选 | media / tier / pop / 排除 published·失败槽 | 筛选后 **导入跟踪表**；与 published 重叠须确认 |
 | ③ 跑生成流程 | pipeline → MySQL 门禁 → generate → 测速 | 跟踪表逐槽更新；**测速 write 成功后自动 regenerate**（bake Grab/测速面板） |
 | ④ 上线 | seo_c2 → deploy（增量/全量/仅上传 + 可选 wrangler） | 批次级步骤 + 同一跟踪表 |
 | ⑤ 配置 | `.env`（MySQL/站点/Ops）+ `accounts.local.json`（数据源） | 分文件加载/保存；热加载到当前进程（无需重启） |
+
+**统管 vs 工单：**
+
+| 概念 | 表 | 用途 |
+|------|-----|------|
+| 统管真源 | `media_pages`（+ catalog） | 全库页面状态、防重复、下线、首页/sitemap 数据源 |
+| 批次工单 | `ops_track_batches` / `ops_track_slots` | 某次筛选→生成→上线的进度；可删批，**不等于**下线页面 |
+
+页面台账 API：
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/api/pages/stats` | draft/thin/published/indexable 计数 |
+| `GET` | `/api/pages?q=&status=&page_type=&limit=&offset=` | 台账列表（含最近工单快照） |
+| `POST` | `/api/pages/unpublish` | `{page_ids, upload?, target_status?}` 下线 |
+| `POST` | `/api/pages/add-to-track` | `{page_ids, create_new_batch?}` 加入活跃批或新建 |
 
 **④ Deploy 范围（Ops UI / API）：**
 
@@ -731,7 +748,7 @@ bash scripts/deploy_cf_pages.sh --mode incremental --page-ids tv:1668:s01e01,mov
 bash scripts/deploy_cf_pages.sh --mode upload-only                      # 仅上传当前 dist
 ```
 
-**说明：** wrangler 上传按文件 hash **增量传**；本次 dist 中不存在的路径会在对账时从线上移除（删除场景：先从 dist 去掉再 upload）。  
+**说明：** wrangler 上传按文件 hash **增量传**；本次 dist 中不存在的路径会在对账时从线上移除（删除场景：先从 dist 去掉再 upload；或 Ops ⓪ 下线并正式上传）。  
 入口函数：`workflow.ops.server.serve_ops`（= `run_ops_server`）。
 
 **剧集 Hub：** `ensure_slot_page` / Ops generate 会确保 `tv:{tmdb}:hub` 存在并 regenerate，避免只有 `/show/s1e1/` 而 `/{slug}/` 404。  
@@ -913,3 +930,4 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | v0.14 | 2026-07-19 | Ops/CLI 增量·全量·仅上传 deploy；`serve_ops` 别名；公网增量更新/新增/删除验收 |
 | v0.15 | 2026-07-20 | 脚本索引：`install_jackett_oneclick.sh` / `configure_jackett_cn_indexers.sh` |
 | v0.16 | 2026-07-20 | Jackett Dashboard 默认密码 `345621`（`JACKETT_ADMIN_PASSWORD`） |
+| v0.17 | 2026-07-20 | Ops ⓪ 页面台账：`media_pages` 统管浏览/搜索/统计/下线；与 `ops_track` 工单边界写清；导入 published 重叠确认 |

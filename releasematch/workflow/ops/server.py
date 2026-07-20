@@ -4,7 +4,7 @@ Ops 本地 HTTP 服务 — 运营控制台。
 
 @module workflow.ops.server
 @description
-  仅绑定 127.0.0.1。提供 JSON API + 单页 UI（含配置加载/修改/热加载）。
+  仅绑定 127.0.0.1。提供 JSON API + 单页 UI（含配置加载/修改/热加载、页面台账）。
   可选 ``RM_OPS_PASSWORD`` 登录门禁（Cookie 会话）。
   CLI: python -m workflow.run ops serve [--port 8090]
 """
@@ -24,6 +24,7 @@ from workflow.ops import DEFAULT_OPS_PORT
 from workflow.ops import actions
 from workflow.ops import auth as ops_auth
 from workflow.ops import config_service
+from workflow.ops import pages_service
 from workflow.ops import source_service
 from workflow.ops.track_store import (
     ensure_tables,
@@ -35,6 +36,7 @@ from workflow.ops.track_store import (
     summarize_batch,
 )
 from workflow.ops.workspace import WORKSPACE
+from workflow.storage.mysql_store import MySQLStore
 
 # 静态资源目录
 OPS_STATIC_DIR: Path = Path(__file__).resolve().parent / "static"
@@ -151,6 +153,11 @@ def _handle_api(
 
     if path == "/api/state" and method == "GET":
         batch = load_active_batch()
+        inventory_stats: Dict[str, Any] = {"ok": False}
+        try:
+            inventory_stats = pages_service.inventory_stats()
+        except Exception as exc:  # noqa: BLE001 — 库未就绪时不阻断整页
+            inventory_stats = {"ok": False, "error": str(exc)}
         return 200, {
             "ok": True,
             "workspace": WORKSPACE.snapshot(),
@@ -159,7 +166,56 @@ def _handle_api(
             "batches": list_batches(),
             "source_logic": source_service.describe_source_logic(),
             "active_batch_id": get_active_batch_id(),
+            "inventory_stats": inventory_stats,
         }
+
+    if path == "/api/pages/stats" and method == "GET":
+        try:
+            return 200, pages_service.inventory_stats()
+        except Exception as exc:  # noqa: BLE001
+            return 500, {"ok": False, "error": str(exc)}
+
+    if path == "/api/pages" and method == "GET":
+        def _q1(key: str, default: Optional[str] = None) -> Optional[str]:
+            vals = query.get(key) or []
+            if not vals:
+                return default
+            return str(vals[0])
+
+        try:
+            return 200, pages_service.list_inventory(
+                q=_q1("q"),
+                status=_q1("status"),
+                page_type=_q1("page_type"),
+                limit=int(_q1("limit", "100") or 100),
+                offset=int(_q1("offset", "0") or 0),
+            )
+        except Exception as exc:  # noqa: BLE001
+            return 500, {"ok": False, "error": str(exc)}
+
+    if path == "/api/pages/unpublish" and method == "POST":
+        try:
+            result = pages_service.unpublish_pages(
+                body.get("page_ids") or [],
+                upload=bool(body.get("upload", False)),
+                target_status=str(body.get("target_status") or "draft"),
+                refresh_home_sitemap=bool(body.get("refresh_home_sitemap", True)),
+            )
+            status = 200 if result.get("ok") else 400
+            return status, result
+        except Exception as exc:  # noqa: BLE001
+            return 500, {"ok": False, "error": str(exc)}
+
+    if path == "/api/pages/add-to-track" and method == "POST":
+        try:
+            result = pages_service.add_inventory_to_track(
+                body.get("page_ids") or [],
+                create_new_batch=bool(body.get("create_new_batch", False)),
+            )
+            status = 200 if result.get("ok") else 400
+            return status, result
+        except Exception as exc:  # noqa: BLE001
+            return 500, {"ok": False, "error": str(exc)}
 
     if path == "/api/source/logic" and method == "GET":
         return 200, {"ok": True, **source_service.describe_source_logic()}
@@ -317,10 +373,21 @@ def _handle_api(
             only_failed=bool(body.get("only_failed")),
             selected_page_ids=body.get("selected_page_ids"),
         )
+        # 统管表 published 计数：筛选段展示防重复门禁
+        published_count = 0
+        try:
+            published_count = len(MySQLStore().list_published_page_ids())
+        except Exception:  # noqa: BLE001
+            published_count = 0
+        if isinstance(result, dict):
+            result["published_count"] = published_count
         return 200, result
 
     if path == "/api/track/import" and method == "POST":
-        result = WORKSPACE.import_to_track(selected_page_ids=body.get("selected_page_ids"))
+        result = WORKSPACE.import_to_track(
+            selected_page_ids=body.get("selected_page_ids"),
+            confirm_published=bool(body.get("confirm_published", False)),
+        )
         status = 200 if result.get("ok") else 400
         return status, result
 

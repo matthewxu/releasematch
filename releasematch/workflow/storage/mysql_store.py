@@ -767,6 +767,342 @@ class MySQLStore:
         conn.close()
         return [str(r["page_id"]) for r in rows]
 
+    def page_inventory_stats(self) -> Dict[str, Any]:
+        """
+        统管表 ``media_pages`` 状态计数（Ops 页面台账看板）。
+
+        @returns: total / draft / thin / published / indexable / by_page_type
+        @description
+          indexable ≈ published 且 magnet≥2 且 robots_noindex=0 且存在 Recommended。
+          与 ``ops_track_*`` 无关；跟踪表仅是批次工单。
+        """
+        conn = self._connect()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT
+                  COUNT(*) AS total,
+                  SUM(page_status = 'draft') AS draft,
+                  SUM(page_status = 'thin') AS thin,
+                  SUM(page_status = 'published') AS published,
+                  SUM(
+                    page_status = 'published'
+                    AND magnet_count >= 2
+                    AND (robots_noindex IS NULL OR robots_noindex = 0)
+                    AND EXISTS (
+                      SELECT 1 FROM download_resources d
+                      WHERE d.page_id = media_pages.page_id AND d.is_recommended = 1
+                    )
+                  ) AS indexable
+                FROM media_pages
+                """
+            )
+            row = cur.fetchone() or {}
+            cur.execute(
+                """
+                SELECT page_type, COUNT(*) AS cnt
+                FROM media_pages
+                GROUP BY page_type
+                """
+            )
+            type_rows = cur.fetchall()
+        conn.close()
+        by_type = {str(r["page_type"]): int(r["cnt"] or 0) for r in type_rows}
+        return {
+            "total": int(row.get("total") or 0),
+            "draft": int(row.get("draft") or 0),
+            "thin": int(row.get("thin") or 0),
+            "published": int(row.get("published") or 0),
+            "indexable": int(row.get("indexable") or 0),
+            "by_page_type": by_type,
+        }
+
+    def list_pages_inventory(
+        self,
+        *,
+        q: Optional[str] = None,
+        status: Optional[str] = None,
+        page_type: Optional[str] = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> Dict[str, Any]:
+        """
+        统管表台账列表：``media_pages`` JOIN ``media_catalog``，可选最近工单快照。
+
+        @param q: 关键词（title / slug / page_id / canonical_path）
+        @param status: draft|thin|published；空=全部
+        @param page_type: episode|movie|show_hub；空=全部
+        @param limit: 分页大小（1–500）
+        @param offset: 偏移
+        @returns: {ok, total, limit, offset, items}
+        """
+        limit_n = max(1, min(int(limit or 100), 500))
+        offset_n = max(0, int(offset or 0))
+        clauses: List[str] = ["1=1"]
+        params: List[Any] = []
+
+        status_norm = (status or "").strip().lower()
+        if status_norm in ("draft", "thin", "published"):
+            clauses.append("p.page_status = %s")
+            params.append(status_norm)
+
+        type_norm = (page_type or "").strip().lower()
+        if type_norm in ("episode", "movie", "show_hub"):
+            clauses.append("p.page_type = %s")
+            params.append(type_norm)
+
+        q_norm = (q or "").strip()
+        if q_norm:
+            like = f"%{q_norm.lower()}%"
+            clauses.append(
+                "("
+                "LOWER(c.title) LIKE %s OR LOWER(IFNULL(c.slug,'')) LIKE %s "
+                "OR LOWER(p.page_id) LIKE %s OR LOWER(IFNULL(p.canonical_path,'')) LIKE %s"
+                ")"
+            )
+            params.extend([like, like, like, like])
+
+        where_sql = " AND ".join(clauses)
+        conn = self._connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"""
+                    SELECT COUNT(*) AS cnt
+                    FROM media_pages p
+                    JOIN media_catalog c ON p.catalog_id = c.catalog_id
+                    WHERE {where_sql}
+                    """,
+                    params,
+                )
+                total = int((cur.fetchone() or {}).get("cnt") or 0)
+
+                cur.execute(
+                    f"""
+                    SELECT
+                      p.page_id, p.page_type, p.page_status, p.magnet_count,
+                      p.robots_noindex, p.canonical_path, p.generated_at, p.updated_at,
+                      p.season, p.episode, p.catalog_id,
+                      c.title, c.slug, c.media_kind, c.tmdb_id, c.year,
+                      EXISTS (
+                        SELECT 1 FROM download_resources d
+                        WHERE d.page_id = p.page_id AND d.is_recommended = 1
+                      ) AS has_recommended
+                    FROM media_pages p
+                    JOIN media_catalog c ON p.catalog_id = c.catalog_id
+                    WHERE {where_sql}
+                    ORDER BY c.title ASC, p.page_type ASC, p.season ASC, p.episode ASC
+                    LIMIT %s OFFSET %s
+                    """,
+                    params + [limit_n, offset_n],
+                )
+                rows = [_normalize_row(r) for r in cur.fetchall()]
+
+                # 可选：最近一次 ops_track_slots 快照（表可能尚未创建）
+                track_by_page: Dict[str, Dict[str, Any]] = {}
+                page_ids = [str(r["page_id"]) for r in rows]
+                if page_ids:
+                    try:
+                        placeholders = ",".join(["%s"] * len(page_ids))
+                        cur.execute(
+                            f"""
+                            SELECT s.page_id, s.batch_id, s.pipeline_status,
+                                   s.generate_status, s.speedtest_status, s.updated_at
+                            FROM ops_track_slots s
+                            INNER JOIN (
+                              SELECT page_id, MAX(id) AS max_id
+                              FROM ops_track_slots
+                              WHERE page_id IN ({placeholders})
+                              GROUP BY page_id
+                            ) latest ON s.id = latest.max_id
+                            """,
+                            page_ids,
+                        )
+                        for tr in cur.fetchall():
+                            nr = _normalize_row(tr)
+                            track_by_page[str(nr["page_id"])] = {
+                                "batch_id": nr.get("batch_id"),
+                                "pipeline_status": nr.get("pipeline_status"),
+                                "generate_status": nr.get("generate_status"),
+                                "speedtest_status": nr.get("speedtest_status"),
+                                "updated_at": nr.get("updated_at"),
+                            }
+                    except Exception:  # noqa: BLE001 — 无工单表时忽略
+                        track_by_page = {}
+        finally:
+            conn.close()
+
+        items: List[Dict[str, Any]] = []
+        for row in rows:
+            pid = str(row["page_id"])
+            robots = row.get("robots_noindex")
+            has_rec = bool(int(row.get("has_recommended") or 0))
+            status_val = str(row.get("page_status") or "")
+            magnet = int(row.get("magnet_count") or 0)
+            indexable = (
+                status_val == "published"
+                and magnet >= 2
+                and not bool(int(robots or 0))
+                and has_rec
+            )
+            items.append(
+                {
+                    "page_id": pid,
+                    "page_type": row.get("page_type"),
+                    "page_status": status_val,
+                    "magnet_count": magnet,
+                    "has_recommended": has_rec,
+                    "robots_noindex": bool(int(robots or 0)),
+                    "indexable": indexable,
+                    "canonical_path": row.get("canonical_path") or "",
+                    # 上线时间：最近静态 bake（下线后仍保留，便于台账对照）
+                    "generated_at": row.get("generated_at"),
+                    "online_at": row.get("generated_at"),
+                    # 更新时间：含 pipeline / 下线 / 元数据变更
+                    "updated_at": row.get("updated_at"),
+                    "season": row.get("season"),
+                    "episode": row.get("episode"),
+                    "catalog_id": row.get("catalog_id"),
+                    "title": row.get("title") or "",
+                    "slug": row.get("slug") or "",
+                    "media_kind": row.get("media_kind") or "",
+                    "tmdb_id": int(row.get("tmdb_id") or 0),
+                    "year": row.get("year"),
+                    "last_track": track_by_page.get(pid),
+                }
+            )
+
+        return {
+            "ok": True,
+            "total": total,
+            "limit": limit_n,
+            "offset": offset_n,
+            "items": items,
+        }
+
+    def get_inventory_rows_by_ids(self, page_ids: List[str]) -> List[Dict[str, Any]]:
+        """
+        按 page_id 批量取台账行（不分页）。
+
+        @param page_ids: 目标 page_id
+        @returns: 与 list_pages_inventory.items 同形的字典列表
+        """
+        ids = [str(p).strip() for p in (page_ids or []) if str(p).strip()]
+        if not ids:
+            return []
+        # 复用列表查询后过滤，避免重复 SQL 拼装；量级通常远小于 500
+        found: Dict[str, Dict[str, Any]] = {}
+        for pid in ids:
+            result = self.list_pages_inventory(q=pid, limit=50, offset=0)
+            for item in result.get("items") or []:
+                if str(item.get("page_id")) == pid:
+                    found[pid] = item
+        return [found[pid] for pid in ids if pid in found]
+
+    def unpublish_pages(
+        self,
+        page_ids: List[str],
+        *,
+        target_status: str = "draft",
+    ) -> Dict[str, Any]:
+        """
+        将统管表页面下线：改 ``page_status`` + ``robots_noindex=1``。
+
+        @param page_ids: 要下线的 page_id 列表
+        @param target_status: 目标状态（draft|thin；默认 draft，避免再次进入 generate 集合）
+        @returns: {ok, updated, missing, page_ids}
+        @description
+          不删 ``download_resources``；静态 dist 删除与 wrangler 对账由 Ops pages_service 负责。
+          下次 ``generate all`` 不会再 bake published 页（draft 不在 list_published）。
+        """
+        ids = [str(p).strip() for p in (page_ids or []) if str(p).strip()]
+        if not ids:
+            return {"ok": False, "error": "缺少 page_ids", "updated": 0, "missing": []}
+
+        status_norm = (target_status or "draft").strip().lower()
+        if status_norm not in ("draft", "thin"):
+            return {
+                "ok": False,
+                "error": f"target_status 须为 draft|thin，收到 {target_status!r}",
+                "updated": 0,
+                "missing": [],
+            }
+
+        now = _utc_now_str()
+        conn = self._connect()
+        updated: List[str] = []
+        missing: List[str] = []
+        paths: Dict[str, str] = {}
+        try:
+            with conn.cursor() as cur:
+                for pid in ids:
+                    cur.execute(
+                        """
+                        SELECT page_id, canonical_path FROM media_pages
+                        WHERE page_id = %s LIMIT 1
+                        """,
+                        (pid,),
+                    )
+                    row = cur.fetchone()
+                    if not row:
+                        missing.append(pid)
+                        continue
+                    paths[pid] = str(row.get("canonical_path") or "")
+                    cur.execute(
+                        """
+                        UPDATE media_pages
+                        SET page_status = %s,
+                            robots_noindex = 1,
+                            updated_at = %s
+                        WHERE page_id = %s
+                        """,
+                        (status_norm, now, pid),
+                    )
+                    updated.append(pid)
+            conn.commit()
+        finally:
+            conn.close()
+
+        return {
+            "ok": True,
+            "updated": len(updated),
+            "missing": missing,
+            "page_ids": updated,
+            "canonical_paths": paths,
+            "target_status": status_norm,
+        }
+
+    def mark_page_generated(self, page_id: str) -> bool:
+        """
+        静态页 bake 成功后写入统管表时间戳。
+
+        @param page_id: 页面主键
+        @returns: 是否更新到行
+        @description
+          设置 ``generated_at``（上线/最近生成）与 ``updated_at``（同步刷新）。
+          Ops 台账「上线时间」读自 generated_at；下线只改 updated_at，保留上次上线时间。
+        """
+        pid = str(page_id or "").strip()
+        if not pid:
+            return False
+        now = _utc_now_str()
+        conn = self._connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    UPDATE media_pages
+                    SET generated_at = %s, updated_at = %s
+                    WHERE page_id = %s
+                    """,
+                    (now, now, pid),
+                )
+                affected = cur.rowcount
+            conn.commit()
+        finally:
+            conn.close()
+        return int(affected or 0) > 0
+
     def list_renderable_page_ids(self) -> List[str]:
         """
         列出应写入 portal/dist 的 episode/movie page_id。

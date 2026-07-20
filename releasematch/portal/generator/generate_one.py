@@ -52,6 +52,12 @@ def write_page_html(
     out_file.parent.mkdir(parents=True, exist_ok=True)
     out_file.write_text(rendered["html"], encoding="utf-8")
 
+    # 统管表：记录上线/最近生成时间（Ops 台账「上线时间」）
+    try:
+        store.mark_page_generated(page_id)
+    except Exception:  # noqa: BLE001 — 写盘成功不因时间戳失败回滚
+        pass
+
     return {
         "ok": True,
         "page_id": page_id,

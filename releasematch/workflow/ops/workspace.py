@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional
 
 from workflow.ops.filter_service import apply_filters
 from workflow.ops.track_store import create_batch, make_track_row
+from workflow.storage.mysql_store import MySQLStore
 
 
 class OpsWorkspace:
@@ -136,12 +137,18 @@ class OpsWorkspace:
             "source": self.source,
         }
 
-    def import_to_track(self, *, selected_page_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+    def import_to_track(
+        self,
+        *,
+        selected_page_ids: Optional[List[str]] = None,
+        confirm_published: bool = False,
+    ) -> Dict[str, Any]:
         """
         将筛选结果导入跟踪表（贯通生成 + 上线）。
 
         @param selected_page_ids: 若给定，仅导入勾选
-        @returns: 新建批次
+        @param confirm_published: 与统管 published 重叠时须为 True，否则返回需确认
+        @returns: 新建批次；或 needs_confirm + published_overlap
         """
         slots = self.filtered if self.filtered else self.candidates
         if selected_page_ids is not None:
@@ -154,12 +161,45 @@ class OpsWorkspace:
             make_track_row(s, source_tier=str(s.get("source_tier") or "unknown"))
             for s in slots
         ]
+
+        # 与统管表对齐：提示已 published，避免无意识重复生成
+        published_overlap: List[str] = []
+        try:
+            published = set(MySQLStore().list_published_page_ids())
+            published_overlap = [r["page_id"] for r in rows if r.get("page_id") in published]
+        except Exception:  # noqa: BLE001
+            published_overlap = []
+
+        if published_overlap and not confirm_published:
+            return {
+                "ok": False,
+                "needs_confirm": True,
+                "error": (
+                    f"其中 {len(published_overlap)} 个已在统管表 published；"
+                    "确认后请带 confirm_published=true 再导入"
+                ),
+                "published_overlap": published_overlap,
+                "published_overlap_count": len(published_overlap),
+                "would_import": len(rows),
+            }
+
         batch = create_batch(
             rows,
             source_meta=self.source,
             filter_meta=self.filter_meta,
         )
-        return {"ok": True, "batch": batch, "imported": len(rows)}
+        return {
+            "ok": True,
+            "batch": batch,
+            "imported": len(rows),
+            "published_overlap": published_overlap,
+            "published_overlap_count": len(published_overlap),
+            "warning": (
+                f"其中 {len(published_overlap)} 个已在统管表 published；已确认导入"
+                if published_overlap
+                else None
+            ),
+        }
 
     def snapshot(self) -> Dict[str, Any]:
         """返回工作区快照（供 UI）。"""

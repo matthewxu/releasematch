@@ -1,5 +1,5 @@
 /**
- * Ops 控制台前端 — 四段流程与跟踪表。
+ * Ops 控制台前端 — 页面台账 + 五段流程与跟踪工单。
  * @file workflow/ops/static/ops.js
  */
 
@@ -11,6 +11,15 @@
 
   /** @type {Array<object>} 最近一次日导出搜索结果 */
   let exportHits = [];
+
+  /** @type {Array<object>} 页面台账当前页行 */
+  let inventoryItems = [];
+
+  /**
+   * 台账分页状态。
+   * @type {{page: number, pageSize: number, total: number}}
+   */
+  let inventoryPager = { page: 1, pageSize: 50, total: 0 };
 
   /**
    * 前端 TV 季集缓存（key = tmdb_id）。
@@ -235,7 +244,7 @@
 
   /**
    * 切换流程面板。
-   * @param {string} step 1-5
+   * @param {string} step 0-5（0=页面台账）
    */
   function showStep(step) {
     document.querySelectorAll(".ops-step-tab").forEach((btn) => {
@@ -244,6 +253,9 @@
     document.querySelectorAll(".ops-panel").forEach((panel) => {
       panel.classList.toggle("is-active", panel.dataset.panel === step);
     });
+    if (String(step) === "0") {
+      loadInventory().catch((e) => log(String(e)));
+    }
     if (String(step) === "5") {
       loadConfig().catch((e) => log(String(e)));
     }
@@ -575,8 +587,17 @@
     renderMetrics(document.getElementById("filterMetrics"), [
       ["筛选前", (ws.filter && ws.filter.count_before) || ws.candidates_count || 0],
       ["筛选后", ws.filtered_count || 0],
+      [
+        "统管 published",
+        (data.inventory_stats && data.inventory_stats.published) != null
+          ? data.inventory_stats.published
+          : "—",
+      ],
     ]);
     renderSlotRows(document.querySelector("#filteredTable tbody"), filtered, true);
+
+    // 台账统计条（state 附带）
+    renderInventoryStats(data.inventory_stats);
 
     renderTrack(data.batch);
   }
@@ -990,6 +1011,237 @@
   }
 
   /**
+   * 渲染统管表状态统计。
+   * @param {object|null|undefined} stats
+   */
+  function renderInventoryStats(stats) {
+    const el = document.getElementById("inventoryStats");
+    if (!el) return;
+    if (!stats || stats.ok === false) {
+      renderMetrics(el, [["台账", stats && stats.error ? String(stats.error) : "不可用"]]);
+      return;
+    }
+    renderMetrics(el, [
+      ["合计", stats.total || 0],
+      ["published", stats.published || 0],
+      ["thin", stats.thin || 0],
+      ["draft", stats.draft || 0],
+      ["indexable", stats.indexable || 0],
+    ]);
+  }
+
+  /**
+   * 台账时间列展示（截断到分钟，空则 —）。
+   * @param {string|null|undefined} value ISO / MySQL DATETIME
+   * @returns {string}
+   */
+  function formatInvTime(value) {
+    if (value == null || value === "") return "—";
+    const text = String(value).replace("T", " ").replace("Z", "");
+    // 2026-07-20 13:01:26.201 → 2026-07-20 13:01
+    return text.length >= 16 ? text.slice(0, 16) : text;
+  }
+
+  /**
+   * 读取台账每页行数（1–500；可选预设或手填）。
+   * @returns {number}
+   */
+  function getInventoryPageSize() {
+    const el = document.getElementById("invPageSize");
+    const n = Number((el && el.value) || inventoryPager.pageSize || 50);
+    if (!Number.isFinite(n) || n < 1) return 50;
+    return Math.min(500, Math.max(1, Math.floor(n)));
+  }
+
+  /**
+   * 同步「预设下拉」与「手填数字」的选中态。
+   * @param {number} size 当前行数
+   */
+  function syncInventoryPageSizeControls(size) {
+    const n = Math.min(500, Math.max(1, Math.floor(Number(size) || 50)));
+    const input = document.getElementById("invPageSize");
+    const preset = document.getElementById("invPageSizePreset");
+    if (input) input.value = String(n);
+    if (preset) {
+      const known = ["25", "50", "100", "200"];
+      preset.value = known.indexOf(String(n)) >= 0 ? String(n) : "custom";
+    }
+  }
+
+  /**
+   * 应用新的每页行数并重新加载（回到第 1 页）。
+   * @param {number} size
+   */
+  function applyInventoryPageSize(size) {
+    const n = Math.min(500, Math.max(1, Math.floor(Number(size) || 50)));
+    inventoryPager.pageSize = n;
+    syncInventoryPageSizeControls(n);
+    withBusy("切换每页行数", () => loadInventory({ resetPage: true }), {
+      indeterminate: true,
+    }).catch((e) => log(String(e)));
+  }
+
+  /**
+   * 更新台账分页控件状态。
+   */
+  function renderInventoryPager() {
+    const total = inventoryPager.total || 0;
+    const pageSize = inventoryPager.pageSize || 50;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize) || 1);
+    let page = inventoryPager.page || 1;
+    if (page > totalPages) page = totalPages;
+    if (page < 1) page = 1;
+    inventoryPager.page = page;
+
+    const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
+    const to = Math.min(total, page * pageSize);
+    const info = document.getElementById("invPageInfo");
+    if (info) {
+      info.textContent = `第 ${page} / ${totalPages} 页 · ${from}–${to} / ${total}`;
+    }
+    const jump = document.getElementById("invPageJump");
+    if (jump) {
+      jump.value = String(page);
+      jump.max = String(totalPages);
+    }
+    const prev = document.getElementById("btnInvPrev");
+    const next = document.getElementById("btnInvNext");
+    if (prev) prev.disabled = page <= 1;
+    if (next) next.disabled = page >= totalPages || total === 0;
+  }
+
+  /**
+   * 渲染台账表格。
+   * @param {Array<object>} items
+   * @param {number} total
+   */
+  function renderInventoryTable(items, total) {
+    inventoryItems = items || [];
+    inventoryPager.total = total != null ? Number(total) || 0 : inventoryItems.length;
+    renderMetrics(document.getElementById("inventoryListMetrics"), [
+      ["本页", inventoryItems.length],
+      ["匹配", inventoryPager.total],
+      ["每页", inventoryPager.pageSize],
+    ]);
+    renderInventoryPager();
+    const checkAll = document.getElementById("checkAllInv");
+    if (checkAll) checkAll.checked = false;
+    const tbody = document.querySelector("#inventoryTable tbody");
+    if (!tbody) return;
+    tbody.innerHTML = inventoryItems
+      .map((it) => {
+        const track = it.last_track || {};
+        const trackLabel = track.batch_id
+          ? `${track.pipeline_status || "—"}/${track.generate_status || "—"}`
+          : "—";
+        const onlineRaw = it.online_at || it.generated_at || "";
+        const updatedRaw = it.updated_at || "";
+        return `<tr>
+          <td><input type="checkbox" class="inv-check" data-page-id="${escapeHtml(
+            it.page_id
+          )}" /></td>
+          <td>${escapeHtml(it.page_status || "")}</td>
+          <td>${escapeHtml(it.title || "")}</td>
+          <td><code>${escapeHtml(it.page_id || "")}</code></td>
+          <td>${escapeHtml(it.page_type || "")}</td>
+          <td>${it.magnet_count != null ? it.magnet_count : "—"}</td>
+          <td>${it.has_recommended ? "Y" : "N"}</td>
+          <td title="${escapeHtml(String(onlineRaw))}">${escapeHtml(
+          formatInvTime(onlineRaw)
+        )}</td>
+          <td title="${escapeHtml(String(updatedRaw))}">${escapeHtml(
+          formatInvTime(updatedRaw)
+        )}</td>
+          <td><code>${escapeHtml(it.canonical_path || "")}</code></td>
+          <td title="${escapeHtml(track.batch_id || "")}">${escapeHtml(trackLabel)}</td>
+        </tr>`;
+      })
+      .join("");
+  }
+
+  /**
+   * 拉取页面台账列表（带分页）。
+   * @param {{resetPage?: boolean}} [opts] resetPage=true 时回到第 1 页（搜索/改页大小）
+   */
+  async function loadInventory(opts) {
+    const resetPage = !!(opts && opts.resetPage);
+    if (resetPage) inventoryPager.page = 1;
+
+    inventoryPager.pageSize = getInventoryPageSize();
+    const pageSize = inventoryPager.pageSize;
+    const page = Math.max(1, inventoryPager.page || 1);
+    const offset = (page - 1) * pageSize;
+
+    const q = (document.getElementById("invQ") && document.getElementById("invQ").value) || "";
+    const status =
+      (document.getElementById("invStatus") && document.getElementById("invStatus").value) || "";
+    const pageType =
+      (document.getElementById("invPageType") && document.getElementById("invPageType").value) ||
+      "";
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (status) params.set("status", status);
+    if (pageType) params.set("page_type", pageType);
+    params.set("limit", String(pageSize));
+    params.set("offset", String(offset));
+    const data = await api("/api/pages?" + params.toString());
+    // 若当前页超出总页（删页后），回退到末页再拉一次
+    const total = Number(data.total) || 0;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize) || 1);
+    if (total > 0 && page > totalPages) {
+      inventoryPager.page = totalPages;
+      return loadInventory();
+    }
+    inventoryPager.page = page;
+    inventoryPager.pageSize = pageSize;
+    syncInventoryPageSizeControls(pageSize);
+    renderInventoryTable(data.items || [], total);
+    const stats = await api("/api/pages/stats");
+    renderInventoryStats(stats);
+    log("台账已加载", {
+      total,
+      page: inventoryPager.page,
+      pageSize,
+      rows: (data.items || []).length,
+    });
+  }
+
+  /**
+   * 读取台账勾选 page_id。
+   * @returns {string[]}
+   */
+  function checkedInventoryPageIds() {
+    return Array.from(document.querySelectorAll("#inventoryTable .inv-check:checked")).map(
+      (el) => el.dataset.pageId
+    );
+  }
+
+  /**
+   * 下线勾选页。
+   * @param {boolean} upload 是否正式 wrangler 上传
+   */
+  async function unpublishSelected(upload) {
+    const ids = checkedInventoryPageIds();
+    if (!ids.length) {
+      log("请先勾选要下线的页面");
+      return;
+    }
+    const tip = upload
+      ? `确认下线 ${ids.length} 页并正式上传公网对账？`
+      : `确认下线 ${ids.length} 页（改库+删 dist，不上公网）？`;
+    if (!window.confirm(tip)) return;
+    await withBusy(upload ? "下线并上传" : "下线页面", async () => {
+      const data = await api("/api/pages/unpublish", {
+        method: "POST",
+        body: { page_ids: ids, upload: !!upload, target_status: "draft" },
+      });
+      log("下线完成", data);
+      await loadInventory();
+      await refresh();
+    });
+  }
+
+  /**
    * 绑定事件。
    */
   function bind() {
@@ -1011,6 +1263,163 @@
       }
       window.location.replace("/login.html");
     });
+
+    const btnInvSearch = document.getElementById("btnInvSearch");
+    if (btnInvSearch) {
+      btnInvSearch.addEventListener("click", () => {
+        withBusy("搜索台账", () => loadInventory({ resetPage: true }), {
+          indeterminate: true,
+        }).catch((e) => log(String(e)));
+      });
+    }
+    const invQ = document.getElementById("invQ");
+    if (invQ) {
+      invQ.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          withBusy("搜索台账", () => loadInventory({ resetPage: true }), {
+            indeterminate: true,
+          }).catch((e) => log(String(e)));
+        }
+      });
+    }
+    const invStatus = document.getElementById("invStatus");
+    const invPageType = document.getElementById("invPageType");
+    [invStatus, invPageType].forEach((el) => {
+      if (!el) return;
+      el.addEventListener("change", () => {
+        withBusy("筛选台账", () => loadInventory({ resetPage: true }), {
+          indeterminate: true,
+        }).catch((e) => log(String(e)));
+      });
+    });
+    const invPageSize = document.getElementById("invPageSize");
+    const invPageSizePreset = document.getElementById("invPageSizePreset");
+    if (invPageSizePreset) {
+      invPageSizePreset.addEventListener("change", () => {
+        const v = invPageSizePreset.value;
+        if (v === "custom") {
+          if (invPageSize) invPageSize.focus();
+          return;
+        }
+        applyInventoryPageSize(Number(v));
+      });
+    }
+    if (invPageSize) {
+      invPageSize.addEventListener("change", () => {
+        applyInventoryPageSize(invPageSize.value);
+      });
+      invPageSize.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          applyInventoryPageSize(invPageSize.value);
+        }
+      });
+    }
+    const btnInvPrev = document.getElementById("btnInvPrev");
+    if (btnInvPrev) {
+      btnInvPrev.addEventListener("click", () => {
+        if (inventoryPager.page <= 1) return;
+        inventoryPager.page -= 1;
+        withBusy("上一页", () => loadInventory(), { indeterminate: true }).catch((e) =>
+          log(String(e))
+        );
+      });
+    }
+    const btnInvNext = document.getElementById("btnInvNext");
+    if (btnInvNext) {
+      btnInvNext.addEventListener("click", () => {
+        const totalPages = Math.max(
+          1,
+          Math.ceil((inventoryPager.total || 0) / (inventoryPager.pageSize || 50)) || 1
+        );
+        if (inventoryPager.page >= totalPages) return;
+        inventoryPager.page += 1;
+        withBusy("下一页", () => loadInventory(), { indeterminate: true }).catch((e) =>
+          log(String(e))
+        );
+      });
+    }
+    const btnInvGoto = document.getElementById("btnInvGoto");
+    if (btnInvGoto) {
+      btnInvGoto.addEventListener("click", () => {
+        const jumpEl = document.getElementById("invPageJump");
+        const n = Number((jumpEl && jumpEl.value) || 1);
+        const totalPages = Math.max(
+          1,
+          Math.ceil((inventoryPager.total || 0) / (inventoryPager.pageSize || 50)) || 1
+        );
+        inventoryPager.page = Math.min(totalPages, Math.max(1, Math.floor(n) || 1));
+        withBusy("跳转页", () => loadInventory(), { indeterminate: true }).catch((e) =>
+          log(String(e))
+        );
+      });
+    }
+    const invPageJump = document.getElementById("invPageJump");
+    if (invPageJump) {
+      invPageJump.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          document.getElementById("btnInvGoto") &&
+            document.getElementById("btnInvGoto").click();
+        }
+      });
+    }
+    const checkAllInv = document.getElementById("checkAllInv");
+    if (checkAllInv) {
+      checkAllInv.addEventListener("change", (ev) => {
+        document.querySelectorAll("#inventoryTable .inv-check").forEach((c) => {
+          c.checked = ev.target.checked;
+        });
+      });
+    }
+    const btnInvUnpublish = document.getElementById("btnInvUnpublish");
+    if (btnInvUnpublish) {
+      btnInvUnpublish.addEventListener("click", () => {
+        unpublishSelected(false).catch((e) => log(String(e)));
+      });
+    }
+    const btnInvUnpublishUpload = document.getElementById("btnInvUnpublishUpload");
+    if (btnInvUnpublishUpload) {
+      btnInvUnpublishUpload.addEventListener("click", () => {
+        unpublishSelected(true).catch((e) => log(String(e)));
+      });
+    }
+    const btnInvAddTrack = document.getElementById("btnInvAddTrack");
+    if (btnInvAddTrack) {
+      btnInvAddTrack.addEventListener("click", async () => {
+        const ids = checkedInventoryPageIds();
+        if (!ids.length) {
+          log("请先勾选要加入跟踪批的页面");
+          return;
+        }
+        const createNew = !!(
+          document.getElementById("invNewBatch") && document.getElementById("invNewBatch").checked
+        );
+        try {
+          await withBusy("加入跟踪批", async () => {
+            const data = await api("/api/pages/add-to-track", {
+              method: "POST",
+              body: { page_ids: ids, create_new_batch: createNew },
+            });
+            if (data.published_overlap && data.published_overlap.length) {
+              log("提示：含已 published 页（可继续重跑）", {
+                published_overlap: data.published_overlap,
+              });
+            }
+            log("已加入跟踪批", {
+              added: data.added,
+              skipped: data.skipped_existing,
+              batch_id: data.batch_id || (data.batch && data.batch.meta && data.batch.meta.batch_id),
+            });
+            await refresh();
+            showStep("3");
+          });
+        } catch (e) {
+          log(String(e));
+        }
+      });
+    }
 
     document.getElementById("btnBuildTmdb").addEventListener("click", async () => {
       const body = {
@@ -1282,7 +1691,11 @@
       try {
         await withBusy("应用筛选", async () => {
           const data = await api("/api/filter", { method: "POST", body });
-          log("筛选完成", { before: data.count_before, after: data.count_after });
+          log("筛选完成", {
+            before: data.count_before,
+            after: data.count_after,
+            published_count: data.published_count,
+          });
           await refresh();
         });
       } catch (e) {
@@ -1300,13 +1713,47 @@
       const ids = checkedPageIds();
       try {
         await withBusy("导入跟踪表", async () => {
-          const data = await api("/api/track/import", {
-            method: "POST",
-            body: { selected_page_ids: ids },
-          });
+          /**
+           * 调用导入；若需确认 published 重叠则弹窗后带 confirm 重试。
+           * @param {boolean} confirmPublished
+           * @returns {Promise<object>}
+           */
+          async function doImport(confirmPublished) {
+            const res = await fetch("/api/track/import", {
+              credentials: "same-origin",
+              headers: { "Content-Type": "application/json" },
+              method: "POST",
+              body: JSON.stringify({
+                selected_page_ids: ids,
+                confirm_published: !!confirmPublished,
+              }),
+            });
+            const data = await res.json();
+            return data;
+          }
+
+          let data = await doImport(false);
+          if (data.needs_confirm && data.published_overlap_count) {
+            const go = window.confirm(
+              `其中 ${data.published_overlap_count} 个已在统管表 published。\n` +
+                "继续导入可重跑；取消则中止。\n\n" +
+                (data.published_overlap || []).slice(0, 12).join("\n")
+            );
+            if (!go) {
+              log("已取消导入（存在 published 重叠）", {
+                published_overlap: data.published_overlap,
+              });
+              return;
+            }
+            data = await doImport(true);
+          }
+          if (!data.ok) {
+            throw new Error(data.error || "导入失败");
+          }
           log("已导入跟踪表", {
             imported: data.imported,
             batch_id: data.batch && data.batch.meta.batch_id,
+            published_overlap: data.published_overlap_count || 0,
           });
           await refresh();
           showStep("3");
@@ -1599,7 +2046,9 @@
 
   bind();
   loadFiles().catch((e) => log(String(e)));
-  refresh().catch((e) => log(String(e)));
+  refresh()
+    .then(() => loadInventory())
+    .catch((e) => log(String(e)));
   // 顶栏配置徽章：静默拉取一次
   loadConfig().catch(() => {
     /* 缺 MySQL 时仍可能读 .env；忽略首屏失败 */
