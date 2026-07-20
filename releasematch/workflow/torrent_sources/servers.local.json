@@ -21,7 +21,9 @@
         "config_path": "/opt/jackett/config",
         "server_config": "/opt/jackett/config/Jackett/ServerConfig.json",
         "network": "jackett-net",
-        "api_key": "pzzb6xrlr39nqtzh4yvxnyy2glip6772"
+        "api_key": "pzzb6xrlr39nqtzh4yvxnyy2glip6772",
+        "admin_password": "345621",
+        "admin_password_note": "Dashboard 登录密码；由 install_jackett_stack.sh 默认写入（JACKETT_ADMIN_PASSWORD）"
       },
       "flaresolverr": {
         "_comment": "1337x / TorrentGalaxy 等 Cloudflare 站点必备；仅绑定本机 8191",

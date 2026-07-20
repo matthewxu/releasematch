@@ -20,7 +20,7 @@
 #   正确: --password 'Release@2026&acb'
 #
 # 依赖：
-#   ssh、scp、sshpass、python3；远端建议 Debian/Ubuntu（apt 装 Docker）
+#   ssh、sshpass、python3；远端建议 Debian/Ubuntu（apt 装 Docker）
 # =============================================================================
 
 set -euo pipefail
@@ -246,9 +246,8 @@ prompt_indexers_if_needed() {
 }
 
 check_deps() {
-  # 检查本机依赖：ssh / scp / sshpass / 子脚本
+  # 检查本机依赖：ssh / sshpass / 子脚本（indexer 经 SSH stdin 推送，无需 scp）
   command -v ssh >/dev/null 2>&1 || die "未找到 ssh，请先安装 OpenSSH 客户端"
-  command -v scp >/dev/null 2>&1 || die "未找到 scp"
   command -v sshpass >/dev/null 2>&1 || die "未找到 sshpass。macOS: brew install hudochenkov/sshpass/sshpass"
   [[ -f "${DEPLOY_SCRIPT}" ]] || die "找不到 ${DEPLOY_SCRIPT}"
   [[ -f "${INDEXERS_SCRIPT}" ]] || die "找不到 ${INDEXERS_SCRIPT}"
@@ -257,8 +256,8 @@ check_deps() {
   fi
 }
 
-ssh_base_args() {
-  # 填充 SSH/SCP 共用连接参数到全局数组 SSH_CONN_ARGS
+ssh_conn_args() {
+  # 填充 ssh 连接参数（端口用小写 -p）
   SSH_CONN_ARGS=(-p "${VPS_PORT}" -o StrictHostKeyChecking=no -o ConnectTimeout=20)
 }
 
@@ -281,7 +280,7 @@ run_install() {
 }
 
 run_configure_indexers() {
-  # 将 configure_jackett_cn_indexers.sh 推到远端执行
+  # 经 SSH stdin 在远端执行 configure_jackett_cn_indexers.sh（避免 scp -p/-P 端口参数差异）
   if [[ "${INDEXERS_MODE}" != "yes" ]]; then
     echo "=== 已跳过默认 indexer 配置 ==="
     return 0
@@ -291,18 +290,15 @@ run_configure_indexers() {
   echo "=== 配置默认 Indexer（profile=${INDEXER_PROFILE}）==="
 
   if [[ "${DRY_RUN}" -eq 1 ]]; then
-    echo "[dry-run] scp ${INDEXERS_SCRIPT} → ${VPS_USER}@${VPS_HOST}:/tmp/"
-    echo "[dry-run] ssh INDEXER_PROFILE=${INDEXER_PROFILE} bash /tmp/configure_jackett_cn_indexers.sh"
+    echo "[dry-run] ssh INDEXER_PROFILE=${INDEXER_PROFILE} bash -s < ${INDEXERS_SCRIPT}"
     return 0
   fi
 
   export SSHPASS="${VPS_PASSWORD}"
-  local remote_tmp="/tmp/configure_jackett_cn_indexers.sh"
-  ssh_base_args
-
-  sshpass -e scp "${SSH_CONN_ARGS[@]}" "${INDEXERS_SCRIPT}" "${VPS_USER}@${VPS_HOST}:${remote_tmp}"
+  ssh_conn_args
+  # 与 deploy 相同：远端 bash -s 读 stdin，不依赖 scp
   sshpass -e ssh -T "${SSH_CONN_ARGS[@]}" "${VPS_USER}@${VPS_HOST}" \
-    "INDEXER_PROFILE='${INDEXER_PROFILE}' bash '${remote_tmp}'"
+    "INDEXER_PROFILE='${INDEXER_PROFILE}' bash -s" < "${INDEXERS_SCRIPT}"
 
   echo "Indexer 配置完成。Dashboard: http://${VPS_HOST}:9117/UI/Dashboard"
 }
@@ -333,10 +329,11 @@ print_next_steps() {
 
 === 安装完成 ===
 Dashboard:  http://${VPS_HOST}:9117/UI/Dashboard
+Dashboard 密码: ${JACKETT_ADMIN_PASSWORD:-345621}
 Torznab:    http://${VPS_HOST}:9117
 FlareSolverr 仅监听 VPS 本机 127.0.0.1:8191（不暴露公网）
 
-建议: 在 Dashboard 对已添加 indexer 逐个点 TEST（1337x/tgx 需 FlareSolverr）。
+建议: 在 Dashboard 登录后对已添加 indexer 逐个点 TEST（1337x/tgx 需 FlareSolverr）。
 本机 Nyaa/DMHy SOCKS: bash scripts/start_ssh_socks_tunnel.sh
 EOF
 }

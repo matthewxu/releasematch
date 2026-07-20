@@ -15,6 +15,7 @@
 | VPS IP | **`104.105.140.95`** |
 | Jackett URL | `http://104.105.140.95:9117` |
 | Dashboard | `http://104.105.140.95:9117/UI/Dashboard` |
+| Dashboard 密码 | 默认 **`345621`**（`JACKETT_ADMIN_PASSWORD`，见 `servers.local.json`） |
 | SSH | `root` · 密码见 `servers.local.json`（勿提交敏感变更到公开仓库时请复查） |
 | Indexer（可一键写入） | nyaasi、1337x、thepiratebay、torrentgalaxyclone、eztv、dmhy、mikan、acgrip、bangumi-moe |
 | FlareSolverr | 容器内 `http://flaresolverr:8191/`（1337x / tgx 用） |
@@ -45,12 +46,15 @@ bash scripts/install_jackett_oneclick.sh --host 104.105.140.95 --password 'YourP
 | `--indexer-profile all\|cn\|intl` | 全套 / 仅华语 / 仅国际 |
 | `--no-force` | 不强制重建已有容器 |
 | `--no-sync` | 不同步 API Key 到本机 |
+| `JACKETT_ADMIN_PASSWORD` | Dashboard 登录密码，**默认 `345621`**（消除无密码外网访问警告） |
 
 脚本内部会调用：
 
-1. `scripts/deploy_jackett_vps.sh` → 远端 `install_jackett_stack.sh`（Docker + Jackett + FlareSolverr）
+1. `scripts/deploy_jackett_vps.sh` → 远端 `install_jackett_stack.sh`（Docker + Jackett + FlareSolverr + **Dashboard 密码**）
 2. （可选）`scripts/remote/configure_jackett_cn_indexers.sh`（写入 Indexers/*.json）
 3. `scripts/sync_jackett_vps_key.sh` → `accounts.local.json`
+
+登录 Dashboard：`http://104.105.140.95:9117/UI/Dashboard` ，密码默认 **`345621`**。
 
 ### 旧版分步命令（仍可用）
 

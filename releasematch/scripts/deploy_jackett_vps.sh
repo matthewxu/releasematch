@@ -57,6 +57,7 @@ usage() {
 环境变量:
   VPS_HOST, VPS_USER, VPS_PORT, SSHPASS
   FORCE_RECREATE=1     传给远端脚本，强制重建 Docker 容器
+  JACKETT_ADMIN_PASSWORD  Dashboard 密码，默认 345621（传给远端）
 
 示例:
   bash scripts/deploy_jackett_vps.sh
@@ -184,7 +185,9 @@ run_remote_install() {
 
   build_ssh_command
 
-  local remote_prefix="FORCE_RECREATE=${FORCE_RECREATE:-0}"
+  local admin_pw="${JACKETT_ADMIN_PASSWORD:-345621}"
+  # 单引号包裹密码，避免远端 shell 解析特殊字符
+  local remote_prefix="FORCE_RECREATE=${FORCE_RECREATE:-0} JACKETT_ADMIN_PASSWORD='${admin_pw//\'/\'\\\'\'}'"
 
   echo "=== 远程安装目标: ${VPS_USER}@${VPS_HOST}:${VPS_PORT} ==="
 

@@ -22,6 +22,7 @@
 #   FLARE_PORT          FlareSolverr 宿主机端口，默认 8191
 #   FLARE_BIND          FlareSolverr 绑定地址，默认 127.0.0.1（不暴露公网）
 #   FLARE_MAX_TIMEOUT   Jackett 内 FlareSolverr 超时 ms，默认 55000
+#   JACKETT_ADMIN_PASSWORD  Dashboard 登录密码明文，默认 345621
 #   FORCE_RECREATE      设为 1 时强制删除并重建容器
 # =============================================================================
 
@@ -41,6 +42,10 @@ FLARE_IMAGE="${FLARE_IMAGE:-ghcr.io/flaresolverr/flaresolverr:latest}"
 FLARE_PORT="${FLARE_PORT:-8191}"
 FLARE_BIND="${FLARE_BIND:-127.0.0.1}"
 FLARE_MAX_TIMEOUT="${FLARE_MAX_TIMEOUT:-55000}"
+
+# Dashboard 管理员密码（明文）；写入 ServerConfig 时按 Jackett SHA512(UTF-16LE(pass+APIKey)) 哈希
+# 消除 “external access enabled without admin password” 警告
+JACKETT_ADMIN_PASSWORD="${JACKETT_ADMIN_PASSWORD:-345621}"
 
 SERVER_CONFIG="${JACKETT_CONFIG}/Jackett/ServerConfig.json"
 FLARE_URL_IN_JACKETT="http://${FLARE_NAME}:8191/"
@@ -161,24 +166,39 @@ wait_for_server_config() {
   die "超时：未找到 ${SERVER_CONFIG}"
 }
 
-configure_flaresolverr_in_jackett() {
-  # 写入 FlareSolverr URL（Docker 同网必须用容器名，不能用 127.0.0.1）
+configure_jackett_server() {
+  # 写入 FlareSolverr URL、AllowExternal、Dashboard 管理员密码哈希
   log "配置 Jackett FlareSolverrUrl = ${FLARE_URL_IN_JACKETT}"
-  python3 <<PY
+  log "配置 Jackett AdminPassword（明文由 JACKETT_ADMIN_PASSWORD 提供，默认 345621）"
+  export JACKETT_ADMIN_PASSWORD
+  python3 <<'PY'
+import hashlib
 import json
+import os
 from pathlib import Path
 
-path = Path("${SERVER_CONFIG}")
+path = Path(os.environ["SERVER_CONFIG"])
 data = json.loads(path.read_text(encoding="utf-8"))
-data["FlareSolverrUrl"] = "${FLARE_URL_IN_JACKETT}"
-data["FlareSolverrMaxTimeout"] = int("${FLARE_MAX_TIMEOUT}")
+data["FlareSolverrUrl"] = os.environ["FLARE_URL_IN_JACKETT"]
+data["FlareSolverrMaxTimeout"] = int(os.environ.get("FLARE_MAX_TIMEOUT", "55000"))
 # Docker 发布端口时需允许外部访问；避免 LocalBindAddress 绑死 127.0.0.1
 data["AllowExternal"] = True
 if data.get("LocalBindAddress") in ("127.0.0.1", "localhost"):
     data["LocalBindAddress"] = "*"
+
+# Jackett SecurityService.HashPassword: SHA512(UTF-16LE(password + APIKey))
+admin_password = os.environ.get("JACKETT_ADMIN_PASSWORD", "345621")
+api_key = str(data.get("APIKey") or "")
+if admin_password and api_key:
+    payload = (admin_password + api_key).encode("utf-16-le")
+    data["AdminPassword"] = hashlib.sha512(payload).hexdigest()
+elif admin_password and not api_key:
+    raise SystemExit("ServerConfig 缺少 APIKey，无法哈希 AdminPassword")
+
 path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 print("FlareSolverrUrl:", data.get("FlareSolverrUrl"))
 print("AllowExternal:", data.get("AllowExternal"), "LocalBindAddress:", data.get("LocalBindAddress"))
+print("AdminPassword:", "set" if data.get("AdminPassword") else "unset")
 PY
   docker restart "${JACKETT_NAME}" >/dev/null
   # 重启后需重新加载数百个 indexer，不能只 sleep 几秒就探测
@@ -270,6 +290,7 @@ print_summary() {
 ================================================================================
   Jackett URL    : http://${public_ip}:${JACKETT_PORT}
   Dashboard      : http://${public_ip}:${JACKETT_PORT}/UI/Dashboard
+  Dashboard 密码 : ${JACKETT_ADMIN_PASSWORD}
   API Key        : ${api_key}
   FlareSolverr   : 容器内 ${FLARE_URL_IN_JACKETT}（宿主机 ${FLARE_BIND}:${FLARE_PORT}）
   配置卷         : ${JACKETT_CONFIG}
@@ -291,9 +312,8 @@ print_summary() {
     bash scripts/start_ssh_socks_tunnel.sh
     export TORRENT_PROXY=socks5h://127.0.0.1:1080
 
-  请在 Jackett Dashboard 手动添加 Indexer（若尚未配置）：
-    thepiratebay, nyaasi, eztv
-    可选（需 FlareSolverr）：1337x, torrentgalaxyclone
+  Indexer：可用 install_jackett_oneclick.sh --with-indexers，或本机推送
+    scripts/remote/configure_jackett_cn_indexers.sh
 
   验证（在本机项目目录）：
     python -m workflow.torrent_sources.run status
@@ -312,7 +332,9 @@ main() {
   start_flaresolverr
   start_jackett
   wait_for_server_config
-  configure_flaresolverr_in_jackett
+  # 供 configure_jackett_server 的 Python 读取路径与 URL
+  export SERVER_CONFIG FLARE_URL_IN_JACKETT FLARE_MAX_TIMEOUT JACKETT_ADMIN_PASSWORD
+  configure_jackett_server
   verify_stack
   print_summary
 }

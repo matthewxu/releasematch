@@ -126,7 +126,7 @@ docker restart jackett
 ### 安全（必做）
 
 1. FlareSolverr 建议只绑定 `127.0.0.1:8191`（不暴露公网）
-2. Jackett 若公网开放 9117：**必须**依赖 API Key；建议设 Dashboard 管理员密码
+2. Jackett 若公网开放 9117：**必须**设 Dashboard 管理员密码（安装脚本默认 `345621`，可用 `JACKETT_ADMIN_PASSWORD` 覆盖）
 3. **SSH 密码、API Key 勿提交 Git** — 见 §三 凭据文件
 
 ---
@@ -191,6 +191,7 @@ cp workflow/torrent_sources/servers.example.json workflow/torrent_sources/server
 | **系统** | Debian 12 |
 | **Jackett** | `http://104.105.140.95:9117` |
 | **Dashboard** | `http://104.105.140.95:9117/UI/Dashboard` |
+| **Dashboard 密码** | 默认 `345621`（`JACKETT_ADMIN_PASSWORD`） |
 | **FlareSolverr** | 容器内 `http://flaresolverr:8191/`（宿主机 `127.0.0.1:8191`） |
 | **Docker 网络** | `jackett-net` |
 | **配置卷** | `/opt/jackett/config` |
@@ -270,3 +271,4 @@ docker exec jackett curl -s -o /dev/null -w '%{http_code}\n' http://flaresolverr
 | 2026-06-30 | 增加 [jackett-stability.md](./jackett-stability.md) 交叉引用 |
 | 2026-06-30 | 增加本机一键脚本 `scripts/deploy_jackett_vps.sh` |
 | 2026-07-20 | 增加 `scripts/install_jackett_oneclick.sh`（IP+密码+交互 indexer）；测试机 `104.105.140.95` |
+| 2026-07-20 | 安装脚本默认写入 Dashboard 密码 `345621`（`JACKETT_ADMIN_PASSWORD`）；indexer 经 SSH stdin 推送 |
