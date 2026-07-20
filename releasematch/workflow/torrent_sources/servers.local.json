@@ -1,9 +1,9 @@
 {
   "_comment": "本地服务器凭据，含 SSH 密码与 Jackett API Key，勿提交 Git",
   "jackett_vps_japan": {
-    "_comment": "日本测试服务器 — Jackett + FlareSolverr Docker 部署（2026-07-19 迁移至 172.238.20.52）",
+    "_comment": "日本测试服务器 — Jackett + FlareSolverr Docker 部署（2026-07-20 当前 104.105.140.95）",
     "label": "日本测试服务器",
-    "host": "172.238.20.52",
+    "host": "104.105.140.95",
     "ssh": {
       "user": "root",
       "password": "Release@2026&acb",
@@ -16,12 +16,12 @@
         "docker_name": "jackett",
         "image": "linuxserver/jackett:latest",
         "port": 9117,
-        "public_url": "http://172.238.20.52:9117",
-        "dashboard_url": "http://172.238.20.52:9117/UI/Dashboard",
+        "public_url": "http://104.105.140.95:9117",
+        "dashboard_url": "http://104.105.140.95:9117/UI/Dashboard",
         "config_path": "/opt/jackett/config",
         "server_config": "/opt/jackett/config/Jackett/ServerConfig.json",
         "network": "jackett-net",
-        "api_key": "l4hlz2sm1unjkg13kjf6xb2mepfm2jni"
+        "api_key": "pzzb6xrlr39nqtzh4yvxnyy2glip6772"
       },
       "flaresolverr": {
         "_comment": "1337x / TorrentGalaxy 等 Cloudflare 站点必备；仅绑定本机 8191",
@@ -35,7 +35,7 @@
       },
       "ssh_socks_tunnel": {
         "_comment": "本机 ssh -D SOCKS5，Nyaa 直连失败时回退；VPS 无需额外代理服务",
-        "command": "ssh -N -D 127.0.0.1:1080 root@172.238.20.52",
+        "command": "ssh -N -D 127.0.0.1:1080 root@104.105.140.95",
         "script": "scripts/start_ssh_socks_tunnel.sh",
         "local_proxy_url": "socks5h://127.0.0.1:1080",
         "env_var": "TORRENT_PROXY"
@@ -47,13 +47,18 @@
       "nyaasi",
       "thepiratebay",
       "eztv",
-      "dmhy"
+      "dmhy",
+      "mikan",
+      "acgrip",
+      "bangumi-moe"
     ],
     "deploy_notes": {
       "_comment": "一键远程安装（在本机 releasematch 目录执行）",
-      "one_click": "bash scripts/deploy_jackett_vps.sh",
+      "one_click": "bash scripts/install_jackett_oneclick.sh --host <IP> --password '<密码>'",
+      "one_click_with_indexers": "bash scripts/install_jackett_oneclick.sh --host <IP> --password '<密码>' --with-indexers",
+      "legacy_deploy": "bash scripts/deploy_jackett_vps.sh",
       "remote_only": "bash scripts/remote/install_jackett_stack.sh",
-      "force_recreate": "FORCE_RECREATE=1 bash scripts/deploy_jackett_vps.sh",
+      "configure_indexers": "bash scripts/remote/configure_jackett_cn_indexers.sh",
       "local_socks_tunnel": "bash scripts/start_ssh_socks_tunnel.sh"
     }
   }

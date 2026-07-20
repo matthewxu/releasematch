@@ -1,7 +1,7 @@
 # Jackett 部署在海外 VPS 说明
 
 > **适用：** 开发机在国内，Jackett 本地 indexer（1337x / Nyaa 等）大量 400 或超时  
-> **项目测试机：** 日本 VPS `172.236.156.193`（见 §四；历史 IP 见 [VPS迁移与部署.md](./VPS迁移与部署.md)）
+> **项目测试机：** 日本 VPS `104.105.140.95`（见 §四；历史 IP 见 [VPS迁移与部署.md](./VPS迁移与部署.md)）
 
 ---
 
@@ -37,21 +37,28 @@ EZTV / YTS **直连 API** 仍可由本机 `eztv_client` / `yts_client` 调用；
 
 ## 零、本机一键远程安装（推荐）
 
-在 **本机** `releasematch` 目录执行（读取 `servers.local.json` 中的 IP / SSH 凭据）：
+新买 VPS 时，在 **本机** `releasematch` 目录用交互一键脚本（IP + 密码即可）：
+
+```bash
+# 交互输入密码；安装后询问是否写入默认 indexer（all/cn/intl）
+bash scripts/install_jackett_oneclick.sh --host 104.105.140.95
+
+# 密码含 & $ 等字符必须单引号
+bash scripts/install_jackett_oneclick.sh --host 104.105.140.95 --password 'YourPass&secret'
+bash scripts/install_jackett_oneclick.sh --host 104.105.140.95 --password 'YourPass' --with-indexers
+```
+
+流程：`deploy_jackett_vps.sh`（Docker + Jackett + FlareSolverr）→ 可选 `configure_jackett_cn_indexers.sh` → `sync_jackett_vps_key.sh`。
+
+仅装栈、不交互（读 `servers.local.json`）时仍可用：
 
 ```bash
 bash scripts/deploy_jackett_vps.sh
-```
-
-指定主机或密码：
-
-```bash
-SSHPASS='your-password' bash scripts/deploy_jackett_vps.sh --host 172.236.156.193
+SSHPASS='your-password' bash scripts/deploy_jackett_vps.sh --host 104.105.140.95
 FORCE_RECREATE=1 bash scripts/deploy_jackett_vps.sh   # 强制重建容器
-bash scripts/deploy_jackett_vps.sh --dry-run          # 仅预览 SSH 命令
+bash scripts/deploy_jackett_vps.sh --dry-run
 ```
 
-脚本会在 VPS 上安装：**Docker + jackett-net + FlareSolverr + Jackett**，并自动写入 `FlareSolverrUrl`。  
 **Nyaa 回退**在本机用 SSH SOCKS，无需 VPS 代理：
 
 ```bash
@@ -59,7 +66,8 @@ bash scripts/start_ssh_socks_tunnel.sh
 export TORRENT_PROXY=socks5h://127.0.0.1:1080
 ```
 
-仅 VPS 内手动安装时：`bash scripts/remote/install_jackett_stack.sh`（需 root）。
+仅 VPS 内手动安装时：`bash scripts/remote/install_jackett_stack.sh`（需 root）。  
+仅补 indexer：`INDEXER_PROFILE=all bash scripts/remote/configure_jackett_cn_indexers.sh`（VPS 上）。
 
 ---
 
@@ -129,7 +137,7 @@ docker restart jackett
 
 ```json
 "jackett": {
-  "base_url": "http://172.236.156.193:9117",
+  "base_url": "http://104.105.140.95:9117",
   "api_key": "从 Dashboard 或 servers.local.json 复制",
   "indexers": {
     "tv": ["thepiratebay", "torrentgalaxyclone", "nyaasi", "1337x", "all"],
@@ -141,7 +149,7 @@ docker restart jackett
 或环境变量：
 
 ```bash
-export JACKETT_BASE_URL=http://172.236.156.193:9117
+export JACKETT_BASE_URL=http://104.105.140.95:9117
 export JACKETT_API_KEY=...
 ```
 
@@ -149,8 +157,8 @@ export JACKETT_API_KEY=...
 
 ```bash
 python -m workflow.torrent_sources.run status
-python scripts/poc_phase0.py --jackett-base-url http://172.236.156.193:9117
-python scripts/poc_jackett_indexers.py --jackett-base-url http://172.236.156.193:9117
+python scripts/poc_phase0.py --jackett-base-url http://104.105.140.95:9117
+python scripts/poc_jackett_indexers.py --jackett-base-url http://104.105.140.95:9117
 ```
 
 ---
@@ -177,29 +185,29 @@ cp workflow/torrent_sources/servers.example.json workflow/torrent_sources/server
 | 项 | 值 |
 |----|-----|
 | **标签** | 日本测试服务器 |
-| **IP** | `172.236.156.193` |
+| **IP** | `104.105.140.95` |
 | **SSH 用户** | `root` |
 | **SSH 密码** | 见 `servers.local.json`（勿写入公开文档） |
 | **系统** | Debian 12 |
-| **Jackett** | `http://172.236.156.193:9117` |
-| **Dashboard** | `http://172.236.156.193:9117/UI/Dashboard` |
+| **Jackett** | `http://104.105.140.95:9117` |
+| **Dashboard** | `http://104.105.140.95:9117/UI/Dashboard` |
 | **FlareSolverr** | 容器内 `http://flaresolverr:8191/`（宿主机 `127.0.0.1:8191`） |
 | **Docker 网络** | `jackett-net` |
 | **配置卷** | `/opt/jackett/config` |
 
 ### 已配置 Indexer
 
-- 1337x（需 FlareSolverr）
-- torrentgalaxyclone
-- nyaasi
-- thepiratebay
-- eztv
+一键脚本 `--with-indexers` / `INDEXER_PROFILE=all` 可写入：
+
+- thepiratebay、nyaasi、eztv
+- 1337x、torrentgalaxyclone（需 FlareSolverr）
+- dmhy、mikan、acgrip、bangumi-moe（华语）
 
 ### 常用运维命令
 
 ```bash
 # SSH 登录
-ssh root@172.236.156.193
+ssh root@104.105.140.95
 
 # 查看容器
 docker ps
@@ -258,6 +266,7 @@ docker exec jackett curl -s -o /dev/null -w '%{http_code}\n' http://flaresolverr
 | 2026-06-30 | 初版：国内本机 indexer 失败后的海外 Jackett 方案 |
 | 2026-06-30 | 补充日本测试机 104.105.140.11、FlareSolverr Docker 网络、`servers.local.json` 凭据规范 |
 | 2026-07-02 | 测试机迁移至 `172.238.15.236`（见 [VPS迁移与部署.md](./VPS迁移与部署.md)） |
-| 2026-07-05 | 测试机迁移至 `172.236.156.193`；indexer：nyaasi/1337x/tpb/tgx；**部署验收通过** |
+| 2026-07-05 | 测试机迁移至 `104.105.140.95`；indexer：nyaasi/1337x/tpb/tgx；**部署验收通过** |
 | 2026-06-30 | 增加 [jackett-stability.md](./jackett-stability.md) 交叉引用 |
 | 2026-06-30 | 增加本机一键脚本 `scripts/deploy_jackett_vps.sh` |
+| 2026-07-20 | 增加 `scripts/install_jackett_oneclick.sh`（IP+密码+交互 indexer）；测试机 `104.105.140.95` |

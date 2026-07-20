@@ -7,9 +7,9 @@
     "use_when_direct_fails": true
   },
   "jackett": {
-    "_comment": "日本测试 VPS Jackett；base_url 指向 172.236.156.193:9117",
-    "base_url": "http://172.238.20.52:9117",
-    "api_key": "l4hlz2sm1unjkg13kjf6xb2mepfm2jni",
+    "_comment": "日本测试 VPS Jackett；base_url 指向 104.105.140.95:9117",
+    "base_url": "http://104.105.140.95:9117",
+    "api_key": "pzzb6xrlr39nqtzh4yvxnyy2glip6772",
     "indexers": {
       "tv": [
         "thepiratebay",

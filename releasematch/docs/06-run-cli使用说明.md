@@ -840,6 +840,9 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | `scripts/failed_slots_merge_reports.py` | 合并 pipeline 失败报告 → 登记册 |
 | `scripts/recompute_cross_source_fuzzy.py` | 不重拉 indexer，按 infohash 重算跨源分子 |
 | `scripts/sync_jackett_vps_key.sh` | 远端 Jackett API Key → `accounts.local.json` |
+| `scripts/install_jackett_oneclick.sh` | VPS 一键：IP+密码安装 Jackett/FlareSolverr，交互配置默认 indexer，同步 Key |
+| `scripts/deploy_jackett_vps.sh` | 仅远程装栈（被 oneclick 调用；可读 `servers.local.json`） |
+| `scripts/remote/configure_jackett_cn_indexers.sh` | 写入默认 Indexers（all/cn/intl）；可被 oneclick 调用 |
 | `scripts/seo_c2_checklist.sh` | C2 SEO 本地检查（§6.1～6.3）；等价 `seo_c2_checklist.py` |
 | `scripts/deploy_cf_pages.sh` | `--mode full\|incremental\|upload-only`；`--prepare-only`；增量需 `--page-ids`；wrangler 按 hash 增量上传 |
 
@@ -908,3 +911,4 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | v0.12 | 2026-07-19 | Ops 测速成功后自动 regenerate；剧集 Hub `ensure_show_hub_page`；CSS `?v=` 缓存破坏；剧集表固定列宽 |
 | v0.13 | 2026-07-19 | TMDB 海报/简介一次性入库（`meta enrich`）；generate 默认不再 live 打 overview API |
 | v0.14 | 2026-07-19 | Ops/CLI 增量·全量·仅上传 deploy；`serve_ops` 别名；公网增量更新/新增/删除验收 |
+| v0.15 | 2026-07-20 | 脚本索引：`install_jackett_oneclick.sh` / `configure_jackett_cn_indexers.sh` |

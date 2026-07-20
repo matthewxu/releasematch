@@ -46,21 +46,30 @@ if [[ -z "${VPS_HOST}" ]]; then
   exit 1
 fi
 
-SSH_BASE=(ssh -p "${VPS_PORT}" -o StrictHostKeyChecking=no -o ConnectTimeout=20 "${VPS_USER}@${VPS_HOST}")
+# -T：禁用伪终端，避免 sshpass 在部分环境下报 “Failed to get a pseudo terminal”
+SSH_BASE=(ssh -T -p "${VPS_PORT}" -o StrictHostKeyChecking=no -o ConnectTimeout=20 "${VPS_USER}@${VPS_HOST}")
+REMOTE_PY="import json; print(json.load(open('${SERVER_CONFIG}')).get('APIKey',''))"
 
 echo "=== 读取远端 API Key: ${VPS_USER}@${VPS_HOST} ==="
 
+SSH_ERR="$(mktemp)"
 if [[ -n "${SSHPASS:-}" ]] && command -v sshpass >/dev/null 2>&1; then
-  API_KEY="$(sshpass -e "${SSH_BASE[@]}" "python3 -c \"import json; print(json.load(open('${SERVER_CONFIG}')).get('APIKey',''))\"" 2>/dev/null || true)"
+  API_KEY="$(sshpass -e "${SSH_BASE[@]}" "python3 -c \"${REMOTE_PY}\"" 2>"${SSH_ERR}" || true)"
 else
-  API_KEY="$("${SSH_BASE[@]}" "python3 -c \"import json; print(json.load(open('${SERVER_CONFIG}')).get('APIKey',''))\"" 2>/dev/null || true)"
+  API_KEY="$("${SSH_BASE[@]}" "python3 -c \"${REMOTE_PY}\"" 2>"${SSH_ERR}" || true)"
 fi
 
 API_KEY="$(echo "${API_KEY}" | tr -d '\r\n')"
 if [[ -z "${API_KEY}" ]]; then
   echo "错误: 无法读取 API Key（SSH 不通或 Jackett 未安装）" >&2
+  if [[ -s "${SSH_ERR}" ]]; then
+    echo "--- SSH 详情 ---" >&2
+    cat "${SSH_ERR}" >&2
+  fi
+  rm -f "${SSH_ERR}"
   exit 1
 fi
+rm -f "${SSH_ERR}"
 
 BASE_URL="http://${VPS_HOST}:${JACKETT_PORT}"
 python3 "${SCRIPT_DIR}/setup_jackett_a4.py" --api-key "${API_KEY}" --jackett-url "${BASE_URL}"

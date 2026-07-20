@@ -172,11 +172,51 @@ path = Path("${SERVER_CONFIG}")
 data = json.loads(path.read_text(encoding="utf-8"))
 data["FlareSolverrUrl"] = "${FLARE_URL_IN_JACKETT}"
 data["FlareSolverrMaxTimeout"] = int("${FLARE_MAX_TIMEOUT}")
+# Docker 发布端口时需允许外部访问；避免 LocalBindAddress 绑死 127.0.0.1
+data["AllowExternal"] = True
+if data.get("LocalBindAddress") in ("127.0.0.1", "localhost"):
+    data["LocalBindAddress"] = "*"
 path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 print("FlareSolverrUrl:", data.get("FlareSolverrUrl"))
+print("AllowExternal:", data.get("AllowExternal"), "LocalBindAddress:", data.get("LocalBindAddress"))
 PY
   docker restart "${JACKETT_NAME}" >/dev/null
-  sleep 5
+  # 重启后需重新加载数百个 indexer，不能只 sleep 几秒就探测
+  wait_for_jackett_http
+}
+
+http_code() {
+  # 请求 URL 并返回 HTTP 状态码；失败时返回 000（避免 curl 失败再 echo 拼成 000000）
+  local url="$1"
+  local code
+  code="$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 3 --max-time 10 "${url}" 2>/dev/null)" || true
+  if [[ -z "${code}" ]]; then
+    echo "000"
+  else
+    echo "${code}"
+  fi
+}
+
+is_jackett_http_ok() {
+  # Jackett 根路径常见 200/301/302
+  local code="$1"
+  [[ "${code}" == "200" || "${code}" == "301" || "${code}" == "302" ]]
+}
+
+wait_for_jackett_http() {
+  # 等待 Jackett 监听就绪（重启后加载 indexer 常需 15~60s）
+  local i code
+  local max_attempts="${JACKETT_HTTP_WAIT_ATTEMPTS:-45}"
+  log "等待 Jackett HTTP 就绪（最多 $((max_attempts * 2))s）..."
+  for i in $(seq 1 "${max_attempts}"); do
+    code="$(http_code "http://127.0.0.1:${JACKETT_PORT}/")"
+    if is_jackett_http_ok "${code}"; then
+      log "Jackett HTTP 就绪（${code}，约 $((i * 2))s）"
+      return 0
+    fi
+    sleep 2
+  done
+  die "超时：Jackett 未响应 HTTP（最后状态码 ${code:-000}）。请检查: docker logs ${JACKETT_NAME}"
 }
 
 print_api_key() {
@@ -195,21 +235,23 @@ PY
 
 verify_stack() {
   # 健康检查：Jackett HTTP、FlareSolverr 容器内连通
-  local code api_key
+  local code
 
   log "验证 Jackett HTTP ..."
-  code="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${JACKETT_PORT}/" || echo 000)"
-  [[ "${code}" == "200" || "${code}" == "301" || "${code}" == "302" ]] \
-    || die "Jackett 未响应 HTTP ${code}"
+  code="$(http_code "http://127.0.0.1:${JACKETT_PORT}/")"
+  is_jackett_http_ok "${code}" || die "Jackett 未响应 HTTP ${code}"
 
   log "验证 Jackett 容器 → FlareSolverr ..."
   code="$(docker exec "${JACKETT_NAME}" curl -s -o /dev/null -w '%{http_code}' \
-    "http://${FLARE_NAME}:8191/" 2>/dev/null || echo 000)"
+    --connect-timeout 3 --max-time 10 \
+    "http://${FLARE_NAME}:8191/" 2>/dev/null)" || code="000"
+  [[ -n "${code}" ]] || code="000"
   [[ "${code}" == "200" || "${code}" == "404" || "${code}" == "405" ]] \
     || log "警告：Jackett 容器访问 FlareSolverr 返回 ${code}（可稍后在 Dashboard 再测）"
 
   log "验证 FlareSolverr 本机 API ..."
   curl -s -o /dev/null -w "FlareSolverr sessions.list HTTP %{http_code}\n" \
+    --connect-timeout 3 --max-time 10 \
     -X POST "http://${FLARE_BIND}:${FLARE_PORT}/v1" \
     -H 'Content-Type: application/json' \
     -d '{"cmd":"sessions.list"}' || true
