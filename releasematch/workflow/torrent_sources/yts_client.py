@@ -39,6 +39,23 @@ _DEFAULT_HEADERS = {
 }
 
 
+def _normalize_yts_source(src_type: str) -> str:
+    """
+    将 YTS torrent.type（web / bluray）归一为诚实 Source 标签。
+
+    YTS web 为站点重编码，语义接近 WEBRip，**不**标成 WEB-DL，避免高估。
+
+    @param src_type: YTS API 的 type 字段
+    @returns: WEBRip / BluRay / 原样大写；空则空串
+    """
+    key = (src_type or "").strip().lower()
+    if key == "web":
+        return "WEBRip"
+    if key in ("bluray", "blu-ray"):
+        return "BluRay"
+    return src_type.upper() if src_type else ""
+
+
 def yts_hash_to_magnet(info_hash: str, title: str, size: int) -> str:
     """
     将 YTS torrent hash 构造为 magnet URI。
@@ -160,7 +177,7 @@ class YtsClient:
                     seeders=seeders,
                     peers=peers,
                     resolution=quality.lower() if quality else "",
-                    source=src_type.upper() if src_type else "",
+                    source=_normalize_yts_source(src_type),
                     indexer="yts",
                     release_group="YTS",
                 )

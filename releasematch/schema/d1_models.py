@@ -1425,7 +1425,10 @@ class EpisodePageContext:
         recommended = self.recommended
         rec_dict = None
         if recommended:
+            from workflow.torrent_sources.release_parser import enrich_item_dict
+
             rec_dict = recommended.to_template_dict()
+            enrich_item_dict(rec_dict, force_specs=True)
             _enrich_recommended_with_speed(
                 rec_dict,
                 self.speed_evidence,
@@ -1456,6 +1459,12 @@ class EpisodePageContext:
         overview_zh = self.page.overview_zh or self.catalog.overview_zh or ""
         overview = overview_en
 
+        from workflow.torrent_sources.release_parser import enrich_item_dict
+
+        source_dicts = [
+            enrich_item_dict(src.to_template_dict(), force_specs=True) for src in self.sources
+        ]
+
         return {
             "show_title": self.catalog.title,
             "show_slug": slug,
@@ -1476,11 +1485,11 @@ class EpisodePageContext:
             if self.torrent_metadata
             else None,
             "recommended": rec_dict,
-            "recommended_quality": recommended.resolution if recommended else "",
-            "recommended_source": recommended.source if recommended else "",
-            "recommended_group": recommended.release_group if recommended else "",
-            "sources": [s.to_template_dict() for s in self.sources],
-            "source_count": len(self.sources),
+            "recommended_quality": (rec_dict or {}).get("resolution") or "",
+            "recommended_source": (rec_dict or {}).get("source") or "",
+            "recommended_group": (rec_dict or {}).get("release_group") or "",
+            "sources": source_dicts,
+            "source_count": len(source_dicts),
             "prev_episode_url": _nav_url(prev_path),
             "prev_episode_label": (
                 f"S{self.page.prev_season:02d}E{self.page.prev_episode:02d}"
@@ -1624,9 +1633,9 @@ class MoviePageContext:
             if self.torrent_metadata
             else None,
             "recommended": rec_dict,
-            "recommended_quality": recommended.resolution if recommended else "",
-            "recommended_source": recommended.source if recommended else "",
-            "recommended_group": recommended.release_group if recommended else "",
+            "recommended_quality": (rec_dict or {}).get("resolution") or "",
+            "recommended_source": (rec_dict or {}).get("source") or "",
+            "recommended_group": (rec_dict or {}).get("release_group") or "",
             "sources": source_dicts,
             "source_editions": source_editions,
             "source_count": len(source_dicts),

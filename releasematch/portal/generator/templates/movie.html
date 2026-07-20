@@ -58,7 +58,7 @@
         {% if source_editions %}
         {% include 'partials/movie_edition_groups.html' %}
         {% else %}
-        <div class="rm-table-wrap">
+        <div class="rm-table-wrap rm-table-wrap--movie">
           {% with items=sources %}
           {% include 'partials/movie_sources_table.html' %}
           {% endwith %}

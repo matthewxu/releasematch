@@ -107,12 +107,12 @@ def _apply_parser(item: ResourceItem) -> ResourceItem:
             "video_spec": getattr(item, "video_spec", "") or "",
             "audio_spec": getattr(item, "audio_spec", "") or "",
         },
-        force_specs=False,
+        force_specs=True,
     )
-    item.release_group = str(data.get("release_group") or item.release_group or "")
+    item.release_group = str(data.get("release_group") or "")
     item.resolution = str(data.get("resolution") or item.resolution or "")
     item.codec = str(data.get("codec") or item.codec or "")
-    item.source = str(data.get("source") or item.source or "")
+    item.source = str(data.get("source") or "")
     return item
 
 
