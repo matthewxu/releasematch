@@ -917,7 +917,10 @@ class MySQLStore:
         """
         聚合 published 页面为首页目录卡片（按作品 catalog 分组）。
 
-        @returns: 含 title、href、meta、poster_url、media_kind 的列表
+        @returns: 含 title、href、meta_key、meta_vars、poster_url、media_kind 的列表
+        @description
+          ``meta_key`` / ``meta_vars`` 供模板 ``t()`` 与 ``data-i18n`` 使用，
+          避免卡片上「电影/剧集」写死中文导致语言切换无效。
         """
         from schema.d1_models import poster_url_from_path
 
@@ -975,28 +978,41 @@ class MySQLStore:
             media_kind = item["media_kind"]
             hub_path = hub_by_catalog.get(item["catalog_id"])
 
+            # meta 文案交给模板 t() + data-i18n；此处只产出 key / vars
+            meta_key = "home.card.movie"
+            meta_vars: Dict[str, Any] = {}
+
             if media_kind == "movie":
                 href = pages[0]["canonical_path"]
                 year = item.get("year")
-                meta = f"电影 · {year}" if year else "电影"
+                if year:
+                    meta_key = "home.card.movie_year"
+                    meta_vars = {"year": year}
+                else:
+                    meta_key = "home.card.movie"
+                    meta_vars = {}
             elif hub_path and len(pages) > 1:
                 href = hub_path
-                meta = f"剧集 · {len(pages)} 集"
+                meta_key = "home.card.tv_count"
+                meta_vars = {"count": len(pages)}
             elif len(pages) == 1:
                 pg = pages[0]
                 href = pg["canonical_path"]
                 season = int(pg["season"] or 1)
                 episode = int(pg["episode"] or 1)
-                meta = f"剧集 · S{season:02d}E{episode:02d}"
+                meta_key = "home.card.tv_slot"
+                meta_vars = {"slot": f"S{season:02d}E{episode:02d}"}
             else:
                 href = pages[0]["canonical_path"]
-                meta = f"剧集 · {len(pages)} 集"
+                meta_key = "home.card.tv_count"
+                meta_vars = {"count": len(pages)}
 
             entries.append(
                 {
                     "title": item["title"],
                     "href": href,
-                    "meta": meta,
+                    "meta_key": meta_key,
+                    "meta_vars": meta_vars,
                     "poster_url": item["poster_url"],
                     "media_kind": media_kind,
                     "page_count": len(pages),

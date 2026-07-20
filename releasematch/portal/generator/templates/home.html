@@ -54,9 +54,7 @@
       {% for item in scarcity_entries %}
       <li class="rm-scarcity-track__item">
         <span class="rm-scarcity-track__title">{{ item.label or item.title }}</span>
-        <span class="rm-badge rm-badge--scarcity">
-          {% if item.failure_class == 'region_gap' %}{{ t('home.scarcity.region_gap') }}{% else %}{{ t('home.scarcity.public') }}{% endif %}
-        </span>
+        <span class="rm-badge rm-badge--scarcity"{% if i18n_enabled %} data-i18n="{% if item.failure_class == 'region_gap' %}home.scarcity.region_gap{% else %}home.scarcity.public{% endif %}"{% endif %}>{% if item.failure_class == 'region_gap' %}{{ t('home.scarcity.region_gap') }}{% else %}{{ t('home.scarcity.public') }}{% endif %}</span>
       </li>
       {% endfor %}
     </ul>
@@ -101,7 +99,8 @@
         {% endif %}
         <div class="rm-show-card__body">
           <h3 class="rm-show-card__title">{{ entry.title }}</h3>
-          <p class="rm-show-card__meta">{{ entry.meta }}</p>
+          {# meta 须走 i18n：切换 en/zh 时更新「电影/Movie」「剧集/TV」 #}
+          <p class="rm-show-card__meta"{% if i18n_enabled %} data-i18n="{{ entry.meta_key }}" data-i18n-vars='{{ entry.meta_vars | tojson }}'{% endif %}>{{ t(entry.meta_key, **entry.meta_vars) }}</p>
         </div>
       </a>
       {% endfor %}

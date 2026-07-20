@@ -268,6 +268,14 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "en": "{movies} movies · {tv} TV · {total} entries",
         "zh": "{movies} 电影 · {tv} 剧集 · {total} 入口",
     },
+    # 首页作品卡片 meta（须 data-i18n，禁止 bake 死中文）
+    "home.card.movie": {"en": "Movie", "zh": "电影"},
+    "home.card.movie_year": {"en": "Movie · {year}", "zh": "电影 · {year}"},
+    "home.card.tv_count": {
+        "en": "TV · {count} episodes",
+        "zh": "剧集 · {count} 集",
+    },
+    "home.card.tv_slot": {"en": "TV · {slot}", "zh": "剧集 · {slot}"},
     "home.search_label": {"en": "Search titles", "zh": "搜索作品"},
     "home.search_placeholder": {
         "en": "Search titles, e.g. Breaking Bad…",
