@@ -135,9 +135,10 @@ MESSAGES: Dict[str, Dict[str, str]] = {
     "torrent.size_match.unknown": {"en": "Not compared", "zh": "未对比"},
     # ── 剧集页 ──
     "episode.breadcrumb": {"en": "Breadcrumb", "zh": "面包屑"},
+    # SEO desc 由 build_episode_meta_description 组装；下列 key 作文档/回退
     "episode.meta_description": {
-        "en": "{show} S{season:02d}E{episode:02d} release guide: Recommended Release and {count} multi-source comparisons.",
-        "zh": "{show} 第 {season} 季第 {episode} 集 Release 导航：本站 Recommended Release、{count} 条多源对比与对版说明。",
+        "en": "{show} S{season:02d}E{episode:02d} torrent sources: {recommended_clause} and {count} matched downloads.",
+        "zh": "{show} S{season:02d}E{episode:02d} torrent sources：{recommended_clause}，共 {count} 条 matched downloads。",
     },
     "episode.season_episode": {
         "en": "Season {season} · Episode {episode}",
@@ -147,9 +148,13 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "en": "{show} S{season:02d}E{episode:02d} — Release-Matched Sources",
         "zh": "{show} S{season:02d}E{episode:02d} — Release-Matched Sources",
     },
+    "episode.hero_lead": {
+        "en": "Matched torrent releases for this episode — pick Recommended, not just any magnet.",
+        "zh": "本集 matched torrent releases：优先 Recommended，而非任意 magnet。",
+    },
     "episode.sources_heading": {
-        "en": "All Sources ({count} matched)",
-        "zh": "All Sources（{count} matched）",
+        "en": "All torrent sources ({count} matched)",
+        "zh": "All torrent sources（{count} matched）",
     },
     "episode.prev": {"en": "Previous", "zh": "上一集"},
     "episode.next": {"en": "Next", "zh": "下一集"},
@@ -165,13 +170,18 @@ MESSAGES: Dict[str, Dict[str, str]] = {
     "episode.tmdb_cta": {"en": "View on TMDB", "zh": "在 TMDB 查看"},
     "episode.poster_alt": {"en": "{title} poster", "zh": "{title} 海报"},
     # ── 电影页 ──
+    # SEO desc 由 build_movie_meta_description 组装；下列 key 作文档/回退
     "movie.meta_description": {
-        "en": "{title} ({year}) release guide: Recommended Release and {count} edition comparisons.",
-        "zh": "{title} ({year}) Release 导航：Recommended Release 与 {count} 条多版本对比。",
+        "en": "{title} ({year}) torrent sources: {recommended_clause} and {count} edition comparisons (WEB-DL / BluRay / REMUX).",
+        "zh": "{title} ({year}) torrent sources：{recommended_clause}，共 {count} 条 edition 对比（WEB-DL / BluRay / REMUX）。",
     },
     "movie.hero_title": {
         "en": "{title} ({year}) — Release-Matched Sources",
         "zh": "{title} ({year}) — Release-Matched Sources",
+    },
+    "movie.hero_lead": {
+        "en": "Compare edition torrent sources — Recommended picks quality over link count.",
+        "zh": "对比各 edition torrent sources：Recommended 重画质，而非链接数量。",
     },
     "movie.versions_heading": {
         "en": "All Versions ({count} matched)",
@@ -582,6 +592,181 @@ def translate(key: str, locale: Optional[str] = None, **kwargs: Any) -> str:
         return text
 
 
+def _seo_recommended_clause(
+    locale: str,
+    *,
+    resolution: str = "",
+    source: str = "",
+    group: str = "",
+) -> str:
+    """
+    组装 meta description 中 Recommended 后的画质/版本/组短语。
+
+    @param locale: en | zh
+    @param resolution: 如 1080p
+    @param source: 如 WEB-DL / BluRay
+    @param group: release group 名
+    @returns: 如 ``Recommended 1080p WEB-DL (NTb)``；无字段时回退 ``Recommended Release``
+    """
+    loc = normalize_locale(locale)
+    res = (resolution or "").strip()
+    src = (source or "").strip()
+    grp = (group or "").strip()
+    parts = [p for p in (res, src) if p]
+    core = " ".join(parts)
+    if grp:
+        detail = f"{core} ({grp})" if core else grp
+    else:
+        detail = core
+    if loc == "zh":
+        return f"Recommended {detail}" if detail else "Recommended Release"
+    return f"Recommended {detail}" if detail else "Recommended Release"
+
+
+def _clamp_meta_description(text: str, max_len: int = 160) -> str:
+    """
+    将 meta description 控制在约 160 字符内，避免 SERP 截断难看。
+
+    @param text: 原始描述
+    @param max_len: 最大长度（字符）
+    @returns: 截断后的描述
+    """
+    cleaned = " ".join((text or "").split())
+    if len(cleaned) <= max_len:
+        return cleaned
+    cut = cleaned[: max_len - 1].rsplit(" ", 1)[0]
+    return (cut or cleaned[: max_len - 1]).rstrip(".,;:") + "…"
+
+
+def build_episode_meta_description(
+    locale: str,
+    *,
+    show: str,
+    season: int,
+    episode: int,
+    count: int,
+    resolution: str = "",
+    source: str = "",
+    group: str = "",
+) -> str:
+    """
+    剧集页 SEO meta description（v1.1 方案：torrent + 动态画质/版本/组）。
+
+    @param locale: en | zh
+    @param show: 剧名
+    @param season: 季号
+    @param episode: 集号
+    @param count: sources 条数
+    @param resolution: Recommended 分辨率
+    @param source: Recommended 版本源（WEB-DL 等）
+    @param group: Recommended release group
+    @returns: 适合 ``<meta name="description">`` 的英文/中文描述
+    """
+    clause = _seo_recommended_clause(
+        locale, resolution=resolution, source=source, group=group
+    )
+    text = translate(
+        "episode.meta_description",
+        locale,
+        show=show,
+        season=int(season or 0),
+        episode=int(episode or 0),
+        recommended_clause=clause,
+        count=int(count or 0),
+    )
+    return _clamp_meta_description(text)
+
+
+def build_movie_meta_description(
+    locale: str,
+    *,
+    title: str,
+    year: Any,
+    count: int,
+    resolution: str = "",
+    source: str = "",
+    group: str = "",
+) -> str:
+    """
+    电影页 SEO meta description（v1.1：torrent + edition 三型 + 动态 Recommended）。
+
+    @param locale: en | zh
+    @param title: 片名
+    @param year: 上映年
+    @param count: versions 条数
+    @param resolution: Recommended 分辨率
+    @param source: Recommended 版本源
+    @param group: Recommended release group（电影一般可空）
+    @returns: meta description 字符串
+    """
+    clause = _seo_recommended_clause(
+        locale, resolution=resolution, source=source, group=group
+    )
+    text = translate(
+        "movie.meta_description",
+        locale,
+        title=title,
+        year=year if year not in (None, "") else "—",
+        recommended_clause=clause,
+        count=int(count or 0),
+    )
+    return _clamp_meta_description(text)
+
+
+def attach_seo_meta_description(context: Dict[str, Any], locale: str) -> None:
+    """
+    按页面类型向模板上下文写入 ``seo_meta_description``（就地修改）。
+
+    剧集：有 show_title + season + episode，且无 hub 的 seasons 列表。
+    电影：有 movie_title。
+
+    @param context: Jinja 上下文
+    @param locale: 当前渲染语言
+    """
+    rec = context.get("recommended")
+    if isinstance(rec, dict):
+        resolution = str(
+            context.get("recommended_quality") or rec.get("resolution") or ""
+        )
+        source = str(context.get("recommended_source") or rec.get("source") or "")
+        group = str(
+            context.get("recommended_group") or rec.get("release_group") or ""
+        )
+    else:
+        resolution = str(context.get("recommended_quality") or "")
+        source = str(context.get("recommended_source") or "")
+        group = str(context.get("recommended_group") or "")
+
+    if context.get("movie_title") is not None and "year" in context:
+        context["seo_meta_description"] = build_movie_meta_description(
+            locale,
+            title=str(context.get("movie_title") or ""),
+            year=context.get("year") or "",
+            count=int(context.get("source_count") or 0),
+            resolution=resolution,
+            source=source,
+            group=group,
+        )
+        return
+
+    if (
+        context.get("show_title") is not None
+        and context.get("season") is not None
+        and context.get("episode") is not None
+        and "seasons" not in context
+    ):
+        context["seo_meta_description"] = build_episode_meta_description(
+            locale,
+            show=str(context.get("show_title") or ""),
+            season=int(context.get("season") or 0),
+            episode=int(context.get("episode") or 0),
+            count=int(context.get("source_count") or 0),
+            resolution=resolution,
+            source=source,
+            group=group,
+        )
+
+
 def catalog_for_js() -> Dict[str, Dict[str, str]]:
     """
     导出前端语言切换用的完整 catalog。
@@ -645,6 +830,7 @@ class I18nRuntime:
             dynamic.update(preset)
             merged["i18n_dynamic"] = dynamic
         localize_page_variables(merged, self.locale)
+        attach_seo_meta_description(merged, self.locale)
         from portal.generator.link_attrs import outbound_link_context
 
         merged.update(outbound_link_context())

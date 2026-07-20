@@ -1,10 +1,11 @@
 # E-E-A-T · Info Gain · SEO 跟进看板
 
 > **Living Document** — 随 SEO 迭代持续更新  
-> **创建：** 2026-07-04 · **最近更新：** 2026-07-19（Workers/.com 软上线 · 禁止爬取 · seo_c2 16 pass）  
+> **创建：** 2026-07-04 · **最近更新：** 2026-07-20（剧集/电影 SEO desc 落地 · Title 保持 Sources）  
 > **功能性邮箱：** `ReleaseMatch@hotmail.com`（Contact · DMCA · Privacy）  
 > **基线评估：** [2026-07-04 基线评估](./assessments/2026-07-04-E-E-A-T与Info-Gain基线评估.md)  
 > **IG 字段权威：** [IG信息登记册.md](../IG信息登记册.md)  
+> **关键词落地：** [可覆盖关键词落地方案.md](./可覆盖关键词落地方案.md)  
 > **IG Debug 批量汇总：** [ig-debug-batch-summary.md](../../worklogs/2026-07-05/ig-debug-batch-summary.md)（2026-07-05 · 未重拉）
 
 ---
@@ -188,6 +189,8 @@
 | Open Graph | ✅ | `base.html` og:* + Twitter Card | — |
 | favicon | ✅ | `/static/favicon.ico` + `.svg` | — |
 | BreadcrumbList | ✅ | episode/movie | T-SEO-08 |
+| Title（L3） | ✅ | `Sources — {quality} \| ReleaseMatch` | 保持品牌 Sources |
+| Meta description | ✅ 2026-07-20 | 剧集/电影分公式 · torrent + 动态 res/source/group | 需 `generate` 进 dist；开爬后看 GSC |
 
 ### 4.2 内容 SEO / 政策
 
@@ -238,6 +241,7 @@
 | 2026-07-06 | fuzzy+groups | 三档宽松 fuzzy · yaml **+12** · L4 Rec **24→12** · S-04 页 **8/110** | Expertise ↑ | 主轨 7+ **98/110**（新定义） | [worklog](../../worklogs/2026-07-06/fuzzy-relaxed-and-groups-before-after.json) |
 | 2026-07-06 | 语义修订 | Hero **源有结果**（S-03）· §3.2.1 三轨 · Trust 方法论 | Trust ↑ | 消除 cross 名不副实 | [迭代](./iterations/2026-07-06-跨源语义与质量向定义.md) |
 | 2026-07-06 | metadata | Phase 2 **torrent_metadata** · 不重拉回填 **75** 槽 · 面板 + A-11 reason 句 · `generate all` | Experience ↑ | **A-11** 新登记 · S-02 补充 | [迭代](./iterations/2026-07-06-torrent-metadata回填与页面优化.md) |
+| 2026-07-20 | SEO desc | 剧集/电影分套 meta description · Hero lead · `All torrent sources` · Title 未改 | Expertise →/↑ | 意图词 torrent/download 进 head | [迭代](./iterations/2026-07-20-可覆盖关键词落地.md) |
 | | | | | | |
 
 **下一迭代待办（摘自基线评估 P0/P1）：**
@@ -258,6 +262,7 @@
 - [ ] P1：release_parser 空组名 / 华语无 `-Group` 标题（剩余 **12** L4 Rec）→ **抬主轨 7+**
 - [ ] P2：S-04 验证页占比 ↑（**8/110**）— 辅轨，非质量向主门槛
 - [x] P2：Hero / Trust **跨源文案语义**与 TRACKER 质量向拆分（2026-07-06）
+- [x] P1：剧集/电影 **SEO meta description** 分公式 + Hero lead（2026-07-20 · [方案](./可覆盖关键词落地方案.md)）
 - [ ] P3：X-09 用户互动（S-Community 结构化 tag → edition_notes bake）— [13-用户互动方案](../13-用户互动方案.md)
 
 ---

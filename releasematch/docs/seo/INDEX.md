@@ -40,6 +40,7 @@
 
 | 文档 | 日期 | 说明 |
 |------|------|------|
+| [2026-07-20-可覆盖关键词落地.md](./iterations/2026-07-20-可覆盖关键词落地.md) | 2026-07-20 | 剧集/电影 SEO desc 公式 · Hero lead · Title 保持 Sources |
 | [2026-07-06-torrent-metadata回填与页面优化.md](./iterations/2026-07-06-torrent-metadata回填与页面优化.md) | 2026-07-06 | A-11 回填 **75** 槽 · 面板 + reason · 展示优化 |
 | [2026-07-06-跨源语义与质量向定义.md](./iterations/2026-07-06-跨源语义与质量向定义.md) | 2026-07-06 | Hero 源有结果 · §3.2.1 三轨 · Trust 方法论 |
 | [2026-07-06-宽松fuzzy与groups补档.md](./iterations/2026-07-06-宽松fuzzy与groups补档.md) | 2026-07-06 | 三档 fuzzy · groups +12 |
@@ -49,6 +50,7 @@
 
 | 文档 | 说明 |
 |------|------|
+| [可覆盖关键词落地方案.md](./可覆盖关键词落地方案.md) | **v1.2 已落地代码**：剧集/电影分套 desc + Hero lead；软件/游戏/音乐域外 |
 | [13-用户互动方案.md](../13-用户互动方案.md) | **X-09 / S-Community**：结构化 tag · edition_notes · Worker API · 分期 |
 
 ---

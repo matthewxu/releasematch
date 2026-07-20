@@ -6,8 +6,8 @@
 
 {% block og_type %}video.movie{% endblock %}
 {% block og_title %}{{ movie_title }} ({{ year }}) Sources — {{ recommended_quality }} | ReleaseMatch{% endblock %}
-{% block meta_description %}{{ t('movie.meta_description', title=movie_title, year=year, count=source_count) }}{% endblock %}
-{% block og_description %}{{ t('movie.meta_description', title=movie_title, year=year, count=source_count) }}{% endblock %}
+{% block meta_description %}{{ seo_meta_description | default(t('site.meta_default'), true) }}{% endblock %}
+{% block og_description %}{{ seo_meta_description | default(t('site.meta_default'), true) }}{% endblock %}
 
 {% block meta_robots %}
   {% if block_crawlers|default(false) %}
@@ -40,6 +40,7 @@
       <span class="rm-badge rm-badge--cross" title="{{ t('badge.cross_page_title', count=cross_source_count, total=cross_source_total) }}">{{ t('badge.cross_page', count=cross_source_count, total=cross_source_total) }}</span>
     </div>
     <h1 class="rm-hero__title">{{ t('movie.hero_title', title=movie_title, year=year) }}</h1>
+    <p class="rm-hero__subtitle"{% if i18n_enabled %} data-i18n="movie.hero_lead"{% endif %}>{{ t('movie.hero_lead') }}</p>
   </header>
 
   <div class="rm-main-grid rm-main-grid--with-sidebar">

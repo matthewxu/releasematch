@@ -1477,6 +1477,8 @@ class EpisodePageContext:
             else None,
             "recommended": rec_dict,
             "recommended_quality": recommended.resolution if recommended else "",
+            "recommended_source": recommended.source if recommended else "",
+            "recommended_group": recommended.release_group if recommended else "",
             "sources": [s.to_template_dict() for s in self.sources],
             "source_count": len(self.sources),
             "prev_episode_url": _nav_url(prev_path),
@@ -1528,10 +1530,7 @@ class EpisodePageContext:
             "robots_noindex": not self.page.is_indexable(
                 has_recommended=self.recommended is not None
             ),
-            "meta_description": (
-                f"{self.catalog.title} 第 {self.page.season} 季第 {self.page.episode} 集 "
-                f"Release 导航：本站 Recommended Release、{len(self.sources)} 条多源对比与对版说明。"
-            ),
+            # 最终 SEO desc 由 i18n.attach_seo_meta_description 在渲染时写入 seo_meta_description
         }
 
 
@@ -1626,6 +1625,8 @@ class MoviePageContext:
             else None,
             "recommended": rec_dict,
             "recommended_quality": recommended.resolution if recommended else "",
+            "recommended_source": recommended.source if recommended else "",
+            "recommended_group": recommended.release_group if recommended else "",
             "sources": source_dicts,
             "source_editions": source_editions,
             "source_count": len(source_dicts),
