@@ -74,12 +74,16 @@ def write_all_published(
     indexable（published 且 magnet≥2）输出 index,follow；thin 页仍生成 HTML 但为 noindex,follow，
     避免 Hub/prev-next 内链 404，同时不进 sitemap。
 
+    生成前会幂等补齐「有 episode、无 Hub」的 show_hub 行，避免 ``/{slug}/`` 空目录。
+
     @param out_root: 输出根目录
     @param site_origin: canonical origin
     @param show_ig_debug: 覆盖 RM_SHOW_IG_DEBUG
     @returns: 批量摘要
     """
     store = MySQLStore()
+    # 流程闸门：历史槽可能只有单集而无 Hub；generate 前先落库再渲染
+    hub_ensure = store.ensure_missing_show_hubs()
     page_ids = store.list_renderable_page_ids()
     published_ids = set(store.list_published_page_ids())
     results: List[Dict[str, Any]] = []
@@ -113,14 +117,15 @@ def write_all_published(
     noindex_generated = sum(1 for r in results if r.get("ok") and not r.get("indexable"))
 
     return {
-        "ok": len(errors) == 0,
+        "ok": len(errors) == 0 and hub_ensure.get("ok", True),
         "count": len(page_ids),
         "generated": sum(1 for r in results if r.get("ok")),
         "indexable_generated": indexable_generated,
         "noindex_generated": noindex_generated,
         "out_root": str(out_root),
         "pages": results,
-        "errors": errors,
+        "errors": errors + list(hub_ensure.get("errors") or []),
+        "hub_ensure": hub_ensure,
         "home": home_result,
         "hubs": hub_result,
         "sitemap": sitemap_result,
@@ -138,15 +143,18 @@ def write_all_show_hubs(
     """
     批量生成全部 show_hub 静态页。
 
+    调用前再次 ``ensure_missing_show_hubs``，保证单独跑 Hub 生成也不会漏页。
+
     @param out_root: 输出根目录
     @param site_origin: canonical origin
     @param show_ig_debug: 覆盖 RM_SHOW_IG_DEBUG
     @returns: 批量摘要
     """
     store = MySQLStore()
+    hub_ensure = store.ensure_missing_show_hubs()
     hub_ids = store.list_show_hub_page_ids()
     results: List[Dict[str, Any]] = []
-    errors: List[str] = []
+    errors: List[str] = list(hub_ensure.get("errors") or [])
 
     for page_id in hub_ids:
         result = write_page_html(
@@ -163,6 +171,7 @@ def write_all_show_hubs(
         "ok": len(errors) == 0,
         "count": len(hub_ids),
         "generated": sum(1 for r in results if r.get("ok")),
+        "hub_ensure": hub_ensure,
         "pages": results,
         "errors": errors,
     }

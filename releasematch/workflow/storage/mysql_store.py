@@ -840,6 +840,79 @@ class MySQLStore:
         conn.close()
         return [str(r["page_id"]) for r in rows]
 
+    def list_tmdb_ids_missing_show_hub(self) -> List[int]:
+        """
+        列出已有 episode 页、但缺少 ``tv:{id}:hub`` 的 TMDB 剧集 ID。
+
+        @returns: 去重后的 tmdb_id 列表（升序）
+        @description
+          历史扩槽若早于 Hub 同步逻辑，会只留下 ``/{slug}/sNeN/`` 而无 Hub
+          ``index.html``，静态服目录页显示为空。
+        """
+        conn = self._connect()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT DISTINCT
+                    CAST(
+                        SUBSTRING_INDEX(SUBSTRING_INDEX(e.page_id, ':', 2), ':', -1)
+                        AS UNSIGNED
+                    ) AS tmdb_id
+                FROM media_pages e
+                WHERE e.page_type = 'episode'
+                  AND e.page_id LIKE 'tv:%:s%%'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM media_pages h
+                      WHERE h.page_id = CONCAT(
+                          'tv:',
+                          SUBSTRING_INDEX(SUBSTRING_INDEX(e.page_id, ':', 2), ':', -1),
+                          ':hub'
+                      )
+                  )
+                ORDER BY tmdb_id
+                """
+            )
+            rows = cur.fetchall()
+        conn.close()
+        out: List[int] = []
+        for row in rows:
+            try:
+                tid = int(row.get("tmdb_id") or 0)
+            except (TypeError, ValueError):
+                continue
+            if tid > 0:
+                out.append(tid)
+        return out
+
+    def ensure_missing_show_hubs(self) -> Dict[str, Any]:
+        """
+        幂等补齐所有缺 Hub 的剧集行（不生成静态文件）。
+
+        @returns: missing / created / hub_page_ids / errors 摘要
+        """
+        missing = self.list_tmdb_ids_missing_show_hub()
+        created: List[str] = []
+        hub_page_ids: List[str] = []
+        errors: List[str] = []
+        for tmdb_id in missing:
+            try:
+                info = self.ensure_show_hub_page(tmdb_id)
+                hub_id = str(info.get("hub_page_id") or "")
+                if hub_id:
+                    hub_page_ids.append(hub_id)
+                if info.get("created"):
+                    created.append(hub_id or f"tv:{tmdb_id}:hub")
+            except Exception as exc:  # noqa: BLE001 — 单剧失败不阻断全站 generate
+                errors.append(f"tv:{tmdb_id}:hub: {exc}")
+        return {
+            "ok": len(errors) == 0,
+            "missing": len(missing),
+            "created": len(created),
+            "created_ids": created,
+            "hub_page_ids": hub_page_ids,
+            "errors": errors,
+        }
+
     def list_home_catalog_entries(self) -> List[Dict[str, Any]]:
         """
         聚合 published 页面为首页目录卡片（按作品 catalog 分组）。
@@ -1186,6 +1259,15 @@ class MySQLStore:
                 ),
             )
         conn.close()
+
+        # 写回 episode 资源时再保一次 Hub，覆盖「建槽早于 Hub 逻辑」的历史数据
+        hub_ensure: Dict[str, Any] = {}
+        if media_kind == "tv" and tmdb_id:
+            try:
+                hub_ensure = self.ensure_show_hub_page(int(tmdb_id))
+            except Exception as exc:  # noqa: BLE001 — Hub 失败不回滚 magnet 写入
+                hub_ensure = {"ok": False, "error": str(exc)}
+
         return {
             "page_id": page_id,
             "resources_upserted": upserted,
@@ -1193,6 +1275,7 @@ class MySQLStore:
             "page_status": page_status,
             "cross_source_count": int(cross_source_page_count),
             "cross_source_total": int(cross_source_page_total),
+            "hub": hub_ensure,
         }
 
     def record_sync_run(

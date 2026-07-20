@@ -1,6 +1,13 @@
-{# Sources 表单行 — episode / movie 共用；剧集行带 rm-col-* 与表头列宽对齐 #}
+{# Sources 表单行 — episode / movie 共用；A：合并列减少横向压力 #}
 {# @partial sources_table_row.html — 参数 item、variant（episode|movie） #}
+{#
+  列模型（A）：
+  - 共用：Release（含 Verify badge）· Group · Size · Seed · Action
+  - episode：+ Quality（resolution）
+  - movie：+ Spec（resolution · video）· Source（source · audio）
+#}
 <tr{% if item.is_recommended %} class="is-recommended"{% elif item.is_edition_pick %} class="is-edition-pick"{% endif %}>
+  {# Release：标题 + 推荐/版本徽章；跨源验证并入本列（去掉独立 Verify 列） #}
   <td class="rm-table__release rm-col-release" data-label="{{ t('table.release') }}">
     {{ item.title_raw }}
     {% if item.is_recommended %}
@@ -8,27 +15,38 @@
     {% elif item.is_edition_pick %}
     <span class="rm-badge rm-badge--edition-pick"{% if i18n_enabled %} data-i18n="badge.edition_pick"{% endif %}>{{ t('badge.edition_pick') }}</span>
     {% endif %}
+    {% if item.cross_source_count and item.cross_source_count > 1 %}
+    <span class="rm-badge rm-badge--cross" title="{{ t('badge.cross_item_title', count=item.cross_source_count) }}">{{ item.cross_source_count }}/{{ cross_source_total | default(3) }}</span>
+    {% endif %}
   </td>
+
   {% if variant == 'movie' %}
-  <td data-label="{{ t('table.source') }}">{{ item.source or '—' }}</td>
-  {% endif %}
+  {# Spec：Quality + Video 合并；若 video_spec 已含分辨率则不重复 #}
+  {% set _res = item.resolution or '' %}
+  {% set _vid = item.video_spec or item.codec or '' %}
+  <td class="rm-col-spec" data-label="{{ t('table.spec') }}" data-sort-value="{{ item.resolution }}">
+    {% if _res and _vid %}
+      {% if _res in _vid %}{{ _vid }}{% else %}{{ _res }} · {{ _vid }}{% endif %}
+    {% else %}
+      {{ _res or _vid or '—' }}
+    {% endif %}
+  </td>
+  {# Source：Source + Audio 合并展示 #}
+  {% set _src = item.source or '' %}
+  {% set _aud = item.audio_spec or '' %}
+  <td class="rm-col-source" data-label="{{ t('table.source') }}">
+    {% if _src and _aud %}{{ _src }} · {{ _aud }}
+    {% else %}{{ _src or _aud or '—' }}{% endif %}
+  </td>
+  {% else %}
   <td class="rm-col-quality" data-label="{{ t('table.quality') }}" data-sort-value="{{ item.resolution }}">{{ item.resolution or '—' }}</td>
-  {% if variant == 'movie' %}
-  <td data-label="{{ t('table.video') }}">{{ item.video_spec or item.codec or '—' }}</td>
-  <td data-label="{{ t('table.audio') }}">{{ item.audio_spec or '—' }}</td>
   {% endif %}
+
   <td class="rm-col-group" data-label="{{ t('table.group') }}">
     {% if item.release_group %}
     <span class="rm-badge rm-badge--tier-{{ item.group_tier | lower }}" title="{{ t('badge.group_tier_title', tier=item.group_tier) }}">{{ item.release_group }} · {{ item.group_tier }}</span>
     {% else %}
     <span class="rm-text-muted">—</span>
-    {% endif %}
-  </td>
-  <td class="rm-col-cross" data-label="{{ t('table.cross') }}" data-sort-value="{{ item.cross_source_count }}">
-    {% if item.cross_source_count and item.cross_source_count > 1 %}
-    <span class="rm-badge rm-badge--cross" title="{{ t('badge.cross_item_title', count=item.cross_source_count) }}">{{ item.cross_source_count }}/{{ cross_source_total | default(3) }}</span>
-    {% else %}
-    <span class="rm-text-muted" title="{{ t('badge.cross_single_title') }}">1</span>
     {% endif %}
   </td>
   <td class="rm-col-size" data-label="{{ t('table.size') }}" data-sort-value="{{ item.size_bytes }}">{{ item.size_human }}</td>

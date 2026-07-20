@@ -47,42 +47,10 @@
     <p class="rm-hero__subtitle"{% if i18n_enabled %} data-i18n="episode.hero_lead"{% endif %}>{{ t('episode.hero_lead') }}</p>
   </header>
 
+  {# B：Recommended+About 双栏；All Sources / 集间导航通栏占满容器宽 #}
   <div class="rm-main-grid rm-main-grid--with-sidebar">
     <div class="rm-main-grid__primary">
-
       {% include 'partials/recommended_block.html' %}
-
-      <section class="rm-section all-sources" aria-labelledby="sources-heading">
-        <div class="rm-section__header">
-          <h2 id="sources-heading"{% if i18n_enabled %} data-i18n="episode.sources_heading" data-i18n-vars='{"count": {{ sources | length }}}'{% endif %}>{{ t('episode.sources_heading', count=sources | length) }}</h2>
-        </div>
-
-        <div class="rm-table-wrap">
-          {% include 'partials/episode_sources_table.html' %}
-        </div>
-      </section>
-
-      <nav class="rm-episode-nav" aria-label="{{ t('episode.episode_nav') }}">
-        {% if prev_episode_url %}
-        <a class="rm-episode-nav__link rm-episode-nav__link--prev" href="{{ prev_episode_url }}" rel="prev">
-          <span class="rm-episode-nav__label"{% if i18n_enabled %} data-i18n="episode.prev"{% endif %}>{{ t('episode.prev') }}</span>
-          <span>{{ prev_episode_label }}</span>
-        </a>
-        {% else %}
-        <span></span>
-        {% endif %}
-
-        <span class="rm-episode-nav__center"{% if i18n_enabled %} data-i18n="episode.season_nav" data-i18n-vars='{"season": {{ season }}}'{% endif %}>{{ t('episode.season_nav', season=season) }}</span>
-
-        {% if next_episode_url %}
-        <a class="rm-episode-nav__link rm-episode-nav__link--next" href="{{ next_episode_url }}" rel="next">
-          <span class="rm-episode-nav__label"{% if i18n_enabled %} data-i18n="episode.next"{% endif %}>{{ t('episode.next') }}</span>
-          <span>{{ next_episode_label }}</span>
-        </a>
-        {% else %}
-        <span></span>
-        {% endif %}
-      </nav>
     </div>
 
     <aside class="rm-main-grid__sidebar">
@@ -124,6 +92,38 @@
       </section>
       {% endif %}
     </aside>
+
+    <section class="rm-section all-sources rm-main-grid__span-full" aria-labelledby="sources-heading">
+      <div class="rm-section__header">
+        <h2 id="sources-heading"{% if i18n_enabled %} data-i18n="episode.sources_heading" data-i18n-vars='{"count": {{ sources | length }}}'{% endif %}>{{ t('episode.sources_heading', count=sources | length) }}</h2>
+      </div>
+
+      <div class="rm-table-wrap">
+        {% include 'partials/episode_sources_table.html' %}
+      </div>
+    </section>
+
+    <nav class="rm-episode-nav rm-main-grid__span-full" aria-label="{{ t('episode.episode_nav') }}">
+      {% if prev_episode_url %}
+      <a class="rm-episode-nav__link rm-episode-nav__link--prev" href="{{ prev_episode_url }}" rel="prev">
+        <span class="rm-episode-nav__label"{% if i18n_enabled %} data-i18n="episode.prev"{% endif %}>{{ t('episode.prev') }}</span>
+        <span>{{ prev_episode_label }}</span>
+      </a>
+      {% else %}
+      <span></span>
+      {% endif %}
+
+      <span class="rm-episode-nav__center"{% if i18n_enabled %} data-i18n="episode.season_nav" data-i18n-vars='{"season": {{ season }}}'{% endif %}>{{ t('episode.season_nav', season=season) }}</span>
+
+      {% if next_episode_url %}
+      <a class="rm-episode-nav__link rm-episode-nav__link--next" href="{{ next_episode_url }}" rel="next">
+        <span class="rm-episode-nav__label"{% if i18n_enabled %} data-i18n="episode.next"{% endif %}>{{ t('episode.next') }}</span>
+        <span>{{ next_episode_label }}</span>
+      </a>
+      {% else %}
+      <span></span>
+      {% endif %}
+    </nav>
   </div>
 </div>
 {% endblock %}

@@ -43,28 +43,12 @@
     <p class="rm-hero__subtitle"{% if i18n_enabled %} data-i18n="movie.hero_lead"{% endif %}>{{ t('movie.hero_lead') }}</p>
   </header>
 
+  {# B：Recommended+About 双栏；All Versions 通栏占满容器宽 #}
   <div class="rm-main-grid rm-main-grid--with-sidebar">
     <div class="rm-main-grid__primary">
       {% with is_movie_page=true %}
       {% include 'partials/recommended_block.html' %}
       {% endwith %}
-
-      <section class="rm-section all-sources" aria-labelledby="sources-heading">
-        <div class="rm-section__header">
-          <h2 id="sources-heading"{% if i18n_enabled %} data-i18n="movie.versions_heading" data-i18n-vars='{"count": {{ sources | length }}}'{% endif %}>{{ t('movie.versions_heading', count=sources | length) }}</h2>
-          <span class="rm-text-muted"{% if i18n_enabled %} data-i18n="movie.versions_sub"{% endif %}>{{ t('movie.versions_sub') }}</span>
-        </div>
-
-        {% if source_editions %}
-        {% include 'partials/movie_edition_groups.html' %}
-        {% else %}
-        <div class="rm-table-wrap">
-          {% with items=sources %}
-          {% include 'partials/movie_sources_table.html' %}
-          {% endwith %}
-        </div>
-        {% endif %}
-      </section>
     </div>
 
     <aside class="rm-main-grid__sidebar">
@@ -86,6 +70,23 @@
         <a class="rm-btn rm-btn--secondary" href="{{ tmdb_url }}" target="{{ outbound_link_target }}" rel="{{ outbound_link_rel }}"{% if i18n_enabled %} data-i18n="episode.tmdb_cta"{% endif %}>{{ t('episode.tmdb_cta') }}</a>
       </section>
     </aside>
+
+    <section class="rm-section all-sources rm-main-grid__span-full" aria-labelledby="sources-heading">
+      <div class="rm-section__header">
+        <h2 id="sources-heading"{% if i18n_enabled %} data-i18n="movie.versions_heading" data-i18n-vars='{"count": {{ sources | length }}}'{% endif %}>{{ t('movie.versions_heading', count=sources | length) }}</h2>
+        <span class="rm-text-muted"{% if i18n_enabled %} data-i18n="movie.versions_sub"{% endif %}>{{ t('movie.versions_sub') }}</span>
+      </div>
+
+      {% if source_editions %}
+      {% include 'partials/movie_edition_groups.html' %}
+      {% else %}
+      <div class="rm-table-wrap">
+        {% with items=sources %}
+        {% include 'partials/movie_sources_table.html' %}
+        {% endwith %}
+      </div>
+      {% endif %}
+    </section>
   </div>
 </div>
 {% endblock %}

@@ -1,4 +1,4 @@
-{# Recommended Release 首屏表格 — 剧集与 All Sources 共用 rm-col-* 列宽契约 #}
+{# Recommended Release 首屏表格 — 与 All Sources 同列模型（A 合并后） #}
 {# @partial recommended_release_table.html — 参数 recommended、variant（episode|movie） #}
 <div class="rm-table-wrap rm-table-wrap--recommended-hero">
   <table class="rm-table rm-table--responsive rm-table--recommended-hero{% if variant == 'movie' %} rm-table--movie{% else %} rm-table--episode{% endif %}">
@@ -6,15 +6,12 @@
       <tr>
         <th scope="col" class="rm-col-release"{% if i18n_enabled %} data-i18n="table.release"{% endif %}>{{ t('table.release') }}</th>
         {% if variant == 'movie' %}
-        <th scope="col"{% if i18n_enabled %} data-i18n="table.source"{% endif %}>{{ t('table.source') }}</th>
-        {% endif %}
+        <th scope="col" class="rm-col-spec"{% if i18n_enabled %} data-i18n="table.spec"{% endif %}>{{ t('table.spec') }}</th>
+        <th scope="col" class="rm-col-source"{% if i18n_enabled %} data-i18n="table.source"{% endif %}>{{ t('table.source') }}</th>
+        {% else %}
         <th scope="col" class="rm-col-quality"{% if i18n_enabled %} data-i18n="table.quality"{% endif %}>{{ t('table.quality') }}</th>
-        {% if variant == 'movie' %}
-        <th scope="col"{% if i18n_enabled %} data-i18n="table.video"{% endif %}>{{ t('table.video') }}</th>
-        <th scope="col"{% if i18n_enabled %} data-i18n="table.audio"{% endif %}>{{ t('table.audio') }}</th>
         {% endif %}
         <th scope="col" class="rm-col-group"{% if i18n_enabled %} data-i18n="table.group"{% endif %}>{{ t('table.group') }}</th>
-        <th scope="col" class="rm-col-cross"{% if i18n_enabled %} data-i18n="table.cross"{% endif %}>{{ t('table.cross') }}</th>
         <th scope="col" class="rm-col-size"{% if i18n_enabled %} data-i18n="table.size"{% endif %}>{{ t('table.size') }}</th>
         <th scope="col" class="rm-col-seed"{% if i18n_enabled %} data-i18n="table.seed"{% endif %}>{{ t('table.seed') }}</th>
         <th scope="col" class="rm-col-action"{% if i18n_enabled %} data-i18n="table.action"{% endif %}>{{ t('table.action') }}</th>

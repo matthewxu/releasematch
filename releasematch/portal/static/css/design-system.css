@@ -55,9 +55,9 @@
   --rm-radius-lg: 14px;
   --rm-radius-xl: 20px;
 
-  /* 布局宽度 */
-  --rm-max-width: 1120px;
-  --rm-sidebar-width: 320px;
+  /* 布局宽度 — B：加宽容器、略缩侧栏，清单通栏后主表可用宽度更大 */
+  --rm-max-width: 1280px;
+  --rm-sidebar-width: 260px;
 
   /* 阴影 */
   --rm-shadow-card: 0 4px 24px rgba(0, 0, 0, 0.35);
@@ -167,7 +167,7 @@ dd:last-child {
 
 @media (min-width: 900px) {
   /*
-   * 与电影页（Whiplash）同一布局契约：主栏可收缩，不因表格 min-content 撑破
+   * 与电影页同一布局契约：主栏可收缩，不因表格 min-content 撑破
    * --rm-max-width / --rm-sidebar-width。
    */
   .rm-main-grid--with-sidebar {
@@ -177,6 +177,11 @@ dd:last-child {
 
   .rm-main-grid__primary {
     min-width: 0;
+  }
+
+  /* B：All Sources / 集间导航跨主栏+侧栏，使用完整容器宽 */
+  .rm-main-grid__span-full {
+    grid-column: 1 / -1;
   }
 }
 
@@ -534,7 +539,7 @@ dd:last-child {
 
 /*
  * 剧集 Recommended / All Sources：共用固定列宽契约（table-layout:fixed），
- * 两表列对齐；禁止 ellipsis，长文案换行；表宽始终 100% 不横向拖动。
+ * A 后 6 列（Verify 并入 Release）；两表列对齐；长文案换行；表宽 100%。
  */
 .rm-table--episode {
   table-layout: fixed;
@@ -552,23 +557,19 @@ dd:last-child {
 
 /* 列宽百分比：Recommended 与 All Sources 必须一致 */
 .rm-table--episode .rm-col-release {
-  width: 38%;
+  width: 44%;
 }
 
 .rm-table--episode .rm-col-quality {
-  width: 10%;
+  width: 12%;
 }
 
 .rm-table--episode .rm-col-group {
-  width: 14%;
-}
-
-.rm-table--episode .rm-col-cross {
-  width: 9%;
+  width: 16%;
 }
 
 .rm-table--episode .rm-col-size {
-  width: 10%;
+  width: 11%;
 }
 
 .rm-table--episode .rm-col-seed {
@@ -576,7 +577,7 @@ dd:last-child {
 }
 
 .rm-table--episode .rm-col-action {
-  width: 11%;
+  width: 9%;
 }
 
 .rm-table--episode .rm-table__release {
@@ -591,8 +592,12 @@ dd:last-child {
   line-height: 1.25;
 }
 
+/*
+ * 电影表 A：7 列固定布局（Spec=Quality+Video，Source=Source+Audio，Verify→Release）。
+ * 与剧集同样禁止 ellipsis / 横向拖动依赖。
+ */
 .rm-table--movie {
-  table-layout: auto;
+  table-layout: fixed;
   width: 100%;
 }
 
@@ -600,6 +605,48 @@ dd:last-child {
 .rm-table--movie td {
   overflow: visible;
   text-overflow: unset;
+  vertical-align: top;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.rm-table--movie .rm-col-release {
+  width: 34%;
+}
+
+.rm-table--movie .rm-col-spec {
+  width: 14%;
+}
+
+.rm-table--movie .rm-col-source {
+  width: 16%;
+}
+
+.rm-table--movie .rm-col-group {
+  width: 12%;
+}
+
+.rm-table--movie .rm-col-size {
+  width: 9%;
+}
+
+.rm-table--movie .rm-col-seed {
+  width: 7%;
+}
+
+.rm-table--movie .rm-col-action {
+  width: 8%;
+}
+
+.rm-table--movie .rm-table__release {
+  max-width: none;
+}
+
+.rm-table--movie .rm-col-group .rm-badge {
+  white-space: normal;
+  display: inline-block;
+  max-width: 100%;
+  line-height: 1.25;
 }
 
 .rm-release-card .rm-speed-evidence-wrap {

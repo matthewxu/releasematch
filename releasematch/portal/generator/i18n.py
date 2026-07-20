@@ -60,11 +60,14 @@ MESSAGES: Dict[str, Dict[str, str]] = {
     # ── 表格列 ──
     "table.release": {"en": "Release", "zh": "Release"},
     "table.quality": {"en": "Quality", "zh": "Quality"},
+    # Spec：电影表 Quality+Video 合并列
+    "table.spec": {"en": "Spec", "zh": "规格"},
     "table.group": {"en": "Group", "zh": "Group"},
     "table.cross": {"en": "Verify", "zh": "验证"},
     "table.size": {"en": "Size", "zh": "Size"},
     "table.seed": {"en": "Seed", "zh": "Seed"},
     "table.action": {"en": "Action", "zh": "操作"},
+    # Source 列在电影表内可含 Audio（Source · Audio）
     "table.source": {"en": "Source", "zh": "Source"},
     "table.video": {"en": "Video", "zh": "Video"},
     "table.audio": {"en": "Audio", "zh": "Audio"},
