@@ -258,7 +258,159 @@
     }
     if (String(step) === "5") {
       loadConfig().catch((e) => log(String(e)));
+      loadJackettDefaults().catch((e) => log(String(e)));
     }
+  }
+
+  /**
+   * 用 defaults 填充 Jackett 部署表单。
+   * @param {object} data /api/jackett/deploy/defaults
+   */
+  function applyJackettDefaults(data) {
+    if (!data || !data.ok) return;
+    const host = document.getElementById("jkHost");
+    const user = document.getElementById("jkUser");
+    const port = document.getElementById("jkPort");
+    const admin = document.getElementById("jkAdminPassword");
+    const pwd = document.getElementById("jkPassword");
+    if (host && data.host) host.value = data.host;
+    if (user && data.user) user.value = data.user;
+    if (port && data.port) port.value = String(data.port);
+    if (admin && data.admin_password_default) admin.value = data.admin_password_default;
+    if (pwd) {
+      pwd.placeholder = data.has_password
+        ? "留空=用 servers.local.json"
+        : "请输入 SSH 密码";
+    }
+    const deps = data.deps || {};
+    renderMetrics(document.getElementById("jackettDeployDeps"), [
+      ["来源", data.source || "—"],
+      ["ssh", deps.ssh ? "✓" : "✗"],
+      ["sshpass", deps.sshpass ? "✓" : "✗"],
+      ["脚本", deps.oneclick_script ? "✓" : "✗"],
+      ["密码", data.has_password ? "本地已有" : "需填写"],
+    ]);
+    const link = document.getElementById("jkDashboardLink");
+    if (link) {
+      if (data.dashboard_url) {
+        link.href = data.dashboard_url;
+        link.hidden = false;
+        link.textContent = "打开 Dashboard";
+      } else {
+        link.hidden = true;
+      }
+    }
+  }
+
+  /**
+   * 拉取 Jackett 部署默认值。
+   */
+  async function loadJackettDefaults() {
+    const data = await api("/api/jackett/deploy/defaults");
+    applyJackettDefaults(data);
+    return data;
+  }
+
+  /**
+   * 轮询一键部署进度直到结束。
+   * @param {string} title 进度标题
+   */
+  async function pollJackettDeploy(title) {
+    for (;;) {
+      const data = await api("/api/jackett/deploy/progress");
+      const p = data.progress || {};
+      const pct = p.percent != null ? Number(p.percent) : null;
+      showProgress(title, {
+        percent: pct,
+        message: p.message || p.status || "",
+      });
+      const logEl = document.getElementById("jackettDeployLog");
+      if (logEl && p.log_tail) logEl.textContent = p.log_tail;
+      if (p.status === "done" || p.status === "error") {
+        return p;
+      }
+      await sleep(1500);
+    }
+  }
+
+  /**
+   * 启动 Jackett + FlareSolverr 一键部署。
+   */
+  async function startJackettDeploy() {
+    const host = (document.getElementById("jkHost") && document.getElementById("jkHost").value) || "";
+    const password =
+      (document.getElementById("jkPassword") && document.getElementById("jkPassword").value) || "";
+    const body = {
+      host: host.trim(),
+      password: password,
+      user: (document.getElementById("jkUser") && document.getElementById("jkUser").value) || "root",
+      port: Number((document.getElementById("jkPort") && document.getElementById("jkPort").value) || 22),
+      with_indexers: !!(
+        document.getElementById("jkWithIndexers") && document.getElementById("jkWithIndexers").checked
+      ),
+      indexer_profile:
+        (document.getElementById("jkIndexerProfile") &&
+          document.getElementById("jkIndexerProfile").value) ||
+        "all",
+      sync_key: !!(document.getElementById("jkSyncKey") && document.getElementById("jkSyncKey").checked),
+      force_recreate: !!(
+        document.getElementById("jkForceRecreate") &&
+        document.getElementById("jkForceRecreate").checked
+      ),
+      dry_run: !!(document.getElementById("jkDryRun") && document.getElementById("jkDryRun").checked),
+      use_servers_password: true,
+      admin_password:
+        (document.getElementById("jkAdminPassword") &&
+          document.getElementById("jkAdminPassword").value) ||
+        "345621",
+    };
+    if (!body.host) {
+      log("请填写 VPS Host / IP");
+      return;
+    }
+    if (!body.password && !body.dry_run) {
+      const go = window.confirm(
+        "未填写 SSH 密码，将尝试使用 servers.local.json。\n继续？"
+      );
+      if (!go) return;
+    }
+    await withBusy("一键部署 Jackett + FlareSolverr", async () => {
+      showProgress("一键部署 Jackett", {
+        percent: 5,
+        message: `连接 ${body.user}@${body.host}…`,
+      });
+      const start = await api("/api/jackett/deploy/start", { method: "POST", body });
+      log("部署已启动", {
+        started: start.started,
+        already_running: start.already_running,
+        host: body.host,
+      });
+      const finalProg = await pollJackettDeploy("一键部署 Jackett + FlareSolverr");
+      log("部署结束", {
+        status: finalProg.status,
+        ok: finalProg.ok,
+        returncode: finalProg.returncode,
+        error: finalProg.error,
+      });
+      if (finalProg.ok) {
+        const dash = `http://${body.host}:9117/UI/Dashboard`;
+        const link = document.getElementById("jkDashboardLink");
+        if (link) {
+          link.href = dash;
+          link.hidden = false;
+          link.textContent = "打开 Dashboard";
+        }
+        // 同步 Key 后刷新配置页 accounts
+        try {
+          await loadConfig();
+        } catch (_) {
+          /* ignore */
+        }
+      }
+      if (!finalProg.ok) {
+        throw new Error(finalProg.error || finalProg.message || "部署失败");
+      }
+    });
   }
 
   /**
@@ -2042,6 +2194,21 @@
         log(String(e));
       }
     });
+
+    const btnJackettDefaults = document.getElementById("btnJackettDefaults");
+    if (btnJackettDefaults) {
+      btnJackettDefaults.addEventListener("click", () => {
+        withBusy("预填 Jackett 部署参数", () => loadJackettDefaults(), {
+          indeterminate: true,
+        }).catch((e) => log(String(e)));
+      });
+    }
+    const btnJackettDeploy = document.getElementById("btnJackettDeploy");
+    if (btnJackettDeploy) {
+      btnJackettDeploy.addEventListener("click", () => {
+        startJackettDeploy().catch((e) => log(String(e)));
+      });
+    }
   }
 
   bind();

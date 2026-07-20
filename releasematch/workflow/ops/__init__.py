@@ -7,7 +7,8 @@
   六段式 UI：页面台账（media_pages 统管）→ 清单来源 → 筛选 → 跑生成流程 → 上线 → 配置。
   筛选结果导入 MySQL 跟踪表（ops_track_batches / ops_track_slots）后，
   生成与部署进度按槽位跟踪到底；台账/下线以 media_pages 为准。
-  「配置」段可读写 ``.env`` / ``accounts.local.json`` 并热加载到本进程。
+  「配置」段可读写 ``.env`` / ``accounts.local.json`` 并热加载；
+  并可一键 SSH 部署 Jackett + FlareSolverr（``install_jackett_oneclick.sh``）。
   可选 ``RM_OPS_PASSWORD`` 登录门禁（``/login.html`` + Cookie 会话）。
   仅绑定 127.0.0.1，勿部署到公网。
 """

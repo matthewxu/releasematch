@@ -24,6 +24,7 @@ from workflow.ops import DEFAULT_OPS_PORT
 from workflow.ops import actions
 from workflow.ops import auth as ops_auth
 from workflow.ops import config_service
+from workflow.ops import jackett_deploy_service
 from workflow.ops import pages_service
 from workflow.ops import source_service
 from workflow.ops.track_store import (
@@ -497,6 +498,30 @@ def _handle_api(
                 return 400, {"ok": False, "error": out["accounts"].get("error"), **out}
         out["config"] = config_service.get_config_bundle()
         return 200, out
+
+    # ── Jackett + FlareSolverr 一键部署（本机 SSH → VPS）────────
+    if path == "/api/jackett/deploy/defaults" and method == "GET":
+        return 200, jackett_deploy_service.load_defaults()
+
+    if path == "/api/jackett/deploy/progress" and method == "GET":
+        return 200, {"ok": True, "progress": jackett_deploy_service.get_progress()}
+
+    if path == "/api/jackett/deploy/start" and method == "POST":
+        result = jackett_deploy_service.start_deploy(
+            host=str(body.get("host") or ""),
+            password=body.get("password"),
+            user=str(body.get("user") or "root"),
+            port=int(body.get("port") or 22),
+            with_indexers=bool(body.get("with_indexers", True)),
+            indexer_profile=str(body.get("indexer_profile") or "all"),
+            sync_key=bool(body.get("sync_key", True)),
+            force_recreate=bool(body.get("force_recreate", True)),
+            dry_run=bool(body.get("dry_run", False)),
+            use_servers_password=bool(body.get("use_servers_password", True)),
+            admin_password=body.get("admin_password"),
+        )
+        status = 200 if result.get("ok") else 400
+        return status, result
 
     return 404, {"ok": False, "error": f"未知 API: {method} {path}"}
 

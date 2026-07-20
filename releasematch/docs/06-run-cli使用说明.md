@@ -712,7 +712,7 @@ python -m workflow.run ops tmdb-sync --full-reload   # TRUNCATE 全量重建
 | ② 筛选 | media / tier / pop / 排除 published·失败槽 | 筛选后 **导入跟踪表**；与 published 重叠须确认 |
 | ③ 跑生成流程 | pipeline → MySQL 门禁 → generate → 测速 | 跟踪表逐槽更新；**测速 write 成功后自动 regenerate**（bake Grab/测速面板） |
 | ④ 上线 | seo_c2 → deploy（增量/全量/仅上传 + 可选 wrangler） | 批次级步骤 + 同一跟踪表 |
-| ⑤ 配置 | `.env`（MySQL/站点/Ops）+ `accounts.local.json`（数据源） | 分文件加载/保存；热加载到当前进程（无需重启） |
+| ⑤ 配置 | `.env`（MySQL/站点/Ops）+ `accounts.local.json`（数据源）+ **一键部署 Jackett/FlareSolverr** | 分文件加载/保存；热加载；SSH 装栈 |
 
 **统管 vs 工单：**
 
@@ -729,8 +729,15 @@ python -m workflow.run ops tmdb-sync --full-reload   # TRUNCATE 全量重建
 | `GET` | `/api/pages?q=&status=&page_type=&limit=&offset=` | 台账列表（含最近工单快照） |
 | `POST` | `/api/pages/unpublish` | `{page_ids, upload?, target_status?}` 下线 |
 | `POST` | `/api/pages/add-to-track` | `{page_ids, create_new_batch?}` 加入活跃批或新建 |
+| `GET` | `/api/jackett/deploy/defaults` | 从 `servers.local.json` 预填 host/user/port（密码不回传） |
+| `GET` | `/api/jackett/deploy/progress` | 一键部署进度 / 日志尾 |
+| `POST` | `/api/jackett/deploy/start` | 后台跑 `install_jackett_oneclick.sh`（SSH→VPS） |
 
-**④ Deploy 范围（Ops UI / API）：**
+**Jackett 一键部署（Ops ⑤）：** 填 VPS IP + SSH 密码（或留空用 `servers.local.json`）→「开始一键部署」。等价 CLI：
+
+```bash
+bash scripts/install_jackett_oneclick.sh --host <IP> --password '<密码>' --with-indexers
+```
 
 | scope | 行为 | 典型用途 |
 |-------|------|----------|
@@ -931,3 +938,4 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | v0.15 | 2026-07-20 | 脚本索引：`install_jackett_oneclick.sh` / `configure_jackett_cn_indexers.sh` |
 | v0.16 | 2026-07-20 | Jackett Dashboard 默认密码 `345621`（`JACKETT_ADMIN_PASSWORD`） |
 | v0.17 | 2026-07-20 | Ops ⓪ 页面台账：`media_pages` 统管浏览/搜索/统计/下线；与 `ops_track` 工单边界写清；导入 published 重叠确认 |
+| v0.18 | 2026-07-20 | Ops ⑤ 一键部署 Jackett+FlareSolverr（`/api/jackett/deploy*` → `install_jackett_oneclick.sh`） |
