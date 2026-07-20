@@ -37,7 +37,13 @@ EZTV / YTS **直连 API** 仍可由本机 `eztv_client` / `yts_client` 调用；
 
 ## 零、本机一键远程安装（推荐）
 
-新买 VPS 时，在 **本机** `releasematch` 目录用交互一键脚本（IP + 密码即可）：
+新买 VPS 时，**优先用 Ops UI**（本机）：
+
+```bash
+python -m workflow.run ops serve   # → ⑤ 配置 →「一键部署 Jackett + FlareSolverr」
+```
+
+或 CLI 交互一键（IP + 密码即可）：
 
 ```bash
 # 交互输入密码；安装后询问是否写入默认 indexer（all/cn/intl）
@@ -48,7 +54,7 @@ bash scripts/install_jackett_oneclick.sh --host 104.105.140.95 --password 'YourP
 bash scripts/install_jackett_oneclick.sh --host 104.105.140.95 --password 'YourPass' --with-indexers
 ```
 
-流程：`deploy_jackett_vps.sh`（Docker + Jackett + FlareSolverr）→ 可选 `configure_jackett_cn_indexers.sh` → `sync_jackett_vps_key.sh`。
+流程：`deploy_jackett_vps.sh`（Docker + Jackett + FlareSolverr）→ 可选 `configure_jackett_cn_indexers.sh` → `sync_jackett_vps_key.sh`（Ops ⑤ / oneclick 同源）。
 
 仅装栈、不交互（读 `servers.local.json`）时仍可用：
 
@@ -272,3 +278,4 @@ docker exec jackett curl -s -o /dev/null -w '%{http_code}\n' http://flaresolverr
 | 2026-06-30 | 增加本机一键脚本 `scripts/deploy_jackett_vps.sh` |
 | 2026-07-20 | 增加 `scripts/install_jackett_oneclick.sh`（IP+密码+交互 indexer）；测试机 `104.105.140.95` |
 | 2026-07-20 | 安装脚本默认写入 Dashboard 密码 `345621`（`JACKETT_ADMIN_PASSWORD`）；indexer 经 SSH stdin 推送 |
+| 2026-07-21 | Ops ⑤ 一键部署入口（`/api/jackett/deploy*`）；对本机 Ops 实测 dry-run + 正式部署 `104.105.140.95` 通过 |

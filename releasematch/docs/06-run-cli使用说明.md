@@ -733,11 +733,24 @@ python -m workflow.run ops tmdb-sync --full-reload   # TRUNCATE 全量重建
 | `GET` | `/api/jackett/deploy/progress` | 一键部署进度 / 日志尾 |
 | `POST` | `/api/jackett/deploy/start` | 后台跑 `install_jackett_oneclick.sh`（SSH→VPS） |
 
-**Jackett 一键部署（Ops ⑤）：** 填 VPS IP + SSH 密码（或留空用 `servers.local.json`）→「开始一键部署」。等价 CLI：
+**Jackett 一键部署（Ops ⑤，推荐日常入口）：**
+
+1. `python -m workflow.run ops serve` → 打开 **05 配置**
+2. 「从 servers.local.json 预填」或手填 Host / SSH 密码
+3. 勾选写入 indexer / 同步 API Key → **开始一键部署**（进度条 + 日志尾）
+4. 成功后热加载 `accounts.local.json`；浏览器打开 Dashboard（密码默认 `345621`）
+
+API body 要点：`{ host, password?, user, port, with_indexers, indexer_profile, sync_key, force_recreate, dry_run, use_servers_password, admin_password }`。密码优先表单；留空且 `use_servers_password=true` 时读 `servers.local.json`（经 `SSHPASS`，不进命令行）。
+
+等价 CLI：
 
 ```bash
 bash scripts/install_jackett_oneclick.sh --host <IP> --password '<密码>' --with-indexers
 ```
+
+**验收（2026-07-21 Ops API 实测 `104.105.140.95`）：** dry-run PASS → 正式部署 PASS（装栈 + indexer + sync Key）；VPS `docker ps` 见 `jackett` / `flaresolverr`；Torznab 搜索返回 RSS。对 `/UI/Dashboard` 用简易 curl 可能 HTTP 400，属 Jackett UI 行为，浏览器访问即可。
+
+**④ Deploy 范围（Ops UI / API）：**
 
 | scope | 行为 | 典型用途 |
 |-------|------|----------|
@@ -864,7 +877,7 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | `scripts/failed_slots_merge_reports.py` | 合并 pipeline 失败报告 → 登记册 |
 | `scripts/recompute_cross_source_fuzzy.py` | 不重拉 indexer，按 infohash 重算跨源分子 |
 | `scripts/sync_jackett_vps_key.sh` | 远端 Jackett API Key → `accounts.local.json` |
-| `scripts/install_jackett_oneclick.sh` | VPS 一键：IP+密码安装 Jackett/FlareSolverr，交互配置默认 indexer，同步 Key；Dashboard 密码默认 `345621` |
+| `scripts/install_jackett_oneclick.sh` | VPS 一键：IP+密码安装 Jackett/FlareSolverr，交互配置默认 indexer，同步 Key；Dashboard 密码默认 `345621`；**Ops ⑤ 同源** |
 | `scripts/deploy_jackett_vps.sh` | 仅远程装栈（被 oneclick 调用；可读 `servers.local.json`） |
 | `scripts/remote/configure_jackett_cn_indexers.sh` | 写入默认 Indexers（all/cn/intl）；可被 oneclick 调用 |
 | `scripts/seo_c2_checklist.sh` | C2 SEO 本地检查（§6.1～6.3）；等价 `seo_c2_checklist.py` |
@@ -939,3 +952,4 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | v0.16 | 2026-07-20 | Jackett Dashboard 默认密码 `345621`（`JACKETT_ADMIN_PASSWORD`） |
 | v0.17 | 2026-07-20 | Ops ⓪ 页面台账：`media_pages` 统管浏览/搜索/统计/下线；与 `ops_track` 工单边界写清；导入 published 重叠确认 |
 | v0.18 | 2026-07-20 | Ops ⑤ 一键部署 Jackett+FlareSolverr（`/api/jackett/deploy*` → `install_jackett_oneclick.sh`） |
+| v0.19 | 2026-07-21 | 文档补齐 Ops ⑤ 部署步骤/API body；`104.105.140.95` dry-run+正式部署验收 |

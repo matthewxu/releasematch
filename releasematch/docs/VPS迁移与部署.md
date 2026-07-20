@@ -22,7 +22,21 @@
 
 ---
 
-## 部署命令（推荐：交互一键）
+## 部署命令（推荐：Ops UI 或交互一键）
+
+### Ops 控制台（日常推荐）
+
+```bash
+cd releasematch
+python -m workflow.run ops serve   # http://127.0.0.1:8090/
+# → ⑤ 配置 →「一键部署 Jackett + FlareSolverr」
+# 可预填 servers.local.json；密码留空用本地凭据；进度轮询 + 成功后热加载 accounts
+```
+
+详见 [06-run-cli使用说明.md](./06-run-cli使用说明.md) §5.4b。  
+**验收：** 2026-07-21 对本机 Ops API 跑通 dry-run + 正式部署（`104.105.140.95`）；`jackett` / `flaresolverr` 容器 Up，Torznab 搜索正常。
+
+### CLI 交互一键
 
 新买 VPS 或重建时，在本机 `releasematch` 目录执行：
 
