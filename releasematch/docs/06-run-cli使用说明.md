@@ -690,9 +690,9 @@ python scripts/speedtest_batch_worker.py \
   --report worklogs/$(date +%Y-%m-%d)/speedtest-all-published-benchmark.json
 ```
 
-### 5.4b Ops 控制台 UI（页面台账 → 清单 → 筛选 → 生成 → 上线 → 配置）
+### 5.4b Ops 控制台 UI（页面台账 → 清单 → 筛选 → 生成 → 上线 → 配置 → 日常运营）
 
-本地六段式 UI，**仅绑定 127.0.0.1**，勿部署公网：
+本地七段式 UI，**仅绑定 127.0.0.1**，勿部署公网：
 
 ```bash
 python -m workflow.run ops serve          # http://127.0.0.1:8090/
@@ -713,6 +713,15 @@ python -m workflow.run ops tmdb-sync --full-reload   # TRUNCATE 全量重建
 | ③ 跑生成流程 | pipeline → MySQL 门禁 → generate → 测速 | 跟踪表逐槽更新；**测速 write 成功后自动 regenerate**（bake Grab/测速面板） |
 | ④ 上线 | seo_c2 → deploy（增量/全量/仅上传 + 可选 wrangler） | 批次级步骤 + 同一跟踪表 |
 | ⑤ 配置 | `.env`（MySQL/站点/Ops）+ `accounts.local.json`（数据源）+ **一键部署 Jackett/FlareSolverr** | 分文件加载/保存；热加载；SSH 装栈 |
+| ⑥ 日常运营 | 手册 **§四** 巡检：Jackett · DB · 测速覆盖 · TMDB 新鲜度 · 失败槽 | 「刷新巡检」；TMDB 日同步；测速缺口补测 |
+
+**日常运营 API：**
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/api/daily/status` | 一键巡检汇总（checks + 各段快照） |
+| `GET` | `/api/daily/speed-gaps?limit=50` | 有 Rec 缺 `slot_speed_summary` 的 page_id |
+| `POST` | `/api/daily/speedtest-gap` | `{limit?, workers?}` 对缺口槽 batch write 测速 |
 
 **统管 vs 工单：**
 
@@ -921,7 +930,7 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | `seo_c2_checklist` | `scripts/seo_c2_checklist.py` |
 | `serve` | `portal/generator/dev_server.py` |
 | `serve-static` | `portal/generator/dev_server.py` · `static_shell.py` |
-| `ops serve` | `workflow/ops/server.py` · `auth.py`（`RM_OPS_PASSWORD`）· `track_store.py` · `config_service.py` |
+| `ops serve` | `workflow/ops/server.py` · `auth.py` · `track_store.py` · `config_service.py` · `daily_service.py` |
 | `ops tmdb-sync` | `workflow/ops/source_service.py` · `tmdb_export_store.py`（全量下载 → UPSERT 增量） |
 | `torrent_sources.run *` | `workflow/torrent_sources/run.py` |
 | `speedtest.run *` | `workflow/torrent_sources/speedtest/` |
@@ -953,3 +962,4 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | v0.17 | 2026-07-20 | Ops ⓪ 页面台账：`media_pages` 统管浏览/搜索/统计/下线；与 `ops_track` 工单边界写清；导入 published 重叠确认 |
 | v0.18 | 2026-07-20 | Ops ⑤ 一键部署 Jackett+FlareSolverr（`/api/jackett/deploy*` → `install_jackett_oneclick.sh`） |
 | v0.19 | 2026-07-21 | 文档补齐 Ops ⑤ 部署步骤/API body；`104.105.140.95` dry-run+正式部署验收 |
+| v0.20 | 2026-07-21 | Ops **⑥ 日常运营**：`/api/daily/*` 巡检、TMDB 日同步入口、测速缺口补测 |

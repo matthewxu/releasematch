@@ -1,5 +1,5 @@
 /**
- * Ops 控制台前端 — 页面台账 + 五段流程与跟踪工单。
+ * Ops 控制台前端 — 页面台账 + 流程段 + 日常运营巡检。
  * @file workflow/ops/static/ops.js
  */
 
@@ -244,7 +244,7 @@
 
   /**
    * 切换流程面板。
-   * @param {string} step 0-5（0=页面台账）
+   * @param {string} step 0-6（0=页面台账，6=日常运营）
    */
   function showStep(step) {
     document.querySelectorAll(".ops-step-tab").forEach((btn) => {
@@ -260,6 +260,108 @@
       loadConfig().catch((e) => log(String(e)));
       loadJackettDefaults().catch((e) => log(String(e)));
     }
+    if (String(step) === "6") {
+      loadDailyPatrol().catch((e) => log(String(e)));
+    }
+  }
+
+  /**
+   * 渲染日常巡检结果到 ⑥ 面板。
+   * @param {object} data /api/daily/status 响应
+   */
+  function renderDailyPatrol(data) {
+    if (!data || !data.ok) {
+      renderMetrics(document.getElementById("dailyMetrics"), [
+        ["巡检", "失败"],
+        ["错误", (data && data.error) || "无数据"],
+      ]);
+      return;
+    }
+    const inv = (data.db && data.db.inventory) || {};
+    const speed = data.speed || {};
+    const tmdb = data.tmdb_export || {};
+    const failed = data.failed_slots || {};
+    renderMetrics(document.getElementById("dailyMetrics"), [
+      ["总评", data.patrol_ok ? "PASS" : "需处理"],
+      ["published", inv.published != null ? String(inv.published) : "—"],
+      ["indexable", inv.indexable != null ? String(inv.indexable) : "—"],
+      [
+        "测速覆盖",
+        speed.with_recommended != null
+          ? `${speed.with_summary}/${speed.with_recommended}`
+          : "—",
+      ],
+      ["TMDB 导出日", tmdb.export_date || "—"],
+      ["失败槽 active", failed.active_count != null ? String(failed.active_count) : "—"],
+      ["采集于", (data.collected_at || "").replace("T", " ").replace("Z", " UTC")],
+    ]);
+
+    const ul = document.getElementById("dailyChecklist");
+    if (ul) {
+      const checks = data.checks || [];
+      ul.innerHTML = checks
+        .map((c) => {
+          const ok = !!c.ok;
+          const optional = !c.required;
+          const markClass = ok
+            ? "ops-check-mark is-ok"
+            : optional
+              ? "ops-check-mark is-optional"
+              : "ops-check-mark is-fail";
+          const mark = ok ? "✓" : optional ? "·" : "✗";
+          return `<li>
+            <span class="${markClass}" aria-hidden="true">${mark}</span>
+            <div class="ops-check-body">
+              <div class="label">${escapeHtml(c.label || c.id || "")}</div>
+              <div class="detail">${escapeHtml(c.detail || "")}</div>
+            </div>
+          </li>`;
+        })
+        .join("");
+    }
+
+    const cronEl = document.getElementById("dailyCronDetail");
+    if (cronEl) {
+      cronEl.textContent = JSON.stringify(data.cron || {}, null, 2);
+    }
+    const failedEl = document.getElementById("dailyFailedDetail");
+    if (failedEl) {
+      failedEl.textContent = JSON.stringify(
+        {
+          active_count: failed.active_count,
+          path: failed.path,
+          sample_keys: failed.sample_keys || [],
+        },
+        null,
+        2
+      );
+    }
+    const gapsEl = document.getElementById("dailyGapsDetail");
+    if (gapsEl) {
+      gapsEl.textContent = JSON.stringify(
+        {
+          gap_count: speed.gap_count,
+          gaps_sample: speed.gaps_sample || [],
+        },
+        null,
+        2
+      );
+    }
+  }
+
+  /**
+   * 拉取并渲染日常巡检。
+   * @returns {Promise<object>}
+   */
+  async function loadDailyPatrol() {
+    const data = await api("/api/daily/status");
+    renderDailyPatrol(data);
+    log("日常巡检", {
+      patrol_ok: data.patrol_ok,
+      collected_at: data.collected_at,
+      gaps: (data.speed && data.speed.gap_count) || 0,
+    });
+    return data;
   }
 
   /**
@@ -2207,6 +2309,57 @@
     if (btnJackettDeploy) {
       btnJackettDeploy.addEventListener("click", () => {
         startJackettDeploy().catch((e) => log(String(e)));
+      });
+    }
+
+    const btnDailyRefresh = document.getElementById("btnDailyRefresh");
+    if (btnDailyRefresh) {
+      btnDailyRefresh.addEventListener("click", () => {
+        withBusy("日常巡检", () => loadDailyPatrol(), { indeterminate: true }).catch((e) =>
+          log(String(e))
+        );
+      });
+    }
+    const btnDailyTmdbSync = document.getElementById("btnDailyTmdbSync");
+    if (btnDailyTmdbSync) {
+      btnDailyTmdbSync.addEventListener("click", async () => {
+        try {
+          await ensureExportWithProgress({
+            download: true,
+            daily: true,
+            force_reload: false,
+          });
+          await loadDailyPatrol();
+        } catch (e) {
+          log(String(e));
+          hideProgress();
+          document.body.classList.remove("ops-busy");
+          busyDepth = 0;
+        }
+      });
+    }
+    const btnDailySpeedGap = document.getElementById("btnDailySpeedGap");
+    if (btnDailySpeedGap) {
+      btnDailySpeedGap.addEventListener("click", async () => {
+        if (
+          !window.confirm(
+            "对有 Recommended 但缺 slot_speed_summary 的槽位补测（最多 20）？\n测速后请再 Generate 对应页。"
+          )
+        ) {
+          return;
+        }
+        try {
+          await withBusy("测速缺口补测", async () => {
+            const data = await api("/api/daily/speedtest-gap", {
+              method: "POST",
+              body: { limit: 20, workers: 3 },
+            });
+            log("测速缺口补测", data);
+            await loadDailyPatrol();
+          });
+        } catch (e) {
+          log(String(e));
+        }
       });
     }
   }

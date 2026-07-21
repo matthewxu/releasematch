@@ -4,7 +4,7 @@ Ops 本地 HTTP 服务 — 运营控制台。
 
 @module workflow.ops.server
 @description
-  仅绑定 127.0.0.1。提供 JSON API + 单页 UI（含配置加载/修改/热加载、页面台账）。
+  仅绑定 127.0.0.1。提供 JSON API + 单页 UI（含配置、页面台账、**日常运营巡检**）。
   可选 ``RM_OPS_PASSWORD`` 登录门禁（Cookie 会话）。
   CLI: python -m workflow.run ops serve [--port 8090]
 """
@@ -24,6 +24,7 @@ from workflow.ops import DEFAULT_OPS_PORT
 from workflow.ops import actions
 from workflow.ops import auth as ops_auth
 from workflow.ops import config_service
+from workflow.ops import daily_service
 from workflow.ops import jackett_deploy_service
 from workflow.ops import pages_service
 from workflow.ops import source_service
@@ -523,6 +524,31 @@ def _handle_api(
         status = 200 if result.get("ok") else 400
         return status, result
 
+    # ── 日常运营巡检（手册 §四）────────────────────────────────
+    if path == "/api/daily/status" and method == "GET":
+        try:
+            return 200, daily_service.collect_daily_patrol()
+        except Exception as exc:  # noqa: BLE001
+            return 500, {"ok": False, "error": str(exc)}
+
+    if path == "/api/daily/speed-gaps" and method == "GET":
+        try:
+            limit_raw = (query.get("limit") or ["50"])[0]
+            return 200, daily_service.list_speed_summary_gaps(limit=int(limit_raw or 50))
+        except Exception as exc:  # noqa: BLE001
+            return 500, {"ok": False, "error": str(exc)}
+
+    if path == "/api/daily/speedtest-gap" and method == "POST":
+        try:
+            result = daily_service.run_speedtest_gap_fill(
+                limit=int(body.get("limit") or 20),
+                workers=int(body.get("workers") or 3),
+            )
+            status = 200 if result.get("ok") else 400
+            return status, result
+        except Exception as exc:  # noqa: BLE001
+            return 500, {"ok": False, "error": str(exc)}
+
     return 404, {"ok": False, "error": f"未知 API: {method} {path}"}
 
 
@@ -720,7 +746,7 @@ def run_ops_server(*, host: str = "127.0.0.1", port: int = DEFAULT_OPS_PORT) -> 
 
     httpd = ThreadingHTTPServer((host, port), OpsHandler)
     print(f"[ops] ReleaseMatch Ops Console → http://{host}:{port}/")
-    print("[ops] 五段：清单 → 筛选 → 生成 → 上线 → 配置（.env / accounts 可热加载）")
+    print("[ops] 七段：台账 → 清单 → 筛选 → 生成 → 上线 → 配置 → 日常运营")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

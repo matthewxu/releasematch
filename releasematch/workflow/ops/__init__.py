@@ -4,7 +4,8 @@
 
 @module workflow.ops
 @description
-  六段式 UI：页面台账（media_pages 统管）→ 清单来源 → 筛选 → 跑生成流程 → 上线 → 配置。
+  七段式 UI：页面台账（media_pages 统管）→ 清单来源 → 筛选 → 跑生成流程 → 上线 → 配置
+  → **日常运营**（§四巡检 / TMDB 日同步 / 测速缺口）。
   筛选结果导入 MySQL 跟踪表（ops_track_batches / ops_track_slots）后，
   生成与部署进度按槽位跟踪到底；台账/下线以 media_pages 为准。
   「配置」段可读写 ``.env`` / ``accounts.local.json`` 并热加载；

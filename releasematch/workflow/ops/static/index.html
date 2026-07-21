@@ -12,7 +12,7 @@
     <header class="ops-top">
       <div>
         <div class="ops-brand">ReleaseMatch Ops</div>
-        <div class="ops-sub">页面台账（media_pages）→ 清单 → 筛选 → 生成 → 上线 · ops_track 为批次工单</div>
+        <div class="ops-sub">页面台账 → 清单 → 筛选 → 生成 → 上线 · 配置 · <strong>日常运营</strong> · ops_track 为批次工单</div>
       </div>
       <div>
         <span class="ops-badge" id="activeBatchBadge">无活跃批次</span>
@@ -58,6 +58,9 @@
       </button>
       <button type="button" class="ops-step-tab" data-step="5" aria-selected="false">
         <span class="n">05</span><span class="t">配置</span>
+      </button>
+      <button type="button" class="ops-step-tab" data-step="6" aria-selected="false">
+        <span class="n">06</span><span class="t">日常运营</span>
       </button>
     </nav>
 
@@ -453,7 +456,50 @@
       </div>
     </section>
 
-    <div class="ops-log" id="opsLog">就绪。请从「清单从哪来」开始；缺配置时先打开「配置」。</div>
+    <!-- ⑥ 日常运营：手册 §四 巡检 + 日同步 / 测速缺口 -->
+    <section class="ops-panel" id="panel-6" data-panel="6">
+      <h2>⑥ 日常运营</h2>
+      <p class="lead">
+        对齐 <code>docs/12-日常运营执行手册.md</code> <strong>§四</strong>：
+        Jackett 连通 · MySQL 快照 · 测速覆盖 · TMDB 日同步 · 失败槽。
+        自动测速 cron（每 6h）仍在本机/VPS 跑；此处做<strong>结果验收与按需补洞</strong>。
+      </p>
+      <div class="ops-metrics" id="dailyMetrics"></div>
+      <div class="ops-actions">
+        <button type="button" id="btnDailyRefresh">刷新巡检</button>
+        <button type="button" class="secondary" id="btnDailyTmdbSync" title="全量下载 Daily Export → MySQL 增量">TMDB 日同步</button>
+        <button type="button" class="secondary" id="btnDailySpeedGap" title="对有 Rec 缺 summary 的槽补测">测速缺口补测</button>
+      </div>
+      <div class="ops-grid" style="margin-top:14px">
+        <div class="ops-card">
+          <h3>每日勾选（自动判定）</h3>
+          <ul class="ops-checklist" id="dailyChecklist"></ul>
+        </div>
+        <div class="ops-card">
+          <h3>测速 / cron 证据</h3>
+          <pre class="ops-mono-block" id="dailyCronDetail">尚未巡检。</pre>
+        </div>
+      </div>
+      <div class="ops-card" style="margin-top:14px">
+        <h3>失败槽 · 缺口样例</h3>
+        <div class="ops-row">
+          <div style="flex:1">
+            <p class="lead" style="margin-bottom:6px">active 失败槽（最多 10）</p>
+            <pre class="ops-mono-block" id="dailyFailedDetail">—</pre>
+          </div>
+          <div style="flex:1">
+            <p class="lead" style="margin-bottom:6px">测速缺口 page_id（最多 20）</p>
+            <pre class="ops-mono-block" id="dailyGapsDetail">—</pre>
+          </div>
+        </div>
+      </div>
+      <p class="lead" style="margin-top:12px">
+        每周例行 / 发版回归仍用 checklist：
+        <code>checklists/daily/</code> · 命令细节见手册 §十二 / §十三。
+      </p>
+    </section>
+
+    <div class="ops-log" id="opsLog">就绪。日常巡检请打开「⑥ 日常运营」；扩槽从「清单从哪来」开始；缺配置时先打开「配置」。</div>
   </div>
   <script src="/ops.js"></script>
 </body>

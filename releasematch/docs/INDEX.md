@@ -11,7 +11,7 @@
 | [05-存储与部署配置.md](./05-存储与部署配置.md) | **MySQL 本地测试 → D1 生产、环境变量、总控 CLI** |
 | [**IG信息登记册.md**](./IG信息登记册.md) | **Information Gain 分级登记册（S/A/B/C + 跨源/Group/测速逻辑）** |
 | [05-Jackett详解与安装使用教程.md](./05-Jackett详解与安装使用教程.md) | **Jackett 概念、安装、Torznab API、ReleaseMatch 集成** |
-| [06-run-cli使用说明.md](./06-run-cli使用说明.md) | **workflow.run 总控**（含 **`ops serve`**：页面台账 / **⑤ 一键部署 Jackett+FlareSolverr** / `ops tmdb-sync` / 配置热加载） |
+| [06-run-cli使用说明.md](./06-run-cli使用说明.md) | **workflow.run 总控**（含 **`ops serve`**：页面台账 / **⑥ 日常运营** / **⑤ 一键部署 Jackett+FlareSolverr** / `ops tmdb-sync` / 配置热加载） |
 | [07-部署架构解疑.md](./07-部署架构解疑.md) | **D1 / Pages / Worker generate / CI 部署 FAQ** |
 | [jackett-remote-linode.md](./jackett-remote-linode.md) | **海外 VPS 部署 Jackett**（通用流程；当前测试机 `104.105.140.95`；Ops ⑤ / CLI oneclick） |
 | [**VPS迁移与部署.md**](./VPS迁移与部署.md) | **当前测试 VPS** `104.105.140.95` 迁移与验收（推荐 Ops ⑤ 一键部署） |
@@ -22,7 +22,7 @@
 | [**11-CN华语影视资源方案.md**](./11-CN华语影视资源方案.md) | **华语影视**：全球市场摘要、DMHy Layer 2F、`cn` 路由、渠道矩阵、PoC |
 | [**全球SEO流量定位.md**](./全球SEO流量定位.md) | **全球影视资源视角：意图分层、市场、关键词簇、选槽与流量组合** |
 | [11-页面SEO分析与优化方向.md](./11-页面SEO分析与优化方向.md) → [worklog](../worklogs/2026-07-03/页面SEO分析与优化方向.md) | **全站 SEO 审计 + C2 任务清单（2026-07-03 工作日志）** |
-| [**12-日常运营执行手册.md**](./12-日常运营执行手册.md) | **日常运维**：巡检、cron、扩槽→生成→SEO 门禁、失败槽、指标看板 |
+| [**12-日常运营执行手册.md**](./12-日常运营执行手册.md) | **日常运维**：巡检、cron、扩槽→生成→SEO 门禁、失败槽、指标看板（Ops **⑥** 一键巡检） |
 | [**15-多地多环境开发切换.md**](./15-多地多环境开发切换.md) | **两地 Mac/Windows**：私有仓同步代码+密钥、收工/开工清单 |
 | [**checklists/**](../checklists/README.md) | **运营 Checklist**：上线门禁、每日/每周/发版前可勾选清单 |
 | [**seo/**](./seo/INDEX.md) | **SEO 迭代专项**：E-E-A-T / Info Gain 评估、跟进看板、历次迭代记录 |
