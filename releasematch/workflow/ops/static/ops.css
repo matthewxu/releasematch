@@ -842,3 +842,142 @@ body.ops-busy .ops-step-tab {
   overflow: auto;
   color: var(--ops-muted);
 }
+
+/* —— 操作旁路说明（? → 抽屉）—— */
+
+.ops-help-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ops-help-btn {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  margin: 0;
+  border-radius: 50%;
+  border: 1px solid var(--ops-border);
+  background: var(--ops-elevated);
+  color: var(--ops-muted);
+  font-size: 12px;
+  font-weight: 650;
+  font-family: var(--ops-mono);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ops-help-btn:hover {
+  color: var(--ops-accent);
+  border-color: rgba(77, 159, 255, 0.45);
+}
+
+.ops-help-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(4, 8, 14, 0.55);
+}
+
+.ops-help-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 90;
+  width: min(440px, 100vw);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--ops-surface);
+  border-left: 1px solid var(--ops-border);
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.35);
+}
+
+.ops-help-drawer[hidden],
+.ops-help-backdrop[hidden] {
+  display: none !important;
+}
+
+.ops-help-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--ops-border);
+}
+
+.ops-help-drawer-head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.ops-help-drawer-body {
+  flex: 1;
+  overflow: auto;
+  padding: 14px 16px 28px;
+}
+
+.ops-help-title {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.ops-help-section {
+  margin-bottom: 14px;
+}
+
+.ops-help-section h4 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--ops-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ops-help-section ol {
+  margin: 0;
+  padding-left: 1.2em;
+  color: var(--ops-text);
+}
+
+.ops-help-section li {
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.ops-help-code {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--ops-bg);
+  border: 1px solid var(--ops-border);
+  border-radius: 6px;
+  font-family: var(--ops-mono);
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--ops-muted);
+}
+
+.ops-help-flow {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ops-text);
+  line-height: 1.5;
+}
+
+.ops-help-foot {
+  margin: 18px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--ops-border);
+  font-size: 11px;
+  color: var(--ops-faint);
+  font-family: var(--ops-mono);
+}
+

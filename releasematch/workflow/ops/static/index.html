@@ -19,7 +19,7 @@
         <span class="ops-badge" title="统管真源">MySQL · media_pages</span>
         <span class="ops-badge" title="批次工单">ops_track_*</span>
         <span class="ops-badge" id="configStatusBadge" title="配置就绪状态">配置 · …</span>
-        <button type="button" class="secondary" id="btnRefresh" style="margin-left:8px">刷新状态</button>
+        <button type="button" class="secondary" id="btnRefresh" data-help="refresh" style="margin-left:8px">刷新状态</button>
         <button type="button" class="secondary" id="btnLogout" style="margin-left:8px" title="退出登录">退出</button>
       </div>
     </header>
@@ -115,10 +115,10 @@
           </label>
         </div>
         <div class="ops-actions">
-          <button type="button" id="btnInvSearch">搜索台账</button>
-          <button type="button" class="secondary" id="btnInvUnpublish">下线勾选（改库+删 dist）</button>
-          <button type="button" class="secondary" id="btnInvUnpublishUpload">下线并正式上传</button>
-          <button type="button" class="secondary" id="btnInvAddTrack">加入当前跟踪批</button>
+          <button type="button" id="btnInvSearch" data-help="inv_search">搜索台账</button>
+          <button type="button" class="secondary" id="btnInvUnpublish" data-help="inv_unpublish">下线勾选（改库+删 dist）</button>
+          <button type="button" class="secondary" id="btnInvUnpublishUpload" data-help="inv_unpublish_upload">下线并正式上传</button>
+          <button type="button" class="secondary" id="btnInvAddTrack" data-help="inv_add_track">加入当前跟踪批</button>
           <label style="margin-left:8px"><input type="checkbox" id="invNewBatch" /> 新建批次</label>
         </div>
       </div>
@@ -177,7 +177,7 @@
             </label>
           </div>
           <div class="ops-actions">
-            <button type="button" id="btnBuildTmdb">生成清单并载入工作区</button>
+            <button type="button" id="btnBuildTmdb" data-help="build_tmdb">生成清单并载入工作区</button>
           </div>
         </div>
         <div class="ops-card">
@@ -186,7 +186,7 @@
             <label class="ops-field" style="flex:1">相对项目根路径
               <input type="text" id="slotsPath" placeholder="worklogs/2026-07-03/tmdb-benchmark-slots.json" style="min-width:100%" />
             </label>
-            <button type="button" id="btnLoadPath" style="margin-top:18px">加载</button>
+            <button type="button" id="btnLoadPath" data-help="load_path" style="margin-top:18px">加载</button>
           </div>
           <ul class="ops-file-list" id="fileList"></ul>
         </div>
@@ -201,8 +201,8 @@
           日同步 CLI：<code>python -m workflow.run ops tmdb-sync</code>。
         </p>
         <div class="ops-row">
-          <button type="button" id="btnEnsureExport">① 全量下载 · 增量入库</button>
-          <button type="button" class="secondary" id="btnDailySyncExport">日同步（强制重下）</button>
+          <button type="button" id="btnEnsureExport" data-help="ensure_export">① 全量下载 · 增量入库</button>
+          <button type="button" class="secondary" id="btnDailySyncExport" data-help="daily_sync_export">日同步（强制重下）</button>
           <label class="ops-field" style="flex-direction:row;align-items:center;gap:6px;margin-top:0">
             <input type="checkbox" id="exportForceDownload" /> 强制重下文件
           </label>
@@ -236,9 +236,9 @@
           <label><input type="checkbox" id="exportExcludeVideo" checked /> 排除 movie.video</label>
         </div>
         <div class="ops-actions">
-          <button type="button" id="btnSearchExport">② 从 MySQL 搜索</button>
-          <button type="button" id="btnAddExportAppend">③ 勾选 → 追加到工作区</button>
-          <button type="button" class="secondary" id="btnAddExportReplace">③ 勾选 → 覆盖工作区</button>
+          <button type="button" id="btnSearchExport" data-help="search_export">② 从 MySQL 搜索</button>
+          <button type="button" id="btnAddExportAppend" data-help="add_export_append">③ 勾选 → 追加到工作区</button>
+          <button type="button" class="secondary" id="btnAddExportReplace" data-help="add_export_replace">③ 勾选 → 覆盖工作区</button>
         </div>
         <div class="ops-metrics" id="exportSearchMetrics"></div>
         <div class="ops-table-wrap">
@@ -305,8 +305,8 @@
           <label><input type="checkbox" id="onlyFailed" /> 仅失败登记册</label>
         </div>
         <div class="ops-actions">
-          <button type="button" id="btnApplyFilter">应用筛选</button>
-          <button type="button" class="secondary" id="btnImportTrack">导入跟踪表 → ③④</button>
+          <button type="button" id="btnApplyFilter" data-help="apply_filter">应用筛选</button>
+          <button type="button" class="secondary" id="btnImportTrack" data-help="import_track">导入跟踪表 → ③④</button>
         </div>
       </div>
       <div class="ops-metrics" id="filterMetrics"></div>
@@ -330,12 +330,12 @@
       <div class="ops-metrics" id="trackMetrics"></div>
       <div class="ops-actions">
         <!-- 一键串联：Pipeline（含门禁刷新）→ Generate 选中页 → 测速 write -->
-        <button type="button" id="btnRunGenerationFlow" title="依次：Pipeline → Generate 选中页 → 测速">一键跑生成流程</button>
-        <button type="button" class="secondary" id="btnPipeline">跑 Pipeline（Jackett 拉源）</button>
-        <button type="button" class="secondary" id="btnRefreshGates">刷新门禁</button>
-        <button type="button" class="secondary" id="btnGeneratePages">Generate 选中页</button>
-        <button type="button" class="secondary" id="btnGenerateAll">Generate all</button>
-        <button type="button" class="secondary" id="btnSpeedtest">测速 write</button>
+        <button type="button" id="btnRunGenerationFlow" data-help="run_generation_flow" title="依次：Pipeline → Generate 选中页 → 测速">一键跑生成流程</button>
+        <button type="button" class="secondary" id="btnPipeline" data-help="pipeline">跑 Pipeline（Jackett 拉源）</button>
+        <button type="button" class="secondary" id="btnRefreshGates" data-help="refresh_gates">刷新门禁</button>
+        <button type="button" class="secondary" id="btnGeneratePages" data-help="generate_pages">Generate 选中页</button>
+        <button type="button" class="secondary" id="btnGenerateAll" data-help="generate_all">Generate all</button>
+        <button type="button" class="secondary" id="btnSpeedtest" data-help="speedtest">测速 write</button>
         <label style="margin-left:8px"><input type="checkbox" id="skipExisting" checked /> 跳过已有 ≥2 magnet</label>
       </div>
       <div id="trackTableHost"></div>
@@ -358,8 +358,8 @@
           <label style="margin-left:8px"><input type="checkbox" id="deployUpload" /> 正式 wrangler 上传（公网）</label>
         </div>
         <div class="ops-actions" style="margin-top:10px">
-          <button type="button" id="btnSeo">跑 seo_c2_checklist</button>
-          <button type="button" id="btnDeployRun">执行 Deploy</button>
+          <button type="button" id="btnSeo" data-help="seo">跑 seo_c2_checklist</button>
+          <button type="button" id="btnDeployRun" data-help="deploy">执行 Deploy</button>
         </div>
       </div>
       <div class="ops-card" style="margin-bottom:12px">
@@ -379,11 +379,11 @@
       </p>
       <div class="ops-metrics" id="configMetrics"></div>
       <div class="ops-actions">
-        <button type="button" id="btnConfigLoad">从磁盘加载</button>
-        <button type="button" class="secondary" id="btnConfigInit">从模板初始化缺失文件</button>
-        <button type="button" class="secondary" id="btnConfigReload">仅加载到进程（不写盘）</button>
-        <button type="button" id="btnConfigSaveEnv">保存 .env 并加载</button>
-        <button type="button" id="btnConfigSaveAccounts">保存 accounts 并加载</button>
+        <button type="button" id="btnConfigLoad" data-help="config_load">从磁盘加载</button>
+        <button type="button" class="secondary" id="btnConfigInit" data-help="config_init">从模板初始化缺失文件</button>
+        <button type="button" class="secondary" id="btnConfigReload" data-help="config_reload">仅加载到进程（不写盘）</button>
+        <button type="button" id="btnConfigSaveEnv" data-help="config_save_env">保存 .env 并加载</button>
+        <button type="button" id="btnConfigSaveAccounts" data-help="config_save_accounts">保存 accounts 并加载</button>
       </div>
       <div class="ops-grid ops-config-grid">
         <div class="ops-card">
@@ -394,7 +394,7 @@
             <summary>高级：编辑 .env 全文</summary>
             <textarea id="configEnvRaw" rows="14" spellcheck="false" class="ops-mono-input"></textarea>
             <div class="ops-actions" style="margin-top:8px">
-              <button type="button" class="secondary" id="btnConfigSaveEnvRaw">保存全文并加载</button>
+              <button type="button" class="secondary" id="btnConfigSaveEnvRaw" data-help="config_save_env">保存全文并加载</button>
             </div>
           </details>
         </div>
@@ -448,8 +448,8 @@
           <label><input type="checkbox" id="jkDryRun" /> dry-run（仅预览）</label>
         </div>
         <div class="ops-actions">
-          <button type="button" id="btnJackettDeploy">开始一键部署</button>
-          <button type="button" class="secondary" id="btnJackettDefaults">从 servers.local.json 预填</button>
+          <button type="button" id="btnJackettDeploy" data-help="jackett_deploy">开始一键部署</button>
+          <button type="button" class="secondary" id="btnJackettDefaults" data-help="jackett_defaults">从 servers.local.json 预填</button>
           <a class="ops-badge" id="jkDashboardLink" href="#" target="_blank" rel="noopener" hidden>打开 Dashboard</a>
         </div>
         <pre class="ops-log" id="jackettDeployLog" style="max-height:220px;margin-top:10px">尚未开始。</pre>
@@ -466,9 +466,9 @@
       </p>
       <div class="ops-metrics" id="dailyMetrics"></div>
       <div class="ops-actions">
-        <button type="button" id="btnDailyRefresh">刷新巡检</button>
-        <button type="button" class="secondary" id="btnDailyTmdbSync" title="全量下载 Daily Export → MySQL 增量">TMDB 日同步</button>
-        <button type="button" class="secondary" id="btnDailySpeedGap" title="对有 Rec 缺 summary 的槽补测">测速缺口补测</button>
+        <button type="button" id="btnDailyRefresh" data-help="daily_refresh">刷新巡检</button>
+        <button type="button" class="secondary" id="btnDailyTmdbSync" data-help="daily_tmdb_sync" title="全量下载 Daily Export → MySQL 增量">TMDB 日同步</button>
+        <button type="button" class="secondary" id="btnDailySpeedGap" data-help="daily_speed_gap" title="对有 Rec 缺 summary 的槽补测">测速缺口补测</button>
       </div>
       <div class="ops-grid" style="margin-top:14px">
         <div class="ops-card">
@@ -499,8 +499,20 @@
       </p>
     </section>
 
-    <div class="ops-log" id="opsLog">就绪。日常巡检请打开「⑥ 日常运营」；扩槽从「清单从哪来」开始；缺配置时先打开「配置」。</div>
+    <div class="ops-log" id="opsLog">就绪。日常巡检请打开「⑥ 日常运营」；扩槽从「清单从哪来」开始；缺配置时先打开「配置」。各操作旁 <strong>?</strong> 可查看实现流程 / 脚本 / 命令 / 数据落点。</div>
   </div>
+
+  <!-- 操作说明抽屉：流程 · 脚本 · 命令 · 数据流 · 存储 · 排障 -->
+  <div class="ops-help-backdrop" id="opsHelpBackdrop" hidden></div>
+  <aside class="ops-help-drawer" id="opsHelpDrawer" hidden aria-hidden="true" aria-labelledby="opsHelpHeading" role="dialog">
+    <div class="ops-help-drawer-head">
+      <h2 id="opsHelpHeading">操作说明</h2>
+      <button type="button" class="secondary" id="opsHelpClose" aria-label="关闭说明">关闭</button>
+    </div>
+    <div class="ops-help-drawer-body" id="opsHelpBody"></div>
+  </aside>
+
+  <script src="/ops-help.js"></script>
   <script src="/ops.js"></script>
 </body>
 </html>

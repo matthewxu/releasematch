@@ -11,7 +11,7 @@
 | [05-存储与部署配置.md](./05-存储与部署配置.md) | **MySQL 本地测试 → D1 生产、环境变量、总控 CLI** |
 | [**IG信息登记册.md**](./IG信息登记册.md) | **Information Gain 分级登记册（S/A/B/C + 跨源/Group/测速逻辑）** |
 | [05-Jackett详解与安装使用教程.md](./05-Jackett详解与安装使用教程.md) | **Jackett 概念、安装、Torznab API、ReleaseMatch 集成** |
-| [06-run-cli使用说明.md](./06-run-cli使用说明.md) | **workflow.run 总控**（含 **`ops serve`**：页面台账 / **⑥ 日常运营** / **⑤ 一键部署 Jackett+FlareSolverr** / `ops tmdb-sync` / 配置热加载） |
+| [06-run-cli使用说明.md](./06-run-cli使用说明.md) | **workflow.run 总控**（含 **`ops serve`**：页面台账 / **⑥ 日常运营** / **⑤ 一键部署 Jackett+FlareSolverr** / `ops tmdb-sync` / 配置热加载；**操作旁 ?** 见 `ops-help.js`） |
 | [07-部署架构解疑.md](./07-部署架构解疑.md) | **D1 / Pages / Worker generate / CI 部署 FAQ** |
 | [jackett-remote-linode.md](./jackett-remote-linode.md) | **海外 VPS 部署 Jackett**（通用流程；当前测试机 `104.105.140.95`；Ops ⑤ / CLI oneclick） |
 | [**VPS迁移与部署.md**](./VPS迁移与部署.md) | **当前测试 VPS** `104.105.140.95` 迁移与验收（推荐 Ops ⑤ 一键部署） |

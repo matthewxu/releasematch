@@ -665,11 +665,11 @@ class OpsHandler(BaseHTTPRequestHandler):
             self._serve_file(OPS_STATIC_DIR / "login.html", "text/html; charset=utf-8")
             return
 
-        # 静态资源：ops.js 需登录（避免未授权读到控制台逻辑）；css/login.js 公开
+        # 静态资源：ops.js / ops-help.js 需登录（避免未授权读到控制台逻辑与排障路径）；css/login.js 公开
         rel = path.lstrip("/")
         if rel.startswith("static/"):
             rel = rel[len("static/") :]
-        if rel == "ops.js" and self._require_auth_or_reject("/" + rel):
+        if rel in ("ops.js", "ops-help.js") and self._require_auth_or_reject("/" + rel):
             return
         file_path = OPS_STATIC_DIR / rel
         if file_path.is_file() and OPS_STATIC_DIR in file_path.resolve().parents:

@@ -715,6 +715,8 @@ python -m workflow.run ops tmdb-sync --full-reload   # TRUNCATE 全量重建
 | ⑤ 配置 | `.env`（MySQL/站点/Ops）+ `accounts.local.json`（数据源）+ **一键部署 Jackett/FlareSolverr** | 分文件加载/保存；热加载；SSH 装栈 |
 | ⑥ 日常运营 | 手册 **§四** 巡检：Jackett · DB · 测速覆盖 · TMDB 新鲜度 · 失败槽 | 「刷新巡检」；TMDB 日同步；测速缺口补测 |
 
+**操作旁路说明（排障）：** 每个主要按钮旁有 **?**，打开右侧抽屉，展示该操作的实现流程、脚本路径、完整 CLI、数据流与存储位置（目录在 `workflow/ops/static/ops-help.js`）。出问题时先点 **?** 再对照底部 `#opsLog`。
+
 **日常运营 API：**
 
 | 方法 | 路径 | 说明 |
@@ -963,3 +965,4 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | v0.18 | 2026-07-20 | Ops ⑤ 一键部署 Jackett+FlareSolverr（`/api/jackett/deploy*` → `install_jackett_oneclick.sh`） |
 | v0.19 | 2026-07-21 | 文档补齐 Ops ⑤ 部署步骤/API body；`104.105.140.95` dry-run+正式部署验收 |
 | v0.20 | 2026-07-21 | Ops **⑥ 日常运营**：`/api/daily/*` 巡检、TMDB 日同步入口、测速缺口补测 |
+| v0.21 | 2026-07-21 | Ops 操作旁 **?** 说明抽屉：`ops-help.js`（流程/脚本/CLI/数据流/存储/排障） |
