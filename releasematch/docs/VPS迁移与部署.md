@@ -120,3 +120,22 @@ Nyaa 本机 SOCKS 回退：
 bash scripts/start_ssh_socks_tunnel.sh
 export TORRENT_PROXY=socks5h://127.0.0.1:1080
 ```
+
+---
+
+## 测速 / 增量发布 crontab（本机或能连 MySQL 的机器）
+
+测速与静态页 bake **不要** 绑在同一条 cron：测速只写库，增量发布 worker 再 bake / 可选上传。
+
+```cron
+# 每 6h 测速
+0 */6 * * * cd /opt/releasematch/releasematch && .venv/bin/python scripts/speedtest_batch_worker.py --all-published --write --workers 5 --target-bytes 262144 --report /var/log/releasematch/speedtest-batch.json >> /var/log/releasematch/speedtest-cron.log 2>&1
+
+# 测速后 30m：脏页增量 bake（CF 正式上线前保留 --prepare-only）
+30 */6 * * * cd /opt/releasematch/releasematch && .venv/bin/python scripts/incremental_publish_worker.py --prepare-only --report /var/log/releasematch/incremental-publish.json >> /var/log/releasematch/incremental-publish-cron.log 2>&1
+
+# 每天 TMDB 日同步
+30 6 * * * cd /opt/releasematch/releasematch && .venv/bin/python -m workflow.run ops tmdb-sync >> /var/log/releasematch/tmdb-sync-cron.log 2>&1
+```
+
+细节见 [12-日常运营执行手册.md](./12-日常运营执行手册.md) §五 / §5.4。

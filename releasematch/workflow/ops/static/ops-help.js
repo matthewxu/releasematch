@@ -499,6 +499,7 @@
         "MySQL：slot_speed_summary",
         "报告：worklogs/ops/speedtest-*.json",
         "cron 日志（VPS）：/var/log/releasematch/speedtest-cron.log",
+        "增量发布日志：/var/log/releasematch/incremental-publish-cron.log",
       ],
       troubleshoot: [
         "无 Rec 槽测不出 → 先 pipeline 出推荐源",

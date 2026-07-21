@@ -883,6 +883,7 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 |------|------|
 | `scripts/pipeline_batch_slots.py` | 等价 `pipeline batch`，额外日志选项 |
 | `scripts/speedtest_batch_worker.py` | 生产 cron 批量测速（多 worker） |
+| `scripts/incremental_publish_worker.py` | 脏页检测 → 增量 bake → 可选 wrangler（测速后 30m cron） |
 | `scripts/tmdb_warm_external_ids.py` | pipeline batch 前预热 imdb/tvdb 缓存 |
 | `scripts/tmdb_select_benchmark_slots.py` | TMDB 日导出 → benchmark slot JSON |
 | `scripts/failed_slots_merge_reports.py` | 合并 pipeline 失败报告 → 登记册 |

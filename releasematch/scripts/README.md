@@ -54,4 +54,17 @@ python scripts/speedtest_batch_worker.py \
   --report worklogs/2026-07-02/speedtest-batch-benchmark.json
 ```
 
-See `docs/VPS迁移与部署.md` for crontab / systemd timer examples.
+### Incremental publish Worker (cron)
+
+Detect stale pages vs `generated_at`, bake dist, optional wrangler upload:
+
+```bash
+# detect only
+python scripts/incremental_publish_worker.py --dry-run
+
+# bake only (CF soft-launch)
+python scripts/incremental_publish_worker.py --prepare-only \
+  --report worklogs/$(date +%Y-%m-%d)/incremental-publish.json
+```
+
+See `docs/12-日常运营执行手册.md` §5.4 for crontab.

@@ -1129,6 +1129,117 @@ class MySQLStore:
         conn.close()
         return [str(r["page_id"]) for r in rows]
 
+    def list_stale_page_ids_for_regenerate(
+        self,
+        *,
+        limit: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """
+        列出相对 ``media_pages.generated_at`` 已脏、需增量 bake 的 page_id。
+
+        @param limit: 最多返回条数；None / ≤0 表示不截断
+        @returns: page_ids / reasons / truncated / limit
+        @description
+          测速 / torrent_metadata / magnet 写入往往 **不** bump ``media_pages.updated_at``，
+          故除页面自身外，还 UNION 子表与 catalog 时间戳。
+          候选范围与 ``list_renderable_page_ids`` 对齐（published∧magnet≥2 或 thin）。
+          Hub 不单独入列：剧集 bake 时由 generate 顺带刷新 Hub。
+        """
+        lim = int(limit) if limit is not None and int(limit) > 0 else None
+        # 完整注释：可渲染槽位谓词（与 list_renderable_page_ids 一致）
+        renderable = """
+            p.page_type IN ('episode', 'movie')
+            AND (
+              (p.page_status = 'published' AND p.magnet_count >= 2)
+              OR p.page_status = 'thin'
+            )
+        """
+        sql = f"""
+            SELECT p.page_id,
+              CASE
+                WHEN p.generated_at IS NULL THEN 'never_generated'
+                WHEN p.updated_at > p.generated_at THEN 'media_pages'
+                WHEN EXISTS (
+                  SELECT 1 FROM slot_speed_summary s
+                  WHERE s.page_id = p.page_id
+                    AND p.generated_at IS NOT NULL
+                    AND s.updated_at > p.generated_at
+                ) THEN 'slot_speed_summary'
+                WHEN EXISTS (
+                  SELECT 1 FROM torrent_metadata t
+                  WHERE t.page_id = p.page_id
+                    AND p.generated_at IS NOT NULL
+                    AND t.extracted_at > p.generated_at
+                ) THEN 'torrent_metadata'
+                WHEN EXISTS (
+                  SELECT 1 FROM download_resources d
+                  WHERE d.page_id = p.page_id
+                    AND p.generated_at IS NOT NULL
+                    AND d.indexed_at > p.generated_at
+                ) THEN 'download_resources'
+                WHEN EXISTS (
+                  SELECT 1 FROM media_catalog c
+                  WHERE c.catalog_id = p.catalog_id
+                    AND p.generated_at IS NOT NULL
+                    AND c.updated_at > p.generated_at
+                ) THEN 'media_catalog'
+                ELSE 'unknown'
+              END AS primary_reason
+            FROM media_pages p
+            WHERE {renderable}
+              AND (
+                p.generated_at IS NULL
+                OR p.updated_at > p.generated_at
+                OR EXISTS (
+                  SELECT 1 FROM slot_speed_summary s
+                  WHERE s.page_id = p.page_id AND s.updated_at > p.generated_at
+                )
+                OR EXISTS (
+                  SELECT 1 FROM torrent_metadata t
+                  WHERE t.page_id = p.page_id AND t.extracted_at > p.generated_at
+                )
+                OR EXISTS (
+                  SELECT 1 FROM download_resources d
+                  WHERE d.page_id = p.page_id AND d.indexed_at > p.generated_at
+                )
+                OR EXISTS (
+                  SELECT 1 FROM media_catalog c
+                  WHERE c.catalog_id = p.catalog_id AND c.updated_at > p.generated_at
+                )
+              )
+            ORDER BY p.catalog_id, p.page_type, p.season, p.episode
+        """
+        if lim is not None:
+            sql += f" LIMIT {lim + 1}"
+
+        conn = self._connect()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(sql)
+                rows = cur.fetchall() or []
+        finally:
+            conn.close()
+
+        truncated = False
+        if lim is not None and len(rows) > lim:
+            truncated = True
+            rows = rows[:lim]
+
+        page_ids: List[str] = []
+        reasons: Dict[str, str] = {}
+        for row in rows:
+            pid = str(row["page_id"])
+            page_ids.append(pid)
+            reasons[pid] = str(row.get("primary_reason") or "unknown")
+
+        return {
+            "page_ids": page_ids,
+            "reasons": reasons,
+            "count": len(page_ids),
+            "truncated": truncated,
+            "limit": lim,
+        }
+
     def list_sitemap_content_pages(self) -> List[Dict[str, Any]]:
         """
         列出可纳入 sitemap 的内容页（indexable + 有 Recommended）。

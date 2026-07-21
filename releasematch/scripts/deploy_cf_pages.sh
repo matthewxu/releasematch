@@ -101,7 +101,7 @@ prepare_full() {
 }
 
 prepare_incremental() {
-  # 增量：仅 bake 指定 page_id + home + sitemap + 壳（经 Ops actions 同源逻辑）
+  # 增量：仅 bake 指定 page_id + Hub + home/sitemap + 壳（不依赖 Ops 批次）
   cd "${PROJECT_ROOT}"
   local py
   py="$(resolve_python)"
@@ -111,37 +111,13 @@ prepare_incremental() {
   fi
   echo "[deploy] incremental prepare page_ids=${PAGE_IDS}"
   "${py}" - <<PY
-from workflow.ops.actions import _prepare_dist_incremental
-from workflow.ops.track_store import load_active_batch, save_batch
+from workflow.ops.actions import prepare_dist_by_page_ids
 
 ids = [p.strip() for p in "${PAGE_IDS}".split(",") if p.strip()]
-batch = load_active_batch()
-batch_id = (batch or {}).get("meta", {}).get("batch_id") if batch else None
-# 无活跃批次时仍可按 page_ids 直写：临时构造最小批次语义由 generate page 覆盖
-if not batch_id:
-    from portal.generator.generate_one import (
-        DEFAULT_OUT_ROOT,
-        write_page_html,
-        write_home_page,
-    )
-    from portal.generator.sitemap import write_sitemap
-    from portal.generator.static_shell import sync_static_shell
-    fails = []
-    for pid in ids:
-        out = write_page_html(page_id=pid)
-        if not out.get("ok", True):
-            fails.append(pid)
-        print(out)
-    write_home_page()
-    write_sitemap(DEFAULT_OUT_ROOT)
-    sync_static_shell()
-    if fails:
-        raise SystemExit(f"incremental failed: {fails}")
-else:
-    out = _prepare_dist_incremental(batch_id=batch_id, page_ids=ids)
-    print(out)
-    if not out.get("ok"):
-        raise SystemExit(out.get("error") or "incremental prepare failed")
+out = prepare_dist_by_page_ids(ids)
+print(out)
+if not out.get("ok"):
+    raise SystemExit(out.get("error") or "incremental prepare failed")
 PY
   echo "[deploy] dist 文件数: $(find "${DIST}" -type f | wc -l | tr -d ' ')"
 }

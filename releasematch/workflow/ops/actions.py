@@ -559,6 +559,127 @@ def _prepare_dist_full() -> Dict[str, Any]:
     return write_all_published()
 
 
+def _hub_id_for_episode(page_id: str) -> Optional[str]:
+    """
+    由剧集 episode page_id 推导对应 Hub page_id。
+
+    @param page_id: 如 ``tv:1396:s04e06``
+    @returns: ``tv:1396:hub`` 或 None
+    """
+    text = str(page_id or "").strip()
+    if not (text.startswith("tv:") and ":s" in text):
+        return None
+    parts = text.split(":")
+    if len(parts) >= 2 and parts[1].isdigit():
+        return f"tv:{parts[1]}:hub"
+    return None
+
+
+def generate_pages_standalone(page_ids: List[str]) -> Dict[str, Any]:
+    """
+    不依赖 Ops 跟踪批次的增量 bake（含剧集 Hub）。
+
+    @param page_ids: 要 regenerate 的 episode/movie page_id
+    @returns: ok / ok_count / fail_count / failed / hubs_generated
+    @description
+      供 cron 增量发布与 ``deploy_cf_pages.sh --mode incremental``（无活跃批次时）使用。
+      成功写入后 ``write_page_html`` 会 ``mark_page_generated``，清掉 stale 水位。
+    """
+    from portal.generator.generate_one import write_page_html
+    from workflow.storage.mysql_store import MySQLStore
+
+    ids = [str(p).strip() for p in (page_ids or []) if str(p).strip()]
+    if not ids:
+        return {
+            "ok": True,
+            "ok_count": 0,
+            "fail_count": 0,
+            "failed": [],
+            "hubs_generated": [],
+            "page_ids": [],
+        }
+
+    ok_n = 0
+    fail_n = 0
+    failed: List[str] = []
+    hub_ids: List[str] = []
+    store = MySQLStore()
+
+    for page_id in ids:
+        try:
+            out = write_page_html(page_id=page_id)
+            ok = bool(out.get("ok", True)) if isinstance(out, dict) else True
+            if ok:
+                ok_n += 1
+                hub_id = _hub_id_for_episode(page_id)
+                if hub_id and hub_id not in hub_ids:
+                    hub_ids.append(hub_id)
+            else:
+                fail_n += 1
+                failed.append(page_id)
+        except Exception:  # noqa: BLE001 — 单页失败不阻断其余页
+            fail_n += 1
+            failed.append(page_id)
+
+    hubs_generated: List[str] = []
+    for hub_id in hub_ids:
+        try:
+            tmdb_id = int(hub_id.split(":")[1])
+            store.ensure_show_hub_page(tmdb_id)
+            hout = write_page_html(page_id=hub_id)
+            if isinstance(hout, dict) and hout.get("ok", True):
+                hubs_generated.append(hub_id)
+        except Exception:  # noqa: BLE001 — Hub 失败不阻断 episode 结果
+            pass
+
+    return {
+        "ok": fail_n == 0,
+        "ok_count": ok_n,
+        "fail_count": fail_n,
+        "failed": failed,
+        "hubs_generated": hubs_generated,
+        "page_ids": ids,
+    }
+
+
+def prepare_dist_by_page_ids(page_ids: List[str]) -> Dict[str, Any]:
+    """
+    按 page_ids 增量准备 dist：bake 槽位 + Hub + home + sitemap + 静态壳。
+
+    @param page_ids: episode/movie page_id 列表
+    @returns: ok / generate / home / sitemap / static_shell
+    @description
+      不依赖 Ops 批次；cron 与 deploy 脚本无活跃批次时的同源入口。
+    """
+    from portal.generator.generate_one import DEFAULT_OUT_ROOT, write_home_page
+    from portal.generator.sitemap import write_sitemap
+    from portal.generator.static_shell import sync_static_shell
+
+    gen = generate_pages_standalone(page_ids)
+    if not gen.get("ok"):
+        return {
+            "ok": False,
+            "error": "增量 generate 失败",
+            "generate": gen,
+        }
+
+    home_result = write_home_page()
+    sitemap_result = write_sitemap(DEFAULT_OUT_ROOT)
+    shell_result = sync_static_shell()
+    return {
+        "ok": True,
+        "generate": {
+            "ok_count": gen.get("ok_count"),
+            "fail_count": gen.get("fail_count"),
+            "hubs_generated": gen.get("hubs_generated"),
+            "failed": gen.get("failed"),
+        },
+        "home": home_result,
+        "sitemap": sitemap_result,
+        "static_shell": shell_result,
+    }
+
+
 def _prepare_dist_incremental(
     *,
     batch_id: Optional[str] = None,
@@ -573,10 +694,21 @@ def _prepare_dist_incremental(
     @description
       wrangler 上传本身按 hash 增量；此处避免全站重 bake。
       Hub 由 run_generate 同步；删除场景须另行从 dist 去掉路径（本函数不删文件）。
+      无活跃批次且显式传入 page_ids 时，回退 ``prepare_dist_by_page_ids``。
     """
     from portal.generator.generate_one import DEFAULT_OUT_ROOT, write_home_page
     from portal.generator.sitemap import write_sitemap
     from portal.generator.static_shell import sync_static_shell
+
+    loaded = _get_batch(batch_id)
+    if not loaded.get("ok"):
+        ids = [str(p).strip() for p in (page_ids or []) if str(p).strip()]
+        if ids:
+            return prepare_dist_by_page_ids(ids)
+        return {
+            "ok": False,
+            "error": loaded.get("error") or "无活跃批次且未提供 page_ids",
+        }
 
     gen = run_generate(
         batch_id=batch_id,
