@@ -729,7 +729,7 @@
       ],
       troubleshoot: [
         "某 check FAIL → 展开 detail，对应该段脚本/表",
-        "失败槽样例看 error 文案；「无可用 items」= 先 seed/warm_tmdb",
+        "失败槽样例看 error 文案；「无可用 items」= 拉源 0 条（非缺 DB seed）；加源只对覆盖缺口有用",
         "cron 无证据 → 确认本机/VPS crontab 与日志路径",
       ],
     },

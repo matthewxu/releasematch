@@ -728,7 +728,10 @@ python -m workflow.run ops tmdb-sync --full-reload   # TRUNCATE 全量重建
 | `POST` | `/api/actions/generation-flow/start` | `{fetch, skip_existing, mode, page_ids?}` 启动后台任务 |
 | `GET` | `/api/actions/generation-flow/progress` | 分槽进度快照（含 `detail` 错误原因） |
 
-**排障：** 跟踪表 / 进度表 `detail` 列与悬停 `title` 为完整错误；⑥「失败槽样例」列出 registry `error`（如「无可用 items」= 需 seed/warm_tmdb，不只加 indexer）。硬刷新（Cmd+Shift+R）加载最新 `ops.js`。
+**排障：** 跟踪表 / 进度表 `detail` 列与悬停 `title` 为完整错误；⑥「失败槽样例」列出 registry `error`。硬刷新（Cmd+Shift+R）加载最新 `ops.js`。
+
+- **「无可用 items」**：Jackett/直连拉到 0 条且 Demo 回退不适用（仅少数固定槽有 Demo）。**多数不是缺 DB seed**。先 `python -m workflow.torrent_sources.run test --tmdb <ID> --force`：报错→修 Jackett；0 命中→可试补 indexer，冷门则按稀缺处理。详见 [12-日常运营执行手册](./12-日常运营执行手册.md) §7.3。
+- **加更多源**：只对「公开源覆盖不足」有效；对真稀缺 / 连通故障无效。
 
 **操作旁路说明（排障）：** 每个主要按钮旁有 **?**，打开右侧抽屉，展示该操作的实现流程、脚本路径、完整 CLI、数据流与存储位置（目录在 `workflow/ops/static/ops-help.js`）。出问题时先点 **?** 再对照底部 `#opsLog`。
 
@@ -983,3 +986,4 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | v0.20 | 2026-07-21 | Ops **⑥ 日常运营**：`/api/daily/*` 巡检、TMDB 日同步入口、测速缺口补测 |
 | v0.21 | 2026-07-21 | Ops 操作旁 **?** 说明抽屉：`ops-help.js`（流程/脚本/CLI/数据流/存储/排障） |
 | v0.22 | 2026-07-25 | ③ 一键跑生成流程：`generation-flow/start`+progress 分槽；跟踪表/⑥ 失败槽展示完整错误原因；Linode VPS 生命周期文档 |
+| v0.23 | 2026-07-25 | 排障：纠正「无可用 items」语义；加源边界说明（链到手册 §7.3） |
