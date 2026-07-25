@@ -2264,8 +2264,107 @@ dd:last-child {
 }
 
 .rm-catalog-search-empty {
+  margin-top: 1rem;
   margin: 0.75rem 0 0;
   text-align: center;
+}
+
+/* 首页目录底部分页（每页 50）— 与按钮体系对齐的页码条 */
+.rm-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem 0.85rem;
+  margin: 2.25rem 0 0.5rem;
+  padding: 1.35rem 1rem 0.25rem;
+  border-top: 1px solid var(--rm-border-subtle);
+}
+
+.rm-pagination__pages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rm-pagination__pages > li {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rm-pagination__page,
+.rm-pagination__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  padding: 0 0.85rem;
+  border-radius: var(--rm-radius-md);
+  border: 1px solid var(--rm-border);
+  background: var(--rm-bg-elevated);
+  color: var(--rm-text-secondary);
+  text-decoration: none;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.rm-pagination__link--prev,
+.rm-pagination__link--next {
+  min-width: auto;
+  padding: 0 1rem;
+}
+
+.rm-pagination__page:hover,
+.rm-pagination__link:hover {
+  color: var(--rm-text-primary);
+  border-color: var(--rm-accent);
+  background: var(--rm-bg-hover);
+}
+
+.rm-pagination__page--current {
+  color: var(--rm-bg-base);
+  border-color: var(--rm-accent);
+  background: var(--rm-accent);
+  cursor: default;
+  pointer-events: none;
+}
+
+.rm-pagination__link--disabled {
+  color: var(--rm-text-muted);
+  border-color: var(--rm-border-subtle);
+  background: transparent;
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .rm-pagination {
+    gap: 0.55rem;
+    padding-inline: 0;
+  }
+
+  .rm-pagination__page,
+  .rm-pagination__link {
+    min-width: 2.25rem;
+    height: 2.25rem;
+    font-size: 0.85rem;
+  }
+
+  .rm-pagination__link--prev,
+  .rm-pagination__link--next {
+    padding: 0 0.75rem;
+  }
 }
 
 .rm-table__sort {

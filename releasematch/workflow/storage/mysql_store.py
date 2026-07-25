@@ -1364,14 +1364,21 @@ class MySQLStore:
             "errors": errors,
         }
 
-    def list_home_catalog_entries(self) -> List[Dict[str, Any]]:
+    def list_home_catalog_entries(
+        self,
+        *,
+        limit: Optional[int] = None,
+        offset: int = 0,
+    ) -> Dict[str, Any]:
         """
         聚合 published 页面为首页目录卡片（按作品 catalog 分组）。
 
-        @returns: 含 title、href、meta_key、meta_vars、poster_url、media_kind 的列表
+        @param limit: 分页条数；None 表示返回全部
+        @param offset: 偏移
+        @returns: entries / total / movie_count / tv_count / limit / offset
         @description
-          ``meta_key`` / ``meta_vars`` 供模板 ``t()`` 与 ``data-i18n`` 使用，
-          避免卡片上「电影/剧集」写死中文导致语言切换无效。
+          按 catalog 内 ``MAX(COALESCE(updated_at, generated_at))`` 降序（最新更新在前）。
+          ``meta_key`` / ``meta_vars`` 供模板 ``t()`` 与 ``data-i18n`` 使用。
         """
         from schema.d1_models import poster_url_from_path
 
@@ -1380,6 +1387,7 @@ class MySQLStore:
             cur.execute(
                 """
                 SELECT p.page_id, p.page_type, p.canonical_path, p.season, p.episode,
+                       p.updated_at, p.generated_at,
                        c.catalog_id, c.slug, c.title, c.media_kind, c.year, c.poster_path
                 FROM media_pages p
                 JOIN media_catalog c ON p.catalog_id = c.catalog_id
@@ -1401,9 +1409,24 @@ class MySQLStore:
         hub_by_catalog = {str(r["catalog_id"]): str(r["canonical_path"]) for r in hub_rows}
         grouped: Dict[str, Dict[str, Any]] = {}
 
+        def _as_dt(value: Any) -> Optional[datetime]:
+            """把 DB 时间规范为可比较的 datetime；无效则 None。"""
+            if value is None:
+                return None
+            if isinstance(value, datetime):
+                return value
+            text = str(value).strip()
+            if not text:
+                return None
+            try:
+                return datetime.fromisoformat(text.replace("Z", "+00:00"))
+            except ValueError:
+                return None
+
         for row in rows:
             catalog_id = str(row["catalog_id"])
             media_kind = str(row["media_kind"])
+            stamp = _as_dt(row.get("updated_at")) or _as_dt(row.get("generated_at"))
             if catalog_id not in grouped:
                 grouped[catalog_id] = {
                     "catalog_id": catalog_id,
@@ -1413,7 +1436,12 @@ class MySQLStore:
                     "year": row.get("year"),
                     "poster_url": poster_url_from_path(str(row.get("poster_path") or "")),
                     "pages": [],
+                    "latest_updated_at": stamp,
                 }
+            else:
+                prev = grouped[catalog_id].get("latest_updated_at")
+                if stamp is not None and (prev is None or stamp > prev):
+                    grouped[catalog_id]["latest_updated_at"] = stamp
             grouped[catalog_id]["pages"].append(
                 {
                     "page_id": str(row["page_id"]),
@@ -1424,12 +1452,22 @@ class MySQLStore:
             )
 
         entries: List[Dict[str, Any]] = []
-        for item in sorted(grouped.values(), key=lambda x: x["title"].lower()):
+        # 完整注释：最新更新优先；无时间戳的排到后面，同时间按标题
+        sorted_items = sorted(
+            grouped.values(),
+            key=lambda x: (
+                x.get("latest_updated_at") is None,
+                -(x["latest_updated_at"].timestamp())
+                if x.get("latest_updated_at") is not None
+                else 0,
+                (x.get("title") or "").lower(),
+            ),
+        )
+        for item in sorted_items:
             pages = item["pages"]
             media_kind = item["media_kind"]
             hub_path = hub_by_catalog.get(item["catalog_id"])
 
-            # meta 文案交给模板 t() + data-i18n；此处只产出 key / vars
             meta_key = "home.card.movie"
             meta_vars: Dict[str, Any] = {}
 
@@ -1467,9 +1505,27 @@ class MySQLStore:
                     "poster_url": item["poster_url"],
                     "media_kind": media_kind,
                     "page_count": len(pages),
+                    "latest_updated_at": item.get("latest_updated_at"),
                 }
             )
-        return entries
+
+        total = len(entries)
+        movie_count = sum(1 for e in entries if e.get("media_kind") == "movie")
+        tv_count = sum(1 for e in entries if e.get("media_kind") == "tv")
+        off = max(0, int(offset or 0))
+        if limit is None:
+            page_entries = entries[off:]
+        else:
+            lim = max(1, int(limit))
+            page_entries = entries[off : off + lim]
+        return {
+            "entries": page_entries,
+            "total": total,
+            "movie_count": movie_count,
+            "tv_count": tv_count,
+            "limit": limit,
+            "offset": off,
+        }
 
     def resolve_url_path(self, url_path: str) -> Optional[Dict[str, Any]]:
         """

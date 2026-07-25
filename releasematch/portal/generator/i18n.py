@@ -289,6 +289,9 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "en": "No published pages yet; run pipeline and generate all.",
         "zh": "暂无 published 页面；请先运行 pipeline 扩槽与 generate all。",
     },
+    "home.pagination_label": {"en": "Catalog pages", "zh": "目录分页"},
+    "home.pagination_prev": {"en": "Previous", "zh": "上一页"},
+    "home.pagination_next": {"en": "Next", "zh": "下一页"},
     # ── 通用 / JS toast ──
     "common.magnet": {"en": "Magnet", "zh": "Magnet"},
     "toast.no_magnet": {"en": "No magnet link to copy", "zh": "无 Magnet 链接可复制"},

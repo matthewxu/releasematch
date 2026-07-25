@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Optional
 from workflow.config import PROJECT_ROOT, SHOW_IG_DEBUG, SITE_ORIGIN
 from workflow.storage.mysql_store import MySQLStore
 
-from portal.generator.render import render_by_page_id, render_home_page
+from portal.generator.render import HOME_CATALOG_PER_PAGE, render_by_page_id, render_home_page
 from portal.generator.sitemap import write_sitemap
 from portal.generator.static_shell import sync_static_shell
 
@@ -198,23 +198,48 @@ def write_home_page(
     show_ig_debug: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """
-    生成首页 index.html（DB 驱动的全部作品目录）。
+    生成首页目录静态页（按最新更新排序，每页 50 条）。
 
     @param out_root: 输出根目录
     @param site_origin: canonical origin
     @param show_ig_debug: 覆盖 RM_SHOW_IG_DEBUG
-    @returns: 生成摘要
+    @returns: 生成摘要（含各分页输出路径）
+    @description
+      第 1 页写入 ``index.html``；第 2 页起写入 ``catalog/page/N/index.html``。
+      同步 ``static/`` 到 dist，确保分页 CSS 等资源可用。
     """
+    from portal.generator.static_shell import sync_static_shell
+
     store = MySQLStore()
-    html = render_home_page(store, site_origin=site_origin, show_ig_debug=show_ig_debug)
-    out_file = out_root / "index.html"
-    out_file.parent.mkdir(parents=True, exist_ok=True)
-    out_file.write_text(html, encoding="utf-8")
-    entries = store.list_home_catalog_entries()
+    peek = store.list_home_catalog_entries(limit=1, offset=0)
+    total = int(peek.get("total") or 0)
+    per_page = HOME_CATALOG_PER_PAGE
+    total_pages = max(1, (total + per_page - 1) // per_page) if total else 1
+    output_files: list[str] = []
+    for page_num in range(1, total_pages + 1):
+        html = render_home_page(
+            store,
+            site_origin=site_origin,
+            show_ig_debug=show_ig_debug,
+            page=page_num,
+            per_page=per_page,
+        )
+        if page_num <= 1:
+            out_file = out_root / "index.html"
+        else:
+            out_file = out_root / "catalog" / "page" / str(page_num) / "index.html"
+        out_file.parent.mkdir(parents=True, exist_ok=True)
+        out_file.write_text(html, encoding="utf-8")
+        output_files.append(str(out_file))
+    shell_result = sync_static_shell(out_root=out_root)
     return {
         "ok": True,
-        "output_file": str(out_file),
-        "catalog_count": len(entries),
+        "output_file": output_files[0] if output_files else str(out_root / "index.html"),
+        "output_files": output_files,
+        "catalog_count": total,
+        "page_count": total_pages,
+        "per_page": per_page,
+        "static_shell": shell_result,
     }
 
 

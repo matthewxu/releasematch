@@ -106,6 +106,32 @@
       {% endfor %}
     </div>
     <p class="rm-catalog-search-empty rm-text-muted" data-rm-catalog-empty hidden{% if i18n_enabled %} data-i18n="home.search_empty"{% endif %}>{{ t('home.search_empty') }}</p>
+    {% if pagination and pagination.total_pages > 1 %}
+    {# 底部分页：每页 50 条，按最新更新排序后的页码导航 #}
+    <nav class="rm-pagination" aria-label="{{ t('home.pagination_label') }}"{% if i18n_enabled %} data-i18n-aria="home.pagination_label"{% endif %}>
+      {% if pagination.has_prev %}
+      <a class="rm-pagination__link rm-pagination__link--prev" href="{{ pagination.prev_href }}"{% if i18n_enabled %} data-i18n="home.pagination_prev"{% endif %}>{{ t('home.pagination_prev') }}</a>
+      {% else %}
+      <span class="rm-pagination__link rm-pagination__link--disabled" aria-disabled="true"{% if i18n_enabled %} data-i18n="home.pagination_prev"{% endif %}>{{ t('home.pagination_prev') }}</span>
+      {% endif %}
+      <ol class="rm-pagination__pages">
+        {% for p in pagination.pages %}
+        <li>
+          {% if p.current %}
+          <span class="rm-pagination__page rm-pagination__page--current" aria-current="page">{{ p.num }}</span>
+          {% else %}
+          <a class="rm-pagination__page" href="{{ p.href }}">{{ p.num }}</a>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+      {% if pagination.has_next %}
+      <a class="rm-pagination__link rm-pagination__link--next" href="{{ pagination.next_href }}"{% if i18n_enabled %} data-i18n="home.pagination_next"{% endif %}>{{ t('home.pagination_next') }}</a>
+      {% else %}
+      <span class="rm-pagination__link rm-pagination__link--disabled" aria-disabled="true"{% if i18n_enabled %} data-i18n="home.pagination_next"{% endif %}>{{ t('home.pagination_next') }}</span>
+      {% endif %}
+    </nav>
+    {% endif %}
     {% else %}
     <p class="rm-text-muted"{% if i18n_enabled %} data-i18n="home.catalog_empty"{% endif %}>{{ t('home.catalog_empty') }}</p>
     {% endif %}

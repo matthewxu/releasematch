@@ -34,6 +34,9 @@ DIST_ROOT = PROJECT_ROOT / "portal" / "dist"
 # DB 动态路由 slug 模式（排除 static、trust 等）
 _DB_ROUTE_RE = re.compile(r"^/([^/]+)(/s\d+e\d+)?/?$")
 
+# 首页目录分页：/catalog/page/2/
+_CATALOG_PAGE_RE = re.compile(r"^/catalog/page/(\d+)/?(?:index\.html)?$")
+
 
 class PortalDevHandler(BaseHTTPRequestHandler):
     """
@@ -82,7 +85,14 @@ class PortalDevHandler(BaseHTTPRequestHandler):
 
         normalized = path.rstrip("/")
         if normalized in ("", "/index.html"):
-            return self._try_render_home()
+            return self._try_render_home(page=1)
+
+        catalog_match = _CATALOG_PAGE_RE.match(normalized)
+        if catalog_match:
+            page_num = int(catalog_match.group(1))
+            if page_num < 1:
+                return False
+            return self._try_render_home(page=page_num)
 
         if normalized.endswith(".html"):
             return False
@@ -109,24 +119,30 @@ class PortalDevHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
         return True
 
-    def _try_render_home(self) -> bool:
+    def _try_render_home(self, page: int = 1) -> bool:
         """
-        渲染 DB 驱动的首页目录。
+        渲染 DB 驱动的首页目录（支持分页）。
 
+        @param page: 页码（从 1 起）
         @returns: 是否已响应
         """
         store = self.store or MySQLStore()
         origin = f"http://{self.headers.get('Host', '127.0.0.1:8080')}"
-        html = render_home_page(store, site_origin=origin, show_ig_debug=SHOW_IG_DEBUG)
+        html = render_home_page(
+            store,
+            site_origin=origin,
+            show_ig_debug=SHOW_IG_DEBUG,
+            page=page,
+        )
         body = html.encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("X-RM-Source", "mysql-home")
+        self.send_header("X-RM-Home-Page", str(page))
         self.end_headers()
         self.wfile.write(body)
         return True
-
     def _trust_slug_from_path(self, path: str) -> Optional[str]:
         """
         从 URL 解析 Trust slug。

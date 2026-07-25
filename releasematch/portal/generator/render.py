@@ -111,18 +111,77 @@ def render_page_context(
     return render_html(template_name, variables)
 
 
+# 首页目录每页条数（按最新更新排序后分页）
+HOME_CATALOG_PER_PAGE = 50
+
+
+def home_catalog_page_href(page: int) -> str:
+    """
+    首页目录分页 URL。
+
+    @param page: 页码（从 1 起）
+    @returns: ``/`` 或 ``/catalog/page/N/``
+    """
+    n = max(1, int(page))
+    if n <= 1:
+        return "/"
+    return f"/catalog/page/{n}/"
+
+
+def build_home_pagination(
+    *,
+    page: int,
+    per_page: int,
+    total: int,
+) -> Dict[str, Any]:
+    """
+    构建首页分页上下文（页码链接、上一页/下一页）。
+
+    @param page: 当前页
+    @param per_page: 每页条数
+    @param total: 作品总数
+    @returns: 供 home.html 使用的 pagination 字典
+    """
+    per = max(1, int(per_page))
+    total_pages = max(1, (int(total) + per - 1) // per) if total else 1
+    cur = max(1, min(int(page), total_pages))
+    page_links = [
+        {
+            "num": n,
+            "href": home_catalog_page_href(n),
+            "current": n == cur,
+        }
+        for n in range(1, total_pages + 1)
+    ]
+    return {
+        "page": cur,
+        "per_page": per,
+        "total": int(total),
+        "total_pages": total_pages,
+        "has_prev": cur > 1,
+        "has_next": cur < total_pages,
+        "prev_href": home_catalog_page_href(cur - 1) if cur > 1 else None,
+        "next_href": home_catalog_page_href(cur + 1) if cur < total_pages else None,
+        "pages": page_links,
+    }
+
+
 def render_home_page(
     store: Any,
     site_origin: str = "",
     *,
     show_ig_debug: Optional[bool] = None,
+    page: int = 1,
+    per_page: int = HOME_CATALOG_PER_PAGE,
 ) -> str:
     """
-    渲染首页目录（全部 published 槽位入口）。
+    渲染首页目录（published 作品按最新更新分页）。
 
     @param store: MySQLStore 实例
     @param site_origin: 站点 origin
     @param show_ig_debug: 覆盖 RM_SHOW_IG_DEBUG
+    @param page: 页码（从 1 起；第 1 页对应 ``/``）
+    @param per_page: 每页条数，默认 50
     @returns: 完整 HTML 字符串
     """
     from datetime import datetime, timezone
@@ -131,17 +190,31 @@ def render_home_page(
 
     from workflow.storage.failed_slots_store import list_scarcity_home_entries
 
-    entries = store.list_home_catalog_entries()
-    movie_count = sum(1 for e in entries if e.get("media_kind") == "movie")
-    tv_count = sum(1 for e in entries if e.get("media_kind") == "tv")
+    per = max(1, int(per_page))
+    requested = max(1, int(page))
+    offset = (requested - 1) * per
+    catalog = store.list_home_catalog_entries(limit=per, offset=offset)
+    total = int(catalog.get("total") or 0)
+    total_pages = max(1, (total + per - 1) // per) if total else 1
+    cur = min(requested, total_pages)
+    # 页码越界时回落到末页并重新取数
+    if cur != requested:
+        catalog = store.list_home_catalog_entries(limit=per, offset=(cur - 1) * per)
+    entries = catalog.get("entries") or []
+    movie_count = int(catalog.get("movie_count") or 0)
+    tv_count = int(catalog.get("tv_count") or 0)
     scarcity_entries = list_scarcity_home_entries(limit=8)
+    pagination = build_home_pagination(page=cur, per_page=per, total=total)
+    page_path = home_catalog_page_href(cur)
+    origin = site_origin.rstrip("/") if site_origin else "https://releasematch.com"
     context = {
         "nav_active": "home",
-        "canonical_url": f"{site_origin.rstrip('/')}/" if site_origin else "https://releasematch.com/",
+        "canonical_url": f"{origin}{page_path}",
         "catalog_entries": entries,
-        "catalog_count": len(entries),
+        "catalog_count": total,
         "movie_count": movie_count,
         "tv_count": tv_count,
+        "pagination": pagination,
         "scarcity_entries": scarcity_entries,
         "scarcity_count": len(scarcity_entries),
         "year": str(datetime.now(timezone.utc).year),
