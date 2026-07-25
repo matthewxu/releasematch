@@ -220,10 +220,32 @@ def run_slot_pipeline(
         return {"ok": False, "step": "db_ping", "detail": ping}
 
     media_type = "tv_episode" if media_kind == "tv" else "movie"
+    if media_kind == "tv":
+        try:
+            from schema.d1_models import normalize_tv_episode_numbers
+
+            season, episode = normalize_tv_episode_numbers(season, episode)
+        except ValueError as exc:
+            return {
+                "ok": False,
+                "error": str(exc),
+                "tmdb_id": tmdb_id,
+                "media_kind": media_kind,
+                "season": season,
+                "episode": episode,
+            }
+
     page_id = store.resolve_page_id(tmdb_id, media_kind, season, episode)
     ensure_result = store.ensure_slot_page(
         tmdb_id, media_kind, season, episode, title=title
     )
+    if ensure_result.get("ok") is False:
+        return {
+            "ok": False,
+            "page_id": ensure_result.get("page_id"),
+            "error": ensure_result.get("error") or "ensure_slot_page 失败",
+            "ensure": ensure_result,
+        }
     # ensure_slot_page 已空则补展示元数据；此处再调用一次幂等（旧路径/显式保障）
     try:
         store.enrich_tmdb_display_meta(
@@ -425,12 +447,24 @@ def run_batch_slot_pipeline(
         media_kind = str(slot.get("media_type") or slot.get("media_kind") or "tv")
         season = slot.get("season")
         episode = slot.get("episode")
-        page_id = store.resolve_page_id(
-            tmdb_id,
-            media_kind,
-            int(season) if season is not None else None,
-            int(episode) if episode is not None else None,
-        )
+        try:
+            page_id = store.resolve_page_id(
+                tmdb_id,
+                media_kind,
+                int(season) if season is not None else None,
+                int(episode) if episode is not None else None,
+            )
+        except ValueError as exc:
+            fail_count += 1
+            results.append(
+                {
+                    "label": label,
+                    "page_id": None,
+                    "status": "failed",
+                    "result": {"ok": False, "error": str(exc)},
+                }
+            )
+            continue
 
         if skip_existing and store.page_has_resources(page_id):
             skip_count += 1

@@ -42,15 +42,16 @@ def build_slot_key(
 
     @param tmdb_id: TMDB ID
     @param media_type: movie | tv
-    @param season: 季号
-    @param episode: 集号
+    @param season: 季号（tv episode 须 ≥1）
+    @param episode: 集号（tv episode 须 ≥1）
     @returns: 如 movie:424、tv:34307:s01e01
+    @raises ValueError: TV 缺 S/E 或为 0（禁止 s00e00）
     """
+    from schema.d1_models import build_page_id
+
     if media_type == "movie":
         return f"movie:{tmdb_id}"
-    season_num = int(season or 0)
-    episode_num = int(episode or 0)
-    return f"tv:{tmdb_id}:s{season_num:02d}e{episode_num:02d}"
+    return build_page_id(tmdb_id, "tv", season=season, episode=episode)
 
 
 def parse_page_id(page_id: str) -> Optional[Dict[str, Any]]:

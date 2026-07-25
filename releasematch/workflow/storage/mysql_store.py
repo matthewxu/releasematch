@@ -44,6 +44,7 @@ from schema.d1_models import (
     build_catalog_id,
     build_page_id,
     is_speed_evidence_publishable,
+    normalize_tv_episode_numbers,
 )
 
 
@@ -2063,13 +2064,74 @@ class MySQLStore:
 
         @param tmdb_id: TMDB ID
         @param media_kind: tv | movie
-        @param season: 季号
-        @param episode: 集号
+        @param season: 季号（剧集 episode 须 ≥1）
+        @param episode: 集号（剧集 episode 须 ≥1）
         @returns: page_id 字符串
+        @raises ValueError: TV episode 缺有效 S/E（禁止 s00e00）
         """
         if media_kind == "movie":
             return build_page_id(tmdb_id, "movie", page_type="movie")
         return build_page_id(tmdb_id, "tv", season=season, episode=episode)
+
+    def purge_invalid_episode_placeholders(self) -> Dict[str, Any]:
+        """
+        清理非法剧集占位页（s00e00 / season·episode 缺失或为 0）。
+
+        @returns: deleted_page_ids、ops_track_deleted、ok
+        @description
+          ``download_resources`` / ``slot_speed_summary`` 随 FK CASCADE 删除；
+          ``ops_track_slots`` 按 page_id 另行清理。
+        """
+        conn = self._connect()
+        deleted: List[str] = []
+        ops_deleted = 0
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT page_id FROM media_pages
+                    WHERE page_type = 'episode'
+                      AND (
+                        page_id REGEXP '^tv:[0-9]+:s00e00$'
+                        OR season IS NULL OR episode IS NULL
+                        OR season < 1 OR episode < 1
+                      )
+                    """
+                )
+                deleted = [str(r["page_id"]) for r in cur.fetchall()]
+                if deleted:
+                    placeholders = ",".join(["%s"] * len(deleted))
+                    cur.execute(
+                        f"DELETE FROM media_pages WHERE page_id IN ({placeholders})",
+                        deleted,
+                    )
+                try:
+                    cur.execute(
+                        """
+                        DELETE FROM ops_track_slots
+                        WHERE page_id REGEXP '^tv:[0-9]+:s00e00$'
+                           OR page_id REGEXP '^tv:[0-9]+:s00e'
+                           OR (
+                             media_type = 'tv'
+                             AND (
+                               season IS NULL OR episode IS NULL
+                               OR season < 1 OR episode < 1
+                             )
+                           )
+                        """
+                    )
+                    ops_deleted = int(cur.rowcount or 0)
+                except Exception:  # noqa: BLE001 — 跟踪表可能尚未创建
+                    ops_deleted = 0
+            conn.commit()
+        finally:
+            conn.close()
+        return {
+            "ok": True,
+            "deleted_count": len(deleted),
+            "deleted_page_ids": deleted,
+            "ops_track_deleted": ops_deleted,
+        }
 
     def ensure_show_hub_page(
         self,
@@ -2212,6 +2274,20 @@ class MySQLStore:
             slugify_title,
         )
 
+        # 剧集 episode 必须有合法 S/E，禁止再写入 s00e00 脏行
+        if media_kind == "tv":
+            try:
+                season, episode = normalize_tv_episode_numbers(season, episode)
+            except ValueError as exc:
+                return {
+                    "ok": False,
+                    "error": str(exc),
+                    "tmdb_id": tmdb_id,
+                    "media_kind": media_kind,
+                    "season": season,
+                    "episode": episode,
+                }
+
         catalog_id = build_catalog_id(tmdb_id, media_kind)
         page_id = self.resolve_page_id(tmdb_id, media_kind, season, episode)
         slot_meta = get_slot_catalog_meta(tmdb_id) or {}
@@ -2311,6 +2387,7 @@ class MySQLStore:
             display_meta = {"ok": False, "error": str(exc)}
 
         return {
+            "ok": True,
             "catalog_id": catalog_id,
             "page_id": page_id,
             "created_catalog": created_catalog,

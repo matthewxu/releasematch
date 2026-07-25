@@ -50,14 +50,20 @@ def resolve_page_id_from_slot(slot: Dict[str, Any]) -> str:
 
     @param slot: 含 tmdb_id、media_type、season、episode
     @returns: 如 tv:1396:s04e06 或 movie:27205
+    @raises ValueError: TV 缺有效 season/episode
     """
     tmdb_id = int(slot["tmdb_id"])
     media_type = str(slot.get("media_type") or "tv").lower()
     if media_type == "movie":
         return build_page_id(tmdb_id, "movie", page_type="movie")
-    season = int(slot.get("season") or 0)
-    episode = int(slot.get("episode") or 0)
-    return build_page_id(tmdb_id, "tv", season=season, episode=episode)
+    if "page_id" in slot and str(slot["page_id"]).strip():
+        return str(slot["page_id"]).strip()
+    return build_page_id(
+        tmdb_id,
+        "tv",
+        season=slot.get("season"),
+        episode=slot.get("episode"),
+    )
 
 
 def load_published_page_targets() -> List[Dict[str, Any]]:

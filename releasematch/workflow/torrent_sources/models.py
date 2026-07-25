@@ -59,12 +59,18 @@ class FetchRequest:
         生成缓存唯一键。
 
         @returns: 如 movie:603 或 tv:1396:s04e06
+        @raises ValueError: TV 缺有效 season/episode
         """
+        from schema.d1_models import build_page_id
+
         if self.media_type == MediaType.MOVIE:
             return f"movie:{self.tmdb_id}"
-        s = self.season or 0
-        e = self.episode or 0
-        return f"tv:{self.tmdb_id}:s{s:02d}e{e:02d}"
+        return build_page_id(
+            self.tmdb_id,
+            "tv",
+            season=self.season,
+            episode=self.episode,
+        )
 
 
 @dataclass

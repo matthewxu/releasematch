@@ -60,6 +60,34 @@ def build_catalog_id(tmdb_id: int, media_kind: str) -> str:
     return f"{media_kind}:{tmdb_id}"
 
 
+def normalize_tv_episode_numbers(
+    season: Optional[int],
+    episode: Optional[int],
+) -> tuple[int, int]:
+    """
+    校验并规范化剧集季/集号（禁止 s00e00 及缺失）。
+
+    @param season: 季号
+    @param episode: 集号
+    @returns: (season, episode)，均 ≥ 1
+    @raises ValueError: 缺失或小于 1（产品不建 Specials/占位槽）
+    """
+    if season is None or episode is None:
+        raise ValueError(
+            "剧集 episode 页必须提供 season≥1 且 episode≥1（禁止缺失导致 s00e00）"
+        )
+    try:
+        s = int(season)
+        e = int(episode)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"无效的 season/episode: {season!r}/{episode!r}") from exc
+    if s < 1 or e < 1:
+        raise ValueError(
+            f"剧集 episode 页禁止 S{s:02d}E{e:02d}（season/episode 均须 ≥1）"
+        )
+    return s, e
+
+
 def build_page_id(
     tmdb_id: int,
     media_kind: str,
@@ -72,17 +100,17 @@ def build_page_id(
 
     @param tmdb_id: TMDB 作品 ID
     @param media_kind: tv 或 movie
-    @param season: 季号（单集必填）
-    @param episode: 集号（单集必填）
+    @param season: 季号（episode 页必填且 ≥1）
+    @param episode: 集号（episode 页必填且 ≥1）
     @param page_type: episode | movie | show_hub
     @returns: 如 tv:1396:s04e06、movie:27205、tv:1396:hub
+    @raises ValueError: TV episode 缺 S/E 或为 0（禁止 s00e00）
     """
     if page_type == PAGE_TYPE_SHOW_HUB:
         return f"{media_kind}:{tmdb_id}:hub"
     if page_type == PAGE_TYPE_MOVIE or media_kind == MEDIA_KIND_MOVIE:
         return f"movie:{tmdb_id}"
-    s = season or 0
-    e = episode or 0
+    s, e = normalize_tv_episode_numbers(season, episode)
     return f"tv:{tmdb_id}:s{s:02d}e{e:02d}"
 
 

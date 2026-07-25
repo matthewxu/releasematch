@@ -182,11 +182,36 @@ def resolve_page_id_from_slot(slot: Dict[str, Any]) -> str:
     """
     从 slot 字典推导 page_id / slot_key。
 
-    @param slot: 含 tmdb_id、media_type、可选 season/episode
-    @returns: 如 tv:1396:s04e06
+    @param slot: 含 tmdb_id、media_type、可选 season/episode；可带既有 page_id
+    @returns: 如 tv:1396:s04e06、movie:27205、tv:1396:hub
+    @raises ValueError: TV episode 缺有效 S/E
     """
+    existing = str(slot.get("page_id") or "").strip()
+    if existing.endswith(":hub"):
+        return existing
+    if existing.startswith("movie:"):
+        return existing
+    # 已有合法 episode page_id 直接复用，避免 Hub/脏行再被格式成 s00e00
+    if existing.startswith("tv:"):
+        parsed = None
+        try:
+            from workflow.storage.failed_slots_store import parse_page_id
+
+            parsed = parse_page_id(existing)
+        except Exception:  # noqa: BLE001
+            parsed = None
+        if parsed and parsed.get("page_type") == "episode":
+            season = parsed.get("season")
+            episode = parsed.get("episode")
+            if season is not None and episode is not None and int(season) >= 1 and int(episode) >= 1:
+                return existing
+
     media = str(slot.get("media_type") or slot.get("media_kind") or "tv")
     tmdb_id = int(slot["tmdb_id"])
+    if media == "movie":
+        return build_slot_key(tmdb_id, "movie")
+    if str(slot.get("page_type") or "") == "show_hub":
+        return f"tv:{tmdb_id}:hub"
     return build_slot_key(
         tmdb_id,
         media,
