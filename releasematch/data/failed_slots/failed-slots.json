@@ -23,8 +23,7 @@
     "media_type": "tv",
     "season": 1,
     "episode": 1,
-    "title": "Grey's Anatomy",
-    "popularity": 213.0097
+    "title": "Grey's Anatomy"
   },
   {
     "label": "Le calde notti di Poppea",
@@ -43,31 +42,12 @@
     "popularity": 139.9211
   },
   {
-    "label": "Miraculous, les aventur… S01E01",
-    "tmdb_id": 65334,
-    "media_type": "tv",
-    "season": 1,
-    "episode": 1,
-    "title": "Miraculous, les aventures de Ladybug et Chat Noir",
-    "popularity": 149.8966
-  },
-  {
-    "label": "The Bear S01E01",
-    "tmdb_id": 136315,
-    "media_type": "tv",
-    "season": 1,
-    "episode": 1,
-    "title": "The Bear",
-    "popularity": 122.9638
-  },
-  {
     "label": "Xplay S01E01",
     "tmdb_id": 4304,
     "media_type": "tv",
     "season": 1,
     "episode": 1,
-    "title": "Xplay",
-    "popularity": 400.4115
+    "title": "Xplay"
   },
   {
     "label": "おーばーふろぉ S01E01",
@@ -75,8 +55,7 @@
     "media_type": "tv",
     "season": 1,
     "episode": 1,
-    "title": "おーばーふろぉ",
-    "popularity": 160.1696
+    "title": "おーばーふろぉ"
   },
   {
     "label": "しーくれっとみっしょん～潜入捜査官は絶対に負け… S01E01",
@@ -97,14 +76,6 @@
     "popularity": 167.2914
   },
   {
-    "label": "庆余年 S01E01",
-    "tmdb_id": 95842,
-    "media_type": "tv",
-    "season": 1,
-    "episode": 1,
-    "title": "Joy of Life"
-  },
-  {
     "label": "悶えてよ、アダムくん S01E01",
     "tmdb_id": 241002,
     "media_type": "tv",
@@ -119,8 +90,7 @@
     "media_type": "tv",
     "season": 1,
     "episode": 1,
-    "title": "炽夏",
-    "popularity": 203.4975
+    "title": "炽夏"
   },
   {
     "label": "검사실의 제안 S01E01",

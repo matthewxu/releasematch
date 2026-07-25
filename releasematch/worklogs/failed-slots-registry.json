@@ -1,8 +1,8 @@
 {
   "meta": {
-    "updated_at": "2026-07-04T07:43:46Z",
-    "active_count": 18,
-    "resolved_count": 12,
+    "updated_at": "2026-07-25T10:32:40Z",
+    "active_count": 15,
+    "resolved_count": 15,
     "version": 1
   },
   "active": {
@@ -36,18 +36,17 @@
       "page_id": "tv:1416:s01e01",
       "imdb_id": "tt0413573",
       "tvdb_id": 73762,
-      "attempt_count": 2,
+      "attempt_count": 3,
       "sources": [
-        "pipeline-retry-failed-report"
+        "pipeline_batch"
       ],
       "season": 1,
       "episode": 1,
-      "popularity": 213.0097,
       "error": "无可用 items；请先 db seed 或使用已知 Demo 槽位 1396/4/6",
       "fetch_note": null,
-      "last_failed_at": "2026-07-02T13:54:43Z",
-      "last_report_path": "worklogs/2026-07-03/pipeline-retry-failed-report.json",
-      "last_sync_run_id": "0861ed44-e3b5-4b07-b786-6101eb4799e0",
+      "last_failed_at": "2026-07-25T10:27:18Z",
+      "last_report_path": "/tmp/pipeline-retry-sample-report.json",
+      "last_sync_run_id": "d3bd0288-92d5-466a-9840-6d1b2c5914f9",
       "first_failed_at": "2026-07-02T13:54:43Z"
     },
     "tv:4304:s01e01": {
@@ -59,18 +58,17 @@
       "page_id": "tv:4304:s01e01",
       "imdb_id": "tt0361258",
       "tvdb_id": 72806,
-      "attempt_count": 2,
+      "attempt_count": 3,
       "sources": [
-        "pipeline-retry-failed-report"
+        "pipeline_batch"
       ],
       "season": 1,
       "episode": 1,
-      "popularity": 400.4115,
       "error": "无可用 items；请先 db seed 或使用已知 Demo 槽位 1396/4/6",
       "fetch_note": null,
-      "last_failed_at": "2026-07-02T13:54:43Z",
-      "last_report_path": "worklogs/2026-07-03/pipeline-retry-failed-report.json",
-      "last_sync_run_id": "0861ed44-e3b5-4b07-b786-6101eb4799e0",
+      "last_failed_at": "2026-07-25T10:32:40Z",
+      "last_report_path": "/tmp/pipeline-retry-remain-report.json",
+      "last_sync_run_id": "2fb4db18-edc3-4732-9be8-38cd12af4634",
       "first_failed_at": "2026-07-02T13:54:43Z"
     },
     "tv:241002:s01e01": {
@@ -151,18 +149,17 @@
       "page_id": "tv:288603:s01e01",
       "imdb_id": "tt36982964",
       "tvdb_id": 467394,
-      "attempt_count": 2,
+      "attempt_count": 3,
       "sources": [
-        "pipeline-retry-failed-report"
+        "pipeline_batch"
       ],
       "season": 1,
       "episode": 1,
-      "popularity": 203.4975,
       "error": "无可用 items；请先 db seed 或使用已知 Demo 槽位 1396/4/6",
       "fetch_note": null,
-      "last_failed_at": "2026-07-02T13:54:43Z",
-      "last_report_path": "worklogs/2026-07-03/pipeline-retry-failed-report.json",
-      "last_sync_run_id": "0861ed44-e3b5-4b07-b786-6101eb4799e0",
+      "last_failed_at": "2026-07-25T10:27:18Z",
+      "last_report_path": "/tmp/pipeline-retry-sample-report.json",
+      "last_sync_run_id": "d3bd0288-92d5-466a-9840-6d1b2c5914f9",
       "first_failed_at": "2026-07-02T13:54:43Z"
     },
     "tv:276161:s01e01": {
@@ -243,41 +240,17 @@
       "page_id": "tv:95897:s01e01",
       "imdb_id": "tt14962432",
       "tvdb_id": 373728,
-      "attempt_count": 2,
+      "attempt_count": 3,
       "sources": [
-        "pipeline-retry-failed-report"
+        "pipeline_batch"
       ],
       "season": 1,
       "episode": 1,
-      "popularity": 160.1696,
       "error": "无可用 items；请先 db seed 或使用已知 Demo 槽位 1396/4/6",
       "fetch_note": null,
-      "last_failed_at": "2026-07-02T13:54:43Z",
-      "last_report_path": "worklogs/2026-07-03/pipeline-retry-failed-report.json",
-      "last_sync_run_id": "0861ed44-e3b5-4b07-b786-6101eb4799e0",
-      "first_failed_at": "2026-07-02T13:54:43Z"
-    },
-    "tv:65334:s01e01": {
-      "slot_key": "tv:65334:s01e01",
-      "tmdb_id": 65334,
-      "media_type": "tv",
-      "label": "Miraculous, les aventur… S01E01",
-      "title": "Miraculous, les aventures de Ladybug et Chat Noir",
-      "page_id": "tv:65334:s01e01",
-      "imdb_id": "tt2580046",
-      "tvdb_id": 302218,
-      "attempt_count": 2,
-      "sources": [
-        "pipeline-retry-failed-report"
-      ],
-      "season": 1,
-      "episode": 1,
-      "popularity": 149.8966,
-      "error": "无可用 items；请先 db seed 或使用已知 Demo 槽位 1396/4/6",
-      "fetch_note": null,
-      "last_failed_at": "2026-07-02T13:54:43Z",
-      "last_report_path": "worklogs/2026-07-03/pipeline-retry-failed-report.json",
-      "last_sync_run_id": "0861ed44-e3b5-4b07-b786-6101eb4799e0",
+      "last_failed_at": "2026-07-25T10:32:40Z",
+      "last_report_path": "/tmp/pipeline-retry-remain-report.json",
+      "last_sync_run_id": "2fb4db18-edc3-4732-9be8-38cd12af4634",
       "first_failed_at": "2026-07-02T13:54:43Z"
     },
     "tv:317270:s01e01": {
@@ -349,29 +322,6 @@
       "last_sync_run_id": "0861ed44-e3b5-4b07-b786-6101eb4799e0",
       "first_failed_at": "2026-07-02T13:54:43Z"
     },
-    "tv:136315:s01e01": {
-      "slot_key": "tv:136315:s01e01",
-      "tmdb_id": 136315,
-      "media_type": "tv",
-      "label": "The Bear S01E01",
-      "title": "The Bear",
-      "page_id": "tv:136315:s01e01",
-      "imdb_id": "tt14452776",
-      "tvdb_id": 403294,
-      "attempt_count": 2,
-      "sources": [
-        "pipeline-retry-failed-report"
-      ],
-      "season": 1,
-      "episode": 1,
-      "popularity": 122.9638,
-      "error": "无可用 items；请先 db seed 或使用已知 Demo 槽位 1396/4/6",
-      "fetch_note": null,
-      "last_failed_at": "2026-07-02T13:54:43Z",
-      "last_report_path": "worklogs/2026-07-03/pipeline-retry-failed-report.json",
-      "last_sync_run_id": "0861ed44-e3b5-4b07-b786-6101eb4799e0",
-      "first_failed_at": "2026-07-02T13:54:43Z"
-    },
     "tv:322055:s01e01": {
       "slot_key": "tv:322055:s01e01",
       "tmdb_id": 322055,
@@ -394,31 +344,6 @@
       "last_report_path": "worklogs/2026-07-03/pipeline-retry-failed-report.json",
       "last_sync_run_id": "0861ed44-e3b5-4b07-b786-6101eb4799e0",
       "first_failed_at": "2026-07-02T13:54:43Z"
-    },
-    "tv:95842:s01e01": {
-      "slot_key": "tv:95842:s01e01",
-      "tmdb_id": 95842,
-      "media_type": "tv",
-      "season": 1,
-      "episode": 1,
-      "label": "庆余年 S01E01",
-      "title": "Joy of Life",
-      "page_id": "tv:95842:s01e01",
-      "imdb_id": "tt11273352",
-      "tvdb_id": 372881,
-      "failure_class": "genuine_scarcity",
-      "error": "公开 BT 稀缺：cn_sources 探测 0 命中，pipeline 仅 1 magnet（thin）",
-      "fetch_note": "dmhy/mikan/acgrip 无 S01E01；国际源亦不足 2 magnet",
-      "attempt_count": 1,
-      "sources": [
-        "cn_probe_sources",
-        "cn_poc_fetch",
-        "pipeline_batch_cn"
-      ],
-      "first_failed_at": "2026-07-04T07:43:46Z",
-      "last_failed_at": "2026-07-04T07:43:46Z",
-      "last_report_path": "worklogs/2026-07-04/cn-sources-probe-vps.json",
-      "content_region": "cn"
     }
   },
   "resolved": {
@@ -711,6 +636,86 @@
       "resolved_at": "2026-07-02T13:54:43Z",
       "resolved_report_path": "worklogs/2026-07-03/pipeline-retry-failed-report.json",
       "resolved_sync_run_id": "0861ed44-e3b5-4b07-b786-6101eb4799e0"
+    },
+    "tv:136315:s01e01": {
+      "slot_key": "tv:136315:s01e01",
+      "tmdb_id": 136315,
+      "media_type": "tv",
+      "label": "The Bear S01E01",
+      "title": "The Bear",
+      "page_id": "tv:136315:s01e01",
+      "imdb_id": "tt14452776",
+      "tvdb_id": 403294,
+      "attempt_count": 2,
+      "sources": [
+        "pipeline-retry-failed-report"
+      ],
+      "season": 1,
+      "episode": 1,
+      "popularity": 122.9638,
+      "error": "无可用 items；请先 db seed 或使用已知 Demo 槽位 1396/4/6",
+      "fetch_note": null,
+      "last_failed_at": "2026-07-02T13:54:43Z",
+      "last_report_path": "worklogs/2026-07-03/pipeline-retry-failed-report.json",
+      "last_sync_run_id": "0861ed44-e3b5-4b07-b786-6101eb4799e0",
+      "first_failed_at": "2026-07-02T13:54:43Z",
+      "resolved_at": "2026-07-25T10:27:18Z",
+      "resolved_report_path": "/tmp/pipeline-retry-sample-report.json",
+      "resolved_sync_run_id": "d3bd0288-92d5-466a-9840-6d1b2c5914f9"
+    },
+    "tv:65334:s01e01": {
+      "slot_key": "tv:65334:s01e01",
+      "tmdb_id": 65334,
+      "media_type": "tv",
+      "label": "Miraculous, les aventur… S01E01",
+      "title": "Miraculous, les aventures de Ladybug et Chat Noir",
+      "page_id": "tv:65334:s01e01",
+      "imdb_id": "tt2580046",
+      "tvdb_id": 302218,
+      "attempt_count": 2,
+      "sources": [
+        "pipeline-retry-failed-report"
+      ],
+      "season": 1,
+      "episode": 1,
+      "popularity": 149.8966,
+      "error": "无可用 items；请先 db seed 或使用已知 Demo 槽位 1396/4/6",
+      "fetch_note": null,
+      "last_failed_at": "2026-07-02T13:54:43Z",
+      "last_report_path": "worklogs/2026-07-03/pipeline-retry-failed-report.json",
+      "last_sync_run_id": "0861ed44-e3b5-4b07-b786-6101eb4799e0",
+      "first_failed_at": "2026-07-02T13:54:43Z",
+      "resolved_at": "2026-07-25T10:32:40Z",
+      "resolved_report_path": "/tmp/pipeline-retry-remain-report.json",
+      "resolved_sync_run_id": "2fb4db18-edc3-4732-9be8-38cd12af4634"
+    },
+    "tv:95842:s01e01": {
+      "slot_key": "tv:95842:s01e01",
+      "tmdb_id": 95842,
+      "media_type": "tv",
+      "season": 1,
+      "episode": 1,
+      "label": "庆余年 S01E01",
+      "title": "Joy of Life",
+      "page_id": "tv:95842:s01e01",
+      "imdb_id": "tt11273352",
+      "tvdb_id": 372881,
+      "failure_class": "genuine_scarcity",
+      "error": "公开 BT 稀缺：cn_sources 探测 0 命中，pipeline 仅 1 magnet（thin）",
+      "fetch_note": "dmhy/mikan/acgrip 无 S01E01；国际源亦不足 2 magnet",
+      "attempt_count": 1,
+      "sources": [
+        "cn_probe_sources",
+        "cn_poc_fetch",
+        "pipeline_batch_cn"
+      ],
+      "first_failed_at": "2026-07-04T07:43:46Z",
+      "last_failed_at": "2026-07-04T07:43:46Z",
+      "last_report_path": "worklogs/2026-07-04/cn-sources-probe-vps.json",
+      "content_region": "cn",
+      "resolved_at": "2026-07-25T10:32:40Z",
+      "resolved_report_path": "/tmp/pipeline-retry-remain-report.json",
+      "resolved_sync_run_id": "2fb4db18-edc3-4732-9be8-38cd12af4634"
     }
   }
 }
