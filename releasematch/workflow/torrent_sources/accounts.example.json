@@ -10,12 +10,12 @@
     "base_url": "http://127.0.0.1:9117",
     "api_key": "YOUR_JACKETT_API_KEY",
     "indexers": {
-      "_comment": "欧美剧集",
-      "tv": ["thepiratebay", "1337x", "torrentgalaxyclone", "nyaasi"],
+      "_comment": "欧美剧集；eztv 与一键 intl profile 对齐",
+      "tv": ["thepiratebay", "1337x", "torrentgalaxyclone", "nyaasi", "eztv"],
       "movie": ["yts", "1337x", "torrentgalaxyclone"],
       "jp_tv": ["nyaasi", "thepiratebay"],
       "kr_tv": ["nyaasi", "thepiratebay"],
-      "cn_tv": ["dmhy", "mikan", "acgrip", "nyaasi", "thepiratebay", "torrentgalaxyclone", "1337x"],
+      "cn_tv": ["dmhy", "mikan", "acgrip", "bangumi-moe", "nyaasi", "thepiratebay", "torrentgalaxyclone", "1337x"],
       "jp_movie": ["nyaasi", "yts"],
       "kr_movie": ["nyaasi", "yts"],
       "cn_movie": ["dmhy", "nyaasi", "1337x"]
@@ -48,7 +48,7 @@
   },
   "cn_sources": {
     "_comment": "华语专用源；scripts/cn_probe_sources.py 仅测此块",
-    "jackett": ["dmhy", "mikan", "acgrip"],
+    "jackett": ["dmhy", "mikan", "acgrip", "bangumi-moe"],
     "direct": ["dmhy", "nyaa_live_action", "nyaa_anime"]
   },
   "dmhy": {

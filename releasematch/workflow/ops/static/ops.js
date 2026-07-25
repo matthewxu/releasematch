@@ -36,6 +36,9 @@
   /** 并发忙碌计数（嵌套 withBusy 时保持面板） */
   let busyDepth = 0;
 
+  /** 一键生成流程是否在跑（防双击重复 start） */
+  let generationFlowRunning = false;
+
   /**
    * 写底部日志。
    * @param {string} msg 消息
@@ -53,6 +56,109 @@
       }
     }
     el.textContent = line + (el.textContent ? "\n\n" + el.textContent : "");
+  }
+
+  /**
+   * 渲染一键生成流程的分槽明细表。
+   * @param {object|null} progress generation-flow progress
+   */
+  function renderGenerationFlowDetail(progress) {
+    const host = document.getElementById("opsProgressDetail");
+    if (!host) return;
+    if (!progress || !progress.slots || !progress.slots.length) {
+      host.hidden = true;
+      host.innerHTML = "";
+      return;
+    }
+    const cur = progress.current_page_id || "";
+    const rows = progress.slots
+      .map((s) => {
+        const cls = s.page_id === cur ? ' class="is-current"' : "";
+        const rec =
+          s.has_recommended == null ? "—" : s.has_recommended ? "Y" : "N";
+        const idx = s.indexable == null ? "—" : s.indexable ? "Y" : "N";
+        const detail = s.detail || "";
+        const shown =
+          detail.length > 100 ? detail.slice(0, 100) + "…" : detail;
+        return `<tr${cls}>
+          <td><code>${escapeHtml(s.page_id)}</code></td>
+          <td>${statusBadge(s.pipeline)}</td>
+          <td>${s.magnet_count != null ? s.magnet_count : "—"}</td>
+          <td>${rec}</td>
+          <td>${escapeHtml(s.page_status || "—")}</td>
+          <td>${idx}</td>
+          <td>${statusBadge(s.generate)}</td>
+          <td>${statusBadge(s.speedtest)}</td>
+          <td class="ops-detail-cell" title="${escapeHtml(detail)}">${escapeHtml(shown || "—")}</td>
+        </tr>`;
+      })
+      .join("");
+    host.hidden = false;
+    host.innerHTML = `<table class="ops-table">
+      <thead><tr>
+        <th>page_id</th><th>pipeline</th><th>magnet</th><th>Rec</th>
+        <th>status</th><th>indexable</th><th>generate</th><th>speedtest</th><th>detail（悬停全文）</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  }
+
+  /**
+   * 轮询一键生成流程进度，直到 done/error。
+   * @param {string} title
+   * @returns {Promise<object>} 最终 progress
+   */
+  async function pollGenerationFlow(title) {
+    let finalProg = null;
+    for (;;) {
+      const data = await api("/api/actions/generation-flow/progress");
+      const prog = data.progress || {};
+      finalProg = prog;
+      const phaseLabel =
+        prog.phase === "pipeline"
+          ? "1/3 Pipeline"
+          : prog.phase === "generate"
+            ? "2/3 Generate"
+            : prog.phase === "speedtest"
+              ? "3/3 Speedtest"
+              : prog.phase === "done"
+                ? "完成"
+                : prog.phase || "…";
+      showProgress(`${title} · ${phaseLabel}`, {
+        percent: prog.percent != null ? prog.percent : null,
+        message: prog.message || "",
+      });
+      renderGenerationFlowDetail(prog);
+      // 同步刷新跟踪表摘要（若有 summary）
+      if (prog.slots && prog.slots.length) {
+        // 轻量：把 progress.slots 映射进 track 表视觉（完整 refresh 在结束时）
+        const fakeBatch = {
+          meta: { batch_id: prog.batch_id || "flow" },
+          slots: prog.slots.map((s) => ({
+            page_id: s.page_id,
+            label: s.label,
+            source_tier: "",
+            gate: {
+              magnet_count: s.magnet_count,
+              has_recommended: s.has_recommended,
+              page_status: s.page_status,
+              indexable: s.indexable,
+            },
+            stages: {
+              pipeline: { status: s.pipeline, detail: s.detail },
+              generate: { status: s.generate },
+              speedtest: { status: s.speedtest },
+            },
+          })),
+        };
+        renderTrack(fakeBatch);
+      }
+      if (prog.status === "done" || prog.status === "error") {
+        break;
+      }
+      await sleep(1000);
+    }
+    return finalProg;
   }
 
   /**
@@ -90,6 +196,10 @@
     const bar = document.getElementById("opsProgressBar");
     bar.classList.remove("is-indeterminate");
     bar.style.width = "0%";
+    const detail = document.getElementById("opsProgressDetail");
+    if (detail) {
+      detail.hidden = true;
+    }
   }
 
   /**
@@ -112,7 +222,10 @@
       busyDepth = Math.max(0, busyDepth - 1);
       if (busyDepth === 0) {
         document.body.classList.remove("ops-busy");
-        hideProgress();
+        // keepProgress：长任务（一键生成）结束后保留进度条与分槽明细
+        if (!(opts && opts.keepProgress)) {
+          hideProgress();
+        }
       }
     }
   }
@@ -326,15 +439,32 @@
     }
     const failedEl = document.getElementById("dailyFailedDetail");
     if (failedEl) {
-      failedEl.textContent = JSON.stringify(
-        {
-          active_count: failed.active_count,
-          path: failed.path,
-          sample_keys: failed.sample_keys || [],
-        },
-        null,
-        2
-      );
+      const sample = failed.sample || [];
+      if (sample.length) {
+        const lines = sample
+          .map((row) => {
+            const err = row.error || "(无 error 字段)";
+            const title = row.title ? ` · ${row.title}` : "";
+            const att =
+              row.attempt_count != null ? ` · attempts=${row.attempt_count}` : "";
+            return `${row.key}${title}${att}\n  → ${err}`;
+          })
+          .join("\n\n");
+        failedEl.textContent =
+          `active_count=${failed.active_count}\npath=${failed.path || ""}\n\n` +
+          lines;
+      } else {
+        failedEl.textContent = JSON.stringify(
+          {
+            active_count: failed.active_count,
+            path: failed.path,
+            sample_keys: failed.sample_keys || [],
+            note: "无 sample；请确认 data/failed_slots/registry.json",
+          },
+          null,
+          2
+        );
+      }
     }
     const gapsEl = document.getElementById("dailyGapsDetail");
     if (gapsEl) {
@@ -713,6 +843,43 @@
   }
 
   /**
+   * 聚合槽位可读错误/明细：优先 slot.error，再最新非 pending 阶段 detail。
+   * @param {object} s 跟踪槽或 progress 行
+   * @returns {string}
+   */
+  function slotDetailText(s) {
+    if (!s) return "";
+    if (s.error) return String(s.error);
+    const st = s.stages || {};
+    const order = ["speedtest", "generate", "pipeline"];
+    for (const name of order) {
+      const stage = st[name] || {};
+      const status = stage.status || "pending";
+      if (status === "pending" || status === "") continue;
+      const d = stage.detail != null ? String(stage.detail) : "";
+      if (d) return d;
+      if (status === "failed") return status;
+    }
+    // progress.slots 扁平字段
+    if (s.detail) return String(s.detail);
+    return "";
+  }
+
+  /**
+   * detail 单元格：截断展示 + title 全文。
+   * @param {string} full
+   * @param {number} [maxLen]
+   * @returns {string} HTML
+   */
+  function detailCellHtml(full, maxLen) {
+    const text = full || "";
+    const lim = maxLen != null ? maxLen : 100;
+    const shown = text.length > lim ? text.slice(0, lim) + "…" : text;
+    if (!text) return "—";
+    return `<td class="ops-detail-cell" title="${escapeHtml(text)}">${escapeHtml(shown)}</td>`;
+  }
+
+  /**
    * 构建跟踪表 HTML（③④共用）。
    * @param {object|null} batch
    * @returns {string}
@@ -725,6 +892,7 @@
       .map((s) => {
         const g = s.gate || {};
         const st = s.stages || {};
+        const detail = slotDetailText(s);
         return `<tr>
           <td><code>${escapeHtml(s.page_id)}</code></td>
           <td class="tier-${s.source_tier || ""}">${escapeHtml(s.source_tier || "")}</td>
@@ -736,7 +904,7 @@
           <td>${g.indexable ? "Y" : "N"}</td>
           <td>${statusBadge(st.generate && st.generate.status)}</td>
           <td>${statusBadge(st.speedtest && st.speedtest.status)}</td>
-          <td>${escapeHtml((s.error || (st.pipeline && st.pipeline.detail) || "").slice(0, 40))}</td>
+          ${detailCellHtml(detail, 100)}
         </tr>`;
       })
       .join("");
@@ -744,7 +912,7 @@
       <thead><tr>
         <th>page_id</th><th>tier</th><th>label</th>
         <th>pipeline</th><th>magnet</th><th>Rec</th><th>status</th><th>indexable</th>
-        <th>generate</th><th>speedtest</th><th>detail</th>
+        <th>generate</th><th>speedtest</th><th>detail（悬停全文）</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table></div>`;
@@ -2018,20 +2186,26 @@
     });
 
     /**
-     * ③ 一键跑生成流程：Pipeline（自动刷新门禁）→ Generate 选中页 → 测速 write。
-     * 任一步 API 失败（ok===false）即中止后续步骤；「跳过已有 ≥2 magnet」仅作用于 Pipeline。
+     * ③ 一键跑生成流程：后台逐槽 Pipeline → Generate → Speedtest，轮询分槽进度。
+     * 「跳过已有 ≥2 magnet」仅作用于 Pipeline；防双击：generationFlowRunning。
      */
     document.getElementById("btnRunGenerationFlow").addEventListener("click", async () => {
+      const btn = document.getElementById("btnRunGenerationFlow");
+      if (generationFlowRunning || busyDepth > 0 || (btn && btn.disabled)) {
+        log("一键跑生成流程已在进行中，忽略重复点击");
+        return;
+      }
       /** @type {boolean} Pipeline 是否跳过已有 ≥2 magnet 的槽 */
       const skipExisting = document.getElementById("skipExisting").checked;
+      generationFlowRunning = true;
+      if (btn) btn.disabled = true;
       try {
         await withBusy("一键跑生成流程", async () => {
-          // 步骤 1/3：Jackett 拉源 + 写库（后端会自动 refresh_gates）
-          showProgress("一键跑生成流程 · 1/3 Pipeline", {
-            percent: 5,
-            message: "Jackett 拉取 / 评分 / 写库，请勿关闭页面…",
+          showProgress("一键跑生成流程 · 启动", {
+            percent: 1,
+            message: "提交后台任务…",
           });
-          const pipeData = await api("/api/actions/pipeline", {
+          const start = await api("/api/actions/generation-flow/start", {
             method: "POST",
             body: {
               fetch: true,
@@ -2039,42 +2213,37 @@
               mode: "live",
             },
           });
-          log("一键 · Pipeline 完成", pipeData.pipeline_report || pipeData);
-          await refresh();
-
-          // 步骤 2/3：烘焙选中槽静态页（非 generate all）
-          showProgress("一键跑生成流程 · 2/3 Generate", {
-            percent: 45,
-            message: "烘焙选中页静态 HTML…",
+          if (start.already_running) {
+            log("检测到已有生成流程在跑，改为附着轮询", start.progress);
+          } else {
+            log("一键生成流程已启动", {
+              total: (start.progress && start.progress.total) || 0,
+              skip_existing: skipExisting,
+              current_page_id:
+                start.progress && start.progress.current_page_id,
+            });
+          }
+          const finalProg = await pollGenerationFlow("一键跑生成流程");
+          if (finalProg && finalProg.status === "error") {
+            throw new Error(finalProg.error || finalProg.message || "生成流程失败");
+          }
+          log("一键 · 流程结束", {
+            ok: finalProg && finalProg.ok,
+            total: finalProg && finalProg.total,
+            summary: finalProg && finalProg.summary,
           });
-          const genData = await api("/api/actions/generate", {
-            method: "POST",
-            body: { generate_all: false },
-          });
-          log("一键 · Generate 完成", {
-            ok_count: genData.ok_count,
-            fail_count: genData.fail_count,
-          });
-          await refresh();
-
-          // 步骤 3/3：批量测速并写回
-          showProgress("一键跑生成流程 · 3/3 测速", {
-            percent: 75,
-            message: "批量测速 write 进行中…",
-          });
-          const speedData = await api("/api/actions/speedtest", {
-            method: "POST",
-            body: {},
-          });
-          log("一键 · Speedtest 结束", { ok: speedData.ok, report: speedData.report });
           showProgress("一键跑生成流程完成", {
             percent: 100,
-            message: "Pipeline → Generate → 测速 均已跑完",
+            message: (finalProg && finalProg.message) || "完成",
           });
+          renderGenerationFlowDetail(finalProg);
           await refresh();
-        });
+        }, { indeterminate: false, keepProgress: true });
       } catch (e) {
         log("一键跑生成流程中断：" + String(e));
+      } finally {
+        generationFlowRunning = false;
+        if (btn) btn.disabled = false;
       }
     });
 

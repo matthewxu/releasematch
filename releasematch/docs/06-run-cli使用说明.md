@@ -710,10 +710,25 @@ python -m workflow.run ops tmdb-sync --full-reload   # TRUNCATE 全量重建
 | ⓪ 页面台账 | **统管表 `media_pages`**：draft/thin/published 统计、搜索、下线、加入工单 | 搜已入库页；下线=改库+删 dist（可选 wrangler） |
 | ① 清单从哪来 | TMDB 日导出 + 锚点/curated；或 **全量下载→增量入库→搜索→工作区** | 自动生成 / 加载 JSON / `ops tmdb-sync` + UI 手动选槽（候选，非台账） |
 | ② 筛选 | media / tier / pop / 排除 published·失败槽 | 筛选后 **导入跟踪表**；与 published 重叠须确认 |
-| ③ 跑生成流程 | pipeline → MySQL 门禁 → generate → 测速 | 跟踪表逐槽更新；**测速 write 成功后自动 regenerate**（bake Grab/测速面板） |
+| ③ 跑生成流程 | pipeline → MySQL 门禁 → generate → 测速 | **一键跑生成流程**（后台分槽 + 进度轮询）；跟踪表 `detail` 显示失败原因（悬停看全文）；**测速 write 成功后自动 regenerate** |
 | ④ 上线 | seo_c2 → deploy（增量/全量/仅上传 + 可选 wrangler） | 批次级步骤 + 同一跟踪表 |
 | ⑤ 配置 | `.env`（MySQL/站点/Ops）+ `accounts.local.json`（数据源）+ **一键部署 Jackett/FlareSolverr** | 分文件加载/保存；热加载；SSH 装栈 |
-| ⑥ 日常运营 | 手册 **§四** 巡检：Jackett · DB · 测速覆盖 · TMDB 新鲜度 · 失败槽 | 「刷新巡检」；TMDB 日同步；测速缺口补测 |
+| ⑥ 日常运营 | 手册 **§四** 巡检：Jackett · DB · 测速覆盖 · TMDB 新鲜度 · 失败槽 | 「刷新巡检」；失败槽样例含 **error 文案**；TMDB 日同步；测速缺口补测 |
+
+**③ 一键跑生成流程（推荐）：**
+
+1. ② 导入跟踪表并勾选槽位；可选「跳过已有 ≥2 magnet」（仅影响 Pipeline）
+2. 点 **一键跑生成流程** → `POST /api/actions/generation-flow/start`，前端轮询 `GET /api/actions/generation-flow/progress`
+3. 进度条下方分槽表：`page_id / pipeline / magnet / Rec / status / indexable / generate / speedtest / detail`
+4. 后台逐槽：`pipeline` → `generate` → `speedtest`（`actions.run_speedtest` 成功后再 `run_generate` bake 测速面板）
+5. 重复点击：返回 `already_running` 并附着轮询，不启第二任务
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/api/actions/generation-flow/start` | `{fetch, skip_existing, mode, page_ids?}` 启动后台任务 |
+| `GET` | `/api/actions/generation-flow/progress` | 分槽进度快照（含 `detail` 错误原因） |
+
+**排障：** 跟踪表 / 进度表 `detail` 列与悬停 `title` 为完整错误；⑥「失败槽样例」列出 registry `error`（如「无可用 items」= 需 seed/warm_tmdb，不只加 indexer）。硬刷新（Cmd+Shift+R）加载最新 `ops.js`。
 
 **操作旁路说明（排障）：** 每个主要按钮旁有 **?**，打开右侧抽屉，展示该操作的实现流程、脚本路径、完整 CLI、数据流与存储位置（目录在 `workflow/ops/static/ops-help.js`）。出问题时先点 **?** 再对照底部 `#opsLog`。
 
@@ -967,3 +982,4 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | v0.19 | 2026-07-21 | 文档补齐 Ops ⑤ 部署步骤/API body；`104.105.140.95` dry-run+正式部署验收 |
 | v0.20 | 2026-07-21 | Ops **⑥ 日常运营**：`/api/daily/*` 巡检、TMDB 日同步入口、测速缺口补测 |
 | v0.21 | 2026-07-21 | Ops 操作旁 **?** 说明抽屉：`ops-help.js`（流程/脚本/CLI/数据流/存储/排障） |
+| v0.22 | 2026-07-25 | ③ 一键跑生成流程：`generation-flow/start`+progress 分槽；跟踪表/⑥ 失败槽展示完整错误原因；Linode VPS 生命周期文档 |

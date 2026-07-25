@@ -17,6 +17,8 @@ data/ops/
 # 密钥：私有仓跟踪 .env / accounts.local.json / servers.local.json（见 docs/15）
 # 仅本机覆盖用，不入库：
 .env.local
+# Linode API Token：明确不上传 GitHub（见 docs/linode-vps-lifecycle.md）
+linode.local.json
 
 # IDE
 .idea/

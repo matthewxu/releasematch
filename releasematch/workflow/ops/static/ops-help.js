@@ -358,7 +358,12 @@
 
     run_generation_flow: {
       title: "一键跑生成流程",
-      api: "串联 POST /api/actions/pipeline → /generate → /speedtest",
+      api: "POST /api/actions/generation-flow/start → GET …/progress（分槽轮询）",
+      what: [
+        "后台逐槽：Pipeline → Generate → Speedtest",
+        "进度含 page_id / pipeline / magnet / Rec / status / indexable / generate / speedtest",
+        "重复点击会忽略或附着已有任务，避免挂起",
+      ],
       flow: [
         "1) pipeline（Jackett 拉源，含门禁刷新）",
         "2) generate 选中页 → portal/dist",
@@ -366,14 +371,14 @@
         "skipExisting 仅影响步骤 1",
       ],
       scripts: [
-        "workflow/ops/static/ops.js（前端串联）",
+        "workflow/ops/generation_flow_service.py（后台分槽）",
+        "workflow/ops/static/ops.js（轮询进度）",
         "workflow/ops/actions.py",
         "workflow/storage/pipeline.py",
       ],
       commands: [
-        "python -m workflow.run pipeline batch …",
-        "python -m workflow.run generate page --page-id …",
-        "python -m workflow.torrent_sources.speedtest.run batch --page-ids '…' --write --report worklogs/ops/speedtest-<batch_id>.json",
+        "POST /api/actions/generation-flow/start",
+        "GET /api/actions/generation-flow/progress",
       ],
       dataFlow: "ops_track_slots → Jackett/magnet → media_pages → dist → 测速表 → 再 bake",
       storage: [
@@ -382,9 +387,13 @@
         "报告：worklogs/ops/speedtest-*.json",
       ],
       troubleshoot: [
+        "只有进度条无明细 → 硬刷新（Cmd+Shift+R）加载新 ops.js",
+        "点两次无反应 → 正常：防重复；日志会写「已在进行中」或附着轮询",
+        "长时间停在某 page_id → 看该槽 Jackett/测速；底部日志有 API 失败",
+        "Pipeline 失败 → 勾选「跳过已有 ≥2 magnet」或先测 Jackett",
         "中断在某步 → 看底部日志哪次 API 失败，再单独点对应按钮",
         "Jackett 失败 → ⑤ accounts.local.json / Dashboard",
-        "测速失败 → 看 report JSON 与 indexer/proxy",
+        "测速失败 → 看 worklogs/ops/speedtest-*.json",
       ],
     },
 
@@ -720,6 +729,7 @@
       ],
       troubleshoot: [
         "某 check FAIL → 展开 detail，对应该段脚本/表",
+        "失败槽样例看 error 文案；「无可用 items」= 先 seed/warm_tmdb",
         "cron 无证据 → 确认本机/VPS crontab 与日志路径",
       ],
     },

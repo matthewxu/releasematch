@@ -200,7 +200,7 @@ def _failed_slots_snapshot() -> Dict[str, Any]:
     """
     失败槽登记册摘要（优先 data/，回退 worklogs 镜像）。
 
-    @returns: active_count / resolved_count / path
+    @returns: active_count / resolved_count / path / sample（含 error）
     """
     path = DEFAULT_REGISTRY_PATH
     if not path.is_file() and DEFAULT_WORKLOG_MIRROR_PATH.is_file():
@@ -208,12 +208,28 @@ def _failed_slots_snapshot() -> Dict[str, Any]:
     registry = load_registry(path)
     meta = registry.get("meta") or {}
     active = registry.get("active") or {}
+    sample: List[Dict[str, Any]] = []
+    # 完整注释：给 Ops ⑥ 可读列表，不只 sample_keys
+    for key, row in list(active.items())[:10]:
+        if not isinstance(row, dict):
+            sample.append({"key": str(key), "title": "", "error": str(row), "attempt_count": None})
+            continue
+        sample.append(
+            {
+                "key": str(key),
+                "title": str(row.get("title") or row.get("label") or ""),
+                "error": str(row.get("error") or row.get("last_error") or "")[:300],
+                "attempt_count": row.get("attempt_count"),
+                "media_type": row.get("media_type"),
+            }
+        )
     return {
         "ok": True,
         "path": str(path),
         "active_count": int(meta.get("active_count") or len(active)),
         "resolved_count": int(meta.get("resolved_count") or len(registry.get("resolved") or {})),
         "sample_keys": list(active.keys())[:10],
+        "sample": sample,
     }
 
 

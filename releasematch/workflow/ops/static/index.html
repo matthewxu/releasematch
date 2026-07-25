@@ -38,6 +38,8 @@
         <div class="ops-progress-bar" id="opsProgressBar"></div>
       </div>
       <div class="ops-progress-msg" id="opsProgressMsg"></div>
+      <!-- 一键生成流程：分槽明细（pipeline/magnet/Rec/…） -->
+      <div class="ops-progress-detail" id="opsProgressDetail" hidden></div>
     </div>
 
     <nav class="ops-steps" role="tablist" aria-label="流程与配置">
@@ -484,7 +486,7 @@
         <h3>失败槽 · 缺口样例</h3>
         <div class="ops-row">
           <div style="flex:1">
-            <p class="lead" style="margin-bottom:6px">active 失败槽（最多 10）</p>
+            <p class="lead" style="margin-bottom:6px">active 失败槽（最多 10，含 error）</p>
             <pre class="ops-mono-block" id="dailyFailedDetail">—</pre>
           </div>
           <div style="flex:1">

@@ -37,7 +37,32 @@ EZTV / YTS **直连 API** 仍可由本机 `eztv_client` / `yts_client` 调用；
 
 ## 零、本机一键远程安装（推荐）
 
-新买 VPS 时，**优先用 Ops UI**（本机）：
+若需用 API **自动购买 / 取 IP / 删除** Linode，可直接走一键脚本（已集成 `linode_vps.py`），详见 [linode-vps-lifecycle.md](./linode-vps-lifecycle.md)。
+
+### 0.1 购买 Linode + 安装 Jackett（推荐新机）
+
+需已配置 `workflow/torrent_sources/linode.local.json`（token + `defaults.ssh.password`）：
+
+```bash
+# 按 linode.local.json 购买（默认 jp-osa / g6-nanode-1 / debian12）→ 等 SSH → 装栈 → 可选 indexer → 同步 Key
+# 并回写 servers.local.json 的 host / 密码 / Dashboard URL
+bash scripts/install_jackett_oneclick.sh --provision-linode --with-indexers
+
+# 仅预览
+bash scripts/install_jackett_oneclick.sh --provision-linode --dry-run
+```
+
+### 0.2 销毁 Linode VPS
+
+```bash
+bash scripts/install_jackett_oneclick.sh --destroy-linode
+# 或指定 label/id：
+# bash scripts/install_jackett_oneclick.sh --destroy-linode --linode-label rm-jackett-jp
+```
+
+### 0.3 已有 VPS：仅装 Jackett
+
+新买（或已有）VPS 时，**也可用 Ops UI**（本机）：
 
 ```bash
 python -m workflow.run ops serve   # → ⑤ 配置 →「一键部署 Jackett + FlareSolverr」
@@ -279,3 +304,4 @@ docker exec jackett curl -s -o /dev/null -w '%{http_code}\n' http://flaresolverr
 | 2026-07-20 | 增加 `scripts/install_jackett_oneclick.sh`（IP+密码+交互 indexer）；测试机 `104.105.140.95` |
 | 2026-07-20 | 安装脚本默认写入 Dashboard 密码 `345621`（`JACKETT_ADMIN_PASSWORD`）；indexer 经 SSH stdin 推送 |
 | 2026-07-21 | Ops ⑤ 一键部署入口（`/api/jackett/deploy*`）；对本机 Ops 实测 dry-run + 正式部署 `104.105.140.95` 通过 |
+| 2026-07-25 | `install_jackett_oneclick.sh` 集成 Linode `--provision-linode` / `--destroy-linode`（读 `linode.local.json`） |

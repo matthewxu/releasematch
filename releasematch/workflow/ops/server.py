@@ -26,6 +26,7 @@ from workflow.ops import auth as ops_auth
 from workflow.ops import config_service
 from workflow.ops import daily_service
 from workflow.ops import jackett_deploy_service
+from workflow.ops import generation_flow_service
 from workflow.ops import pages_service
 from workflow.ops import source_service
 from workflow.ops.track_store import (
@@ -427,6 +428,20 @@ def _handle_api(
             batch_id=body.get("batch_id"),
             page_ids=body.get("page_ids"),
         )
+
+    # 一键跑生成流程（后台 + 分槽进度轮询）
+    if path == "/api/actions/generation-flow/start" and method == "POST":
+        result = generation_flow_service.start_generation_flow(
+            fetch=bool(body.get("fetch", True)),
+            skip_existing=bool(body.get("skip_existing", True)),
+            mode=str(body.get("mode") or "live"),
+            page_ids=body.get("page_ids"),
+        )
+        status = 200 if result.get("ok") else 400
+        return status, result
+
+    if path == "/api/actions/generation-flow/progress" and method == "GET":
+        return 200, {"ok": True, "progress": generation_flow_service.get_progress()}
 
     if path == "/api/actions/seo" and method == "POST":
         return 200, actions.run_seo_c2(batch_id=body.get("batch_id"))

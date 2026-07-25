@@ -557,6 +557,51 @@ table.ops-table tr:hover td {
   font-family: var(--ops-mono);
 }
 
+.ops-progress-detail {
+  margin-top: 10px;
+  max-height: 280px;
+  overflow: auto;
+  border: 1px solid var(--ops-border);
+  border-radius: 6px;
+}
+
+.ops-progress-detail[hidden] {
+  display: none !important;
+}
+
+.ops-progress-detail table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.ops-progress-detail th,
+.ops-progress-detail td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--ops-border);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.ops-progress-detail tr.is-current {
+  background: rgba(80, 140, 255, 0.12);
+}
+
+.ops-progress-detail code {
+  font-size: 10px;
+}
+
+/* 跟踪表 / 进度表：错误原因列可悬停看全文 */
+.ops-detail-cell {
+  max-width: 280px;
+  white-space: normal;
+  word-break: break-word;
+  color: var(--ops-muted);
+  font-family: var(--ops-mono);
+  font-size: 11px;
+  cursor: help;
+}
+
 .ops-progress-spinner {
   width: 14px;
   height: 14px;

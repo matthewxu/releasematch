@@ -23,6 +23,31 @@ python scripts/poc_phase0.py --jackett-base-url http://YOUR_VPS:9117
 
 `*.ps1` files delegate to the Python scripts above for backward compatibility.
 
+## Linode VPS lifecycle (create / IP / delete)
+
+脚本与配置同目录：`workflow/torrent_sources/`。文档：`docs/linode-vps-lifecycle.md`。
+
+```bash
+pip install -r workflow/torrent_sources/requirements-linode.txt
+# Token：复制模板并填入（linode.local.json 已 gitignore，不上传 GitHub）
+cp workflow/torrent_sources/linode.example.json \
+   workflow/torrent_sources/linode.local.json
+# 或临时：export LINODE_TOKEN=...
+
+python workflow/torrent_sources/linode_vps.py create --region jp-osa --label demo
+python workflow/torrent_sources/linode_vps.py create --json --region jp-osa
+python workflow/torrent_sources/linode_vps.py params --kind region --region-filter jp
+python workflow/torrent_sources/linode_vps.py params --kind type --json
+python workflow/torrent_sources/linode_vps.py ip --label demo
+python workflow/torrent_sources/linode_vps.py list
+python workflow/torrent_sources/linode_vps.py delete --label demo --yes
+
+# 一键：购买 + 装 Jackett（推荐）
+bash scripts/install_jackett_oneclick.sh --provision-linode --with-indexers
+bash scripts/install_jackett_oneclick.sh --destroy-linode
+# label 默认来自 linode.local.json → defaults.label（linode_vps.py defaults）
+```
+
 ## Jackett on overseas VPS
 
 See `docs/jackett-remote-linode.md`.

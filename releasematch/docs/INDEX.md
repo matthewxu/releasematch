@@ -15,6 +15,7 @@
 | [06-run-cli使用说明.md](./06-run-cli使用说明.md) | **workflow.run 总控**（含 **`ops serve`**：页面台账 / **⑥ 日常运营** / **⑤ 一键部署 Jackett+FlareSolverr** / `ops tmdb-sync` / 配置热加载；**操作旁 ?** 见 `ops-help.js`） |
 | [07-部署架构解疑.md](./07-部署架构解疑.md) | **D1 / Pages / Worker generate / CI 部署 FAQ** |
 | [jackett-remote-linode.md](./jackett-remote-linode.md) | **海外 VPS 部署 Jackett**（通用流程；当前测试机 `104.105.140.95`；Ops ⑤ / CLI oneclick） |
+| [**linode-vps-lifecycle.md**](./linode-vps-lifecycle.md) | **Linode VPS 自动购买 / 取 IP / 删除**（`workflow/torrent_sources/linode_vps.py`，与配置同目录；`--json` 可供外部调用） |
 | [**VPS迁移与部署.md**](./VPS迁移与部署.md) | **当前测试 VPS** `104.105.140.95` 迁移与验收（推荐 Ops ⑤ 一键部署） |
 | [jackett-stability.md](./jackett-stability.md) | **Jackett / 拉取稳定性保障**（配置、healthcheck、验收） |
 | [nyaa-proxy-asia.md](./nyaa-proxy-asia.md) | **日韩剧 Nyaa LA 直连 + SSH SOCKS 隧道回退** |

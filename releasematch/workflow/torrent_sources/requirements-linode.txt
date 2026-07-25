@@ -1,0 +1,4 @@
+# Linode VPS 生命周期脚本依赖（与 linode_vps.py / linode.local.json 同目录）
+# 与主项目 requirements.txt 解耦，便于外部机器单独安装：
+#   pip install -r workflow/torrent_sources/requirements-linode.txt
+linode_api4>=5.0.0
