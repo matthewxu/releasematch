@@ -1001,17 +1001,39 @@
   }
 
   /**
+   * 按 Host 设置「打开 Dashboard」链接，并同步 jkHost 输入框。
+   * @param {string} host VPS IP/域名
+   */
+  function setJackettDashboardFromHost(host) {
+    const h = String(host || "").trim();
+    if (!h || h === "(provision-linode)") return;
+    const hostEl = document.getElementById("jkHost");
+    if (hostEl) hostEl.value = h;
+    const link = document.getElementById("jkDashboardLink");
+    if (link) {
+      link.href = `http://${h}:9117/UI/Dashboard`;
+      link.hidden = false;
+      link.textContent = "打开 Dashboard";
+      link.title = link.href;
+    }
+  }
+
+  /**
    * 用 defaults 填充 Jackett 部署表单。
    * @param {object} data /api/jackett/deploy/defaults
+   * @param {object} [opts]
+   * @param {boolean} [opts.preserveHost] 为 true 时不覆盖当前 jkHost（部署后刷新用）
    */
-  function applyJackettDefaults(data) {
+  function applyJackettDefaults(data, opts) {
     if (!data || !data.ok) return;
+    const preserveHost = !!(opts && opts.preserveHost);
     const host = document.getElementById("jkHost");
     const user = document.getElementById("jkUser");
     const port = document.getElementById("jkPort");
     const admin = document.getElementById("jkAdminPassword");
     const pwd = document.getElementById("jkPassword");
-    if (host && data.host) host.value = data.host;
+    const currentHost = host && host.value ? String(host.value).trim() : "";
+    if (host && data.host && !preserveHost) host.value = data.host;
     if (user && data.user) user.value = data.user;
     if (port && data.port) port.value = String(data.port);
     if (admin && data.admin_password_default) admin.value = data.admin_password_default;
@@ -1028,24 +1050,31 @@
       ["脚本", deps.oneclick_script ? "✓" : "✗"],
       ["密码", data.has_password ? "本地已有" : "需填写"],
     ]);
-    const link = document.getElementById("jkDashboardLink");
-    if (link) {
-      if (data.dashboard_url) {
-        link.href = data.dashboard_url;
-        link.hidden = false;
-        link.textContent = "打开 Dashboard";
-      } else {
-        link.hidden = true;
+    // Dashboard：优先用当前表单 Host（用户刚部署的 IP），避免被旧 dashboard_url 覆盖
+    const effectiveHost = preserveHost && currentHost ? currentHost : (host && host.value) || data.host;
+    if (effectiveHost) {
+      setJackettDashboardFromHost(effectiveHost);
+    } else {
+      const link = document.getElementById("jkDashboardLink");
+      if (link) {
+        if (data.dashboard_url) {
+          link.href = data.dashboard_url;
+          link.hidden = false;
+          link.textContent = "打开 Dashboard";
+        } else {
+          link.hidden = true;
+        }
       }
     }
   }
 
   /**
    * 拉取 Jackett 部署默认值。
+   * @param {object} [opts] 传给 applyJackettDefaults
    */
-  async function loadJackettDefaults() {
+  async function loadJackettDefaults(opts) {
     const data = await api("/api/jackett/deploy/defaults");
-    applyJackettDefaults(data);
+    applyJackettDefaults(data, opts);
     return data;
   }
 
@@ -1148,24 +1177,27 @@
         provision_linode: finalProg.provision_linode,
       });
       if (finalProg.ok) {
-        // 开通后 host 可能已写入 servers.local.json — 刷新预填
+        // 以本次部署实际 host 为准（progress.host 或表单），勿被旧 servers.local.json 覆盖
+        const deployHost = (() => {
+          const fromProg = finalProg.host && String(finalProg.host).trim();
+          if (fromProg && fromProg !== "(provision-linode)") return fromProg;
+          const fromBody = body.host && String(body.host).trim();
+          return fromBody || "";
+        })();
+        if (deployHost) {
+          setJackettDashboardFromHost(deployHost);
+          log("Dashboard 已指向本次 Host", {
+            host: deployHost,
+            url: `http://${deployHost}:9117/UI/Dashboard`,
+          });
+        }
         try {
-          await loadJackettDefaults();
+          // 刷新 deps/密码提示，但保留刚部署的 Host + Dashboard
+          await loadJackettDefaults({ preserveHost: true });
         } catch (_) {
           /* ignore */
         }
-        const filledHost =
-          (document.getElementById("jkHost") && document.getElementById("jkHost").value) ||
-          body.host;
-        if (filledHost) {
-          const dash = `http://${filledHost}:9117/UI/Dashboard`;
-          const link = document.getElementById("jkDashboardLink");
-          if (link) {
-            link.href = dash;
-            link.hidden = false;
-            link.textContent = "打开 Dashboard";
-          }
-        }
+        if (deployHost) setJackettDashboardFromHost(deployHost);
         try {
           await loadConfig();
         } catch (_) {

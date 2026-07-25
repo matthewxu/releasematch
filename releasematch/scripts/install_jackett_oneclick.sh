@@ -402,8 +402,9 @@ wait_for_ssh() {
   die "SSH 等待超时：${VPS_USER}@${VPS_HOST}:${VPS_PORT}"
 }
 
-update_servers_local_after_provision() {
-  # 把新 IP / 密码 / public_url 写回 servers.local.json（若存在）
+update_servers_local_host() {
+  # 把当前 VPS_HOST / 密码 / Jackett URL 写回 servers.local.json（若存在）
+  # --provision-linode 与 --host 安装成功后都应调用，避免 Ops Dashboard 指向旧 IP
   if [[ "${UPDATE_SERVERS_LOCAL}" -ne 1 ]]; then
     echo "=== 已跳过 servers.local.json 回写（--no-update-servers）==="
     return 0
@@ -422,7 +423,8 @@ update_servers_local_after_provision() {
   HOST="${VPS_HOST}" VPS_PASS="${VPS_PASSWORD}" VPS_SSH_USER="${VPS_USER}" VPS_SSH_PORT="${VPS_PORT}" \
   KEY="${SERVERS_ENTRY_KEY}" SERVERS_JSON="${SERVERS_LOCAL}" \
   "${py}" - <<'PY'
-"""将开通后的 host/密码写回 servers.local.json 对应条目。"""
+# -*- coding: utf-8 -*-
+"""将 host/密码/Jackett URL 写回 servers.local.json 对应条目。"""
 import json
 import os
 from pathlib import Path
@@ -436,7 +438,7 @@ port = int(os.environ.get("VPS_SSH_PORT") or "22")
 
 data = json.loads(path.read_text(encoding="utf-8"))
 if key not in data or not isinstance(data[key], dict):
-    data[key] = {"_comment": "由 install_jackett_oneclick.sh --provision-linode 创建"}
+    data[key] = {"_comment": "由 install_jackett_oneclick.sh 回写"}
 entry = data[key]
 entry["host"] = host
 entry.setdefault("label", "日本测试服务器")
@@ -446,7 +448,8 @@ if not isinstance(ssh, dict):
     ssh = {}
     entry["ssh"] = ssh
 ssh["user"] = user
-ssh["password"] = password
+if password:
+    ssh["password"] = password
 ssh["port"] = port
 
 services = entry.setdefault("services", {})
@@ -460,8 +463,13 @@ if isinstance(services, dict):
         socks["command"] = f"ssh -N -D 127.0.0.1:1080 {user}@{host}"
 
 path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-print(f"已更新 {path} → {key}.host={host}")
+print(f"已更新 {path} → {key}.host={host} dashboard=http://{host}:9117/UI/Dashboard")
 PY
+}
+
+# 兼容旧名（provision 路径仍调用）
+update_servers_local_after_provision() {
+  update_servers_local_host
 }
 
 run_provision_linode() {
@@ -659,6 +667,8 @@ main() {
   check_deps
   run_install
   run_configure_indexers
+  # --host 安装成功后同步 servers.local.json，避免 Ops Dashboard 仍指向旧 IP
+  update_servers_local_host
   run_sync_key
   print_next_steps
 }

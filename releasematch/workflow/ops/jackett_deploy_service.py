@@ -150,7 +150,18 @@ def load_defaults() -> Dict[str, Any]:
         else {}
     )
     password = str(ssh.get("password") or "")
-    host = str(entry.get("host") or "")
+    host = str(entry.get("host") or "").strip()
+    jackett = jackett if isinstance(jackett, dict) else {}
+    public_url = str(jackett.get("public_url") or "")
+    dashboard_url = str(jackett.get("dashboard_url") or "")
+    # host 与 URL 不一致时以 host 为准（避免改 IP 后旧 dashboard_url 残留）
+    if host:
+        expect_pub = f"http://{host}:9117"
+        expect_dash = f"http://{host}:9117/UI/Dashboard"
+        if not public_url or host not in public_url:
+            public_url = expect_pub
+        if not dashboard_url or host not in dashboard_url:
+            dashboard_url = expect_dash
     return {
         "ok": True,
         "source": entry.get("_key"),
@@ -160,13 +171,10 @@ def load_defaults() -> Dict[str, Any]:
         "port": int(ssh.get("port") or 22),
         "has_password": bool(password),
         "password_hint": ("已配置（servers.local.json）" if password else ""),
-        "public_url": str((jackett or {}).get("public_url") or (f"http://{host}:9117" if host else "")),
-        "dashboard_url": str(
-            (jackett or {}).get("dashboard_url")
-            or (f"http://{host}:9117/UI/Dashboard" if host else "")
-        ),
+        "public_url": public_url,
+        "dashboard_url": dashboard_url,
         "admin_password_default": str(
-            (jackett or {}).get("admin_password") or os.environ.get("JACKETT_ADMIN_PASSWORD") or "345621"
+            jackett.get("admin_password") or os.environ.get("JACKETT_ADMIN_PASSWORD") or "345621"
         ),
         "deps": deps,
         "script": str(ONECLICK_SCRIPT.relative_to(PROJECT_ROOT)),
@@ -379,6 +387,11 @@ def start_deploy(
                     _append_log("[ops] 已热加载 accounts.local.json 到当前进程")
                 except Exception as exc:  # noqa: BLE001
                     _append_log(f"[ops] 热加载失败（可手动点「仅加载到进程」）: {exc}")
+            dash = (
+                f"http://{progress_host}:9117/UI/Dashboard"
+                if progress_host and progress_host != "(provision-linode)"
+                else ""
+            )
             _set_progress(
                 status="done" if ok else "error",
                 percent=100,
@@ -391,6 +404,8 @@ def start_deploy(
                 finished_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 returncode=rc,
                 ok=ok,
+                host=progress_host,
+                dashboard_url=dash if ok else "",
             )
         except Exception as exc:  # noqa: BLE001
             _append_log(f"[error] {exc}")
