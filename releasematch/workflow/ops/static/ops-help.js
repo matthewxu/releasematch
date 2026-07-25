@@ -404,6 +404,7 @@
         "actions.run_pipeline() → run_batch_slot_pipeline()",
         "经 Jackett/Torznab 拉 torrent/magnet",
         "写入 media_pages / download_resources",
+        "已有 magnets 但本次拉空/失败 → kept_existing（不擦库，继续 generate/speedtest）",
         "自动 refresh_gates 回写跟踪表 magnet/Rec",
       ],
       scripts: [
@@ -420,7 +421,8 @@
         "配置：workflow/torrent_sources/accounts.local.json",
       ],
       troubleshoot: [
-        "0 magnet → Jackett Key/URL、indexer、FlareSolverr、代理",
+        "0 magnet 且空槽 → Jackett Key/URL、indexer、FlareSolverr、代理",
+        "已有槽拉空 → 应见「保留原 magnets」；继续测速更新面板",
         "skip_existing 跳过过多 → 取消勾选「跳过已有 ≥2 magnet」",
       ],
     },

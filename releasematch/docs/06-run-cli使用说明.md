@@ -342,7 +342,7 @@ python -m workflow.run pipeline slot \
 | `--season` | 剧集必填 | 季号 |
 | `--episode` | 剧集必填 | 集号 |
 | `--mode` | 否 | `demo`（默认）或 `live` |
-| `--fetch` | live 时 | 调用 `FetchService` 拉取；**失败或 0 条时才回退 demo** |
+| `--fetch` | live 时 | 调用 `FetchService` 拉取；**已有 magnets 时失败/0 条 → `kept_existing` 保留原数据**；仅空槽才回退 demo（固定 Demo 槽） |
 
 **前提：** `RM_STORAGE_BACKEND=mysql`，且已 `db init`（建议 `--seed`）。
 

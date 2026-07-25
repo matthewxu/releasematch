@@ -112,6 +112,76 @@ def _demo_items_for_slot(
     return []
 
 
+def _kept_existing_slot_result(
+    store: MySQLStore,
+    *,
+    page_id: str,
+    ensure_result: Dict[str, Any],
+    mode: str,
+    fetch_note: str,
+) -> Dict[str, Any]:
+    """
+    拉取失败/空结果时，保留槽位已有 magnets 并返回可继续后续流程的摘要。
+
+    @param store: MySQLStore
+    @param page_id: 槽位 page_id
+    @param ensure_result: ensure_slot_page 结果
+    @param mode: demo | live
+    @param fetch_note: 拉取说明（失败原因 / 0 条）
+    @returns: ok=True、status=kept_existing 的 pipeline 摘要
+    @description
+      不调用 upsert，避免空结果擦库；下游 generate/speedtest 仍可读原 Recommended。
+    """
+    if page_id.startswith("movie:"):
+        ctx = store.get_movie_page_context(page_id)
+    else:
+        ctx = store.get_episode_page_context(page_id)
+
+    magnet_count = int(ctx.page.magnet_count) if ctx else 0
+    page_status = str(ctx.page.page_status) if ctx else ""
+    recommended = ctx.recommended if ctx else None
+    ranked_top = None
+    if recommended:
+        ranked_top = {
+            "title_raw": recommended.title_raw,
+            "score": recommended.match_score,
+            "group_tier": recommended.group_tier,
+        }
+
+    template_preview = None
+    if ctx:
+        template_preview = {
+            "show_title": ctx.catalog.title,
+            "source_count": len(ctx.sources),
+            "recommended": recommended.title_raw if recommended else None,
+            "cross_source_count": ctx.page.cross_source_count,
+            "cross_source_total": ctx.page.cross_source_total,
+            "robots_noindex": not ctx.page.is_indexable(
+                has_recommended=recommended is not None
+            ),
+        }
+
+    return {
+        "ok": True,
+        "status": "kept_existing",
+        "backend": STORAGE_BACKEND,
+        "page_id": page_id,
+        "ensure": ensure_result,
+        "mode": mode,
+        "fetch_note": fetch_note,
+        "ranked_top": ranked_top,
+        "write": {
+            "page_id": page_id,
+            "resources_upserted": 0,
+            "magnet_count": magnet_count,
+            "page_status": page_status,
+            "kept_existing": True,
+        },
+        "sync_run_id": None,
+        "template_preview": template_preview,
+    }
+
+
 def run_slot_pipeline(
     tmdb_id: int,
     media_kind: str = "tv",
@@ -134,6 +204,9 @@ def run_slot_pipeline(
     @param title: 可选 slot 标题（扩槽时来自 TMDB 导出）
     @param force: True 时忽略 torrent 缓存，强制重拉
     @returns: pipeline 结果 JSON
+    @description
+      更新已有槽时若拉取失败或 0 条，保留原 magnets（``kept_existing``），
+      不写空结果、不覆盖 Demo，便于后续 generate / speedtest 继续用原数据。
     """
     if STORAGE_BACKEND != "mysql":
         return {
@@ -190,13 +263,28 @@ def run_slot_pipeline(
         fetch_result = FetchService().fetch_slot(request)
         cross_source_page_count = fetch_result.cross_source_page_count
         cross_source_page_total = fetch_result.cross_source_page_total
-        if fetch_result.error:
-            fetch_note = f"torrent 拉取失败: {fetch_result.error}；回退 demo"
-            items = _demo_items_for_slot(tmdb_id, season, episode)
-            cross_source_page_count = None
-            cross_source_page_total = None
-        elif not fetch_result.items:
-            fetch_note = "torrent 拉取 0 条；回退 demo"
+        if fetch_result.error or not fetch_result.items:
+            # 已有数据：保留原 magnets，供后续 speedtest / generate 更新面板
+            if store.page_has_resources(page_id, min_magnets=1):
+                if fetch_result.error:
+                    keep_note = (
+                        f"torrent 拉取失败: {fetch_result.error}；"
+                        "保留原 magnets，继续后续测速/生成"
+                    )
+                else:
+                    keep_note = "torrent 拉取 0 条；保留原 magnets，继续后续测速/生成"
+                return _kept_existing_slot_result(
+                    store,
+                    page_id=page_id,
+                    ensure_result=ensure_result,
+                    mode=mode,
+                    fetch_note=keep_note,
+                )
+            # 空槽：仅 Demo 槽位回退内置样例，便于本地冒烟
+            if fetch_result.error:
+                fetch_note = f"torrent 拉取失败: {fetch_result.error}；回退 demo"
+            else:
+                fetch_note = "torrent 拉取 0 条；回退 demo"
             items = _demo_items_for_slot(tmdb_id, season, episode)
             cross_source_page_count = None
             cross_source_page_total = None
@@ -214,6 +302,16 @@ def run_slot_pipeline(
         return {"ok": False, "error": "live 模式需 --fetch（R1 实现 jackett 编排）"}
 
     if not items:
+        # 二次保险：非 fetch 路径或 demo 空结果时，仍优先保留已有数据
+        if store.page_has_resources(page_id, min_magnets=1):
+            return _kept_existing_slot_result(
+                store,
+                page_id=page_id,
+                ensure_result=ensure_result,
+                mode=mode,
+                fetch_note=fetch_note
+                or "无可用 items；保留原 magnets，继续后续测速/生成",
+            )
         return {
             "ok": False,
             "page_id": page_id,
@@ -263,6 +361,7 @@ def run_slot_pipeline(
 
     return {
         "ok": True,
+        "status": "upserted",
         "backend": STORAGE_BACKEND,
         "page_id": page_id,
         "ensure": ensure_result,
@@ -317,6 +416,7 @@ def run_batch_slot_pipeline(
     results: List[Dict[str, Any]] = []
     ok_count = 0
     skip_count = 0
+    keep_count = 0
     fail_count = 0
 
     for slot in slots:
@@ -346,17 +446,22 @@ def run_batch_slot_pipeline(
             fetch=fetch,
             title=slot.get("title") or slot.get("label"),
         )
+        if one.get("status") == "kept_existing":
+            status = "kept_existing"
+            keep_count += 1
+        elif one.get("ok"):
+            status = "ok"
+            ok_count += 1
+        else:
+            status = "failed"
+            fail_count += 1
         entry = {
             "label": label,
             "page_id": page_id,
-            "status": "ok" if one.get("ok") else "failed",
+            "status": status,
             "result": one,
         }
         results.append(entry)
-        if one.get("ok"):
-            ok_count += 1
-        else:
-            fail_count += 1
 
     run_id = str(uuid.uuid4())
     store.record_sync_run(
@@ -366,9 +471,9 @@ def run_batch_slot_pipeline(
         resources_upserted=sum(
             int(r.get("result", {}).get("write", {}).get("resources_upserted") or 0)
             for r in results
-            if r.get("status") == "ok"
+            if r.get("status") in ("ok", "kept_existing")
         ),
-        pages_published=ok_count,
+        pages_published=ok_count + keep_count,
     )
 
     report = {
@@ -376,6 +481,7 @@ def run_batch_slot_pipeline(
         "total": len(slots),
         "ok_count": ok_count,
         "skip_count": skip_count,
+        "keep_count": keep_count,
         "fail_count": fail_count,
         "sync_run_id": run_id,
         "tmdb_warm": tmdb_warm,
@@ -427,6 +533,7 @@ def run_refetch_all_published_pipeline(
 
     results: List[Dict[str, Any]] = []
     ok_count = 0
+    keep_count = 0
     fail_count = 0
 
     for slot in slots:
@@ -440,9 +547,18 @@ def run_refetch_all_published_pipeline(
             fetch=True,
             force=force,
         )
+        if one.get("status") == "kept_existing":
+            status = "kept_existing"
+            keep_count += 1
+        elif one.get("ok"):
+            status = "ok"
+            ok_count += 1
+        else:
+            status = "failed"
+            fail_count += 1
         entry = {
             "page_id": page_id,
-            "status": "ok" if one.get("ok") else "failed",
+            "status": status,
             "cross_source_total": (one.get("write") or {}).get("cross_source_total"),
             "cross_source_count": (one.get("write") or {}).get("cross_source_count"),
             "magnet_count": (one.get("write") or {}).get("magnet_count"),
@@ -450,18 +566,18 @@ def run_refetch_all_published_pipeline(
             "error": one.get("error"),
         }
         results.append(entry)
-        if one.get("ok"):
-            ok_count += 1
-        else:
-            fail_count += 1
 
     run_id = str(uuid.uuid4())
     store.record_sync_run(
         run_id=run_id,
         source="pipeline_refetch_all",
         slots_processed=len(slots),
-        resources_upserted=sum(int(r.get("magnet_count") or 0) for r in results if r.get("status") == "ok"),
-        pages_published=ok_count,
+        resources_upserted=sum(
+            int(r.get("magnet_count") or 0)
+            for r in results
+            if r.get("status") == "ok"
+        ),
+        pages_published=ok_count + keep_count,
     )
 
     cross_totals = [int(r["cross_source_total"]) for r in results if r.get("cross_source_total")]
@@ -469,6 +585,7 @@ def run_refetch_all_published_pipeline(
         "ok": fail_count == 0,
         "total": len(slots),
         "ok_count": ok_count,
+        "keep_count": keep_count,
         "fail_count": fail_count,
         "sync_run_id": run_id,
         "force": force,

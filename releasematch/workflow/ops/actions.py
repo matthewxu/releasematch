@@ -244,6 +244,16 @@ def run_pipeline(
             update_slot_stage(
                 batch, page_id, "pipeline", status="skipped", detail="已有 ≥2 magnet"
             )
+        elif status == "kept_existing":
+            # 更新拉空但保留原数据：标 ok，便于一键流程继续 generate/speedtest
+            note = str(
+                (entry.get("result") or {}).get("fetch_note")
+                or "拉取无结果；保留原 magnets"
+            )
+            write = (entry.get("result") or {}).get("write") or {}
+            if write.get("magnet_count") is not None:
+                note = f"{note} · magnet={write.get('magnet_count')}"
+            update_slot_stage(batch, page_id, "pipeline", status="ok", detail=note)
         elif status == "ok":
             detail = ""
             write = (entry.get("result") or {}).get("write") or {}
@@ -262,6 +272,7 @@ def run_pipeline(
             "total": report.get("total"),
             "ok_count": report.get("ok_count"),
             "skip_count": report.get("skip_count"),
+            "keep_count": report.get("keep_count"),
             "fail_count": report.get("fail_count"),
             "sync_run_id": report.get("sync_run_id"),
         },
