@@ -352,13 +352,22 @@ print(data["ipv4"], data["root_pass"], data["id"])
 
 ### 4.5 与 Jackett 一键装机衔接
 
-**推荐（已集成）：**
+**推荐（脚本已集成买机/销毁）：**
 
 ```bash
 bash scripts/install_jackett_oneclick.sh --provision-linode --with-indexers
-# 销毁：label 读 linode.local.json，一般不必再传 --linode-label
 bash scripts/install_jackett_oneclick.sh --destroy-linode
 ```
+
+**Ops ⑤ 配置（与脚本模式对齐）：**
+
+| UI | 实际脚本参数 |
+|----|----------------|
+| 「一键部署 Jackett」+ 填 Host | `--host …`（装/重装，不买机） |
+| 「一键部署 Jackett」+ 勾选「先开通 Linode」 | `--provision-linode`（买机+装栈） |
+| 「Linode VPS 增删」开通 / 销毁 | `linode_vps.py create\|delete`；开通可勾选顺带 provision |
+
+同 `defaults.label` 已存在时开通会失败，需先销毁。
 
 **分步（等价）：**
 

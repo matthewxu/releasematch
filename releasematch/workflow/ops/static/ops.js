@@ -504,6 +504,7 @@
     if (String(step) === "5") {
       loadConfig().catch((e) => log(String(e)));
       loadJackettDefaults().catch((e) => log(String(e)));
+      loadLinodeDefaults().catch((e) => log(String(e)));
     }
     if (String(step) === "6") {
       loadDailyPatrol().catch((e) => log(String(e)));
@@ -627,6 +628,190 @@
   }
 
   /**
+   * 用 linode.local.json 默认值填充开通表单。
+   * @param {object} data /api/linode/defaults
+   */
+  function applyLinodeDefaults(data) {
+    if (!data) return;
+    const label = document.getElementById("lnLabel");
+    const region = document.getElementById("lnRegion");
+    const typeEl = document.getElementById("lnType");
+    const image = document.getElementById("lnImage");
+    const delLabel = document.getElementById("lnDeleteLabel");
+    if (label && data.label) label.value = data.label;
+    if (region && data.region) region.value = data.region;
+    if (typeEl && data.type) typeEl.value = data.type;
+    if (image && data.image) image.value = data.image;
+    if (delLabel && data.label && !delLabel.value) delLabel.value = data.label;
+    const deps = data.deps || {};
+    renderMetrics(document.getElementById("linodeDeps"), [
+      ["config", data.config_path ? "✓" : "缺 linode.local.json"],
+      ["token", data.has_token ? "✓" : "✗"],
+      ["cli", deps.cli ? "✓" : "✗"],
+      ["linode_api4", deps.linode_api4 ? "✓" : "✗"],
+      ["ssh 密码", data.has_ssh_password ? "本地已有" : "—"],
+    ]);
+    if (data.hint) log("Linode", data.hint);
+    if (data.defaults_error) log("Linode defaults", data.defaults_error);
+  }
+
+  /**
+   * 拉取 Linode 默认参数。
+   */
+  async function loadLinodeDefaults() {
+    const data = await api("/api/linode/defaults");
+    applyLinodeDefaults(data);
+    return data;
+  }
+
+  /**
+   * 渲染实例列表到 metrics。
+   * @param {object} data /api/linode/list
+   */
+  function renderLinodeList(data) {
+    const el = document.getElementById("linodeListMetrics");
+    if (!el) return;
+    if (!data || !data.ok) {
+      renderMetrics(el, [["列表", "失败"], ["错误", (data && data.error) || "—"]]);
+      return;
+    }
+    const rows = data.instances || [];
+    if (!rows.length) {
+      renderMetrics(el, [["实例", "0"], ["状态", "账号下无 VPS"]]);
+      return;
+    }
+    const metrics = [["实例数", String(rows.length)]];
+    rows.slice(0, 8).forEach((inst) => {
+      metrics.push([
+        String(inst.label || inst.id || "?"),
+        `${inst.status || "?"} · ${inst.ipv4 || "—"} · id=${inst.id || "—"}`,
+      ]);
+    });
+    renderMetrics(el, metrics);
+    const logEl = document.getElementById("linodeLog");
+    if (logEl) {
+      logEl.textContent = rows
+        .map(
+          (r) =>
+            `${r.id}\t${r.label}\t${r.region || ""}\t${r.status || ""}\t${r.ipv4 || ""}`
+        )
+        .join("\n");
+    }
+  }
+
+  /**
+   * 刷新 Linode 实例列表。
+   */
+  async function loadLinodeList() {
+    const data = await api("/api/linode/list");
+    renderLinodeList(data);
+    log("Linode list", { ok: data.ok, count: data.count, error: data.error });
+    return data;
+  }
+
+  /**
+   * 轮询 Linode 开通进度。
+   * @param {string} title
+   */
+  async function pollLinodeProgress(title) {
+    for (;;) {
+      const data = await api("/api/linode/progress");
+      const p = data.progress || {};
+      showProgress(title, {
+        percent: p.percent != null ? Number(p.percent) : null,
+        message: p.message || p.status || "",
+      });
+      const logEl = document.getElementById("linodeLog");
+      if (logEl && p.log_tail) logEl.textContent = p.log_tail;
+      if (p.status === "done" || p.status === "error") {
+        return p;
+      }
+      await sleep(1500);
+    }
+  }
+
+  /**
+   * 开通 Linode VPS（可选顺带装 Jackett）。
+   */
+  async function startLinodeCreate() {
+    const body = {
+      label: ((document.getElementById("lnLabel") && document.getElementById("lnLabel").value) || "").trim(),
+      region: ((document.getElementById("lnRegion") && document.getElementById("lnRegion").value) || "").trim(),
+      type: ((document.getElementById("lnType") && document.getElementById("lnType").value) || "").trim(),
+      image: ((document.getElementById("lnImage") && document.getElementById("lnImage").value) || "").trim(),
+      with_jackett: !!(
+        document.getElementById("lnWithJackett") && document.getElementById("lnWithJackett").checked
+      ),
+      with_indexers: !!(
+        document.getElementById("lnWithIndexers") && document.getElementById("lnWithIndexers").checked
+      ),
+    };
+    const tip = body.with_jackett
+      ? "将购买 Linode 并安装 Jackett（约数分钟，产生费用）。继续？"
+      : "将购买一台 Linode VPS（产生费用）。继续？";
+    if (!window.confirm(tip)) return;
+
+    await withBusy(body.with_jackett ? "开通 Linode + Jackett" : "开通 Linode VPS", async () => {
+      showProgress("Linode 开通", { percent: 5, message: "启动…" });
+      const start = await api("/api/linode/create/start", { method: "POST", body });
+      log("Linode create 已启动", {
+        started: start.started,
+        already_running: start.already_running,
+        with_jackett: body.with_jackett,
+      });
+      const finalProg = await pollLinodeProgress(
+        body.with_jackett ? "开通 Linode + Jackett" : "开通 Linode VPS"
+      );
+      log("Linode create 结束", {
+        status: finalProg.status,
+        ok: finalProg.ok,
+        result: finalProg.result,
+        error: finalProg.error,
+      });
+      const ipv4 = finalProg.result && finalProg.result.ipv4;
+      if (finalProg.ok && ipv4) {
+        const jkHost = document.getElementById("jkHost");
+        if (jkHost) jkHost.value = String(ipv4);
+        log("已把新 IP 填入 Jackett Host", { ipv4 });
+      }
+      await loadLinodeList().catch(() => null);
+    });
+  }
+
+  /**
+   * 销毁 Linode VPS（双确认）。
+   */
+  async function startLinodeDelete() {
+    const idRaw =
+      (document.getElementById("lnDeleteId") && document.getElementById("lnDeleteId").value) || "";
+    const label =
+      ((document.getElementById("lnDeleteLabel") && document.getElementById("lnDeleteLabel").value) ||
+        (document.getElementById("lnLabel") && document.getElementById("lnLabel").value) ||
+        "").trim();
+    const instance_id = idRaw.trim() ? Number(idRaw) : null;
+    if (!instance_id && !label) {
+      log("请填写销毁用 Instance ID 或 Label");
+      return;
+    }
+    const who = instance_id ? `id=${instance_id}` : `label=${label}`;
+    if (!window.confirm(`确认销毁 Linode（${who}）？不可恢复。`)) return;
+    if (!window.confirm("再次确认：真的删除该 VPS？")) return;
+
+    await withBusy("销毁 Linode VPS", async () => {
+      const data = await api("/api/linode/delete", {
+        method: "POST",
+        body: { instance_id, label: label || null, confirm: true },
+      });
+      const logEl = document.getElementById("linodeLog");
+      if (logEl) {
+        logEl.textContent = JSON.stringify(data.result || data, null, 2);
+      }
+      log("Linode delete", { ok: data.ok, error: data.error, result: data.result });
+      await loadLinodeList().catch(() => null);
+    });
+  }
+
+  /**
    * 用 defaults 填充 Jackett 部署表单。
    * @param {object} data /api/jackett/deploy/defaults
    */
@@ -704,6 +889,10 @@
     const host = (document.getElementById("jkHost") && document.getElementById("jkHost").value) || "";
     const password =
       (document.getElementById("jkPassword") && document.getElementById("jkPassword").value) || "";
+    const provision_linode = !!(
+      document.getElementById("jkProvisionLinode") &&
+      document.getElementById("jkProvisionLinode").checked
+    );
     const body = {
       host: host.trim(),
       password: password,
@@ -727,44 +916,67 @@
         (document.getElementById("jkAdminPassword") &&
           document.getElementById("jkAdminPassword").value) ||
         "345621",
+      provision_linode,
     };
-    if (!body.host) {
-      log("请填写 VPS Host / IP");
+    if (!body.provision_linode && !body.host) {
+      log("请填写 VPS Host / IP，或勾选「先开通 Linode」");
       return;
     }
-    if (!body.password && !body.dry_run) {
+    if (body.provision_linode) {
+      const tip =
+        "将执行 --provision-linode：按 linode.local.json 购买 VPS 并安装 Jackett（产生费用）。\n" +
+        "若同 label 已存在会失败，需先销毁。继续？";
+      if (!window.confirm(tip)) return;
+    } else if (!body.password && !body.dry_run) {
       const go = window.confirm(
         "未填写 SSH 密码，将尝试使用 servers.local.json。\n继续？"
       );
       if (!go) return;
     }
-    await withBusy("一键部署 Jackett + FlareSolverr", async () => {
+    const busyTitle = body.provision_linode
+      ? "开通 Linode + 部署 Jackett"
+      : "一键部署 Jackett + FlareSolverr";
+    await withBusy(busyTitle, async () => {
       showProgress("一键部署 Jackett", {
         percent: 5,
-        message: `连接 ${body.user}@${body.host}…`,
+        message: body.provision_linode
+          ? "开通 Linode…"
+          : `连接 ${body.user}@${body.host}…`,
       });
       const start = await api("/api/jackett/deploy/start", { method: "POST", body });
       log("部署已启动", {
         started: start.started,
         already_running: start.already_running,
-        host: body.host,
+        host: body.host || "(provision)",
+        provision_linode: body.provision_linode,
       });
-      const finalProg = await pollJackettDeploy("一键部署 Jackett + FlareSolverr");
+      const finalProg = await pollJackettDeploy(busyTitle);
       log("部署结束", {
         status: finalProg.status,
         ok: finalProg.ok,
         returncode: finalProg.returncode,
         error: finalProg.error,
+        provision_linode: finalProg.provision_linode,
       });
       if (finalProg.ok) {
-        const dash = `http://${body.host}:9117/UI/Dashboard`;
-        const link = document.getElementById("jkDashboardLink");
-        if (link) {
-          link.href = dash;
-          link.hidden = false;
-          link.textContent = "打开 Dashboard";
+        // 开通后 host 可能已写入 servers.local.json — 刷新预填
+        try {
+          await loadJackettDefaults();
+        } catch (_) {
+          /* ignore */
         }
-        // 同步 Key 后刷新配置页 accounts
+        const filledHost =
+          (document.getElementById("jkHost") && document.getElementById("jkHost").value) ||
+          body.host;
+        if (filledHost) {
+          const dash = `http://${filledHost}:9117/UI/Dashboard`;
+          const link = document.getElementById("jkDashboardLink");
+          if (link) {
+            link.href = dash;
+            link.hidden = false;
+            link.textContent = "打开 Dashboard";
+          }
+        }
         try {
           await loadConfig();
         } catch (_) {
@@ -2662,6 +2874,35 @@
     if (btnJackettDeploy) {
       btnJackettDeploy.addEventListener("click", () => {
         startJackettDeploy().catch((e) => log(String(e)));
+      });
+    }
+
+    const btnLinodeDefaults = document.getElementById("btnLinodeDefaults");
+    if (btnLinodeDefaults) {
+      btnLinodeDefaults.addEventListener("click", () => {
+        withBusy("预填 Linode 参数", () => loadLinodeDefaults(), {
+          indeterminate: true,
+        }).catch((e) => log(String(e)));
+      });
+    }
+    const btnLinodeList = document.getElementById("btnLinodeList");
+    if (btnLinodeList) {
+      btnLinodeList.addEventListener("click", () => {
+        withBusy("刷新 Linode 列表", () => loadLinodeList(), {
+          indeterminate: true,
+        }).catch((e) => log(String(e)));
+      });
+    }
+    const btnLinodeCreate = document.getElementById("btnLinodeCreate");
+    if (btnLinodeCreate) {
+      btnLinodeCreate.addEventListener("click", () => {
+        startLinodeCreate().catch((e) => log(String(e)));
+      });
+    }
+    const btnLinodeDelete = document.getElementById("btnLinodeDelete");
+    if (btnLinodeDelete) {
+      btnLinodeDelete.addEventListener("click", () => {
+        startLinodeDelete().catch((e) => log(String(e)));
       });
     }
 

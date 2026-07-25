@@ -9,7 +9,8 @@
   筛选结果导入 MySQL 跟踪表（ops_track_batches / ops_track_slots）后，
   生成与部署进度按槽位跟踪到底；台账/下线以 media_pages 为准。
   「配置」段可读写 ``.env`` / ``accounts.local.json`` 并热加载；
-  并可一键 SSH 部署 Jackett + FlareSolverr（``install_jackett_oneclick.sh``）。
+  Jackett 一键部署对齐 ``install_jackett_oneclick.sh``（``--host`` 或 ``--provision-linode``）；
+  并可单独增删 Linode VPS（``linode_vps.py``）。
   可选 ``RM_OPS_PASSWORD`` 登录门禁（``/login.html`` + Cookie 会话）。
   仅绑定 127.0.0.1，勿部署到公网。
 """

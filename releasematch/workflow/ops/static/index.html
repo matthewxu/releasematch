@@ -411,15 +411,62 @@
       </div>
 
       <div class="ops-card" style="margin-top:16px">
+        <h3>Linode VPS 增删</h3>
+        <p class="lead" style="margin-bottom:10px">
+          封装 <code>workflow/torrent_sources/linode_vps.py</code>（配置
+          <code>linode.local.json</code>，已 gitignore）。
+          Token / root 密码不回传浏览器。销毁不可恢复，需二次确认。
+          文档：<code>docs/linode-vps-lifecycle.md</code>。
+        </p>
+        <div class="ops-metrics" id="linodeDeps"></div>
+        <div class="ops-row">
+          <label class="ops-field">Label
+            <input type="text" id="lnLabel" placeholder="rm-jackett-jp" autocomplete="off" />
+          </label>
+          <label class="ops-field">Region
+            <input type="text" id="lnRegion" placeholder="jp-osa" autocomplete="off" />
+          </label>
+          <label class="ops-field">Type
+            <input type="text" id="lnType" placeholder="g6-nanode-1" autocomplete="off" />
+          </label>
+          <label class="ops-field">Image
+            <input type="text" id="lnImage" placeholder="linode/debian12" autocomplete="off" />
+          </label>
+        </div>
+        <div class="ops-row">
+          <label><input type="checkbox" id="lnWithJackett" /> 开通后顺带安装 Jackett（--provision-linode）</label>
+          <label><input type="checkbox" id="lnWithIndexers" checked /> 装机时写入 indexer</label>
+        </div>
+        <div class="ops-row">
+          <label class="ops-field">销毁用 Instance ID
+            <input type="number" id="lnDeleteId" placeholder="可选" autocomplete="off" />
+          </label>
+          <label class="ops-field">销毁用 Label
+            <input type="text" id="lnDeleteLabel" placeholder="与 Label 相同或另填" autocomplete="off" />
+          </label>
+        </div>
+        <div class="ops-actions">
+          <button type="button" id="btnLinodeDefaults" class="secondary" data-help="linode_defaults">从 linode.local.json 预填</button>
+          <button type="button" id="btnLinodeList" class="secondary" data-help="linode_list">刷新实例列表</button>
+          <button type="button" id="btnLinodeCreate" data-help="linode_create">开通 VPS</button>
+          <button type="button" id="btnLinodeDelete" class="secondary" data-help="linode_delete">销毁 VPS</button>
+        </div>
+        <div class="ops-metrics" id="linodeListMetrics" style="margin-top:10px"></div>
+        <pre class="ops-log" id="linodeLog" style="max-height:220px;margin-top:10px">尚未操作。</pre>
+      </div>
+
+      <div class="ops-card" style="margin-top:16px">
         <h3>一键部署 Jackett + FlareSolverr</h3>
         <p class="lead" style="margin-bottom:10px">
-          本机 SSH 到 VPS 安装 Docker 栈（封装 <code>scripts/install_jackett_oneclick.sh</code>）。
-          密码优先填表单；留空则用 <code>servers.local.json</code>（不回显）。仅 127.0.0.1 Ops 可用。
+          封装 <code>scripts/install_jackett_oneclick.sh</code>（与脚本三种模式对齐）：
+          填 Host → <code>--host</code> 装/重装；勾选「先开通 Linode」→
+          <code>--provision-linode</code>（买机+装栈，读 <code>linode.local.json</code>）。
+          密码优先填表单；留空则用 <code>servers.local.json</code>（开通模式不需要密码）。仅 127.0.0.1 Ops。
         </p>
         <div class="ops-metrics" id="jackettDeployDeps"></div>
         <div class="ops-row">
           <label class="ops-field">VPS Host / IP
-            <input type="text" id="jkHost" placeholder="203.0.113.10" autocomplete="off" />
+            <input type="text" id="jkHost" placeholder="203.0.113.10（开通模式可留空）" autocomplete="off" />
           </label>
           <label class="ops-field">SSH 用户
             <input type="text" id="jkUser" value="root" autocomplete="off" />
@@ -444,6 +491,7 @@
           </label>
         </div>
         <div class="ops-row">
+          <label><input type="checkbox" id="jkProvisionLinode" /> 先开通 Linode（--provision-linode，无机器时用）</label>
           <label><input type="checkbox" id="jkWithIndexers" checked /> 写入默认 indexer</label>
           <label><input type="checkbox" id="jkSyncKey" checked /> 同步 API Key → accounts.local.json</label>
           <label><input type="checkbox" id="jkForceRecreate" checked /> 强制重建容器</label>

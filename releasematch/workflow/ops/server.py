@@ -26,6 +26,7 @@ from workflow.ops import auth as ops_auth
 from workflow.ops import config_service
 from workflow.ops import daily_service
 from workflow.ops import jackett_deploy_service
+from workflow.ops import linode_vps_service
 from workflow.ops import generation_flow_service
 from workflow.ops import seo_c2_service
 from workflow.ops import deploy_flow_service
@@ -569,6 +570,46 @@ def _handle_api(
             dry_run=bool(body.get("dry_run", False)),
             use_servers_password=bool(body.get("use_servers_password", True)),
             admin_password=body.get("admin_password"),
+            provision_linode=bool(body.get("provision_linode", False)),
+        )
+        status = 200 if result.get("ok") else 400
+        return status, result
+
+    # ── Linode VPS 增删（linode_vps.py）──────────────────────────
+    if path == "/api/linode/defaults" and method == "GET":
+        return 200, linode_vps_service.load_defaults()
+
+    if path == "/api/linode/list" and method == "GET":
+        try:
+            return 200, linode_vps_service.list_instances()
+        except Exception as exc:  # noqa: BLE001
+            return 500, {"ok": False, "error": str(exc), "instances": []}
+
+    if path == "/api/linode/progress" and method == "GET":
+        return 200, {"ok": True, "progress": linode_vps_service.get_progress()}
+
+    if path == "/api/linode/create/start" and method == "POST":
+        result = linode_vps_service.start_create(
+            label=(str(body.get("label")).strip() if body.get("label") else None),
+            region=(str(body.get("region")).strip() if body.get("region") else None),
+            ltype=(str(body.get("type")).strip() if body.get("type") else None),
+            image=(str(body.get("image")).strip() if body.get("image") else None),
+            with_jackett=bool(body.get("with_jackett", False)),
+            with_indexers=bool(body.get("with_indexers", True)),
+        )
+        status = 200 if result.get("ok") else 400
+        return status, result
+
+    if path == "/api/linode/delete" and method == "POST":
+        iid_raw = body.get("instance_id") or body.get("id")
+        try:
+            iid = int(iid_raw) if iid_raw is not None and str(iid_raw).strip() != "" else None
+        except (TypeError, ValueError):
+            return 400, {"ok": False, "error": "instance_id 无效"}
+        result = linode_vps_service.delete_instance(
+            instance_id=iid,
+            label=(str(body.get("label")).strip() if body.get("label") else None),
+            confirm=bool(body.get("confirm", False)),
         )
         status = 200 if result.get("ok") else 400
         return status, result

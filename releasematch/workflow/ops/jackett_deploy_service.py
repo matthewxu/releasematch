@@ -4,8 +4,10 @@ Ops 一键部署 Jackett + FlareSolverr（封装 install_jackett_oneclick.sh）�
 
 @module workflow.ops.jackett_deploy_service
 @description
-  在本机后台跑 ``scripts/install_jackett_oneclick.sh``（SSH 到 VPS 装 Docker 栈），
-  UI 轮询进度。默认值可从 ``servers.local.json`` 预填（密码不回传明文，仅标记已配置）。
+  在本机后台跑 ``scripts/install_jackett_oneclick.sh``：
+    - 默认 ``--host``：对已有 VPS SSH 装 Docker 栈；
+    - ``provision_linode=True``：``--provision-linode``（买机 + 装栈，与脚本集成一致）。
+  UI 轮询进度。默认值可从 ``servers.local.json`` 预填（密码不回传明文）。
 """
 
 from __future__ import annotations
@@ -193,7 +195,7 @@ def _resolve_password(password: Optional[str], *, use_servers_password: bool) ->
 
 def start_deploy(
     *,
-    host: str,
+    host: str = "",
     password: Optional[str] = None,
     user: str = "root",
     port: int = 22,
@@ -204,12 +206,13 @@ def start_deploy(
     dry_run: bool = False,
     use_servers_password: bool = True,
     admin_password: Optional[str] = None,
+    provision_linode: bool = False,
 ) -> Dict[str, Any]:
     """
     后台启动一键安装（立即返回，前端轮询 progress）。
 
-    @param host: VPS IP/域名
-    @param password: SSH 密码；空则尝试 servers.local.json
+    @param host: VPS IP/域名；``provision_linode=True`` 时可空
+    @param password: SSH 密码；空则尝试 servers.local.json（开通模式不需要）
     @param user: SSH 用户
     @param port: SSH 端口
     @param with_indexers: 写入默认 indexer
@@ -219,13 +222,15 @@ def start_deploy(
     @param dry_run: 仅预览
     @param use_servers_password: password 空时读本地
     @param admin_password: Jackett Dashboard 密码（环境变量）
+    @param provision_linode: True 时走 ``--provision-linode``（买机+装栈）
     @returns: {ok, started|already_running, progress}
+    @description
+      与脚本三种模式对齐：默认 ``--host`` 装/重装；勾选开通则 ``--provision-linode``。
     """
     global _WORKER
 
     host_norm = str(host or "").strip()
-    if not host_norm:
-        return {"ok": False, "error": "缺少 host（VPS IP）"}
+    do_provision = bool(provision_linode)
 
     profile = str(indexer_profile or "all").strip().lower()
     if profile not in ("all", "cn", "intl"):
@@ -234,39 +239,69 @@ def start_deploy(
     if not ONECLICK_SCRIPT.is_file():
         return {"ok": False, "error": f"找不到脚本 {ONECLICK_SCRIPT}"}
 
-    pw = _resolve_password(password, use_servers_password=use_servers_password)
-    if not pw and not dry_run:
-        return {
-            "ok": False,
-            "error": "缺少 SSH 密码；请填写或在 servers.local.json 配置",
-        }
-
-    # 密码只经环境变量 SSHPASS 传递，避免出现在进程命令行
-    cmd: List[str] = [
-        "bash",
-        str(ONECLICK_SCRIPT),
-        "--host",
-        host_norm,
-        "--user",
-        str(user or "root"),
-        "--port",
-        str(int(port or 22)),
-        "--indexer-profile",
-        profile,
-    ]
-    if with_indexers:
-        cmd.append("--with-indexers")
+    if do_provision:
+        # 买机路径：不要求 host/密码；凭据来自 linode.local.json
+        cmd: List[str] = [
+            "bash",
+            str(ONECLICK_SCRIPT),
+            "--provision-linode",
+            "--indexer-profile",
+            profile,
+        ]
+        if with_indexers:
+            cmd.append("--with-indexers")
+        else:
+            cmd.append("--no-indexers")
+        if not sync_key:
+            cmd.append("--no-sync")
+        if not force_recreate:
+            cmd.append("--no-force")
+        if dry_run:
+            cmd.append("--dry-run")
+        progress_host = "(provision-linode)"
+        log_cmd_hint = "$ bash scripts/install_jackett_oneclick.sh --provision-linode …"
+        start_msg = "开通 Linode 并安装 Jackett…"
     else:
-        cmd.append("--no-indexers")
-    if not sync_key:
-        cmd.append("--no-sync")
-    if not force_recreate:
-        cmd.append("--no-force")
-    if dry_run:
-        cmd.append("--dry-run")
+        if not host_norm:
+            return {
+                "ok": False,
+                "error": "缺少 host（VPS IP）；或勾选「先开通 Linode」走 --provision-linode",
+            }
+        pw = _resolve_password(password, use_servers_password=use_servers_password)
+        if not pw and not dry_run:
+            return {
+                "ok": False,
+                "error": "缺少 SSH 密码；请填写或在 servers.local.json 配置",
+            }
+        cmd = [
+            "bash",
+            str(ONECLICK_SCRIPT),
+            "--host",
+            host_norm,
+            "--user",
+            str(user or "root"),
+            "--port",
+            str(int(port or 22)),
+            "--indexer-profile",
+            profile,
+        ]
+        if with_indexers:
+            cmd.append("--with-indexers")
+        else:
+            cmd.append("--no-indexers")
+        if not sync_key:
+            cmd.append("--no-sync")
+        if not force_recreate:
+            cmd.append("--no-force")
+        if dry_run:
+            cmd.append("--dry-run")
+        progress_host = host_norm
+        log_cmd_hint = f"$ bash scripts/install_jackett_oneclick.sh --host {host_norm} …"
+        start_msg = f"SSH 安装 Docker / Jackett / FlareSolverr（{user}@{host_norm}）…"
 
     env = os.environ.copy()
-    env["SSHPASS"] = pw or ""
+    if not do_provision:
+        env["SSHPASS"] = _resolve_password(password, use_servers_password=use_servers_password) or ""
     env["FORCE_RECREATE"] = "1" if force_recreate else "0"
     if admin_password and str(admin_password).strip():
         env["JACKETT_ADMIN_PASSWORD"] = str(admin_password).strip()
@@ -284,12 +319,13 @@ def start_deploy(
             {
                 "status": "running",
                 "percent": 5,
-                "message": f"启动安装 {user}@{host_norm}…",
+                "message": start_msg,
                 "log_tail": "",
                 "error": None,
                 "started_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 "finished_at": None,
-                "host": host_norm,
+                "host": progress_host,
+                "provision_linode": do_provision,
                 "returncode": None,
                 "ok": None,
             }
@@ -299,8 +335,11 @@ def start_deploy(
         """后台线程：流式跑 oneclick，更新进度。"""
         rc = -1
         try:
-            _append_log(f"$ bash scripts/install_jackett_oneclick.sh --host {host_norm} …")
-            _set_progress(percent=10, message="SSH 安装 Docker / Jackett / FlareSolverr…")
+            _append_log(log_cmd_hint)
+            _set_progress(
+                percent=10,
+                message=("购买 Linode…" if do_provision else "SSH 安装…"),
+            )
             proc = subprocess.Popen(
                 cmd,
                 cwd=str(PROJECT_ROOT),
@@ -315,14 +354,18 @@ def start_deploy(
                 _append_log(line)
                 low = line.lower()
                 # 粗粒度进度（按脚本阶段关键字）
-                if "docker" in low and "install" in low:
+                if do_provision and ("linode" in low or "create" in low or "已创建" in line):
                     _set_progress(percent=25)
-                elif "jackett" in low and ("pull" in low or "creat" in low):
+                elif "ssh" in low and ("wait" in low or "连接" in line):
+                    _set_progress(percent=35)
+                elif "docker" in low and "install" in low:
                     _set_progress(percent=45)
+                elif "jackett" in low and ("pull" in low or "creat" in low):
+                    _set_progress(percent=55)
                 elif "flaresolverr" in low:
-                    _set_progress(percent=60)
+                    _set_progress(percent=65)
                 elif "indexer" in low:
-                    _set_progress(percent=75)
+                    _set_progress(percent=78)
                 elif "api key" in low or "sync" in low:
                     _set_progress(percent=88)
                 elif "安装完成" in line or "dashboard:" in low:
@@ -338,8 +381,12 @@ def start_deploy(
                     _append_log(f"[ops] 热加载失败（可手动点「仅加载到进程」）: {exc}")
             _set_progress(
                 status="done" if ok else "error",
-                percent=100 if ok else 100,
-                message=("安装成功" if ok else f"安装失败 exit={rc}"),
+                percent=100,
+                message=(
+                    ("开通+安装成功" if do_provision else "安装成功")
+                    if ok
+                    else f"失败 exit={rc}"
+                ),
                 error=None if ok else f"exit_code={rc}",
                 finished_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 returncode=rc,

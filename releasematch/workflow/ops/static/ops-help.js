@@ -669,30 +669,30 @@
       title: "Jackett 一键部署",
       api: "POST /api/jackett/deploy/start + GET …/progress",
       flow: [
-        "jackett_deploy_service.start_deploy()",
-        "SSH 到 VPS 跑 scripts/install_jackett_oneclick.sh",
+        "默认：--host 对已有 VPS SSH 装/重装 Jackett",
+        "勾选「先开通 Linode」：--provision-linode（买机+装栈，与脚本集成一致）",
         "可选写 indexer、sync API Key → accounts.local.json",
       ],
       scripts: [
         "workflow/ops/jackett_deploy_service.py",
         "scripts/install_jackett_oneclick.sh",
-        "workflow/torrent_sources/servers.local.json",
+        "workflow/torrent_sources/servers.local.json / linode.local.json",
       ],
       commands: [
-        "bash scripts/install_jackett_oneclick.sh \\",
-        "  --host <IP> --password '<密码>' \\",
-        "  --with-indexers --indexer-profile all",
+        "bash scripts/install_jackett_oneclick.sh --host <IP> --with-indexers",
+        "bash scripts/install_jackett_oneclick.sh --provision-linode --with-indexers",
       ],
-      dataFlow: "表单/SSH → VPS Docker(jackett+flaresolverr) → 可选回写 accounts",
+      dataFlow: "表单 → oneclick（host | provision）→ VPS Docker / 可选回写 accounts",
       storage: [
         "VPS：Docker 容器 jackett / flaresolverr",
+        "开通：Linode 实例 + servers.local.json",
         "本机：accounts.local.json（若 sync Key）",
-        "SSH 凭据：servers.local.json（不回显密码）",
       ],
       troubleshoot: [
+        "无机器 → 勾选「先开通 Linode」或先用上方 Linode 卡片开通",
+        "同 label 已存在 → 先 destroy / Linode 销毁",
         "SSH 失败 → host/端口/密码或 servers.local.json",
-        "Dashboard HTTP 400（curl）属 Jackett UI 行为，用浏览器",
-        "docs：docs/jackett-remote-linode.md / docs/VPS迁移与部署.md",
+        "docs：docs/linode-vps-lifecycle.md / docs/jackett-remote-linode.md",
       ],
     },
 
@@ -707,10 +707,91 @@
         "workflow/ops/jackett_deploy_service.py",
         "workflow/torrent_sources/servers.local.json",
       ],
-      commands: ["# 编辑 servers.local.json 后点预填"],
-      dataFlow: "servers.local.json → 表单字段（无密码明文）",
-      storage: ["servers.local.json（勿提交）"],
-      troubleshoot: ["预填空 → 文件不存在或字段名不匹配"],
+      commands: ["# UI：点「从 servers.local.json 预填」"],
+      dataFlow: "servers.local.json → 表单",
+      storage: ["servers.local.json"],
+      troubleshoot: ["无 host → 检查 JSON 首个含 host 的条目"],
+    },
+
+    linode_defaults: {
+      title: "Linode 预填 defaults",
+      api: "GET /api/linode/defaults",
+      flow: [
+        "linode_vps_service.load_defaults()",
+        "子进程 linode_vps.py defaults --json",
+        "不回传 token / SSH 密码",
+      ],
+      scripts: [
+        "workflow/ops/linode_vps_service.py",
+        "workflow/torrent_sources/linode_vps.py",
+        "workflow/torrent_sources/linode.local.json",
+      ],
+      commands: [
+        "python workflow/torrent_sources/linode_vps.py defaults --json",
+      ],
+      dataFlow: "linode.local.json → Ops 表单",
+      storage: ["linode.local.json（gitignore）"],
+      troubleshoot: [
+        "缺配置 → cp linode.example.json linode.local.json",
+        "token ✗ → 填 LINODE_TOKEN 或 local.token",
+        "缺 linode_api4 → pip install -r workflow/torrent_sources/requirements-linode.txt",
+      ],
+    },
+
+    linode_list: {
+      title: "Linode 实例列表",
+      api: "GET /api/linode/list",
+      flow: ["linode_vps.py list --json"],
+      scripts: ["workflow/ops/linode_vps_service.py"],
+      commands: ["python workflow/torrent_sources/linode_vps.py list --json"],
+      dataFlow: "Linode API → Ops metrics",
+      storage: ["Linode 账号实例"],
+      troubleshoot: ["401/token → 检查 linode.local.json token"],
+    },
+
+    linode_create: {
+      title: "开通 Linode VPS",
+      api: "POST /api/linode/create/start + GET …/progress",
+      flow: [
+        "后台 linode_vps.py create --json（等待 running）",
+        "可选 --provision-linode：买机 + 装 Jackett",
+        "成功后把 ipv4 填入下方 Jackett Host",
+      ],
+      scripts: [
+        "workflow/ops/linode_vps_service.py",
+        "workflow/torrent_sources/linode_vps.py",
+        "scripts/install_jackett_oneclick.sh",
+      ],
+      commands: [
+        "python workflow/torrent_sources/linode_vps.py create --json \\",
+        "  --label rm-jackett-jp --region jp-osa",
+        "bash scripts/install_jackett_oneclick.sh --provision-linode --with-indexers",
+      ],
+      dataFlow: "表单 → Linode API → 实例 ipv4",
+      storage: ["Linode 账单实例", "可选回写 servers.local.json（provision）"],
+      troubleshoot: [
+        "产生费用，确认 region/type",
+        "docs：docs/linode-vps-lifecycle.md",
+      ],
+    },
+
+    linode_delete: {
+      title: "销毁 Linode VPS",
+      api: "POST /api/linode/delete  body: {confirm:true, id|label}",
+      flow: [
+        "双确认后 linode_vps.py delete --yes",
+        "不可恢复",
+      ],
+      scripts: ["workflow/ops/linode_vps_service.py"],
+      commands: [
+        "python workflow/torrent_sources/linode_vps.py delete --label <label> --yes",
+      ],
+      dataFlow: "Ops → Linode delete",
+      storage: ["实例删除后不可恢复"],
+      troubleshoot: [
+        "须填 instance id 或 label",
+        "label 不唯一会失败 → 用 id",
+      ],
     },
 
     daily_refresh: {
