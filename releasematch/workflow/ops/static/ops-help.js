@@ -753,7 +753,8 @@
       title: "开通 Linode VPS",
       api: "POST /api/linode/create/start + GET …/progress（phases[]）",
       flow: [
-        "后台 linode_vps.py create --json（等待 running）",
+        "后台 linode_vps.py create --json（booted=true）",
+        "官方等待：wait_for_entity_free + status=running（见 docs §3.0）",
         "可选 --provision-linode：买机 + 装 Jackett",
         "进度：prepare → api_create → wait_running → finalize（或 provision 多阶段）",
         "成功后把 ipv4 填入下方 Jackett Host",

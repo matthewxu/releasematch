@@ -322,6 +322,69 @@ def _finish(ok: bool, *, message: str, error: Optional[str], rc: int, result: An
     )
 
 
+def _local_ssh_password() -> str:
+    """
+    从 linode.local.json 读取 defaults.ssh.password（不入日志）。
+
+    @returns: 密码或空串
+    """
+    if not LINODE_LOCAL.is_file():
+        return ""
+    try:
+        cfg = json.loads(LINODE_LOCAL.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return ""
+    ssh = ((cfg or {}).get("defaults") or {}).get("ssh") or {}
+    return str(ssh.get("password") or "")
+
+
+def _find_listed_instance(
+    instances: List[Dict[str, Any]], *, label: Optional[str], instance_id: Optional[int] = None
+) -> Optional[Dict[str, Any]]:
+    """
+    在 list 结果中按 label / id 找实例。
+
+    @param instances: list_instances 的 instances
+    @param label: 标签
+    @param instance_id: 可选 id
+    @returns: 匹配行或 None
+    """
+    lab = (label or "").strip()
+    for row in instances:
+        if not isinstance(row, dict):
+            continue
+        if instance_id is not None and row.get("id") == instance_id:
+            return row
+        if lab and str(row.get("label") or "") == lab:
+            return row
+    return None
+
+
+def _result_from_listed(row: Dict[str, Any], *, root_pass: str = "") -> Dict[str, Any]:
+    """
+    用 list 行合成 create 成功结果（create HTTP 卡住时的兜底）。
+
+    @param row: 实例摘要
+    @param root_pass: 本地配置密码（可空）
+    @returns: 与 CLI create JSON 对齐的字典
+    """
+    ipv4 = str(row.get("ipv4") or "")
+    return {
+        "ok": True,
+        "action": "create",
+        "id": row.get("id"),
+        "label": row.get("label"),
+        "region": row.get("region"),
+        "type": row.get("type"),
+        "status": row.get("status"),
+        "ipv4": ipv4,
+        "ipv4_list": [ipv4] if ipv4 else [],
+        "root_pass": root_pass,
+        "ssh": f"ssh root@{ipv4}" if ipv4 else "",
+        "recovered_from_list": True,
+    }
+
+
 def load_defaults() -> Dict[str, Any]:
     """
     Ops 表单预填（不含 token / 密码明文）。
@@ -775,53 +838,150 @@ def start_create(
             )
             assert proc.stdout is not None and proc.stderr is not None
 
+            seen_running_via_list: Optional[Dict[str, Any]] = None
+            list_probe_at = 0.0
+
             def _drain_err() -> None:
                 """流式 stderr → 日志，并推进 wait_running。"""
                 for line in proc.stderr:
                     _append_log(line)
                     low = line.lower()
-                    if "creat" in low or "request" in low:
+                    if "提交 api" in low or "create:" in low and "api" in low:
                         _set_phase(
-                            "api_create", "running", line.strip()[:160], percent=30
+                            "api_create", "running", line.strip()[:160], percent=28
                         )
-                    if "wait" in low or "pending" in low or "boot" in low:
+                    if "api 已返回" in low or "已返回 id=" in low:
                         _set_phase(
-                            "api_create", "done", "实例已创建", percent=40
+                            "api_create", "done", line.strip()[:160], percent=42
                         )
                         _set_phase(
                             "wait_running",
                             "running",
-                            line.strip()[:160] or "等待 running…",
+                            "等待实例 running…",
                             percent=55,
                         )
-                    if "running" in low:
+                    if "wait_ready" in low or "wait_for_entity_free" in low or "wait_running" in low or "pending" in low or "provision" in low:
                         _set_phase(
-                            "wait_running", "done", "实例 running", percent=75
+                            "api_create", "done", "实例已创建", percent=42
+                        )
+                        _set_phase(
+                            "wait_running",
+                            "running",
+                            line.strip()[:160] or "等待 Events/status…",
+                            percent=60,
+                        )
+                    if "已 running" in low or "status=running" in low.replace(" ", ""):
+                        _set_phase(
+                            "wait_running", "done", "实例 running", percent=78
                         )
 
             err_thread = threading.Thread(target=_drain_err, daemon=True)
             err_thread.start()
-            # 心跳：长时间等待时刷新 elapsed / message
+
+            # 心跳 + list 旁路：create HTTP 卡住但控制台已 running 时仍能收尾
             while proc.poll() is None:
+                now = time.monotonic()
                 _set_progress(elapsed_sec=_elapsed())
                 with _PROGRESS_LOCK:
                     cur = _PROGRESS.get("phase")
                 if cur == "api_create":
                     _set_progress(
-                        message=f"创建中… 已等待 {_elapsed()}s（API 可能仍在响应）"
+                        message=(
+                            f"创建中… 已等待 {_elapsed()}s"
+                            f"（若 Linode 控制台已有机器，将自动用 list 确认）"
+                        )
                     )
                 elif cur == "wait_running":
                     _set_progress(
                         message=f"等待实例 running… 已等待 {_elapsed()}s"
                     )
-                time.sleep(1.5)
-            stdout_data = proc.stdout.read()
-            rc = proc.wait(timeout=5)
-            err_thread.join(timeout=5)
 
-            _set_phase("finalize", "running", "解析 JSON 结果…", percent=88)
-            payload = _parse_json_stdout(stdout_data or "")
+                # 约每 12s 用 list 探测（list 本身可能较慢）
+                if label_s and now - list_probe_at >= 12:
+                    list_probe_at = now
+                    try:
+                        listed = list_instances()
+                        row = _find_listed_instance(
+                            listed.get("instances") or [], label=label_s
+                        )
+                    except Exception as probe_exc:  # noqa: BLE001
+                        _append_log(f"[probe] list 失败: {probe_exc}")
+                        row = None
+                    if row:
+                        st = str(row.get("status") or "").lower()
+                        _append_log(
+                            f"[probe] list 命中 id={row.get('id')} "
+                            f"status={row.get('status')} ipv4={row.get('ipv4')}"
+                        )
+                        _set_phase(
+                            "api_create",
+                            "done",
+                            f"控制台已有 id={row.get('id')}",
+                            percent=45,
+                        )
+                        if st == "running":
+                            seen_running_via_list = row
+                            _set_phase(
+                                "wait_running",
+                                "done",
+                                f"list 确认 running ipv4={row.get('ipv4')}",
+                                percent=80,
+                            )
+                            # create 子进程若仍阻塞在 HTTP，再等一会；超时则终止并 list 收尾
+                            if _elapsed() >= 45:
+                                _append_log(
+                                    "[probe] create 子进程仍未返回，"
+                                    "终止并用 list 结果收尾"
+                                )
+                                try:
+                                    proc.terminate()
+                                except OSError:
+                                    pass
+                                try:
+                                    proc.wait(timeout=8)
+                                except Exception:  # noqa: BLE001
+                                    try:
+                                        proc.kill()
+                                    except OSError:
+                                        pass
+                                break
+                        else:
+                            _set_phase(
+                                "wait_running",
+                                "running",
+                                f"list status={row.get('status')}",
+                                percent=58,
+                            )
+                time.sleep(1.5)
+
+            stdout_data = ""
+            try:
+                stdout_data = proc.stdout.read() or ""
+            except Exception:  # noqa: BLE001
+                stdout_data = ""
+            rc = proc.poll()
+            if rc is None:
+                try:
+                    rc = proc.wait(timeout=5)
+                except Exception:  # noqa: BLE001
+                    rc = -1
+            err_thread.join(timeout=3)
+
+            _set_phase("finalize", "running", "解析结果…", percent=88)
+            payload = _parse_json_stdout(stdout_data)
             ok = bool(payload.get("ok")) and rc == 0
+
+            # create HTTP 超时/被杀，但 list 已确认 running → 视为成功
+            if (not ok) and seen_running_via_list:
+                _append_log(
+                    "[recover] CLI 无完整 JSON，使用 list + 本地 ssh 密码合成结果"
+                )
+                payload = _result_from_listed(
+                    seen_running_via_list, root_pass=_local_ssh_password()
+                )
+                ok = True
+                rc = 0
+
             safe = _redact_payload(payload)
             if ok:
                 _set_phase(
@@ -839,6 +999,8 @@ def start_create(
                     f"ipv4={safe.get('ipv4')} region={safe.get('region')} "
                     f"type={safe.get('type')}"
                 )
+                if safe.get("recovered_from_list"):
+                    detail += " · recovered_from_list"
                 _set_phase("finalize", "done", detail, percent=100)
                 _append_log(
                     f"created id={safe.get('id')} label={safe.get('label')} "
@@ -848,14 +1010,49 @@ def start_create(
                     True,
                     message=f"开通成功 ipv4={safe.get('ipv4')}",
                     error=None,
-                    rc=rc,
+                    rc=rc if rc is not None else 0,
                     result=safe,
                 )
             else:
+                # 最后再 list 一次：纯超时但机器已在
+                if label_s:
+                    try:
+                        listed = list_instances()
+                        row = _find_listed_instance(
+                            listed.get("instances") or [], label=label_s
+                        )
+                        if row and str(row.get("status") or "").lower() == "running":
+                            payload = _result_from_listed(
+                                row, root_pass=_local_ssh_password()
+                            )
+                            safe = _redact_payload(payload)
+                            _set_phase("api_create", "done", f"id={safe.get('id')}")
+                            _set_phase(
+                                "wait_running",
+                                "done",
+                                "list 确认 running",
+                                percent=95,
+                            )
+                            _set_phase(
+                                "finalize",
+                                "done",
+                                f"ipv4={safe.get('ipv4')} · recovered_from_list",
+                                percent=100,
+                            )
+                            _finish(
+                                True,
+                                message=f"开通成功（list 收尾）ipv4={safe.get('ipv4')}",
+                                error=None,
+                                rc=0,
+                                result=safe,
+                            )
+                            return
+                    except Exception as recover_exc:  # noqa: BLE001
+                        _append_log(f"[recover] {recover_exc}")
                 err = payload.get("error") or f"exit={rc}"
                 _set_phase("finalize", "error", str(err)[:200])
                 _append_log(f"create failed: {err}")
-                _finish(False, message=str(err)[:200], error=str(err), rc=rc, result=safe)
+                _finish(False, message=str(err)[:200], error=str(err), rc=rc or -1, result=safe)
         except Exception as exc:  # noqa: BLE001
             _append_log(f"[error] {exc}")
             _set_phase("finalize", "error", str(exc)[:200])

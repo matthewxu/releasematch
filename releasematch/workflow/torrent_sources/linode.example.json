@@ -1,7 +1,7 @@
 {
-  "_comment": "与 linode_vps.py 同目录。复制为 linode.local.json 并填入真实 token / 密码。linode.local.json 已在 .gitignore，勿提交 GitHub。",
+  "_comment": "与 linode_vps.py 同目录。复制为 linode.local.json 并填入真实 token / 密码。linode.local.json 已在 .gitignore，勿提交 GitHub。http_timeout 为单次 HTTP 秒数（默认 120）；就绪等待见 docs/linode-vps-lifecycle.md §3.0。",
   "token": "YOUR_LINODE_PERSONAL_ACCESS_TOKEN",
-  "http_timeout": null,
+  "http_timeout": 120,
   "defaults": {
     "_comment": "create / 一键开通未传 CLI 时使用。label 为实例名；ssh.password 建议与 servers.local.json → jackett_vps_japan.ssh.password 一致。",
     "label": "rm-jackett-jp",

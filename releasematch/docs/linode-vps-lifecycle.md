@@ -68,6 +68,7 @@ Cloud Manager 对每个产品/服务提供三档（对应 OAuth scope 的 `*_onl
 |----------------------|------|------------|------------------------|
 | **Linodes** | **Read/Write** | `create` / `list` / `ip` / `delete`；`params --kind type` | 403；无法创建或删除实例 |
 | **Images** | **Read Only** | `params --kind image`；create 选用公开镜像 id | 枚举镜像失败；create 指定镜像可能失败 |
+| **Events** | **Read Only** | create 等待就绪：`wait_for_entity_free` 读 Account Events | 无此权限时回退为轮询实例 status（仍可用，稍慢/噪音多） |
 | **Account** | No Access 或 Read Only | 一般不需要；查账单/账号信息才要 | — |
 | **IPs** | 默认 No Access | 仅预留/管理独立 IP 时才需 Read/Write | 普通 create 自动分配公网 IP，通常不需要 |
 | **Firewalls** | 默认 No Access | 脚本不配防火墙 | — |
@@ -77,6 +78,7 @@ Cloud Manager 对每个产品/服务提供三档（对应 OAuth scope 的 `*_onl
 
 - Linodes → **Read/Write**
 - Images → **Read Only**
+- Events → **Read Only**（推荐；官方 Event 轮询）
 - 其余 → **No Access**
 
 > **Regions：** 区域列表多为公开/账号可读信息，Cloud Manager 未必单独列出 “Regions” 行；`params --kind region` 在已有 Linodes 读权限时一般可用。若枚举区域报权限错误，再给 **Account: Read Only** 试一次。
@@ -91,7 +93,7 @@ Cloud Manager 对每个产品/服务提供三档（对应 OAuth scope 的 `*_onl
 | `params --kind type` | Linodes: Read Only（或 Write） |
 | `params --kind image` | Images: Read Only |
 | `list` / `ip` | Linodes: Read Only |
-| `create` | Linodes: **Read/Write**；Images: Read Only（选镜像） |
+| `create` | Linodes: **Read/Write**；Images: Read Only（选镜像）；Events: Read Only（推荐，等就绪） |
 | `delete` | Linodes: **Read/Write** |
 
 #### 2.1.5 Cloud Manager 产品 ↔ OAuth Scope 全表
@@ -140,7 +142,7 @@ cp linode.example.json linode.local.json
 ```json
 {
   "token": "你的真实token",
-  "http_timeout": null,
+  "http_timeout": 120,
   "defaults": {
     "label": "rm-jackett-jp",
     "region": "jp-osa",
@@ -155,6 +157,7 @@ cp linode.example.json linode.local.json
 }
 ```
 
+- `http_timeout`：单次 API HTTP 超时（秒）；`null`/缺省时脚本按 **120**；显式 `0` 表示不设超时（不推荐）。**不等待** provisioning，就绪等待见 §3.0。  
 - `defaults.label`：实例名；`create` / 一键 `--provision-linode` / `--destroy-linode` 未传 CLI 时使用  
 - `defaults.ssh.password`：`create` 未传 `--root-pass` 时作为 root 密码  
 
@@ -224,6 +227,29 @@ python workflow/torrent_sources/linode_vps.py delete --label jackett-jp --yes
 ```
 
 也可先 `cd workflow/torrent_sources` 后直接 `python linode_vps.py ...`。
+
+### 3.0 创建等待：官方推荐逻辑
+
+依据：
+
+- [Create a Linode](https://techdocs.akamai.com/linode-api/reference/post-linode-instance)：`POST` 成功即返回对象，status 常为 `provisioning`；镜像部署默认 `booted=true`。
+- [linode_api4 Event polling](https://linode-api4.readthedocs.io/en/latest/guides/event_polling.html)：长耗时操作用 Account Events；拿到 id 后用 `wait_for_entity_free("linode", id)`。
+- 社区确认：无官方「开通百分比」字段，可按 `provisioning` → `booting` → `running` 映射粗进度。
+
+本脚本 `create`（默认等待）流程：
+
+```text
+POST /linode/instances  (booted=true, http_timeout 仅约束本次 HTTP)
+        │ 返回 id + status（多为 provisioning）
+        ▼
+client.polling.wait_for_entity_free("linode", id)   # Events: read_only
+        ▼
+反复 GET instance，直到 status == running
+        ▼
+输出 ipv4 / root_pass JSON
+```
+
+`--no-wait`：只做 POST，不等待。`--wait-seconds` 默认 240（与 SDK polling 默认一致）。
 
 ### 3.1 枚举可用参数（推荐先跑）
 
@@ -369,6 +395,8 @@ bash scripts/install_jackett_oneclick.sh --destroy-linode
 
 开通/销毁均为后台任务：Ops 顶部进度条 + 卡片内 `phases[]` 分项表 + 滚动日志；轮询 `GET /api/linode/progress`。销毁走 `POST /api/linode/delete/start`（须 `confirm:true`）。
 
+若 `create` HTTP 长时间无返回但控制台已有实例，Ops 会定期 `list` 旁路确认；确认 `running` 后终止卡住的子进程并用 list 结果收尾。`http_timeout` 缺省按 120s（见 `linode.example.json`），避免无限阻塞。
+
 同 `defaults.label` 已存在时开通会失败，需先销毁。
 
 **分步（等价）：**
@@ -419,8 +447,8 @@ create：
   --label LABEL       省略则用 config.defaults.label，再否则 rm-linode-<unix_ts>
   --root-pass PASS    可选；省略则由 API/SDK 生成并写入 JSON
   --ssh-key PUBKEY    可选；注入 authorized_keys
-  --wait-seconds N    等待 running 超时，默认 180
-  --no-wait           创建后不等待（可能尚未 running）
+  --wait-seconds N    等待就绪超时（Events + status=running），默认 240
+  --no-wait           仅 POST，不等待 Events/running
 
 ip / delete：
   --id ID             实例数字 ID
@@ -473,3 +501,4 @@ curl -s -X DELETE -H "Authorization: Bearer $LINODE_TOKEN" \
 | 2026-07-25 | `linode.local.json` 增加 `defaults.ssh.password`，与 `servers.local.json` 对齐 |
 | 2026-07-25 | `install_jackett_oneclick.sh` 集成 `--provision-linode` / `--destroy-linode` |
 | 2026-07-25 | `defaults.label` 写入 linode.local.json；新增 `defaults` 子命令；一键脚本不再写死 label |
+| 2026-07-25 | create 按官方语义：`booted=true` + `wait_for_entity_free` + status=running；推荐 Events: Read Only |

@@ -59,7 +59,11 @@ EXIT_USAGE = 2
 DEFAULT_TYPE = "g6-nanode-1"  # 1 vCPU / 1GB RAM / 25GB SSD / 1TB 流量
 DEFAULT_REGION = "jp-osa"  # Japan, Osaka
 DEFAULT_IMAGE = "linode/debian12"
-DEFAULT_WAIT_SECONDS = 180
+DEFAULT_WAIT_SECONDS = 240  # 与 linode_api4 PollingGroup 默认 timeout 对齐
+# create/list 未配置 http_timeout 时的默认（秒）；仅约束「单次 HTTP」，不等待 provisioning
+DEFAULT_HTTP_TIMEOUT = 120.0
+# Event / status 轮询间隔（秒）；与 SDK PollingGroup 默认 interval 对齐
+DEFAULT_POLL_INTERVAL = 5
 
 # 本脚本与配置同目录：workflow/torrent_sources/
 _SCRIPT_DIR = Path(__file__).resolve().parent
@@ -91,8 +95,8 @@ def _emit(payload: dict[str, Any], *, as_json: bool, human_lines: list[str] | No
 
 
 def _err(message: str) -> None:
-    """将诊断信息写到 stderr，避免污染 --json 的 stdout。"""
-    print(message, file=sys.stderr)
+    """将诊断信息写到 stderr，避免污染 --json 的 stdout（立即 flush 供 Ops 轮询）。"""
+    print(message, file=sys.stderr, flush=True)
 
 
 def candidate_config_paths(explicit: str | None = None) -> list[Path]:
@@ -175,23 +179,28 @@ def extract_http_timeout(config: dict[str, Any]) -> float | None:
     """
     解析 HTTP 超时：环境变量 LINODE_HTTP_TIMEOUT 优先，其次配置 http_timeout。
 
+    配置为 null / 缺省时返回 ``DEFAULT_HTTP_TIMEOUT``（避免 create 在 API 已成功后
+    仍无限阻塞在 HTTP 读上）。显式 ``0`` 表示不设超时（不推荐）。
+
     @param config: 已加载的配置
-    @return: 秒数或 None
+    @return: 秒数；显式 0 时为 None（无超时）
     """
     env = (os.environ.get("LINODE_HTTP_TIMEOUT") or "").strip()
     if env:
         try:
-            return float(env)
+            val = float(env)
+            return None if val <= 0 else val
         except ValueError:
             _err(f"忽略无效 LINODE_HTTP_TIMEOUT={env!r}")
     raw = config.get("http_timeout")
     if raw is None or raw == "":
-        return None
+        return DEFAULT_HTTP_TIMEOUT
     try:
-        return float(raw)
+        val = float(raw)
+        return None if val <= 0 else val
     except (TypeError, ValueError):
         _err(f"忽略无效 http_timeout={raw!r}")
-        return None
+        return DEFAULT_HTTP_TIMEOUT
 
 
 def require_token(config: dict[str, Any], config_path: Path | None) -> str:
@@ -301,20 +310,147 @@ def effective_create_defaults(config: dict[str, Any]) -> dict[str, str]:
     }
 
 
+def _status_text(instance) -> str:
+    """
+    规范化实例 status 为小写字符串（兼容枚举/对象）。
+
+    @param instance: linode_api4 Instance
+    @return: 如 running / provisioning / booting
+    """
+    raw = getattr(instance, "status", "")
+    if raw is None:
+        return ""
+    # 部分 SDK 版本 status 为枚举
+    text = getattr(raw, "value", None) or getattr(raw, "name", None) or raw
+    return str(text).strip().lower()
+
+
+def _refresh_instance(client, instance):
+    """
+    用 ``client.load`` 刷新实例（官方推荐显式 load，避免惰性对象过期）。
+
+    @param client: LinodeClient
+    @param instance: 已有 Instance（至少含 id）
+    @return: 刷新后的 Instance
+    """
+    _, Instance = _import_sdk()
+    try:
+        return client.load(Instance, instance.id)
+    except Exception:  # noqa: BLE001
+        try:
+            instance.invalidate()
+        except Exception:  # noqa: BLE001
+            pass
+        return instance
+
+
+def wait_until_ready(client, instance, timeout: int, *, interval: int = DEFAULT_POLL_INTERVAL) -> None:
+    """
+    等待新建实例就绪（官方推荐流程）。
+
+    依据：
+    - Akamai Linode API：``POST /linode/instances`` 立即返回，status 常为
+      ``provisioning``；需随后查询直至 ``running``
+      （https://techdocs.akamai.com/linode-api/reference/post-linode-instance）。
+    - linode_api4：长耗时操作用 Account Events +
+      ``client.polling.wait_for_entity_free("linode", id)``
+      （https://linode-api4.readthedocs.io/en/latest/guides/event_polling.html）。
+    - 无百分比进度；可用 status 映射粗进度（社区官方答复）。
+
+    步骤：
+    1. ``wait_for_entity_free``：该 Linode 上无 ``scheduled``/``started`` 事件；
+    2. 再 ``load`` 确认 ``status == running``（``booted=false`` 时 entity free
+       也可能是 offline，故必须二次校验）；
+    3. 若无 Events 权限 / SDK 过旧，回退为按 interval 轮询 GET instance。
+
+    @param client: LinodeClient
+    @param instance: create 返回的 Instance
+    @param timeout: 最长等待秒数
+    @param interval: 轮询间隔秒数
+    """
+    entity_id = int(instance.id)
+    deadline = time.time() + max(1, int(timeout))
+    interval = max(1, int(interval))
+
+    _err(
+        f"wait_ready: id={entity_id} 开始等待 "
+        f"(timeout={timeout}s interval={interval}s)"
+    )
+
+    # ── 1) 官方 Event 轮询：等该实体无进行中事件 ─────────────
+    polling_group = getattr(client, "polling", None)
+    wait_free = getattr(polling_group, "wait_for_entity_free", None) if polling_group else None
+    if callable(wait_free):
+        remaining = max(1, int(deadline - time.time()))
+        _err(
+            f"wait_ready: wait_for_entity_free(linode, {entity_id}) "
+            f"timeout={remaining}s"
+        )
+        try:
+            wait_free("linode", entity_id, timeout=remaining, interval=interval)
+            _err(f"wait_ready: id={entity_id} entity events 已空闲")
+        except Exception as exc:  # noqa: BLE001 — 超时或缺 events 权限
+            _err(f"wait_ready: wait_for_entity_free 未完成（将改用 status 轮询）: {exc}")
+    else:
+        _err("wait_ready: SDK 无 polling.wait_for_entity_free，改用 status 轮询")
+
+    # ── 2) 确认 status=running（GET instance）────────────────
+    last = ""
+    while time.time() < deadline:
+        instance = _refresh_instance(client, instance)
+        status = _status_text(instance)
+        if status != last:
+            # 粗进度：与 Linode 社区建议一致（无官方 % API）
+            rough = {
+                "provisioning": "约 0–40%",
+                "booting": "约 40–90%",
+                "running": "100%",
+                "offline": "offline（若未 booted）",
+            }.get(status, "")
+            extra = f" ({rough})" if rough else ""
+            _err(f"wait_ready: id={entity_id} status={status or '?'}{extra}")
+            last = status
+        if status == "running":
+            _err(f"wait_ready: id={entity_id} 已 running")
+            return
+        if status in ("stopped", "offline") and last:
+            # booted=false 的合法终态；create 默认 booted=true，此处视为异常提示
+            raise RuntimeError(
+                f"实例 id={entity_id} 事件已结束但 status={status!r} "
+                f"（若创建时 booted=false 属预期；否则检查磁盘/配置）"
+            )
+        time.sleep(interval)
+
+    raise RuntimeError(
+        f"等待 running 超时（{timeout}s），当前 status={_status_text(instance)!r}"
+    )
+
+
 def wait_running(instance, timeout: int) -> None:
     """
-    轮询实例直至 status == running，或超时抛出 RuntimeError。
+    兼容旧调用：仅有 instance 时按 status 轮询（无 client 则无法走 Events）。
 
     @param instance: linode_api4 Instance
     @param timeout: 最长等待秒数
     """
     deadline = time.time() + timeout
+    last = ""
     while time.time() < deadline:
-        instance.invalidate()
-        if instance.status == "running":
+        try:
+            instance.invalidate()
+        except Exception as exc:  # noqa: BLE001
+            _err(f"wait_running: invalidate 失败: {exc}")
+        status = _status_text(instance)
+        if status != last:
+            _err(f"wait_running: id={getattr(instance, 'id', '?')} status={status or '?'}")
+            last = status
+        if status == "running":
+            _err(f"wait_running: id={getattr(instance, 'id', '?')} 已 running")
             return
-        time.sleep(5)
-    raise RuntimeError(f"等待 running 超时（{timeout}s），当前 status={instance.status!r}")
+        time.sleep(DEFAULT_POLL_INTERVAL)
+    raise RuntimeError(
+        f"等待 running 超时（{timeout}s），当前 status={_status_text(instance)!r}"
+    )
 
 
 def resolve_instance(client, Instance, *, instance_id: int | None, label: str | None):
@@ -446,13 +582,19 @@ def resolve_create_ssh_key(config: dict[str, Any], cli_ssh_key: str | None) -> s
 
 def cmd_create(args: argparse.Namespace) -> int:
     """
-    创建（购买）一台 Linode，可选等待 running，输出 id/ip/root_pass。
+    创建（购买）一台 Linode，可选等待 ready，输出 id/ip/root_pass。
+
+    官方语义（POST /linode/instances）：
+    - HTTP 成功即返回实例对象，status 多为 ``provisioning``；
+    - 镜像部署默认 ``booted=true``，后台继续装系统/启动；
+    - 就绪判定：Events 空闲 + ``status=running``（见 ``wait_until_ready``）。
 
     @param args: argparse 命名空间
     @return: 退出码
     """
     config: dict[str, Any] = args.linode_config
     client = get_client(config, args.linode_config_path)
+    _, Instance = _import_sdk()
     cfg_defaults = create_defaults_from_config(config)
 
     ltype = args.type or cfg_defaults.get("type") or DEFAULT_TYPE
@@ -469,6 +611,8 @@ def cmd_create(args: argparse.Namespace) -> int:
         "region": region,
         "image": image,
         "label": label,
+        # 官方：从 Image 创建时默认 booted=true；显式写出避免歧义
+        "booted": True,
     }
     root_pass_arg = resolve_create_root_pass(config, args.root_pass)
     ssh_key = resolve_create_ssh_key(config, args.ssh_key)
@@ -484,29 +628,50 @@ def cmd_create(args: argparse.Namespace) -> int:
     # 记录将使用的 root 密码（新版 SDK 的 instance_create 只返回 Instance）
     used_root_pass = create_kwargs.get("root_pass") or ""
 
+    _err(
+        f"create: POST /linode/instances label={label} region={region} "
+        f"type={ltype} image={image} booted=true"
+    )
+    instance = None
     try:
         created = client.linode.instance_create(**create_kwargs)
     except Exception as exc:  # noqa: BLE001
-        _err(f"创建失败: {exc}")
-        payload = {"ok": False, "action": "create", "error": str(exc)}
-        _emit(payload, as_json=args.json, human_lines=[f"error={exc}"])
-        return EXIT_FAIL
-
-    # 兼容旧版 SDK 可能返回 (Instance, root_pass)
-    if isinstance(created, tuple) and len(created) >= 1:
-        instance = created[0]
-        if len(created) > 1 and created[1]:
-            used_root_pass = created[1] or used_root_pass
+        # HTTP 超时等：控制台可能已受理创建 → 按 label 找回后继续 wait
+        _err(f"create: instance_create 异常: {exc}")
+        try:
+            instance = resolve_instance(
+                client, Instance, instance_id=None, label=label
+            )
+            _err(
+                f"create: 已按 label 找回 id={instance.id} "
+                f"status={_status_text(instance)}，继续等待就绪"
+            )
+        except Exception:  # noqa: BLE001
+            payload = {"ok": False, "action": "create", "error": str(exc)}
+            _emit(payload, as_json=args.json, human_lines=[f"error={exc}"])
+            return EXIT_FAIL
     else:
-        instance = created
+        # 兼容旧版 SDK 可能返回 (Instance, root_pass)
+        if isinstance(created, tuple) and len(created) >= 1:
+            instance = created[0]
+            if len(created) > 1 and created[1]:
+                used_root_pass = created[1] or used_root_pass
+        else:
+            instance = created
 
+    assert instance is not None
     root_pass = used_root_pass
+    _err(
+        f"create: API 对象已就绪 id={instance.id} label={instance.label} "
+        f"status={_status_text(instance)}（随后用 Events/status 等待 running）"
+    )
 
     if not args.no_wait:
         try:
-            wait_running(instance, args.wait_seconds)
-        except RuntimeError as exc:
+            wait_until_ready(client, instance, args.wait_seconds)
+        except Exception as exc:  # noqa: BLE001
             _err(str(exc))
+            instance = _refresh_instance(client, instance)
             ipv4 = primary_ipv4(instance)
             payload = {
                 "ok": False,
@@ -514,16 +679,17 @@ def cmd_create(args: argparse.Namespace) -> int:
                 "error": str(exc),
                 "id": instance.id,
                 "label": instance.label,
-                "status": instance.status,
+                "status": _status_text(instance),
                 "ipv4": ipv4,
                 "root_pass": root_pass,
             }
             _emit(payload, as_json=args.json)
             return EXIT_FAIL
 
-    instance.invalidate()
+    instance = _refresh_instance(client, instance)
     ipv4 = primary_ipv4(instance)
     ipv4_list = list(instance.ipv4 or [])
+    status = _status_text(instance)
     payload = {
         "ok": True,
         "action": "create",
@@ -531,7 +697,7 @@ def cmd_create(args: argparse.Namespace) -> int:
         "label": instance.label,
         "region": str(getattr(instance.region, "id", instance.region)),
         "type": ltype,
-        "status": instance.status,
+        "status": status,
         "ipv4": ipv4,
         "ipv4_list": ipv4_list,
         "root_pass": root_pass,
@@ -982,9 +1148,9 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=DEFAULT_WAIT_SECONDS,
         dest="wait_seconds",
-        help=f"等待 running 超时秒数（默认 {DEFAULT_WAIT_SECONDS}）",
+        help=f"等待就绪超时秒数（默认 {DEFAULT_WAIT_SECONDS}；官方 Events 轮询 + status=running）",
     )
-    create_p.add_argument("--no-wait", action="store_true", help="创建后不等待 running")
+    create_p.add_argument("--no-wait", action="store_true", help="仅 POST，不等待 Events/running")
     create_p.set_defaults(func=cmd_create)
 
     ip_p = sub.add_parser("ip", help="查询公网 IPv4", parents=[common])
