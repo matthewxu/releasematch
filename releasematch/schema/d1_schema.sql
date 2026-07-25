@@ -152,6 +152,7 @@ CREATE TABLE IF NOT EXISTS slot_speed_summary (
     recommended_infohash    TEXT DEFAULT '',      -- 对应 Recommended release
     recommended_speed       TEXT DEFAULT '',      -- 展示文本，如 4.2 MB/s
     reachability            TEXT DEFAULT '',      -- 高 | 中 | 低
+    test_region             TEXT DEFAULT '',      -- 测速出口区域 ID，如 jp-osa
     updated_at              TEXT NOT NULL,
     FOREIGN KEY (page_id) REFERENCES media_pages(page_id)
 );

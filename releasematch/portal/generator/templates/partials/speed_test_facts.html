@@ -1,7 +1,13 @@
-{# libtorrent 实测六项指标 — 测速时间 / 均速 / 峰值 / total peers / 已连 / 连接率 #}
+{# libtorrent 实测指标 — 测速区域 / 测速时间 / 均速 / 峰值 / total peers / 已连 / 连接率 #}
 {# @partial speed_test_facts.html — facts 字典由 SpeedEvidenceContext.to_template_dict 或 recommended.speed_test 提供 #}
 {% if facts %}
 <div class="rm-speed-facts rm-speed-facts--{{ variant | default('panel') }}" role="group" aria-label="{{ t('speed.facts.aria') }}">
+  <div class="rm-speed-facts__cell rm-speed-facts__cell--region">
+    <span class="rm-speed-facts__label"{% if i18n_enabled %} data-i18n="speed.metric.region"{% endif %}>{{ t('speed.metric.region') }}</span>
+    <span class="rm-speed-facts__value"{% if i18n_enabled %} data-i18n-dynamic="speed_test_region_label"{% endif %}>{{ facts.test_region_label | default('—') }}</span>
+    <span class="rm-speed-facts__sub"{% if i18n_enabled %} data-i18n-dynamic="speed_test_region"{% endif %}>{{ facts.test_region | default('—') }}</span>
+  </div>
+
   <div class="rm-speed-facts__cell rm-speed-facts__cell--time">
     <span class="rm-speed-facts__label"{% if i18n_enabled %} data-i18n="speed.metric.tested_at"{% endif %}>{{ t('speed.metric.tested_at') }}</span>
     <span class="rm-speed-facts__value">

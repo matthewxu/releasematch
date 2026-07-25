@@ -55,11 +55,12 @@ SPEED_GRAB_BODY_EN: str = """
 </table>
 
 <h2 id="speed-metrics">Speed test metrics</h2>
-<p>Shown in the collapsible <strong>Speed evidence</strong> panel and six metric cards:</p>
+<p>Shown in the collapsible <strong>Speed evidence</strong> panel and measured metric cards:</p>
 <table class="rm-spec-table">
 <thead><tr><th>Metric</th><th>Definition</th><th>How it is measured</th></tr></thead>
 <tbody>
-<tr><td>Tested at</td><td>UTC time of last successful slot test</td><td>Written to <code>slot_speed_summary.tested_at</code></td></tr>
+<tr><td>Test region</td><td>Egress node region of the libtorrent run (e.g. Japan · Osaka)</td><td><code>slot_speed_summary.test_region</code> from <code>RM_SPEEDTEST_REGION</code></td></tr>
+<tr><td>Tested at</td><td>UTC time of last successful slot test</td><td>Written to speedtest result / summary timestamps</td></tr>
 <tr><td>Avg speed</td><td>Mean KiB/s over 256 KB segment samples</td><td>Phase 2 libtorrent download (strategy A2)</td></tr>
 <tr><td>Max speed</td><td>Peak KiB/s in the same run</td><td>Phase 2; spread vs avg shown when available</td></tr>
 <tr><td>Peers observed</td><td>Distinct peers seen in tracker/DHT</td><td>Phase 1 peer sampling</td></tr>
@@ -129,11 +130,12 @@ SPEED_GRAB_BODY_ZH: str = """
 </table>
 
 <h2 id="speed-metrics">测速指标</h2>
-<p>展示于折叠区 <strong>测速证据</strong> 与六项指标卡：</p>
+<p>展示于折叠区 <strong>测速证据</strong> 与实测指标卡：</p>
 <table class="rm-spec-table">
 <thead><tr><th>指标</th><th>定义</th><th>测量方式</th></tr></thead>
 <tbody>
-<tr><td>测速时间</td><td>最近一次成功槽位测试的 UTC 时间</td><td>写入 <code>slot_speed_summary.tested_at</code></td></tr>
+<tr><td>测速区域</td><td>本次 libtorrent 测速出口节点区域（如 日本 · 大阪）</td><td><code>slot_speed_summary.test_region</code>，来自 <code>RM_SPEEDTEST_REGION</code></td></tr>
+<tr><td>测速时间</td><td>最近一次成功槽位测试的 UTC 时间</td><td>写入测速明细 / 摘要时间戳</td></tr>
 <tr><td>均速</td><td>256 KB 片段采样平均 KiB/s</td><td>Phase 2 libtorrent 下载（策略 A2）</td></tr>
 <tr><td>峰值</td><td>同次运行最高 KiB/s</td><td>Phase 2；可与均速对比展示</td></tr>
 <tr><td>观测 peers</td><td>tracker/DHT 见到的 peer 数</td><td>Phase 1 采样</td></tr>

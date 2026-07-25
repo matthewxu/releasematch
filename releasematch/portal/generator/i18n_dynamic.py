@@ -34,6 +34,8 @@ _DYNAMIC_EXTRACTORS: List[Tuple[str, Callable[[Dict[str, Any]], Optional[str]]]]
     ("speed_index_vs_measured", lambda c: _get_nested(c, "speed_evidence", "index_vs_measured")),
     ("speed_spread_display", lambda c: _get_nested(c, "speed_evidence", "speed_spread_display")),
     ("speed_connect_rate_display", lambda c: _get_nested(c, "speed_evidence", "connect_rate_display")),
+    ("speed_test_region", lambda c: _get_nested(c, "speed_evidence", "test_region")),
+    ("speed_test_region_label", lambda c: _get_nested(c, "speed_evidence", "test_region_label")),
     ("speed_freshness_validity_line", lambda c: ""),  # 由 _freshness_validity_line_for_locale 生成
     ("speed_facts_time_sub", lambda c: ""),  # 由 _speed_facts_time_sub_for_locale 生成
 ]

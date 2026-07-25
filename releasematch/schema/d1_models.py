@@ -487,6 +487,7 @@ class SlotSpeedSummary:
     @var recommended_infohash: 对应 Recommended release
     @var recommended_speed: 展示速度文本
     @var reachability: 可达性：高/中/低
+    @var test_region: 测速出口区域 ID（如 jp-osa）
     @var updated_at: ISO8601 UTC
     """
 
@@ -494,6 +495,7 @@ class SlotSpeedSummary:
     recommended_speed: str = ""
     reachability: str = ""
     recommended_infohash: str = ""
+    test_region: str = ""
     updated_at: str = ""
 
     def to_template_dict(self) -> Dict[str, Any]:
@@ -501,6 +503,7 @@ class SlotSpeedSummary:
         return {
             "recommended_speed": self.recommended_speed,
             "reachability": self.reachability,
+            "test_region": self.test_region,
             "updated_at": self.updated_at[:10] if self.updated_at else "",
         }
 
@@ -512,6 +515,7 @@ class SlotSpeedSummary:
             recommended_speed=str(row.get("recommended_speed") or ""),
             reachability=str(row.get("reachability") or ""),
             recommended_infohash=str(row.get("recommended_infohash") or ""),
+            test_region=str(row.get("test_region") or ""),
             updated_at=str(row.get("updated_at") or ""),
         )
 
@@ -1049,6 +1053,12 @@ class SpeedEvidenceContext:
             or (self.phase1.tested_at if self.phase1 else "")
             or self.summary.updated_at
         )
+        from workflow.torrent_sources.speedtest.region import resolve_speedtest_region_for_display
+
+        region = resolve_speedtest_region_for_display(self.summary.test_region, locale="zh")
+        region_part = ""
+        if region.get("test_region_label") and region["test_region_label"] != "—":
+            region_part = f"测速区域 {region['test_region_display']}。"
         time_part = ""
         if freshness.get("tested_at_iso"):
             tested_display = _format_datetime_utc_display(
@@ -1064,7 +1074,7 @@ class SpeedEvidenceContext:
             f"以下数据绑定 {title_part}（infohash …{self.summary.recommended_infohash[:8]}），"
             f"libtorrent 片段实测 {speed_pair['speed_pair_display']}，"
             f"Peer 可达性 {reach['reachability_display']}。"
-            f"{time_part}"
+            f"{region_part}{time_part}"
         )
 
     def build_index_vs_measured_text(self) -> str:
@@ -1146,6 +1156,10 @@ class SpeedEvidenceContext:
             validity_level=freshness.get("validity_level", ""),
         )
 
+        from workflow.torrent_sources.speedtest.region import resolve_speedtest_region_for_display
+
+        region = resolve_speedtest_region_for_display(self.summary.test_region, locale="zh")
+
         return {
             "recommended_speed": self.summary.recommended_speed or speed_pair["avg_speed"],
             "avg_speed": speed_pair["avg_speed"],
@@ -1179,6 +1193,9 @@ class SpeedEvidenceContext:
             "age_display": freshness.get("age_display", "—"),
             "freshness_note": freshness.get("freshness_note", ""),
             "ttl_hours": freshness.get("ttl_hours", 6),
+            "test_region": region["test_region"],
+            "test_region_label": region["test_region_label"],
+            "test_region_display": region["test_region_display"],
             "infohash_short": (
                 self.summary.recommended_infohash[:8]
                 if self.summary.recommended_infohash
@@ -1186,7 +1203,10 @@ class SpeedEvidenceContext:
             ),
             "indexed_seeders": self.indexed_seeders,
             "index_vs_measured": self.build_index_vs_measured_text(),
-            "method_note": f"libtorrent 片段下载（{self.target_bytes_label}，策略 A2）",
+            "method_note": (
+                f"libtorrent 片段下载（{self.target_bytes_label}，策略 A2）"
+                f" · 测速区域 {region['test_region_display']}"
+            ),
             "target_bytes_label": self.target_bytes_label,
             "ig_badges": ig_badges,
             "status": (p2.status if p2 else "") or (p1.status if p1 else "ok"),
@@ -1273,6 +1293,9 @@ def _enrich_recommended_with_speed(
             "connect_rate_display": speed_ctx["connect_rate_display"],
             "peers_pair_display": speed_ctx["peers_pair_display"],
             "reachability": speed_ctx["reachability"],
+            "test_region": speed_ctx["test_region"],
+            "test_region_label": speed_ctx["test_region_label"],
+            "test_region_display": speed_ctx["test_region_display"],
         }
         rec_dict["grab_index"] = {
             "grab_index_name": speed_ctx["grab_index_name"],

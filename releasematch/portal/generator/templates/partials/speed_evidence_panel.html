@@ -69,6 +69,13 @@
 
     <dl class="rm-speed-evidence__metrics">
       <div class="rm-speed-evidence__metric rm-speed-evidence__metric--highlight">
+        <dt{% if i18n_enabled %} data-i18n="speed.metric.region"{% endif %}>{{ t('speed.metric.region') }}</dt>
+        <dd>
+          <span{% if i18n_enabled %} data-i18n-dynamic="speed_test_region_label"{% endif %}>{{ speed_evidence.test_region_label | default('—') }}</span>
+          <span class="rm-speed-evidence__metric-sub">· <span{% if i18n_enabled %} data-i18n-dynamic="speed_test_region"{% endif %}>{{ speed_evidence.test_region | default('—') }}</span></span>
+        </dd>
+      </div>
+      <div class="rm-speed-evidence__metric rm-speed-evidence__metric--highlight">
         <dt{% if i18n_enabled %} data-i18n="speed.metric.tested_at"{% endif %}>{{ t('speed.metric.tested_at') }}</dt>
         <dd>
           {% if speed_evidence.tested_at_iso %}

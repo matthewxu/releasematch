@@ -79,6 +79,7 @@ def apply_environ_to_module() -> None:
     global RELEASE_MYSQL_USER, RELEASE_MYSQL_PASSWORD
     global D1_DATABASE_NAME, D1_BINDING, SITE_ORIGIN
     global SHOW_IG_DEBUG, BLOCK_CRAWLERS, SITE_I18N_ENABLED, SITE_LOCALE
+    global SPEEDTEST_REGION, SPEEDTEST_REGION_LABEL
 
     # standalone: JSON 清单；mysql: 只读 TMDB 元数据库
     TMDB_DATA_MODE = os.getenv("RM_TMDB_DATA_MODE", "standalone")
@@ -140,6 +141,10 @@ def apply_environ_to_module() -> None:
     SITE_I18N_ENABLED = _env_bool("RM_SITE_I18N_ENABLED", False)
     # 默认 UI 语言
     SITE_LOCALE = os.getenv("RM_SITE_LOCALE", "en").strip().lower() or "en"
+    # 测速出口区域 ID（写入 slot_speed_summary.test_region，页面展示）
+    SPEEDTEST_REGION = os.getenv("RM_SPEEDTEST_REGION", "jp-osa").strip().lower() or "jp-osa"
+    # 可选：覆盖区域展示文案（不分 locale；空则用 region catalog）
+    SPEEDTEST_REGION_LABEL = os.getenv("RM_SPEEDTEST_REGION_LABEL", "").strip()
 
 
 def reload_runtime_config(*, overwrite_environ: bool = True) -> Path | None:
@@ -216,6 +221,10 @@ SHOW_IG_DEBUG: bool = False
 BLOCK_CRAWLERS: bool = False
 SITE_I18N_ENABLED: bool = False
 SITE_LOCALE: str = "en"
+# 测速出口区域（如 jp-osa）；页面「测速区域」与写库共用
+SPEEDTEST_REGION: str = "jp-osa"
+# 可选展示文案覆盖（空则按 REGION_CATALOG 派生）
+SPEEDTEST_REGION_LABEL: str = ""
 
 # 用已加载的 environ 填充上述常量
 apply_environ_to_module()

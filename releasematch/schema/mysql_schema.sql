@@ -134,6 +134,7 @@ CREATE TABLE IF NOT EXISTS slot_speed_summary (
     recommended_infohash    CHAR(40)     DEFAULT '',
     recommended_speed       VARCHAR(32)  DEFAULT '' COMMENT '如 4.2 MB/s',
     reachability            VARCHAR(16)  DEFAULT '' COMMENT '高|中|低',
+    test_region             VARCHAR(32)  DEFAULT '' COMMENT '测速出口区域 ID，如 jp-osa',
     updated_at              DATETIME(3)  NOT NULL,
     CONSTRAINT fk_speed_page FOREIGN KEY (page_id)
         REFERENCES media_pages(page_id) ON DELETE CASCADE

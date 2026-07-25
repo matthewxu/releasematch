@@ -103,12 +103,17 @@ def persist_speedtest_results(
     )
 
     summary_written = False
+    # 测速出口区域：写库 + 回传报告（与页面展示同源）
+    from workflow.torrent_sources.speedtest.region import resolve_speedtest_region_for_persist
+
+    test_region = resolve_speedtest_region_for_persist()
     if slot_page_id:
         store.upsert_slot_speed_summary(
             page_id=slot_page_id,
             recommended_infohash=full.phase2.infohash,
             recommended_speed=full.recommended_speed or "",
             reachability=full.reachability,
+            test_region=test_region,
         )
         summary_written = True
 
@@ -124,6 +129,7 @@ def persist_speedtest_results(
         "phase2_result_id": phase2_id,
         "recommended_speed": full.recommended_speed,
         "reachability": full.reachability,
+        "test_region": test_region,
         "slot_speed_summary_written": summary_written,
         "torrent_metadata_written": metadata_written,
     }

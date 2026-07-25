@@ -1041,7 +1041,13 @@ dd:last-child {
 
 @media (min-width: 1024px) {
   .rm-speed-facts--panel {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .rm-speed-facts--panel {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 }
 
@@ -1065,6 +1071,7 @@ dd:last-child {
   border-color: rgba(148, 163, 184, 0.22);
 }
 
+.rm-speed-facts__cell--region { border-color: rgba(251, 146, 60, 0.4); }
 .rm-speed-facts__cell--time { border-color: rgba(56, 189, 248, 0.35); }
 .rm-speed-facts__cell--avg { border-color: rgba(255, 193, 7, 0.35); }
 .rm-speed-facts__cell--max { border-color: rgba(56, 189, 248, 0.45); }
@@ -1096,6 +1103,11 @@ dd:last-child {
 .rm-speed-facts__cell--avg .rm-speed-facts__value,
 .rm-speed-facts__cell--max .rm-speed-facts__value {
   color: var(--rm-star);
+}
+
+.rm-speed-facts__cell--region .rm-speed-facts__value {
+  font-size: clamp(0.95rem, 2.2vw, 1.2rem);
+  color: #fb923c;
 }
 
 .rm-speed-facts__cell--time .rm-speed-facts__value {

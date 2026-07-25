@@ -405,6 +405,7 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "zh": "{pct}（{reachable}/{total}）",
     },
     "speed.metric.tested_at": {"en": "Test time", "zh": "测速时间"},
+    "speed.metric.region": {"en": "Test region", "zh": "测速区域"},
     "speed.metric.avg": {"en": "Avg speed", "zh": "均速 avg"},
     "speed.metric.max": {"en": "Peak speed", "zh": "峰值 max"},
     "speed.metric.peers_total": {"en": "Peers observed", "zh": "观测 peers total"},
@@ -432,8 +433,8 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "zh": "数据来自 libtorrent DHT/tracker 时点采样；<strong>均速、峰值、peers 与连接率均为同一次 {method} 结果</strong>，与 Jackett 索引 seeders 可能偏差。",
     },
     "speed.method_note": {
-        "en": "libtorrent segment download ({target}, strategy A2)",
-        "zh": "libtorrent 片段下载（{target}，策略 A2）",
+        "en": "libtorrent segment download ({target}, strategy A2) · test region {region}",
+        "zh": "libtorrent 片段下载（{target}，策略 A2）· 测速区域 {region}",
     },
     "speed.index_vs.no_index": {
         "en": "Indexed seeders not recorded; libtorrent measured {peers} peers (A-02).",
@@ -485,9 +486,13 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "en": " Tested at {tested} ({age}, validity {validity}·{freshness}).",
         "zh": "测速于 {tested}（{age}，有效性 {validity}·{freshness}）。",
     },
+    "speed.endorsement.region": {
+        "en": " Test region {region}.",
+        "zh": "测速区域 {region}。",
+    },
     "speed.endorsement.body": {
-        "en": "Data bound to {title} (infohash …{hash}), libtorrent segment test {speed}, peer reachability {reach}.{time}",
-        "zh": "以下数据绑定 {title}（infohash …{hash}），libtorrent 片段实测 {speed}，Peer 可达性 {reach}。{time}",
+        "en": "Data bound to {title} (infohash …{hash}), libtorrent segment test {speed}, peer reachability {reach}.{region}{time}",
+        "zh": "以下数据绑定 {title}（infohash …{hash}），libtorrent 片段实测 {speed}，Peer 可达性 {reach}。{region}{time}",
     },
     "movie.edition_pick": {"en": "Best in group:", "zh": "本组推荐："},
     # ── Trust 五页 ──

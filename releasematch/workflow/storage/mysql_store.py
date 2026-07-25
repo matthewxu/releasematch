@@ -2017,6 +2017,7 @@ class MySQLStore:
         recommended_infohash: str,
         recommended_speed: str,
         reachability: str,
+        test_region: str = "",
     ) -> None:
         """
         写入或更新槽位测速摘要（S-06 / S-07）。
@@ -2025,6 +2026,7 @@ class MySQLStore:
         @param recommended_infohash: Recommended infohash
         @param recommended_speed: 展示速度文案，如 4.2 MB/s
         @param reachability: 高 | 中 | 低 | 不可达
+        @param test_region: 测速出口区域 ID，如 jp-osa
         @returns: None
         """
         now = _utc_now_str()
@@ -2034,12 +2036,13 @@ class MySQLStore:
                 """
                 INSERT INTO slot_speed_summary (
                     page_id, recommended_infohash, recommended_speed,
-                    reachability, updated_at
-                ) VALUES (%s, %s, %s, %s, %s)
+                    reachability, test_region, updated_at
+                ) VALUES (%s, %s, %s, %s, %s, %s)
                 ON DUPLICATE KEY UPDATE
                     recommended_infohash=VALUES(recommended_infohash),
                     recommended_speed=VALUES(recommended_speed),
                     reachability=VALUES(reachability),
+                    test_region=VALUES(test_region),
                     updated_at=VALUES(updated_at)
                 """,
                 (
@@ -2047,6 +2050,7 @@ class MySQLStore:
                     recommended_infohash,
                     _clip_str(recommended_speed, 32),
                     _clip_str(reachability, 16),
+                    _clip_str(test_region, 32),
                     now,
                 ),
             )

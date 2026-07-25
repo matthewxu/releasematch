@@ -329,14 +329,26 @@ def _extract_target_bytes(method_note: str) -> str:
 
 def _localize_method_and_compare(se: Dict[str, Any], locale: str) -> None:
     """
-    重写 method_note、index_vs_measured。
+    重写 method_note、index_vs_measured，并本地化测速区域文案。
 
     @param se: speed_evidence 字典
     @param locale: en | zh
     @returns: None
     """
+    from workflow.torrent_sources.speedtest.region import resolve_speedtest_region_for_display
+
+    region = resolve_speedtest_region_for_display(se.get("test_region"), locale=locale)
+    se["test_region"] = region["test_region"]
+    se["test_region_label"] = region["test_region_label"]
+    se["test_region_display"] = region["test_region_display"]
+
     target = se.get("target_bytes_label") or _extract_target_bytes(str(se.get("method_note") or ""))
-    se["method_note"] = translate("speed.method_note", locale, target=target)
+    se["method_note"] = translate(
+        "speed.method_note",
+        locale,
+        target=target,
+        region=region["test_region_display"],
+    )
 
     indexed = int(se.get("indexed_seeders") or 0)
     peers = int(se.get("peers_total") or 0)
@@ -371,6 +383,10 @@ def _localize_endorsement(se: Dict[str, Any], locale: str, release_title: str = 
     infohash = str(se.get("infohash_short") or "")
     speed_pair = se.get("speed_pair_display") or ""
     reach = se.get("reachability_display") or se.get("reachability") or "—"
+    region_part = ""
+    region_display = str(se.get("test_region_display") or se.get("test_region_label") or "").strip()
+    if region_display and region_display != "—":
+        region_part = translate("speed.endorsement.region", loc, region=region_display)
     time_part = ""
     if se.get("tested_at_iso"):
         time_part = translate(
@@ -388,6 +404,7 @@ def _localize_endorsement(se: Dict[str, Any], locale: str, release_title: str = 
         hash=infohash,
         speed=speed_pair,
         reach=reach,
+        region=region_part,
         time=time_part,
     )
 
@@ -430,6 +447,7 @@ def _localize_speed_test_subset(st: Dict[str, Any], se: Dict[str, Any]) -> None:
         "age_display", "freshness_label", "validity_level",
         "avg_speed", "max_speed", "peers_total_display", "peers_reachable_display",
         "connect_rate_pct", "connect_rate_display", "peers_pair_display",
+        "test_region", "test_region_label", "test_region_display",
     ):
         if key in se:
             st[key] = se[key]

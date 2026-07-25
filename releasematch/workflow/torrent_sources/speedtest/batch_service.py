@@ -25,6 +25,17 @@ DEFAULT_BATCH_TARGET_BYTES = 262_144
 DEFAULT_SPEEDTEST_TTL_HOURS = 6
 
 
+def _batch_test_region() -> str:
+    """
+    读取本批测速报告应标注的出口区域 ID。
+
+    @returns: 如 jp-osa
+    """
+    from workflow.torrent_sources.speedtest.region import resolve_speedtest_region_for_persist
+
+    return resolve_speedtest_region_for_persist()
+
+
 def _parse_mysql_utc(ts: str) -> Optional[datetime]:
     """
     解析 MySQL DATETIME 字符串为 UTC aware datetime。
@@ -398,6 +409,7 @@ def run_batch_speedtest(
             "ttl_hours": ttl_hours,
             "force": force,
             "phase2_only": phase2_only,
+            "test_region": _batch_test_region(),
             "started_at": started_at,
             "finished_at": datetime.now(timezone.utc).isoformat(),
             "total_wall_sec": wall_sec,

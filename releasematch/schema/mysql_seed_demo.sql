@@ -68,12 +68,13 @@ ON DUPLICATE KEY UPDATE
     page_status=VALUES(page_status), overview=VALUES(overview),
     episode_title=VALUES(episode_title), updated_at=VALUES(updated_at);
 
-INSERT INTO slot_speed_summary (page_id, recommended_infohash, recommended_speed, reachability, updated_at) VALUES
-('tv:1396:s04e06', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', '4.2 MB/s', '高', '2026-06-28 12:00:00.000')
+INSERT INTO slot_speed_summary (page_id, recommended_infohash, recommended_speed, reachability, test_region, updated_at) VALUES
+('tv:1396:s04e06', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', '4.2 MB/s', '高', 'jp-osa', '2026-06-28 12:00:00.000')
 ON DUPLICATE KEY UPDATE
     recommended_infohash=VALUES(recommended_infohash),
     recommended_speed=VALUES(recommended_speed),
     reachability=VALUES(reachability),
+    test_region=VALUES(test_region),
     updated_at=VALUES(updated_at);
 
 INSERT INTO download_resources (

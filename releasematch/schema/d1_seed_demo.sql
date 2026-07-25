@@ -92,12 +92,13 @@ INSERT OR REPLACE INTO media_pages (
 
 -- S04E06 测速摘要（对齐演示页 rm-speed-bar）
 INSERT OR REPLACE INTO slot_speed_summary (
-    page_id, recommended_infohash, recommended_speed, reachability, updated_at
+    page_id, recommended_infohash, recommended_speed, reachability, test_region, updated_at
 ) VALUES (
     'tv:1396:s04e06',
     'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
     '4.2 MB/s',
     '高',
+    'jp-osa',
     '2026-06-28T12:00:00Z'
 );
 
