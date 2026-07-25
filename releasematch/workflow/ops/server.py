@@ -600,13 +600,14 @@ def _handle_api(
         status = 200 if result.get("ok") else 400
         return status, result
 
-    if path == "/api/linode/delete" and method == "POST":
+    if path in ("/api/linode/delete", "/api/linode/delete/start") and method == "POST":
+        # 异步销毁：立即返回 started，前端轮询 /api/linode/progress 看 phases
         iid_raw = body.get("instance_id") or body.get("id")
         try:
             iid = int(iid_raw) if iid_raw is not None and str(iid_raw).strip() != "" else None
         except (TypeError, ValueError):
             return 400, {"ok": False, "error": "instance_id 无效"}
-        result = linode_vps_service.delete_instance(
+        result = linode_vps_service.start_delete(
             instance_id=iid,
             label=(str(body.get("label")).strip() if body.get("label") else None),
             confirm=bool(body.get("confirm", False)),

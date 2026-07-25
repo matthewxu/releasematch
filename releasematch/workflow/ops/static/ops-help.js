@@ -751,10 +751,11 @@
 
     linode_create: {
       title: "开通 Linode VPS",
-      api: "POST /api/linode/create/start + GET …/progress",
+      api: "POST /api/linode/create/start + GET …/progress（phases[]）",
       flow: [
         "后台 linode_vps.py create --json（等待 running）",
         "可选 --provision-linode：买机 + 装 Jackett",
+        "进度：prepare → api_create → wait_running → finalize（或 provision 多阶段）",
         "成功后把 ipv4 填入下方 Jackett Host",
       ],
       scripts: [
@@ -777,9 +778,10 @@
 
     linode_delete: {
       title: "销毁 Linode VPS",
-      api: "POST /api/linode/delete  body: {confirm:true, id|label}",
+      api: "POST /api/linode/delete/start + GET …/progress（phases[]）",
       flow: [
-        "双确认后 linode_vps.py delete --yes",
+        "双确认后后台 linode_vps.py delete --yes",
+        "进度：prepare → resolve → delete_api → finalize",
         "不可恢复",
       ],
       scripts: ["workflow/ops/linode_vps_service.py"],

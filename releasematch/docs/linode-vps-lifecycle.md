@@ -367,6 +367,8 @@ bash scripts/install_jackett_oneclick.sh --destroy-linode
 | 「一键部署 Jackett」+ 勾选「先开通 Linode」 | `--provision-linode`（买机+装栈） |
 | 「Linode VPS 增删」开通 / 销毁 | `linode_vps.py create\|delete`；开通可勾选顺带 provision |
 
+开通/销毁均为后台任务：Ops 顶部进度条 + 卡片内 `phases[]` 分项表 + 滚动日志；轮询 `GET /api/linode/progress`。销毁走 `POST /api/linode/delete/start`（须 `confirm:true`）。
+
 同 `defaults.label` 已存在时开通会失败，需先销毁。
 
 **分步（等价）：**

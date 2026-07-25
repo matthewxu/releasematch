@@ -350,6 +350,14 @@
     log(title);
     try {
       return await fn();
+    } catch (err) {
+      // keepProgress 时也要把失败写到进度条，避免一直停在「启动后台任务…」
+      const msg = String((err && err.message) || err);
+      showProgress(title + " · 失败", {
+        percent: opts && opts.indeterminate === false ? 100 : null,
+        message: msg.slice(0, 240),
+      });
+      throw err;
     } finally {
       busyDepth = Math.max(0, busyDepth - 1);
       if (busyDepth === 0) {
@@ -710,23 +718,124 @@
   }
 
   /**
-   * 轮询 Linode 开通进度。
+   * 渲染 Linode 任务分阶段明细（顶部进度条 + 卡片内阶段表）。
+   * @param {object|null} progress /api/linode/progress
+   */
+  function renderLinodeDetail(progress) {
+    const globalHost = document.getElementById("opsProgressDetail");
+    const cardHost = document.getElementById("linodePhaseDetail");
+    const metricsEl = document.getElementById("linodeRunMetrics");
+    const phases = (progress && progress.phases) || [];
+    const action = (progress && progress.action) || "—";
+    const target = (progress && progress.target) || "—";
+    const phase = (progress && progress.phase) || "—";
+    const elapsed = progress && progress.elapsed_sec != null ? progress.elapsed_sec : "—";
+    const status = (progress && progress.status) || "idle";
+
+    if (metricsEl) {
+      renderMetrics(metricsEl, [
+        ["动作", String(action)],
+        ["目标", String(target)],
+        ["阶段", String(phase)],
+        ["状态", String(status)],
+        ["已用时", elapsed === "—" ? "—" : `${elapsed}s`],
+        ["进度", progress && progress.percent != null ? `${progress.percent}%` : "—"],
+      ]);
+    }
+
+    if (!phases.length && !(progress && progress.log_tail)) {
+      if (globalHost) {
+        globalHost.hidden = true;
+        globalHost.innerHTML = "";
+      }
+      if (cardHost) {
+        cardHost.hidden = true;
+        cardHost.innerHTML = "";
+      }
+      return;
+    }
+
+    const rows = phases
+      .map((s) => {
+        const cls = s.id === phase ? ' class="is-current"' : "";
+        const detail = s.detail || "";
+        const shown = detail.length > 100 ? detail.slice(0, 100) + "…" : detail;
+        const at = s.at ? String(s.at).replace("T", " ").replace("Z", "") : "—";
+        return `<tr${cls}>
+          <td><code>${escapeHtml(s.id || "")}</code></td>
+          <td>${escapeHtml(s.label || "")}</td>
+          <td>${statusBadge(s.status)}</td>
+          <td class="ops-detail-cell" title="${escapeHtml(detail)}">${escapeHtml(shown || "—")}</td>
+          <td>${escapeHtml(at)}</td>
+        </tr>`;
+      })
+      .join("");
+    const tableHtml = `<table class="ops-table">
+      <thead><tr>
+        <th>phase</th><th>说明</th><th>status</th><th>detail（悬停全文）</th><th>at</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+    const errLine =
+      progress && progress.error
+        ? `<p class="lead" style="margin:8px 0;color:var(--ops-danger,#b00020)">错误：${escapeHtml(
+            String(progress.error)
+          )}</p>`
+        : "";
+    const result = progress && progress.result;
+    const resultLine =
+      result && typeof result === "object"
+        ? `<p class="lead" style="margin:8px 0">结果：<code>${escapeHtml(
+            [
+              result.id != null ? `id=${result.id}` : "",
+              result.label ? `label=${result.label}` : "",
+              result.ipv4 ? `ipv4=${result.ipv4}` : "",
+              result.status ? `status=${result.status}` : "",
+            ]
+              .filter(Boolean)
+              .join(" · ") || JSON.stringify(result).slice(0, 120)
+          )}</code></p>`
+        : "";
+
+    if (globalHost) {
+      globalHost.hidden = false;
+      globalHost.innerHTML = `${errLine}${resultLine}${tableHtml}`;
+    }
+    if (cardHost) {
+      cardHost.hidden = false;
+      cardHost.innerHTML = `${errLine}${resultLine}${tableHtml}`;
+    }
+
+    const logEl = document.getElementById("linodeLog");
+    if (logEl && progress && progress.log_tail) {
+      logEl.textContent = progress.log_tail;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+  }
+
+  /**
+   * 轮询 Linode 开通/销毁进度，更新顶部条与阶段表。
    * @param {string} title
+   * @returns {Promise<object>} 最终 progress
    */
   async function pollLinodeProgress(title) {
+    let finalProg = null;
     for (;;) {
       const data = await api("/api/linode/progress");
       const p = data.progress || {};
-      showProgress(title, {
+      finalProg = p;
+      const phaseLabel = p.phase || "…";
+      const elapsed =
+        p.elapsed_sec != null ? ` · ${p.elapsed_sec}s` : "";
+      showProgress(`${title} · ${phaseLabel}${elapsed}`, {
         percent: p.percent != null ? Number(p.percent) : null,
         message: p.message || p.status || "",
       });
-      const logEl = document.getElementById("linodeLog");
-      if (logEl && p.log_tail) logEl.textContent = p.log_tail;
+      renderLinodeDetail(p);
       if (p.status === "done" || p.status === "error") {
         return p;
       }
-      await sleep(1500);
+      await sleep(1000);
     }
   }
 
@@ -751,35 +860,47 @@
       : "将购买一台 Linode VPS（产生费用）。继续？";
     if (!window.confirm(tip)) return;
 
-    await withBusy(body.with_jackett ? "开通 Linode + Jackett" : "开通 Linode VPS", async () => {
-      showProgress("Linode 开通", { percent: 5, message: "启动…" });
-      const start = await api("/api/linode/create/start", { method: "POST", body });
-      log("Linode create 已启动", {
-        started: start.started,
-        already_running: start.already_running,
-        with_jackett: body.with_jackett,
-      });
-      const finalProg = await pollLinodeProgress(
-        body.with_jackett ? "开通 Linode + Jackett" : "开通 Linode VPS"
-      );
-      log("Linode create 结束", {
-        status: finalProg.status,
-        ok: finalProg.ok,
-        result: finalProg.result,
-        error: finalProg.error,
-      });
-      const ipv4 = finalProg.result && finalProg.result.ipv4;
-      if (finalProg.ok && ipv4) {
-        const jkHost = document.getElementById("jkHost");
-        if (jkHost) jkHost.value = String(ipv4);
-        log("已把新 IP 填入 Jackett Host", { ipv4 });
-      }
-      await loadLinodeList().catch(() => null);
-    });
+    const title = body.with_jackett ? "开通 Linode + Jackett" : "开通 Linode VPS";
+    await withBusy(
+      title,
+      async () => {
+        showProgress(title, { percent: 2, message: "正在提交开通请求…" });
+        const start = await api("/api/linode/create/start", { method: "POST", body });
+        log("Linode create 已启动", {
+          started: start.started,
+          already_running: start.already_running,
+          with_jackett: body.with_jackett,
+        });
+        showProgress(title, {
+          percent: 8,
+          message: start.already_running
+            ? "已有 Linode 任务在跑，改为跟踪其进度…"
+            : "后台任务已启动，开始轮询进度…",
+        });
+        if (start.progress) renderLinodeDetail(start.progress);
+        const finalProg = await pollLinodeProgress(title);
+        log("Linode create 结束", {
+          status: finalProg.status,
+          ok: finalProg.ok,
+          action: finalProg.action,
+          elapsed_sec: finalProg.elapsed_sec,
+          result: finalProg.result,
+          error: finalProg.error,
+        });
+        const ipv4 = finalProg.result && finalProg.result.ipv4;
+        if (finalProg.ok && ipv4) {
+          const jkHost = document.getElementById("jkHost");
+          if (jkHost) jkHost.value = String(ipv4);
+          log("已把新 IP 填入 Jackett Host", { ipv4 });
+        }
+        await loadLinodeList().catch(() => null);
+      },
+      { indeterminate: false, keepProgress: true }
+    );
   }
 
   /**
-   * 销毁 Linode VPS（双确认）。
+   * 销毁 Linode VPS（双确认 + 分阶段进度轮询）。
    */
   async function startLinodeDelete() {
     const idRaw =
@@ -797,18 +918,86 @@
     if (!window.confirm(`确认销毁 Linode（${who}）？不可恢复。`)) return;
     if (!window.confirm("再次确认：真的删除该 VPS？")) return;
 
-    await withBusy("销毁 Linode VPS", async () => {
-      const data = await api("/api/linode/delete", {
-        method: "POST",
-        body: { instance_id, label: label || null, confirm: true },
-      });
-      const logEl = document.getElementById("linodeLog");
-      if (logEl) {
-        logEl.textContent = JSON.stringify(data.result || data, null, 2);
-      }
-      log("Linode delete", { ok: data.ok, error: data.error, result: data.result });
-      await loadLinodeList().catch(() => null);
-    });
+    await withBusy(
+      "销毁 Linode VPS",
+      async () => {
+        showProgress("销毁 Linode VPS", { percent: 2, message: "正在提交销毁请求…" });
+        let start;
+        try {
+          start = await api("/api/linode/delete/start", {
+            method: "POST",
+            body: { instance_id, label: label || null, confirm: true },
+          });
+        } catch (err) {
+          // 旧 Ops 进程可能尚未热加载新路由：回退到 /api/linode/delete
+          const msg = String((err && err.message) || err);
+          log("delete/start 失败，尝试 /api/linode/delete", msg);
+          showProgress("销毁 Linode VPS", {
+            percent: 5,
+            message: "start 路由不可用，回退 delete…",
+          });
+          start = await api("/api/linode/delete", {
+            method: "POST",
+            body: { instance_id, label: label || null, confirm: true },
+          });
+        }
+        log("Linode delete 已启动", {
+          started: start.started,
+          already_running: start.already_running,
+          target: who,
+        });
+        if (start.already_running) {
+          showProgress("销毁 Linode VPS", {
+            percent: start.progress && start.progress.percent,
+            message: "已有 Linode 任务在跑，改为跟踪其进度…",
+          });
+        } else {
+          showProgress("销毁 Linode VPS", {
+            percent: 8,
+            message: "后台任务已启动，开始轮询进度…",
+          });
+        }
+        if (start.progress) renderLinodeDetail(start.progress);
+        // 若后端仍是同步 delete（无 started 字段），直接展示结果
+        if (start.started == null && start.result != null) {
+          const fake = {
+            status: start.ok ? "done" : "error",
+            ok: start.ok,
+            percent: 100,
+            message: start.ok ? "销毁完成（同步）" : start.error || "销毁失败",
+            error: start.error || null,
+            result: start.result,
+            phases: [],
+            log_tail: JSON.stringify(start.result, null, 2),
+            action: "delete",
+            target: who,
+            elapsed_sec: 0,
+          };
+          renderLinodeDetail(fake);
+          showProgress("销毁 Linode VPS", {
+            percent: 100,
+            message: fake.message,
+          });
+          log("Linode delete 结束（同步）", {
+            ok: start.ok,
+            result: start.result,
+            error: start.error,
+          });
+          await loadLinodeList().catch(() => null);
+          return;
+        }
+        const finalProg = await pollLinodeProgress("销毁 Linode VPS");
+        log("Linode delete 结束", {
+          status: finalProg.status,
+          ok: finalProg.ok,
+          elapsed_sec: finalProg.elapsed_sec,
+          result: finalProg.result,
+          error: finalProg.error,
+        });
+        await loadLinodeList().catch(() => null);
+      },
+      { indeterminate: false, keepProgress: true }
+    );
   }
 
   /**
