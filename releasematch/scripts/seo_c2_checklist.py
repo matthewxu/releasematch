@@ -146,15 +146,27 @@ class CheckReport:
     @var items: 全部检查项
     @var dist_root: 检查的 dist 目录
     @var site_origin: 期望的 canonical origin
+    @var on_add: 每追加一项时的可选回调（Ops 进度轮询）
     """
 
     items: List[CheckItem] = field(default_factory=list)
     dist_root: str = ""
     site_origin: str = ""
+    on_add: Optional[Any] = field(default=None, repr=False, compare=False)
 
     def add(self, item: CheckItem) -> None:
-        """追加一条结果。"""
+        """
+        追加一条结果；若设置了 on_add 则回调。
+
+        @param item: 检查项
+        """
         self.items.append(item)
+        cb = self.on_add
+        if callable(cb):
+            try:
+                cb(item)
+            except Exception:  # noqa: BLE001 — 进度回调失败不阻断检查
+                pass
 
     @property
     def fail_count(self) -> int:
@@ -954,6 +966,7 @@ def run_checks(
     site_origin: str,
     *,
     use_db: bool = True,
+    on_item: Optional[Any] = None,
 ) -> CheckReport:
     """
     执行全部 §6.1～6.3 检查。
@@ -961,9 +974,10 @@ def run_checks(
     @param dist_root: portal/dist
     @param site_origin: RM_SITE_ORIGIN
     @param use_db: 是否连接 MySQL 做交叉验证
+    @param on_item: 每完成一项时的回调 ``(CheckItem) -> None``
     @returns: CheckReport
     """
-    report = CheckReport(dist_root=str(dist_root), site_origin=site_origin)
+    report = CheckReport(dist_root=str(dist_root), site_origin=site_origin, on_add=on_item)
 
     if not dist_root.is_dir():
         report.add(

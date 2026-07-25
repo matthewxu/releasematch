@@ -704,6 +704,7 @@ class MySQLStore:
                 """
                 SELECT season, episode FROM media_pages
                 WHERE catalog_id = %s AND page_type = 'episode'
+                  AND season IS NOT NULL AND episode IS NOT NULL
                 ORDER BY season ASC, episode ASC
                 """,
                 (hub_row["catalog_id"],),
@@ -713,6 +714,9 @@ class MySQLStore:
 
         seasons_map: Dict[int, List[Dict[str, int]]] = {}
         for row in ep_rows:
+            # 完整注释：脏数据可能仍出现 NULL，再兜底跳过避免 int(None)
+            if row["season"] is None or row["episode"] is None:
+                continue
             s = int(row["season"])
             e = int(row["episode"])
             seasons_map.setdefault(s, []).append({"number": e})

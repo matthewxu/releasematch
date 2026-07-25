@@ -27,6 +27,8 @@ from workflow.ops import config_service
 from workflow.ops import daily_service
 from workflow.ops import jackett_deploy_service
 from workflow.ops import generation_flow_service
+from workflow.ops import seo_c2_service
+from workflow.ops import deploy_flow_service
 from workflow.ops import pages_service
 from workflow.ops import source_service
 from workflow.ops.track_store import (
@@ -444,10 +446,22 @@ def _handle_api(
         return 200, {"ok": True, "progress": generation_flow_service.get_progress()}
 
     if path == "/api/actions/seo" and method == "POST":
+        # 兼容同步调用；UI 优先用 /seo/start + /seo/progress
         return 200, actions.run_seo_c2(batch_id=body.get("batch_id"))
 
+    if path == "/api/actions/seo/start" and method == "POST":
+        result = seo_c2_service.start_seo_c2(
+            batch_id=body.get("batch_id"),
+            use_db=bool(body.get("use_db", True)),
+        )
+        status = 200 if result.get("ok") else 400
+        return status, result
+
+    if path == "/api/actions/seo/progress" and method == "GET":
+        return 200, {"ok": True, "progress": seo_c2_service.get_progress()}
+
     if path == "/api/actions/deploy" and method == "POST":
-        # scope: full | incremental | upload_only；upload / prepare_only 控制是否 wrangler
+        # 兼容同步；UI 优先 /deploy/start + /deploy/progress
         scope = str(body.get("scope") or "full").strip().lower()
         upload_arg = body.get("upload")
         prepare_only_arg = body.get("prepare_only")
@@ -458,6 +472,26 @@ def _handle_api(
             upload=None if upload_arg is None else bool(upload_arg),
             prepare_only=None if prepare_only_arg is None else bool(prepare_only_arg),
         )
+
+    if path == "/api/actions/deploy/start" and method == "POST":
+        upload_arg = body.get("upload")
+        prepare_only_arg = body.get("prepare_only")
+        upload = False
+        if upload_arg is not None:
+            upload = bool(upload_arg)
+        elif prepare_only_arg is not None:
+            upload = not bool(prepare_only_arg)
+        result = deploy_flow_service.start_deploy(
+            scope=str(body.get("scope") or "full"),
+            upload=upload,
+            batch_id=body.get("batch_id"),
+            page_ids=body.get("page_ids"),
+        )
+        status = 200 if result.get("ok") else 400
+        return status, result
+
+    if path == "/api/actions/deploy/progress" and method == "GET":
+        return 200, {"ok": True, "progress": deploy_flow_service.get_progress()}
 
     # ── 配置：加载 / 修改 / 热加载（.env + accounts.local.json）────────
     if path == "/api/config" and method == "GET":

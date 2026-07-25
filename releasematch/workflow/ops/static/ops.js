@@ -104,6 +104,138 @@
   }
 
   /**
+   * 渲染 seo_c2 检查项明细表。
+   * @param {object|null} progress seo progress
+   */
+  function renderSeoC2Detail(progress) {
+    const host = document.getElementById("opsProgressDetail");
+    if (!host) return;
+    const checks = (progress && progress.checks) || [];
+    if (!checks.length) {
+      host.hidden = true;
+      host.innerHTML = "";
+      return;
+    }
+    const cur = progress.current_check_id || "";
+    const rows = checks
+      .map((c) => {
+        const cls = c.check_id === cur ? ' class="is-current"' : "";
+        const detail = c.detail || "";
+        const shown = detail.length > 80 ? detail.slice(0, 80) + "…" : detail;
+        return `<tr${cls}>
+          <td>${escapeHtml(c.section || "")}</td>
+          <td><code>${escapeHtml(c.check_id || "")}</code></td>
+          <td>${escapeHtml(c.title || "")}</td>
+          <td>${statusBadge(c.status)}</td>
+          <td class="ops-detail-cell" title="${escapeHtml(detail)}">${escapeHtml(shown || "—")}</td>
+        </tr>`;
+      })
+      .join("");
+    host.hidden = false;
+    host.innerHTML = `<table class="ops-table">
+      <thead><tr>
+        <th>§</th><th>check_id</th><th>title</th><th>status</th><th>detail（悬停全文）</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  }
+
+  /**
+   * 渲染 Deploy 分阶段进度。
+   * @param {object|null} progress
+   */
+  function renderDeployDetail(progress) {
+    const host = document.getElementById("opsProgressDetail");
+    if (!host) return;
+    const steps = (progress && progress.steps) || [];
+    if (!steps.length && !(progress && progress.log_tail)) {
+      host.hidden = true;
+      host.innerHTML = "";
+      return;
+    }
+    const rows = steps
+      .map((s) => {
+        return `<tr>
+          <td><code>${escapeHtml(s.id || "")}</code></td>
+          <td>${statusBadge(s.status)}</td>
+          <td class="ops-detail-cell" title="${escapeHtml(s.detail || "")}">${escapeHtml(
+            (s.detail || "").slice(0, 100) || "—"
+          )}</td>
+        </tr>`;
+      })
+      .join("");
+    const pageLine =
+      progress.page_total > 0
+        ? `<p class="lead" style="margin:8px 0">页面 ${progress.page_index || 0}/${
+            progress.page_total
+          } · <code>${escapeHtml(progress.current_page_id || "")}</code></p>`
+        : "";
+    const log = progress.log_tail
+      ? `<pre class="ops-mono-block" style="max-height:160px;overflow:auto;margin-top:8px">${escapeHtml(
+          progress.log_tail
+        )}</pre>`
+      : "";
+    host.hidden = false;
+    host.innerHTML = `${pageLine}<table class="ops-table">
+      <thead><tr><th>step</th><th>status</th><th>detail</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>${log}`;
+  }
+
+  /**
+   * 轮询 Deploy 进度。
+   * @param {string} title
+   * @returns {Promise<object>}
+   */
+  async function pollDeploy(title) {
+    let finalProg = null;
+    for (;;) {
+      const data = await api("/api/actions/deploy/progress");
+      const prog = data.progress || {};
+      finalProg = prog;
+      const phase = prog.phase || "…";
+      showProgress(`${title} · ${phase}`, {
+        percent: prog.percent != null ? prog.percent : null,
+        message: prog.message || "",
+      });
+      renderDeployDetail(prog);
+      if (prog.status === "done" || prog.status === "error") {
+        break;
+      }
+      await sleep(800);
+    }
+    return finalProg;
+  }
+
+  /**
+   * 轮询 seo_c2 进度直到 done/error。
+   * @param {string} title
+   * @returns {Promise<object>}
+   */
+  async function pollSeoC2(title) {
+    let finalProg = null;
+    for (;;) {
+      const data = await api("/api/actions/seo/progress");
+      const prog = data.progress || {};
+      finalProg = prog;
+      const sum = prog.summary || {};
+      const sumLabel = sum.pass != null
+        ? ` pass=${sum.pass} fail=${sum.fail || 0}`
+        : "";
+      showProgress(`${title} · §${prog.phase || "…"}`, {
+        percent: prog.percent != null ? prog.percent : null,
+        message: (prog.message || "") + sumLabel,
+      });
+      renderSeoC2Detail(prog);
+      if (prog.status === "done" || prog.status === "error") {
+        break;
+      }
+      await sleep(400);
+    }
+    return finalProg;
+  }
+
+  /**
    * 轮询一键生成流程进度，直到 done/error。
    * @param {string} title
    * @returns {Promise<object>} 最终 progress
@@ -2322,22 +2454,52 @@
     });
 
     document.getElementById("btnSeo").addEventListener("click", async () => {
+      const btn = document.getElementById("btnSeo");
+      if (busyDepth > 0 || (btn && btn.disabled)) {
+        log("seo_c2 已在进行中，忽略重复点击");
+        return;
+      }
+      if (btn) btn.disabled = true;
       try {
         await withBusy("seo_c2_checklist", async () => {
-          const data = await api("/api/actions/seo", { method: "POST", body: {} });
-          log("seo_c2 结束", { ok: data.ok, returncode: data.returncode });
+          showProgress("seo_c2 · 启动", { percent: 1, message: "提交后台检查…" });
+          const start = await api("/api/actions/seo/start", {
+            method: "POST",
+            body: { use_db: true },
+          });
+          if (start.already_running) {
+            log("seo_c2 已在跑，附着轮询", start.progress);
+          } else {
+            log("seo_c2 已启动");
+          }
+          const finalProg = await pollSeoC2("seo_c2_checklist");
+          if (finalProg && finalProg.status === "error") {
+            throw new Error(finalProg.error || finalProg.message || "seo_c2 失败");
+          }
+          log("seo_c2 结束", {
+            ok: finalProg && finalProg.ok,
+            summary: finalProg && finalProg.summary,
+          });
+          showProgress("seo_c2 完成", {
+            percent: 100,
+            message: (finalProg && finalProg.message) || "完成",
+          });
+          renderSeoC2Detail(finalProg);
           await refresh();
           showStep("4");
-        });
+        }, { indeterminate: false, keepProgress: true });
       } catch (e) {
         log(String(e));
+      } finally {
+        if (btn) btn.disabled = false;
       }
     });
 
     document.getElementById("btnDeployRun").addEventListener("click", async () => {
       /**
-       * 读取 Deploy 范围与是否正式上传，调用 /api/actions/deploy。
+       * 读取 Deploy 范围与是否正式上传，调用 start + 轮询进度。
        */
+      const btn = document.getElementById("btnDeployRun");
       const scopeEl = document.querySelector('input[name="deployScope"]:checked');
       const scope = (scopeEl && scopeEl.value) || "incremental";
       const upload = !!(document.getElementById("deployUpload") || {}).checked;
@@ -2350,28 +2512,50 @@
               : "确认增量 prepare（选中槽）+ 正式 wrangler deploy？（影响公网）";
         if (!window.confirm(tip)) return;
       }
+      if (busyDepth > 0 || (btn && btn.disabled)) {
+        log("Deploy 已在进行中，忽略重复点击");
+        return;
+      }
       const label = upload
         ? `Deploy ${scope} + wrangler`
         : `Deploy ${scope} prepare-only`;
+      if (btn) btn.disabled = true;
       try {
         await withBusy(label, async () => {
-          if (upload) {
-            showProgress("Deploy", { percent: null, message: "准备 / 上传中…" });
-          }
-          const data = await api("/api/actions/deploy", {
+          showProgress(label + " · 启动", {
+            percent: 1,
+            message: "提交后台任务…",
+          });
+          const start = await api("/api/actions/deploy/start", {
             method: "POST",
             body: { scope, upload },
           });
+          if (start.already_running) {
+            log("Deploy 已在跑，附着轮询", start.progress);
+          } else {
+            log("Deploy 已启动", { scope, upload });
+          }
+          const finalProg = await pollDeploy(label);
+          if (finalProg && finalProg.status === "error") {
+            throw new Error(finalProg.error || finalProg.message || "Deploy 失败");
+          }
           log("deploy 结束", {
-            ok: data.ok,
-            scope: data.scope,
-            upload: data.upload,
-            error: data.error,
+            ok: finalProg && finalProg.ok,
+            scope: finalProg && finalProg.scope,
+            upload: finalProg && finalProg.upload,
+            message: finalProg && finalProg.message,
           });
+          showProgress("Deploy 完成", {
+            percent: 100,
+            message: (finalProg && finalProg.message) || "完成",
+          });
+          renderDeployDetail(finalProg);
           await refresh();
-        });
+        }, { indeterminate: false, keepProgress: true });
       } catch (e) {
         log(String(e));
+      } finally {
+        if (btn) btn.disabled = false;
       }
     });
 

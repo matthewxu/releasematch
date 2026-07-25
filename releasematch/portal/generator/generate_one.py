@@ -73,6 +73,7 @@ def write_all_published(
     site_origin: str = SITE_ORIGIN,
     *,
     show_ig_debug: Optional[bool] = None,
+    on_page: Optional[Any] = None,
 ) -> Dict[str, Any]:
     """
     批量生成 episode/movie 静态 HTML，并写入首页、Hub、sitemap。
@@ -85,6 +86,7 @@ def write_all_published(
     @param out_root: 输出根目录
     @param site_origin: canonical origin
     @param show_ig_debug: 覆盖 RM_SHOW_IG_DEBUG
+    @param on_page: 可选进度回调 ``(index, total, page_id, result) -> None``
     @returns: 批量摘要
     """
     store = MySQLStore()
@@ -94,8 +96,9 @@ def write_all_published(
     published_ids = set(store.list_published_page_ids())
     results: List[Dict[str, Any]] = []
     errors: List[str] = []
+    total = len(page_ids)
 
-    for page_id in page_ids:
+    for idx, page_id in enumerate(page_ids):
         result = write_page_html(
             page_id,
             out_root=out_root,
@@ -106,6 +109,11 @@ def write_all_published(
         results.append(result)
         if not result.get("ok"):
             errors.append(f"{page_id}: {result.get('error')}")
+        if callable(on_page):
+            try:
+                on_page(idx + 1, total, page_id, result)
+            except Exception:  # noqa: BLE001 — 进度回调失败不阻断 generate
+                pass
 
     home_result = write_home_page(out_root=out_root, site_origin=site_origin, show_ig_debug=show_ig_debug)
     hub_result = write_all_show_hubs(

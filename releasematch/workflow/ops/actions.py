@@ -495,57 +495,14 @@ def run_speedtest(
 
 def run_seo_c2(*, batch_id: Optional[str] = None) -> Dict[str, Any]:
     """
-    跑本地 seo_c2_checklist（批次级步骤）。
+    跑本地 seo_c2_checklist（批次级步骤；内部走后台服务并阻塞等待）。
 
     @param batch_id: 批次
     @returns: 结果
     """
-    loaded = _get_batch(batch_id)
-    if not loaded.get("ok"):
-        return loaded
-    batch = loaded["batch"]
-    update_batch_step(batch, "seo_c2", status="running", detail="")
-    save_batch(batch)
+    from workflow.ops import seo_c2_service
 
-    script = PROJECT_ROOT / "scripts" / "seo_c2_checklist.sh"
-    if not script.is_file():
-        # 尝试 python 等价
-        py = PROJECT_ROOT / "scripts" / "seo_c2_checklist.py"
-        if py.is_file():
-            cmd = [sys.executable, str(py)]
-        else:
-            update_batch_step(batch, "seo_c2", status="failed", detail="找不到 seo_c2_checklist")
-            save_batch(batch)
-            return {"ok": False, "error": "找不到 seo_c2_checklist 脚本", "batch": batch}
-    else:
-        cmd = ["bash", str(script)]
-
-    try:
-        proc = subprocess.run(
-            cmd,
-            cwd=str(PROJECT_ROOT),
-            capture_output=True,
-            text=True,
-            timeout=600,
-            check=False,
-        )
-        ok = proc.returncode == 0
-        detail = (proc.stdout or proc.stderr or "")[-500:]
-        update_batch_step(
-            batch, "seo_c2", status="ok" if ok else "failed", detail=detail
-        )
-        save_batch(batch)
-        return {
-            "ok": ok,
-            "returncode": proc.returncode,
-            "detail": detail,
-            "summary": summarize_batch(batch),
-            "batch": batch,
-        }
-    except Exception as exc:  # noqa: BLE001
-        update_batch_step(batch, "seo_c2", status="failed", detail=str(exc))
-        save_batch(batch)
-        return {"ok": False, "error": str(exc), "batch": batch}
+    return seo_c2_service.run_seo_c2_blocking(batch_id=batch_id, use_db=True)
 
 
 def _prepare_dist_full() -> Dict[str, Any]:
@@ -781,116 +738,21 @@ def run_deploy(
     @param scope: ``full`` | ``incremental`` | ``upload_only``
     @param upload: True=执行 wrangler deploy；False=仅准备 dist
     @param prepare_only: 兼容旧 API；若提供则 ``upload = not prepare_only``
-    @returns: 结果摘要（含 scope / upload / prepare / wrangler）
+    @returns: 结果摘要（含 scope / upload / progress）
     @description
-      - full：generate all + 壳同步（与历史 deploy_cf_pages.sh 一致）
-      - incremental：只 bake 选中槽 + home/sitemap/壳；上传仍由 wrangler 对账增量
-      - upload_only：假定 dist 已就绪，只 wrangler
+      实际执行走 ``deploy_flow_service``（可轮询进度）；本函数阻塞等待结束。
     """
-    # 完整注释：兼容旧客户端只传 prepare_only
     if upload is None:
         if prepare_only is not None:
             upload = not bool(prepare_only)
         else:
             upload = False
 
-    scope_norm = str(scope or "full").strip().lower()
-    if scope_norm in ("selected", "pages", "incr"):
-        scope_norm = "incremental"
-    if scope_norm not in ("full", "incremental", "upload_only"):
-        return {"ok": False, "error": f"未知 scope={scope!r}，应为 full|incremental|upload_only"}
+    from workflow.ops import deploy_flow_service
 
-    loaded = _get_batch(batch_id)
-    if not loaded.get("ok"):
-        return loaded
-    batch = loaded["batch"]
-
-    if scope_norm == "incremental":
-        rows = _selected_slots(batch, page_ids)
-        if not rows:
-            return {
-                "ok": False,
-                "error": "增量 deploy 需要跟踪表中至少 1 个选中槽",
-                "batch": batch,
-            }
-
-    update_batch_step(
-        batch,
-        "deploy",
-        status="running",
-        detail=f"scope={scope_norm} upload={upload}",
+    return deploy_flow_service.run_deploy_blocking(
+        scope=str(scope or "full"),
+        upload=bool(upload),
+        batch_id=batch_id,
+        page_ids=page_ids,
     )
-    save_batch(batch)
-
-    prepare_result: Dict[str, Any] = {"skipped": True}
-    wrangler_result: Dict[str, Any] = {"skipped": True}
-
-    try:
-        if scope_norm == "full":
-            prepare_result = _prepare_dist_full()
-            if isinstance(prepare_result, dict) and prepare_result.get("ok") is False:
-                raise RuntimeError(prepare_result.get("error") or "全量 prepare 失败")
-            # write_all_published 成功时通常无 ok=false；错误抛异常
-            prepare_result = {"ok": True, "mode": "full", "result": prepare_result}
-        elif scope_norm == "incremental":
-            prepare_result = _prepare_dist_incremental(
-                batch_id=batch.get("meta", {}).get("batch_id") or batch_id,
-                page_ids=page_ids,
-            )
-            if not prepare_result.get("ok"):
-                raise RuntimeError(prepare_result.get("error") or "增量 prepare 失败")
-            # run_generate 已 save_batch；重新加载以免覆盖
-            reloaded = _get_batch(batch_id)
-            if reloaded.get("ok"):
-                batch = reloaded["batch"]
-        # upload_only：跳过 prepare
-
-        if upload:
-            wrangler_result = _run_wrangler_upload()
-            if not wrangler_result.get("ok"):
-                raise RuntimeError(
-                    wrangler_result.get("error")
-                    or wrangler_result.get("detail")
-                    or "wrangler deploy 失败"
-                )
-
-        detail_parts = [f"scope={scope_norm}", f"upload={upload}"]
-        if prepare_result.get("skipped"):
-            detail_parts.append("prepare=skip")
-        elif scope_norm == "incremental":
-            g = prepare_result.get("generate") or {}
-            detail_parts.append(
-                f"prepare=incr ok={g.get('ok_count')} fail={g.get('fail_count')}"
-            )
-        else:
-            detail_parts.append("prepare=full")
-        if upload:
-            detail_parts.append("wrangler=ok")
-        detail = " | ".join(detail_parts)
-        if upload and wrangler_result.get("detail"):
-            detail = (detail + "\n" + str(wrangler_result.get("detail")))[-500:]
-
-        update_batch_step(batch, "deploy", status="ok", detail=detail)
-        save_batch(batch)
-        return {
-            "ok": True,
-            "scope": scope_norm,
-            "upload": upload,
-            "prepare_only": not upload,
-            "prepare": prepare_result,
-            "wrangler": wrangler_result,
-            "summary": summarize_batch(batch),
-            "batch": batch,
-        }
-    except Exception as exc:  # noqa: BLE001
-        update_batch_step(batch, "deploy", status="failed", detail=str(exc)[:500])
-        save_batch(batch)
-        return {
-            "ok": False,
-            "error": str(exc),
-            "scope": scope_norm,
-            "upload": upload,
-            "prepare": prepare_result,
-            "wrangler": wrangler_result,
-            "batch": batch,
-        }

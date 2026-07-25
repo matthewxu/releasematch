@@ -299,8 +299,9 @@ table.ops-table tr:hover td {
 
 .st-pending { color: var(--ops-faint); }
 .st-running { color: var(--ops-accent); border-color: rgba(77, 159, 255, 0.4); }
-.st-ok, .st-skipped { color: var(--ops-ok); border-color: rgba(61, 214, 140, 0.35); }
-.st-failed { color: var(--ops-danger); border-color: rgba(240, 113, 120, 0.4); }
+.st-ok, .st-skipped, .st-pass, .st-skip { color: var(--ops-ok); border-color: rgba(61, 214, 140, 0.35); }
+.st-failed, .st-fail { color: var(--ops-danger); border-color: rgba(240, 113, 120, 0.4); }
+.st-warn { color: #c9a227; border-color: rgba(201, 162, 39, 0.45); }
 
 .tier-anchor { color: var(--ops-ok); }
 .tier-curated { color: var(--ops-accent); }
