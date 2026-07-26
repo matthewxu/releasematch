@@ -301,6 +301,10 @@ def run_generate(
     batch = loaded["batch"]
     rows = _selected_slots(batch, page_ids)
 
+    # 长驻 Ops 进程：先热重载生成链路，避免磁盘已改代码但 bake 仍用旧 Context
+    from workflow.ops.generate_reload import reload_generate_modules
+
+    reload_info = reload_generate_modules()
     from portal.generator.generate_one import write_all_published, write_page_html
 
     if generate_all:
@@ -308,6 +312,10 @@ def run_generate(
             update_slot_stage(batch, row["page_id"], "generate", status="running")
         save_batch(batch)
         try:
+            if not reload_info.get("ok"):
+                raise RuntimeError(
+                    "模块热重载失败: " + "; ".join(reload_info.get("errors") or [])
+                )
             result = write_all_published()
             detail = json.dumps(result, ensure_ascii=False)[:500] if isinstance(result, dict) else str(result)
             for row in rows:
@@ -315,12 +323,19 @@ def run_generate(
                     batch, row["page_id"], "generate", status="ok", detail=detail[:200]
                 )
             save_batch(batch)
-            return {"ok": True, "mode": "all", "result": result, "summary": summarize_batch(batch), "batch": batch}
+            return {
+                "ok": True,
+                "mode": "all",
+                "result": result,
+                "reload": reload_info,
+                "summary": summarize_batch(batch),
+                "batch": batch,
+            }
         except Exception as exc:  # noqa: BLE001
             for row in rows:
                 update_slot_stage(batch, row["page_id"], "generate", status="failed", detail=str(exc))
             save_batch(batch)
-            return {"ok": False, "error": str(exc), "batch": batch}
+            return {"ok": False, "error": str(exc), "reload": reload_info, "batch": batch}
 
     ok_n = 0
     fail_n = 0

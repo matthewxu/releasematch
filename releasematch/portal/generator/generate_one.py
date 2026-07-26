@@ -74,6 +74,7 @@ def write_all_published(
     *,
     show_ig_debug: Optional[bool] = None,
     on_page: Optional[Any] = None,
+    on_phase: Optional[Any] = None,
 ) -> Dict[str, Any]:
     """
     批量生成 episode/movie 静态 HTML，并写入首页、Hub、sitemap。
@@ -87,10 +88,23 @@ def write_all_published(
     @param site_origin: canonical origin
     @param show_ig_debug: 覆盖 RM_SHOW_IG_DEBUG
     @param on_page: 可选进度回调 ``(index, total, page_id, result) -> None``
+    @param on_phase: 可选阶段回调 ``(phase, detail) -> None``
+      phase: ensure_hubs | pages | home | hubs | sitemap | trust | static_shell
     @returns: 批量摘要
     """
+
+    def _phase(name: str, detail: str = "") -> None:
+        """安全调用阶段回调。"""
+        if not callable(on_phase):
+            return
+        try:
+            on_phase(name, detail)
+        except Exception:  # noqa: BLE001 — 进度回调失败不阻断 generate
+            pass
+
     store = MySQLStore()
     # 流程闸门：历史槽可能只有单集而无 Hub；generate 前先落库再渲染
+    _phase("ensure_hubs", "补齐缺失 show_hub…")
     hub_ensure = store.ensure_missing_show_hubs()
     page_ids = store.list_renderable_page_ids()
     published_ids = set(store.list_published_page_ids())
@@ -98,6 +112,7 @@ def write_all_published(
     errors: List[str] = []
     total = len(page_ids)
 
+    _phase("pages", f"开始烘焙 {total} 个 episode/movie 页…")
     for idx, page_id in enumerate(page_ids):
         result = write_page_html(
             page_id,
@@ -115,16 +130,21 @@ def write_all_published(
             except Exception:  # noqa: BLE001 — 进度回调失败不阻断 generate
                 pass
 
+    _phase("home", "写入首页目录（按源更新时间降序）…")
     home_result = write_home_page(out_root=out_root, site_origin=site_origin, show_ig_debug=show_ig_debug)
+    _phase("hubs", "写入全部 show_hub…")
     hub_result = write_all_show_hubs(
         out_root=out_root, site_origin=site_origin, show_ig_debug=show_ig_debug
     )
+    _phase("sitemap", "写入 sitemap…")
     sitemap_result = write_sitemap(out_root=out_root, site_origin=site_origin)
 
     from portal.generator.render_trust import write_trust_pages
 
+    _phase("trust", "写入 Trust 页…")
     trust_result = write_trust_pages(out_root=out_root, site_origin=site_origin)
 
+    _phase("static_shell", "同步 CSS/JS 静态壳…")
     static_shell_result = sync_static_shell(out_root=out_root)
 
     indexable_generated = sum(1 for r in results if r.get("ok") and r.get("indexable"))

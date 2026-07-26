@@ -271,6 +271,11 @@ MESSAGES: Dict[str, Dict[str, str]] = {
     # 首页作品卡片 meta（须 data-i18n，禁止 bake 死中文）
     "home.card.movie": {"en": "Movie", "zh": "电影"},
     "home.card.movie_year": {"en": "Movie · {year}", "zh": "电影 · {year}"},
+    "home.card.updated": {"en": "Updated {time}", "zh": "更新 {time}"},
+    "page.magnets_updated": {
+        "en": "Sources updated {time}",
+        "zh": "源更新 {time}",
+    },
     "home.card.tv_count": {
         "en": "TV · {count} episodes",
         "zh": "剧集 · {count} 集",

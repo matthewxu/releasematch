@@ -28,6 +28,7 @@ from workflow.ops import daily_service
 from workflow.ops import jackett_deploy_service
 from workflow.ops import linode_vps_service
 from workflow.ops import generation_flow_service
+from workflow.ops import generate_all_flow_service
 from workflow.ops import seo_c2_service
 from workflow.ops import deploy_flow_service
 from workflow.ops import pages_service
@@ -420,11 +421,23 @@ def _handle_api(
         )
 
     if path == "/api/actions/generate" and method == "POST":
+        # generate_all=true 时建议走 /generate-all/start（异步进度）；此处保留同步兼容
         return 200, actions.run_generate(
             batch_id=body.get("batch_id"),
             page_ids=body.get("page_ids"),
             generate_all=bool(body.get("generate_all", False)),
         )
+
+    # Generate all：后台 + 分阶段/逐页进度轮询（含模块热重载与抽样验收）
+    if path == "/api/actions/generate-all/start" and method == "POST":
+        result = generate_all_flow_service.start_generate_all(
+            batch_id=body.get("batch_id"),
+        )
+        status = 200 if result.get("ok") else 400
+        return status, result
+
+    if path == "/api/actions/generate-all/progress" and method == "GET":
+        return 200, {"ok": True, "progress": generate_all_flow_service.get_progress()}
 
     if path == "/api/actions/speedtest" and method == "POST":
         return 200, actions.run_speedtest(

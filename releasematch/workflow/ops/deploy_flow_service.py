@@ -181,6 +181,14 @@ def start_deploy(
                     steps=list(steps),
                 )
 
+                from workflow.ops.generate_reload import reload_generate_modules
+
+                reload_info = reload_generate_modules()
+                if not reload_info.get("ok"):
+                    raise RuntimeError(
+                        "模块热重载失败: " + "; ".join(reload_info.get("errors") or [])
+                    )
+                # reload 后再 import，拿到新 generate_one 绑定
                 from portal.generator.generate_one import write_all_published
 
                 def on_page(index: int, total: int, page_id: str, result: Dict[str, Any]) -> None:

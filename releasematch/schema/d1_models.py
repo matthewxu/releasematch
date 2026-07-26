@@ -841,6 +841,54 @@ def _format_datetime_utc_display(ts: str) -> str:
     return f"{base} UTC"
 
 
+def _format_date_utc_display(ts: str) -> str:
+    """
+    将时间戳格式化为 UTC 日期（首页卡片等紧凑展示）。
+
+    @param ts: MySQL DATETIME / ISO 字符串
+    @returns: 如 2026-07-02；空串表示无时间
+    """
+    text = (ts or "").strip()
+    if not text:
+        return ""
+    return text[:10]
+
+
+def resolve_magnets_updated_fields(
+    sources: List["DownloadResource"],
+    *,
+    fallback_updated_at: str = "",
+) -> Dict[str, str]:
+    """
+    从槽位 magnet 列表解析「源更新时间」展示字段。
+
+    @param sources: download_resources 行模型列表
+    @param fallback_updated_at: 无 indexed_at 时回退（如 media_pages.updated_at）
+    @returns: magnets_updated_at / magnets_updated_display / magnets_updated_date
+    @description
+      权威字段为 ``download_resources.indexed_at``（pipeline 爬源 upsert 时刷新）。
+    """
+    best_raw = ""
+    best_dt: Optional[datetime] = None
+    for src in sources or []:
+        raw = str(getattr(src, "indexed_at", "") or "").strip()
+        if not raw:
+            continue
+        parsed = _parse_mysql_utc_datetime(raw)
+        if parsed is None:
+            continue
+        if best_dt is None or parsed > best_dt:
+            best_dt = parsed
+            best_raw = raw
+    if not best_raw:
+        best_raw = str(fallback_updated_at or "").strip()
+    return {
+        "magnets_updated_at": best_raw,
+        "magnets_updated_display": _format_datetime_utc_display(best_raw),
+        "magnets_updated_date": _format_date_utc_display(best_raw),
+    }
+
+
 def _parse_mysql_utc_datetime(ts: str) -> Optional[datetime]:
     """
     解析 MySQL DATETIME 为 UTC aware datetime。
@@ -1515,6 +1563,10 @@ class EpisodePageContext:
         source_dicts = [
             enrich_item_dict(src.to_template_dict(), force_specs=True) for src in self.sources
         ]
+        magnets_updated = resolve_magnets_updated_fields(
+            self.sources,
+            fallback_updated_at=self.page.updated_at,
+        )
 
         return {
             "show_title": self.catalog.title,
@@ -1590,6 +1642,8 @@ class EpisodePageContext:
             "robots_noindex": not self.page.is_indexable(
                 has_recommended=self.recommended is not None
             ),
+            # 源爬取 / magnet upsert 最新时间（download_resources.indexed_at）
+            **magnets_updated,
             # 最终 SEO desc 由 i18n.attach_seo_meta_description 在渲染时写入 seo_meta_description
         }
 
@@ -1667,6 +1721,10 @@ class MoviePageContext:
         overview_zh = self.page.overview_zh or self.catalog.overview_zh or ""
         overview = overview_en
         year = self.catalog.year or ""
+        magnets_updated = resolve_magnets_updated_fields(
+            self.sources,
+            fallback_updated_at=self.page.updated_at,
+        )
         return {
             "movie_title": self.catalog.title,
             "tmdb_id": self.catalog.tmdb_id,
@@ -1712,6 +1770,8 @@ class MoviePageContext:
             "robots_noindex": not self.page.is_indexable(
                 has_recommended=self.recommended is not None
             ),
+            # 源爬取 / magnet upsert 最新时间（download_resources.indexed_at）
+            **magnets_updated,
         }
 
 

@@ -141,6 +141,108 @@
   }
 
   /**
+   * 渲染 Generate all 分阶段 + 最近页明细。
+   * @param {object|null} progress
+   */
+  function renderGenerateAllDetail(progress) {
+    const host = document.getElementById("opsProgressDetail");
+    if (!host) return;
+    const steps = (progress && progress.steps) || [];
+    const recent = (progress && progress.recent_pages) || [];
+    if (!steps.length && !recent.length) {
+      host.hidden = true;
+      host.innerHTML = "";
+      return;
+    }
+    const pageLine =
+      progress.page_total > 0
+        ? `<p class="lead" style="margin:8px 0">页面 ${progress.page_index || 0}/${
+            progress.page_total
+          } · ok=${progress.ok_pages || 0} fail=${progress.fail_pages || 0} · <code>${escapeHtml(
+            progress.current_page_id || ""
+          )}</code></p>`
+        : "";
+    const stepRows = steps
+      .map((s) => {
+        return `<tr>
+          <td><code>${escapeHtml(s.id || "")}</code></td>
+          <td>${statusBadge(s.status)}</td>
+          <td class="ops-detail-cell" title="${escapeHtml(s.detail || "")}">${escapeHtml(
+            (s.detail || "").slice(0, 120) || "—"
+          )}</td>
+        </tr>`;
+      })
+      .join("");
+    const recentRows = recent
+      .slice()
+      .reverse()
+      .map((r) => {
+        const cls = r.page_id === (progress.current_page_id || "") ? ' class="is-current"' : "";
+        return `<tr${cls}>
+          <td><code>${escapeHtml(r.page_id || "")}</code></td>
+          <td>${r.ok ? statusBadge("ok") : statusBadge("failed")}</td>
+          <td class="ops-detail-cell" title="${escapeHtml(r.detail || "")}">${escapeHtml(
+            (r.detail || "").slice(0, 100) || "—"
+          )}</td>
+        </tr>`;
+      })
+      .join("");
+    const verify = progress.verify;
+    let verifyHtml = "";
+    if (verify) {
+      const warns = (verify.warnings || [])
+        .map((w) => `<li>${escapeHtml(w)}</li>`)
+        .join("");
+      verifyHtml = `<div style="margin-top:8px">
+        <p class="lead">验收 · ${verify.ok ? "通过" : "警告"} · badge_hits=${
+          verify.badge_hits != null ? verify.badge_hits : "—"
+        } · home=${verify.home_hit ? "Y" : "N"}</p>
+        ${warns ? `<ul>${warns}</ul>` : ""}
+      </div>`;
+    }
+    host.hidden = false;
+    host.innerHTML = `${pageLine}<table class="ops-table">
+      <thead><tr><th>step</th><th>status</th><th>detail</th></tr></thead>
+      <tbody>${stepRows}</tbody>
+    </table>
+    ${
+      recentRows
+        ? `<p class="lead" style="margin:12px 0 4px">最近完成页</p>
+      <table class="ops-table">
+        <thead><tr><th>page_id</th><th>status</th><th>path/error</th></tr></thead>
+        <tbody>${recentRows}</tbody>
+      </table>`
+        : ""
+    }
+    ${verifyHtml}`;
+  }
+
+  /**
+   * 轮询 Generate all 进度直到 done/error。
+   * @param {string} title
+   * @returns {Promise<object>}
+   */
+  async function pollGenerateAll(title) {
+    let finalProg = null;
+    for (;;) {
+      const data = await api("/api/actions/generate-all/progress");
+      const prog = data.progress || {};
+      finalProg = prog;
+      const phase = prog.phase || "…";
+      showProgress(`${title} · ${phase}`, {
+        percent: prog.percent != null ? prog.percent : null,
+        message: prog.message || "",
+      });
+      renderGenerateAllDetail(prog);
+      if (prog.status === "done" || prog.status === "error") {
+        break;
+      }
+      await sleep(500);
+    }
+    return finalProg;
+  }
+
+  /**
    * 渲染 Deploy 分阶段进度。
    * @param {object|null} progress
    */
@@ -2864,8 +2966,35 @@
     document.getElementById("btnGenerateAll").addEventListener("click", async () => {
       try {
         await withBusy("Generate all", async () => {
-          showProgress("Generate all", { percent: null, message: "烘焙全站静态页…" });
-          await api("/api/actions/generate", { method: "POST", body: { generate_all: true } });
+          showProgress("Generate all", { percent: 1, message: "启动后台任务…" });
+          const start = await api("/api/actions/generate-all/start", {
+            method: "POST",
+            body: {},
+          });
+          if (!start.ok) {
+            throw new Error(start.error || "Generate all 启动失败");
+          }
+          if (start.already_running) {
+            log("Generate all 已在运行，接入进度轮询");
+          }
+          const prog = await pollGenerateAll("Generate all");
+          if (prog.status === "error" || prog.ok === false) {
+            log("Generate all 结束（含警告/失败）", {
+              error: prog.error,
+              verify: prog.verify,
+              result_summary: prog.result_summary,
+              reload: prog.reload,
+            });
+            if (prog.status === "error") {
+              throw new Error(prog.error || prog.message || "Generate all 失败");
+            }
+          } else {
+            log("Generate all 完成", {
+              result_summary: prog.result_summary,
+              verify: prog.verify,
+              reload: prog.reload,
+            });
+          }
           await refresh();
         });
       } catch (e) {

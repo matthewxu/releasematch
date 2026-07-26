@@ -101,6 +101,11 @@
           <h3 class="rm-show-card__title">{{ entry.title }}</h3>
           {# meta 须走 i18n：切换 en/zh 时更新「电影/Movie」「剧集/TV」 #}
           <p class="rm-show-card__meta"{% if i18n_enabled %} data-i18n="{{ entry.meta_key }}" data-i18n-vars='{{ entry.meta_vars | tojson }}'{% endif %}>{{ t(entry.meta_key, **entry.meta_vars) }}</p>
+          {% if entry.magnets_updated_date %}
+          <p class="rm-show-card__updated">
+            <time datetime="{{ entry.magnets_updated_at }}"{% if i18n_enabled %} data-i18n="home.card.updated" data-i18n-vars='{"time": {{ entry.magnets_updated_date | tojson }}}'{% endif %}>{{ t('home.card.updated', time=entry.magnets_updated_date) }}</time>
+          </p>
+          {% endif %}
         </div>
       </a>
       {% endfor %}

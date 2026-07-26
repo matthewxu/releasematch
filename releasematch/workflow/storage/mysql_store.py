@@ -1378,20 +1378,30 @@ class MySQLStore:
         @param offset: 偏移
         @returns: entries / total / movie_count / tv_count / limit / offset
         @description
-          按 catalog 内 ``MAX(COALESCE(updated_at, generated_at))`` 降序（最新更新在前）。
+          按 catalog 内 ``MAX(download_resources.indexed_at)`` 降序（源爬取更新最新在前）；
+          无 indexed_at 时回退 ``media_pages.updated_at`` / ``generated_at``。
           ``meta_key`` / ``meta_vars`` 供模板 ``t()`` 与 ``data-i18n`` 使用。
         """
-        from schema.d1_models import poster_url_from_path
+        from schema.d1_models import (
+            _format_date_utc_display,
+            _format_datetime_utc_display,
+            poster_url_from_path,
+        )
 
         conn = self._connect()
         with conn.cursor() as cur:
             cur.execute(
                 """
                 SELECT p.page_id, p.page_type, p.canonical_path, p.season, p.episode,
-                       p.updated_at, p.generated_at,
+                       p.updated_at, p.generated_at, dr.max_indexed_at,
                        c.catalog_id, c.slug, c.title, c.media_kind, c.year, c.poster_path
                 FROM media_pages p
                 JOIN media_catalog c ON p.catalog_id = c.catalog_id
+                LEFT JOIN (
+                    SELECT page_id, MAX(indexed_at) AS max_indexed_at
+                    FROM download_resources
+                    GROUP BY page_id
+                ) dr ON dr.page_id = p.page_id
                 WHERE p.page_status = 'published' AND p.magnet_count >= 2
                   AND p.page_type IN ('episode', 'movie')
                 ORDER BY c.title, p.season, p.episode
@@ -1427,7 +1437,12 @@ class MySQLStore:
         for row in rows:
             catalog_id = str(row["catalog_id"])
             media_kind = str(row["media_kind"])
-            stamp = _as_dt(row.get("updated_at")) or _as_dt(row.get("generated_at"))
+            # 优先 magnet 爬取时间 indexed_at，再回退页级 updated_at
+            stamp = (
+                _as_dt(row.get("max_indexed_at"))
+                or _as_dt(row.get("updated_at"))
+                or _as_dt(row.get("generated_at"))
+            )
             if catalog_id not in grouped:
                 grouped[catalog_id] = {
                     "catalog_id": catalog_id,
@@ -1453,7 +1468,7 @@ class MySQLStore:
             )
 
         entries: List[Dict[str, Any]] = []
-        # 完整注释：最新更新优先；无时间戳的排到后面，同时间按标题
+        # 完整注释：按源更新时间降序；无时间戳排后，同时间按标题
         sorted_items = sorted(
             grouped.values(),
             key=lambda x: (
@@ -1497,6 +1512,13 @@ class MySQLStore:
                 meta_key = "home.card.tv_count"
                 meta_vars = {"count": len(pages)}
 
+            # 模板用字符串时间；datetime 仅用于排序
+            latest_dt = item.get("latest_updated_at")
+            latest_raw = ""
+            if isinstance(latest_dt, datetime):
+                latest_raw = latest_dt.strftime("%Y-%m-%d %H:%M:%S")
+            elif latest_dt:
+                latest_raw = str(latest_dt)
             entries.append(
                 {
                     "title": item["title"],
@@ -1506,7 +1528,9 @@ class MySQLStore:
                     "poster_url": item["poster_url"],
                     "media_kind": media_kind,
                     "page_count": len(pages),
-                    "latest_updated_at": item.get("latest_updated_at"),
+                    "magnets_updated_at": latest_raw,
+                    "magnets_updated_display": _format_datetime_utc_display(latest_raw),
+                    "magnets_updated_date": _format_date_utc_display(latest_raw),
                 }
             )
 

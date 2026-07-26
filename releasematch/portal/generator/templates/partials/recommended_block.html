@@ -7,6 +7,9 @@
     <h2 class="rm-section__title" id="recommended-heading">
       <span aria-hidden="true">⭐</span> <span{% if i18n_enabled %} data-i18n="recommended.title"{% endif %}>{{ t('recommended.title') }}</span>
     </h2>
+    {% if magnets_updated_display %}
+    <time class="rm-section__updated" datetime="{{ magnets_updated_at }}"{% if i18n_enabled %} data-i18n="page.magnets_updated" data-i18n-vars='{"time": {{ magnets_updated_display | tojson }}}'{% endif %}>{{ t('page.magnets_updated', time=magnets_updated_display) }}</time>
+    {% endif %}
   </div>
 
   <article class="rm-release-card rm-release-card--recommended">

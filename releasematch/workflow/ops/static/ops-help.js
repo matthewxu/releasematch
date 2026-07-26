@@ -471,17 +471,24 @@
 
     generate_all: {
       title: "Generate all",
-      api: "POST /api/actions/generate  body: {generate_all:true}",
+      api: "POST /api/actions/generate-all/start → GET …/progress（分阶段轮询）",
       flow: [
-        "write_all_published() 全站 bake",
-        "用于模板/CSS/全局变更后的全量 regenerate",
+        "热重载 schema/render/generate_one（避免 ops serve 长驻用旧代码）",
+        "write_all_published：ensure_hubs → 逐页 → home → hubs → sitemap → trust → static",
+        "抽样验收 rm-badge--updated / 首页更新时间",
       ],
-      scripts: ["workflow/ops/actions.py", "workflow/generate/"],
+      scripts: [
+        "workflow/ops/generate_all_flow_service.py",
+        "workflow/ops/generate_reload.py",
+        "portal/generator/generate_one.py",
+      ],
       commands: ["python -m workflow.run generate all"],
-      dataFlow: "全部 published（及策略内页面）→ portal/dist 全量",
+      dataFlow: "全部 renderable 页 → portal/dist；进度含 page_id / 阶段 / 验收",
       storage: ["portal/dist/", "media_pages"],
       troubleshoot: [
-        "耗时长属正常；失败看返回 error 与某 page_id",
+        "进度条卡住 → 看 opsProgressDetail 当前 page_id；失败页在 recent_pages",
+        "验收警告「模板有标记但 HTML 无」→ 重启 ops serve 后再 Generate all",
+        "仅本地 dist 变了；公网需再 Deploy/upload",
         "仅单批上线用「Generate 选中页」或④增量即可",
       ],
     },

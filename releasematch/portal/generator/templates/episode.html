@@ -39,6 +39,10 @@
 
   <header class="rm-hero">
     <div class="rm-hero__meta">
+      {% if magnets_updated_display %}
+      {# 源爬取更新时间：靠前高亮，权威字段 download_resources.indexed_at #}
+      <time class="rm-badge rm-badge--updated" datetime="{{ magnets_updated_at }}"{% if i18n_enabled %} data-i18n="page.magnets_updated" data-i18n-vars='{"time": {{ magnets_updated_display | tojson }}}'{% endif %}>{{ t('page.magnets_updated', time=magnets_updated_display) }}</time>
+      {% endif %}
       <span{% if i18n_enabled %} data-i18n="episode.season_episode" data-i18n-vars='{"season": {{ season }}, "episode": {{ episode }}}'{% endif %}>{{ t('episode.season_episode', season=season, episode=episode) }}</span>
       {% if air_date %}<span>{{ air_date }}</span>{% endif %}
       <span class="rm-badge rm-badge--cross" title="{{ t('badge.cross_page_title', count=cross_source_count, total=cross_source_total) }}">{{ t('badge.cross_page', count=cross_source_count, total=cross_source_total) }}</span>
