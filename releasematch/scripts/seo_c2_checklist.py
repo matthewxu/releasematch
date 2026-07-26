@@ -25,7 +25,7 @@ import xml.etree.ElementTree as ET
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 # 保证从 releasematch/ 根目录可 import workflow / portal
 _ROOT = Path(__file__).resolve().parent.parent
@@ -217,12 +217,15 @@ def _path_from_sitemap_loc(loc: str, site_origin: str) -> str:
     """
     从 sitemap ``<loc>`` 提取 canonical 路径（含 trailing slash）。
 
-    @param loc: 完整 URL
+    @param loc: 完整 URL（可为百分号编码）
     @param site_origin: 期望 origin
-    @returns: 如 ``/breaking-bad/s4e6/``
+    @returns: 如 ``/breaking-bad/s4e6/``（解码后，与 dist 目录名对齐）
     """
+    # site_origin 由调用方校验 loc 前缀；此处只解析 path
+    _ = site_origin
     parsed = urlparse(loc)
-    path = parsed.path or "/"
+    # dist 目录使用 Unicode 路径；sitemap loc 可能已 percent-encode
+    path = unquote(parsed.path or "/")
     if not path.endswith("/"):
         path = f"{path}/"
     return path

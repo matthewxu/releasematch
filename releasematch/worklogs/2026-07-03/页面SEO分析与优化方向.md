@@ -153,7 +153,7 @@
 
 **建议：** 选 A 或 C。从 [validation-pages.json](./validation-pages.json) / DB 筛 `is_indexable() AND has_recommended` 生成首批 sitemap。
 
-> **✅ 2026-07-04 已定：选 A** — sitemap 首批 ≤30 indexable 内容页 + Trust 4 + 首页；实现见 `portal/generator/sitemap.py`。
+> **✅ 2026-07-04 已定：选 A** — sitemap 首批 ≤30 indexable 内容页 + Trust 6 + 首页（合计 **37 URL**）；实现见 `portal/generator/sitemap.py`。
 
 ### 决策 D4：subtitle 跨站链
 
@@ -256,7 +256,7 @@
 ### 6.1 技术 SEO
 
 - [x] `robots.txt` 可访问，`Sitemap:` 指向有效 sitemap（**本地 dist ✅** · 生产待 deploy）
-- [x] `sitemap.xml` 200，URL 仅含 indexable 页 + Trust + 首页（本地 **36 URL / 30 内容**）
+- [x] `sitemap.xml` 200，URL 仅含 indexable 页 + Trust + 首页（本地 **37 URL / 30 内容 + Trust 6**）
 - [x] 抽查 10 页：canonical 唯一、trailing slash 一致
 - [x] 404 页 `noindex`；410 HTML 可演示（**HTTP 410 待 CF 路由**）
 - [x] `RM_SHOW_IG_DEBUG` 生产环境为 false（防全站 noindex）

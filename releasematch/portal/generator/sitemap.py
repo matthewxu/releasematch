@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-sitemap.xml 生成器 — C2 冷启动首批 URL（≤30 内容页 + Trust + 首页）。
+sitemap.xml 生成器 — C2 冷启动首批 URL（≤30 内容页 + Trust 6 + 首页 = 37）。
 
 @module portal.generator.sitemap
 @description
   按 SEO 决策 D3：优先 validation-pages.json，再补 DB 中 indexable 且有 Recommended 的页。
-  排除 Hub、noindex、410/DMCA 路径。
+  排除 Hub、noindex、410/DMCA 路径；``<loc>`` 对非 ASCII 路径做百分号编码。
 """
 
 from __future__ import annotations
@@ -16,12 +16,13 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import quote, unquote, urlsplit, urlunsplit
 from xml.dom import minidom
 
 from workflow.config import PROJECT_ROOT, SITE_ORIGIN
 from workflow.storage.mysql_store import MySQLStore
 
-# Trust 五页固定路径（trailing slash）；含 Contact（T-05 功能性邮箱）
+# Trust 六页固定路径（trailing slash）；含 Contact、speed-and-grab
 TRUST_PATHS: Tuple[str, ...] = (
     "/trust/about/",
     "/trust/contact/",
@@ -59,6 +60,23 @@ def _format_lastmod(updated_at: Optional[str]) -> str:
             except ValueError:
                 continue
     return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
+def encode_sitemap_loc(url: str) -> str:
+    """
+    将 sitemap ``<loc>`` 规范为百分号编码（非 ASCII 路径必须编码）。
+
+    @param url: 完整 URL（可为未编码 Unicode，或已 percent-encode）
+    @returns: path 段已 quote、``/`` 保留的 URL
+    @description
+      协议见 sitemaps.org：loc 须为可被抓取的编码 URI。
+      先 ``unquote`` 再 ``quote``，保证幂等，避免二次编码 ``%``。
+      ASCII 路径在 ``quote(..., safe=\"/\")`` 下保持不变。
+    """
+    parts = urlsplit((url or "").strip())
+    raw_path = unquote(parts.path or "/")
+    encoded_path = quote(raw_path, safe="/")
+    return urlunsplit((parts.scheme, parts.netloc, encoded_path, parts.query, parts.fragment))
 
 
 def load_validation_priority_ids(
@@ -147,7 +165,8 @@ def build_sitemap_xml(
     for item in entries:
         url_el = ET.SubElement(urlset, "url")
         loc = ET.SubElement(url_el, "loc")
-        loc.text = f"{origin}{item['loc_path']}"
+        # 非 ASCII slug 必须 percent-encode，否则部分爬虫/校验器拒收
+        loc.text = encode_sitemap_loc(f"{origin}{item['loc_path']}")
         lastmod = ET.SubElement(url_el, "lastmod")
         lastmod.text = item.get("lastmod") or datetime.now(timezone.utc).strftime("%Y-%m-%d")
     rough = ET.tostring(urlset, encoding="unicode")

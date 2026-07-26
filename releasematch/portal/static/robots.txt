@@ -1,11 +1,8 @@
 # ReleaseMatch robots.txt
-# 当前：全站禁止爬取（软上线）。确认后改为 Allow + 取消注释 Sitemap。
-# 开关：.env 中 RM_BLOCK_CRAWLERS=1（配合页面 noindex）；开放时设 0 并恢复下方 Allow/Sitemap。
+# 当前：开放爬取。软上线禁爬时改为 Disallow: / 并注释 Sitemap；.env 设 RM_BLOCK_CRAWLERS=1。
+# 开关：RM_BLOCK_CRAWLERS=0（本文件 Allow + Sitemap）/ 1（Disallow + 页面 noindex）
 
 User-agent: *
-Disallow: /
+Allow: /
 
-# --- 开放爬取时使用（并设置 RM_BLOCK_CRAWLERS=0，重新 generate + deploy）---
-# User-agent: *
-# Allow: /
-# Sitemap: https://releasematch.com/sitemap.xml
+Sitemap: https://releasematch.com/sitemap.xml

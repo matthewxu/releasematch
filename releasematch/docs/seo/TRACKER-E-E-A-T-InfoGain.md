@@ -179,7 +179,7 @@
 
 | 元素 | 状态 | 文档/工具 | 下一动作 |
 |------|------|-----------|----------|
-| sitemap.xml | ✅ 37 URL（未对爬虫宣告） | `portal/generator/sitemap.py` | 开放后提交 GSC |
+| sitemap.xml | ✅ 37 URL（robots 已宣告 Sitemap） | `portal/generator/sitemap.py` | deploy 后提交 GSC |
 | robots.txt | ✅ 根路径 `Disallow: /` | `portal/dist/robots.txt` + static 副本 | 爬虫只认 `/robots.txt` |
 | canonical | ✅ | 生成器 | — |
 | 薄页 robots | ✅ | `is_indexable()` · **无 Rec → noindex** | — |
