@@ -1077,6 +1077,82 @@ class MySQLStore:
             "target_status": status_norm,
         }
 
+    def reconcile_magnet_counts_from_resources(self) -> Dict[str, Any]:
+        """
+        用 ``download_resources`` 实有非空 magnet 数回写 ``media_pages.magnet_count`` / 门禁。
+
+        @returns: checked / fixed / samples
+        @description
+          修复「magnet_count≥2 但资源表已空」等脏读，避免无 magnet 页进首页、
+          却因 updated_at 显示虚假「源更新时间」。
+        """
+        now = _utc_now_str()
+        conn = self._connect()
+        fixed: List[Dict[str, Any]] = []
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT p.page_id, p.magnet_count AS old_count, p.page_status AS old_status,
+                           COALESCE(d.c, 0) AS real_count,
+                           COALESCE(d.has_rec, 0) AS has_rec
+                    FROM media_pages p
+                    LEFT JOIN (
+                        SELECT page_id,
+                               COUNT(*) AS c,
+                               MAX(CASE WHEN is_recommended = 1 THEN 1 ELSE 0 END) AS has_rec
+                        FROM download_resources
+                        WHERE magnet_uri IS NOT NULL AND TRIM(magnet_uri) <> ''
+                        GROUP BY page_id
+                    ) d ON d.page_id = p.page_id
+                    WHERE p.page_type IN ('episode', 'movie')
+                      AND COALESCE(p.magnet_count, 0) <> COALESCE(d.c, 0)
+                    """
+                )
+                rows = list(cur.fetchall() or [])
+                for row in rows:
+                    page_id = str(row["page_id"])
+                    real_count = int(row["real_count"] or 0)
+                    has_rec = int(row["has_rec"] or 0) == 1
+                    if real_count >= 2:
+                        page_status = "published"
+                        robots_noindex = 0 if has_rec else 1
+                    elif real_count > 0:
+                        page_status = "thin"
+                        robots_noindex = 1
+                    else:
+                        page_status = "draft"
+                        robots_noindex = 1
+                    cur.execute(
+                        """
+                        UPDATE media_pages
+                        SET magnet_count = %s,
+                            page_status = %s,
+                            robots_noindex = %s,
+                            updated_at = %s
+                        WHERE page_id = %s
+                        """,
+                        (real_count, page_status, robots_noindex, now, page_id),
+                    )
+                    fixed.append(
+                        {
+                            "page_id": page_id,
+                            "old_count": int(row["old_count"] or 0),
+                            "real_count": real_count,
+                            "old_status": str(row["old_status"] or ""),
+                            "page_status": page_status,
+                        }
+                    )
+            conn.commit()
+        finally:
+            conn.close()
+        return {
+            "ok": True,
+            "checked_mismatches": len(fixed),
+            "fixed": len(fixed),
+            "samples": fixed[:20],
+        }
+
     def mark_page_generated(self, page_id: str) -> bool:
         """
         静态页 bake 成功后写入统管表时间戳。
@@ -1378,8 +1454,8 @@ class MySQLStore:
         @param offset: 偏移
         @returns: entries / total / movie_count / tv_count / limit / offset
         @description
-          按 catalog 内 ``MAX(download_resources.indexed_at)`` 降序（源爬取更新最新在前）；
-          无 indexed_at 时回退 ``media_pages.updated_at`` / ``generated_at``。
+          仅收录库中 **实际存在非空 magnet_uri** 的 published 页（避免 magnet_count 脏读）。
+          按 catalog 内 ``MAX(indexed_at)``（仅有 magnet 的行）降序；无 magnet 时间的排最后且不展示更新日。
           ``meta_key`` / ``meta_vars`` 供模板 ``t()`` 与 ``data-i18n`` 使用。
         """
         from schema.d1_models import (
@@ -1393,16 +1469,20 @@ class MySQLStore:
             cur.execute(
                 """
                 SELECT p.page_id, p.page_type, p.canonical_path, p.season, p.episode,
-                       p.updated_at, p.generated_at, dr.max_indexed_at,
+                       dr.max_indexed_at, dr.magnet_rows,
                        c.catalog_id, c.slug, c.title, c.media_kind, c.year, c.poster_path
                 FROM media_pages p
                 JOIN media_catalog c ON p.catalog_id = c.catalog_id
-                LEFT JOIN (
-                    SELECT page_id, MAX(indexed_at) AS max_indexed_at
+                INNER JOIN (
+                    SELECT page_id,
+                           MAX(indexed_at) AS max_indexed_at,
+                           COUNT(*) AS magnet_rows
                     FROM download_resources
+                    WHERE magnet_uri IS NOT NULL AND TRIM(magnet_uri) <> ''
                     GROUP BY page_id
+                    HAVING COUNT(*) >= 2
                 ) dr ON dr.page_id = p.page_id
-                WHERE p.page_status = 'published' AND p.magnet_count >= 2
+                WHERE p.page_status = 'published'
                   AND p.page_type IN ('episode', 'movie')
                 ORDER BY c.title, p.season, p.episode
                 """
@@ -1437,12 +1517,8 @@ class MySQLStore:
         for row in rows:
             catalog_id = str(row["catalog_id"])
             media_kind = str(row["media_kind"])
-            # 优先 magnet 爬取时间 indexed_at，再回退页级 updated_at
-            stamp = (
-                _as_dt(row.get("max_indexed_at"))
-                or _as_dt(row.get("updated_at"))
-                or _as_dt(row.get("generated_at"))
-            )
+            # 仅真实 magnet 的 indexed_at；无则不展示更新时间、排序靠后
+            stamp = _as_dt(row.get("max_indexed_at"))
             if catalog_id not in grouped:
                 grouped[catalog_id] = {
                     "catalog_id": catalog_id,

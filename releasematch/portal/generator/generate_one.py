@@ -89,7 +89,7 @@ def write_all_published(
     @param show_ig_debug: 覆盖 RM_SHOW_IG_DEBUG
     @param on_page: 可选进度回调 ``(index, total, page_id, result) -> None``
     @param on_phase: 可选阶段回调 ``(phase, detail) -> None``
-      phase: ensure_hubs | pages | home | hubs | sitemap | trust | static_shell
+      phase: reconcile_magnets | ensure_hubs | pages | home | hubs | sitemap | trust | static_shell
     @returns: 批量摘要
     """
 
@@ -103,6 +103,9 @@ def write_all_published(
             pass
 
     store = MySQLStore()
+    # 先对齐 magnet_count 与实有资源，避免无 magnet 页冒充 published / 虚假更新时间
+    _phase("reconcile_magnets", "回写 magnet_count 与门禁…")
+    reconcile = store.reconcile_magnet_counts_from_resources()
     # 流程闸门：历史槽可能只有单集而无 Hub；generate 前先落库再渲染
     _phase("ensure_hubs", "补齐缺失 show_hub…")
     hub_ensure = store.ensure_missing_show_hubs()
@@ -159,6 +162,7 @@ def write_all_published(
         "out_root": str(out_root),
         "pages": results,
         "errors": errors + list(hub_ensure.get("errors") or []),
+        "reconcile_magnets": reconcile,
         "hub_ensure": hub_ensure,
         "home": home_result,
         "hubs": hub_result,
@@ -231,6 +235,8 @@ def write_home_page(
     from portal.generator.static_shell import sync_static_shell
 
     store = MySQLStore()
+    # 首页 bake 前对齐门禁，避免脏 magnet_count 把无源片排到最前
+    store.reconcile_magnet_counts_from_resources()
     peek = store.list_home_catalog_entries(limit=1, offset=0)
     total = int(peek.get("total") or 0)
     per_page = HOME_CATALOG_PER_PAGE

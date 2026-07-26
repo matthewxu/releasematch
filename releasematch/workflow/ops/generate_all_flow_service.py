@@ -195,6 +195,7 @@ def start_generate_all(*, batch_id: Optional[str] = None) -> Dict[str, Any]:
     steps: List[Dict[str, Any]] = []
     for sid, detail in (
         ("reload", "热重载生成模块"),
+        ("reconcile_magnets", "对齐 magnet_count 与实有资源"),
         ("ensure_hubs", "补齐缺失 Hub"),
         ("pages", "烘焙 episode/movie"),
         ("home", "首页目录"),
@@ -265,6 +266,7 @@ def start_generate_all(*, batch_id: Optional[str] = None) -> Dict[str, Any]:
             def on_phase(phase: str, detail: str = "") -> None:
                 """write_all_published 阶段回调。"""
                 phase_pct = {
+                    "reconcile_magnets": 6,
                     "ensure_hubs": 8,
                     "pages": 12,
                     "home": 82,
@@ -273,7 +275,16 @@ def start_generate_all(*, batch_id: Optional[str] = None) -> Dict[str, Any]:
                     "trust": 95,
                     "static_shell": 97,
                 }.get(phase, 50)
-                if phase in ("ensure_hubs", "pages", "home", "hubs", "sitemap", "trust", "static_shell"):
+                if phase in (
+                    "reconcile_magnets",
+                    "ensure_hubs",
+                    "pages",
+                    "home",
+                    "hubs",
+                    "sitemap",
+                    "trust",
+                    "static_shell",
+                ):
                     _set_step(steps, phase, "running", detail or phase)
                 _set_progress(
                     phase=phase,
@@ -325,7 +336,16 @@ def start_generate_all(*, batch_id: Optional[str] = None) -> Dict[str, Any]:
                     or "generate all 失败"
                 )
 
-            for sid in ("ensure_hubs", "pages", "home", "hubs", "sitemap", "trust", "static_shell"):
+            for sid in (
+                "reconcile_magnets",
+                "ensure_hubs",
+                "pages",
+                "home",
+                "hubs",
+                "sitemap",
+                "trust",
+                "static_shell",
+            ):
                 if sid == "pages":
                     _set_step(
                         steps,
@@ -357,6 +377,14 @@ def start_generate_all(*, batch_id: Optional[str] = None) -> Dict[str, Any]:
                         sid,
                         "ok",
                         f"created={he.get('created', he.get('ensured', 0))}",
+                    )
+                elif sid == "reconcile_magnets":
+                    rm = prepare_raw.get("reconcile_magnets") or {}
+                    _set_step(
+                        steps,
+                        sid,
+                        "ok",
+                        f"fixed={rm.get('fixed', 0)} mismatches",
                     )
                 else:
                     _set_step(steps, sid, "ok", "done")

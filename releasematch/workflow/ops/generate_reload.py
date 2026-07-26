@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Ops 长驻进程内重载「静态页生成」相关模块。
+Ops 长驻进程内重载「pipeline / 评分 / 静态页生成」相关模块。
 
 @module workflow.ops.generate_reload
 @description
-  ``ops serve`` 常驻后，磁盘上的 schema/模板逻辑变更不会自动进进程。
-  Generate all / Deploy prepare 前调用本模块，避免 bake 出旧 HTML
-  （例如缺 ``magnets_updated_*`` / ``rm-badge--updated``）。
+  ``ops serve`` 常驻后，磁盘上的 schema/模板/评分逻辑变更不会自动进进程。
+  Generate / Deploy / Pipeline 前调用本模块，避免：
+  - bake 出旧 HTML（如缺 ``magnets_updated_*``）
+  - Rec 仍用旧 scorer（0 seed L0 压过有 seed）
+  - 槽位过滤未用新 slot_filter（衍生剧误入库）
 """
 
 from __future__ import annotations
@@ -16,8 +18,12 @@ import sys
 from typing import Any, Dict, List
 
 
-# 自底向上：先数据模型，再 store / 渲染 / 生成入口
+# 自底向上：过滤/评分 → 数据模型 → store/pipeline → 渲染/生成入口
 _RELOAD_ORDER: List[str] = [
+    "workflow.torrent_sources.slot_filter",
+    "workflow.recommended.groups_registry",
+    "workflow.recommended.reason_i18n",
+    "workflow.recommended.scorer",
     "schema.d1_models",
     "portal.generator.i18n",
     "portal.generator.ig_debug",
@@ -26,6 +32,7 @@ _RELOAD_ORDER: List[str] = [
     "portal.generator.render_trust",
     "portal.generator.render",
     "workflow.storage.mysql_store",
+    "workflow.storage.pipeline",
     "portal.generator.generate_one",
 ]
 

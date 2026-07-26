@@ -70,6 +70,76 @@ _STOP_WORDS: FrozenSet[str] = frozenset({"the", "a", "an", "of", "and", "in", "t
 # API 已按 imdb_id + season + episode 过滤，不再要求标题含作品名
 _TRUSTED_TV_INDEXERS: FrozenSet[str] = frozenset({"eztv"})
 
+# 作品名之后、季集号之前允许出现的词（否则视为衍生剧/加长标题，如 Blacklist Redemption）
+_AFTER_SHOW_TITLE_OK: FrozenSet[str] = frozenset(
+    {
+        "s",
+        "season",
+        "e",
+        "ep",
+        "episode",
+        "pilot",
+        "complete",
+        "repack",
+        "proper",
+        "internal",
+        "limited",
+        "extended",
+        "uncut",
+        "remastered",
+        "hybrid",
+        "multi",
+        "dual",
+        "subs",
+        "sub",
+        "dubbed",
+        "german",
+        "french",
+        "spanish",
+        "italian",
+        "japanese",
+        "korean",
+        "chinese",
+        "eng",
+        "en",
+        "ita",
+        "web",
+        "webrip",
+        "webdl",
+        "hdtv",
+        "bluray",
+        "bdrip",
+        "dvdrip",
+        "hdrip",
+        "1080p",
+        "720p",
+        "480p",
+        "2160p",
+        "4k",
+        "uhd",
+        "x264",
+        "x265",
+        "h264",
+        "h265",
+        "hevc",
+        "avc",
+        "xvid",
+        "aac",
+        "ac3",
+        "dts",
+        "dd5",
+        "ddp5",
+        "atmos",
+        "hdr",
+        "sdr",
+        "nf",
+        "amzn",
+        "dsnp",
+        "hulu",
+        "hdtv",
+    }
+)
+
 
 def normalize_title(text: str) -> str:
     """
@@ -237,6 +307,55 @@ def matches_season_episode(title: str, season: int, episode: int) -> bool:
     return False
 
 
+def _reject_extra_series_after_show(title_raw: str, show_title: str) -> bool:
+    """
+    作品名连续命中后，季集前若还有额外剧名词则判为衍生剧污染。
+
+    @param title_raw: release 标题
+    @param show_title: 目标作品名
+    @returns: True 表示应拒绝（如 The Blacklist **Redemption** S01E01）
+    """
+    show_norm = normalize_title(show_title)
+    release_norm = normalize_title(title_raw)
+    if not show_norm or not release_norm:
+        return False
+    # 允许省略作品名开头冠词
+    variants = [show_norm]
+    for article in ("the ", "a ", "an "):
+        if show_norm.startswith(article):
+            variants.append(show_norm[len(article) :])
+    hit_at = -1
+    hit_len = 0
+    for variant in variants:
+        idx = release_norm.find(variant)
+        if idx >= 0 and (hit_at < 0 or idx < hit_at):
+            hit_at = idx
+            hit_len = len(variant)
+    if hit_at < 0:
+        return False
+    rest = release_norm[hit_at + hit_len :].strip()
+    if not rest:
+        return False
+    # 跳过紧随的季集标记
+    rest = re.sub(
+        r"^(?:s(?:eason)?\s*0*\d+\s*e(?:p(?:isode)?)?\s*0*\d+|0*\d+\s*x\s*0*\d+)\b\s*",
+        "",
+        rest,
+        flags=re.IGNORECASE,
+    ).strip()
+    if not rest:
+        return False
+    first = rest.split()[0]
+    if not first:
+        return False
+    # 数字 / 已知画质·编码·标签 → 允许
+    if first.isdigit() or first in _AFTER_SHOW_TITLE_OK:
+        return False
+    if re.fullmatch(r"(?:dd|ddp|dts|aac)?\d+(?:\.\d+)?", first):
+        return False
+    return True
+
+
 def matches_show_title(title_raw: str, show_title: Optional[str]) -> bool:
     """
     判断 release 标题是否包含目标作品名 token。
@@ -244,6 +363,9 @@ def matches_show_title(title_raw: str, show_title: Optional[str]) -> bool:
     @param title_raw: release 标题
     @param show_title: 作品英文名
     @returns: 无作品名时 True；否则按 token 命中率判定
+    @description
+      另拒绝「作品名 + 额外剧名词 + 季集」的衍生剧误匹配
+      （如目标 The Blacklist 时剔除 The Blacklist Redemption）。
     """
     if not show_title or not str(show_title).strip():
         return True
@@ -255,8 +377,14 @@ def matches_show_title(title_raw: str, show_title: Optional[str]) -> bool:
         return False
     matched = sum(1 for token in tokens if re.search(rf"\b{re.escape(token)}\b", norm))
     if len(tokens) <= 2:
-        return matched >= len(tokens)
-    return matched >= max(2, (len(tokens) + 1) // 2)
+        token_ok = matched >= len(tokens)
+    else:
+        token_ok = matched >= max(2, (len(tokens) + 1) // 2)
+    if not token_ok:
+        return False
+    if _reject_extra_series_after_show(title_raw, str(show_title)):
+        return False
+    return True
 
 
 def indexer_family(indexer: str) -> str:

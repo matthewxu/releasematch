@@ -225,6 +225,10 @@ def run_pipeline(
             item["episode"] = row["episode"]
         slots_payload.append(item)
 
+    # 长驻进程：pipeline 前热重载 scorer / slot_filter / pipeline
+    from workflow.ops.generate_reload import reload_generate_modules
+
+    reload_generate_modules()
     from workflow.storage.pipeline import run_batch_slot_pipeline
 
     report = run_batch_slot_pipeline(

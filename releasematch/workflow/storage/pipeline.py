@@ -698,6 +698,24 @@ def rescore_page_recommendations(
     old_rec = ctx.recommended.title_raw if ctx.recommended else None
     old_score = ctx.recommended.match_score if ctx.recommended else None
     items = [_resource_item_dict(r) for r in ctx.sources]
+    # 重算前再跑作品名过滤，清掉历史误入库的衍生剧（如 Blacklist Redemption）
+    if media_kind == "tv":
+        from workflow.torrent_sources.slot_filter import matches_show_title
+
+        show_title = str(ctx.catalog.title or "")
+        before_n = len(items)
+        items = [
+            it
+            for it in items
+            if matches_show_title(str(it.get("title_raw") or ""), show_title)
+        ]
+        if before_n and not items:
+            return {
+                "ok": False,
+                "page_id": page_id,
+                "error": f"作品名过滤后无剩余资源（原 {before_n} 条）",
+                "filtered_out": before_n,
+            }
     ranked = rank_items(items, media_kind=media_kind)
     write = store.upsert_slot_resources(
         page_id=page_id,

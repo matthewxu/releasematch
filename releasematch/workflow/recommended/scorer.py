@@ -15,8 +15,8 @@ Recommended Release 评分引擎 v1.2（规则版 · 剧集 v1.1 + 电影分化�
 
   **电影 vs 剧集：**
     - 剧集（默认）：seeders 50% · tier 25% · cross 25%
-    - 电影：seeders 55% · tier 15% · cross 30%；有 seed≥1 时优先于 0 seed；
-      tie-break 增加版本类型（WEB-DL/BluRay > CAM/TS）
+    - 电影：seeders 55% · tier 15% · cross 30%；tie-break 增加版本类型（WEB-DL/BluRay > CAM/TS）
+    - **门禁（剧集+电影）**：槽内存在 seed≥1 的条目时，不推 0 seed（可下载性优先于顶级组）
 """
 
 from __future__ import annotations
@@ -53,8 +53,11 @@ _MOVIE_SCORE_WEIGHT_SEEDERS: float = 55.0
 _MOVIE_SCORE_WEIGHT_TIER: float = 15.0
 _MOVIE_SCORE_WEIGHT_CROSS: float = 30.0
 
-# 电影 Recommended 门槛：存在 seed≥1 的条目时，不推 0 seed
-_MIN_MOVIE_SEEDERS_FOR_REC: int = 1
+# Recommended 可下载性门槛：槽内存在 seed≥1 时，不推 0 seed（剧集/电影共用）
+# 否则 L0+0seed 常以 ~33 分压过 L4+少量 seed（seed 归一化上限 50，1~2 seed 几乎不得分）
+_MIN_SEEDERS_FOR_REC: int = 1
+# 兼容旧名
+_MIN_MOVIE_SEEDERS_FOR_REC: int = _MIN_SEEDERS_FOR_REC
 
 
 @dataclass
@@ -237,21 +240,22 @@ def _mark_recommended(
     media_kind: str,
 ) -> None:
     """
-    标记唯一 Recommended：电影在有 seed≥1 时跳过 0 seed 条目。
+    标记唯一 Recommended：槽内有 seed≥1 时跳过 0 seed（剧集与电影相同）。
 
     @param orders: 已排序 Order 列表
     @param items_by_hash: infohash → item 字典
-    @param media_kind: tv | movie
+    @param media_kind: tv | movie（保留参数供调用方一致；门禁不按类型分支）
     @returns: None
     """
+    _ = media_kind
     if not orders:
         return
-    if media_kind == _MEDIA_KIND_MOVIE:
-        for order in orders:
-            item = items_by_hash.get(order.infohash, {})
-            if int(item.get("seeders") or 0) >= _MIN_MOVIE_SEEDERS_FOR_REC:
-                order.is_recommended = True
-                return
+    for order in orders:
+        item = items_by_hash.get(order.infohash, {})
+        if int(item.get("seeders") or 0) >= _MIN_SEEDERS_FOR_REC:
+            order.is_recommended = True
+            return
+    # 全员 0 seed 时仍推主分最高者
     orders[0].is_recommended = True
 
 

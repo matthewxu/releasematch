@@ -863,14 +863,20 @@ def resolve_magnets_updated_fields(
     从槽位 magnet 列表解析「源更新时间」展示字段。
 
     @param sources: download_resources 行模型列表
-    @param fallback_updated_at: 无 indexed_at 时回退（如 media_pages.updated_at）
+    @param fallback_updated_at: 已废弃；忽略（勿用 media_pages.updated_at）
     @returns: magnets_updated_at / magnets_updated_display / magnets_updated_date
     @description
-      权威字段为 ``download_resources.indexed_at``（pipeline 爬源 upsert 时刷新）。
+      定义：仅当库中存在 **非空 magnet_uri** 的资源时才有更新时间，
+      取这些行的 ``MAX(indexed_at)``。无 magnet 则三字段皆空（不展示、不靠前排序）。
+      ``fallback_updated_at`` 保留参数仅为兼容旧调用，**不再使用**。
     """
+    _ = fallback_updated_at  # 废弃：generate 会刷 updated_at，不能当「爬到源」时间
     best_raw = ""
     best_dt: Optional[datetime] = None
     for src in sources or []:
+        magnet = str(getattr(src, "magnet_uri", "") or "").strip()
+        if not magnet:
+            continue
         raw = str(getattr(src, "indexed_at", "") or "").strip()
         if not raw:
             continue
@@ -880,8 +886,6 @@ def resolve_magnets_updated_fields(
         if best_dt is None or parsed > best_dt:
             best_dt = parsed
             best_raw = raw
-    if not best_raw:
-        best_raw = str(fallback_updated_at or "").strip()
     return {
         "magnets_updated_at": best_raw,
         "magnets_updated_display": _format_datetime_utc_display(best_raw),
@@ -1563,10 +1567,8 @@ class EpisodePageContext:
         source_dicts = [
             enrich_item_dict(src.to_template_dict(), force_specs=True) for src in self.sources
         ]
-        magnets_updated = resolve_magnets_updated_fields(
-            self.sources,
-            fallback_updated_at=self.page.updated_at,
-        )
+        # 仅有真实 magnet 时展示源更新时间（见 resolve_magnets_updated_fields）
+        magnets_updated = resolve_magnets_updated_fields(self.sources)
 
         return {
             "show_title": self.catalog.title,
@@ -1721,10 +1723,8 @@ class MoviePageContext:
         overview_zh = self.page.overview_zh or self.catalog.overview_zh or ""
         overview = overview_en
         year = self.catalog.year or ""
-        magnets_updated = resolve_magnets_updated_fields(
-            self.sources,
-            fallback_updated_at=self.page.updated_at,
-        )
+        # 仅有真实 magnet 时展示源更新时间（见 resolve_magnets_updated_fields）
+        magnets_updated = resolve_magnets_updated_fields(self.sources)
         return {
             "movie_title": self.catalog.title,
             "tmdb_id": self.catalog.tmdb_id,
