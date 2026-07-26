@@ -399,30 +399,31 @@
 
     pipeline: {
       title: "跑 Pipeline（Jackett 拉源）",
-      api: "POST /api/actions/pipeline  body: {fetch:true, skip_existing, mode:\"live\"}",
+      api: "POST /api/actions/pipeline/start → GET /api/actions/pipeline/progress（分槽轮询）",
       flow: [
-        "actions.run_pipeline() → run_batch_slot_pipeline()",
+        "generation_flow_service.start_pipeline_flow(stages=[pipeline])",
+        "后台逐槽 actions.run_pipeline() → run_batch_slot_pipeline()",
         "经 Jackett/Torznab 拉 torrent/magnet",
         "写入 media_pages / download_resources",
-        "已有 magnets 但本次拉空/失败 → kept_existing（不擦库，继续 generate/speedtest）",
-        "自动 refresh_gates 回写跟踪表 magnet/Rec",
+        "已有 magnets 但本次拉空/失败 → kept_existing",
+        "UI：百分比 + 分槽表（pipeline/magnet/Rec/status/…）",
       ],
       scripts: [
+        "workflow/ops/generation_flow_service.py",
         "workflow/ops/actions.py → run_pipeline()",
         "workflow/storage/pipeline.py",
-        "workflow/torrent_sources/（accounts.local.json）",
       ],
       commands: [
         "python -m workflow.run pipeline batch …",
       ],
-      dataFlow: "跟踪槽 → Jackett 搜索 → DB 资源行 → 门禁字段",
+      dataFlow: "跟踪槽 → Jackett 搜索 → DB 资源行 → 门禁字段；进度态内存轮询",
       storage: [
         "MySQL：media_pages、download_resources、ops_track_slots",
         "配置：workflow/torrent_sources/accounts.local.json",
       ],
       troubleshoot: [
         "0 magnet 且空槽 → Jackett Key/URL、indexer、FlareSolverr、代理",
-        "已有槽拉空 → 应见「保留原 magnets」；继续测速更新面板",
+        "进度条不动 → 看明细表当前 page_id；与一键流程互斥（同进度态）",
         "skip_existing 跳过过多 → 取消勾选「跳过已有 ≥2 magnet」",
       ],
     },
@@ -445,15 +446,18 @@
 
     generate_pages: {
       title: "Generate 选中页",
-      api: "POST /api/actions/generate  body: {generate_all:false}",
+      api: "POST /api/actions/generate/start → GET /api/actions/generate/progress（分槽轮询）",
       flow: [
-        "actions.run_generate(generate_all=false)",
+        "generation_flow_service.start_generate_flow(stages=[generate])",
+        "后台逐槽 actions.run_generate(generate_all=false)",
         "write_page_html() bake 选中槽",
         "TV 自动 ensure_show_hub_page + hub generate",
+        "UI：百分比 + 分槽表（generate 列实时 running/ok）",
       ],
       scripts: [
+        "workflow/ops/generation_flow_service.py",
         "workflow/ops/actions.py → run_generate()",
-        "workflow/generate/（页面模板写入）",
+        "portal/generator/generate_one.py",
       ],
       commands: [
         "python -m workflow.run generate page --page-id <page_id>",
@@ -465,6 +469,7 @@
       ],
       troubleshoot: [
         "空白页 → 先 pipeline 保证有内容/magnet",
+        "与 Pipeline/一键流程互斥 → 等当前任务完成",
         "缺 hub → 看 TV 是否自动 ensure_show_hub",
       ],
     },
@@ -495,33 +500,33 @@
 
     speedtest: {
       title: "测速 write",
-      api: "POST /api/actions/speedtest",
+      api: "POST /api/actions/speedtest/start → GET /api/actions/speedtest/progress（分槽轮询）",
       flow: [
-        "子进程调用 speedtest.run batch --write",
-        "写 MySQL slot_speed_summary",
-        "报告 worklogs/ops/speedtest-{batch_id}.json",
-        "成功后自动 regenerate 选中页（Grab/测速面板）",
+        "generation_flow_service.start_speedtest_flow(stages=[speedtest])",
+        "后台逐槽 actions.run_speedtest(page_ids=[pid])",
+        "子进程测速写 MySQL slot_speed_summary",
+        "报告 worklogs/ops/speedtest-*.json",
+        "成功后自动 regenerate 该页（Grab/测速面板）",
+        "UI：百分比 + 分槽表（speedtest 列实时 running/ok）",
       ],
       scripts: [
+        "workflow/ops/generation_flow_service.py",
         "workflow/ops/actions.py → run_speedtest()",
         "workflow/torrent_sources/speedtest/run.py",
-        "scripts/speedtest_batch_worker.py（回退）",
       ],
       commands: [
         "python -m workflow.torrent_sources.speedtest.run batch \\",
         "  --page-ids \"tv:1396:s04e06,movie:603\" \\",
         "  --write --report worklogs/ops/speedtest-<batch_id>.json",
       ],
-      dataFlow: "选中 page_ids → 测速 worker → slot_speed_summary → 再 generate",
+      dataFlow: "选中 page_ids → 逐槽测速 → slot_speed_summary → 再 generate",
       storage: [
         "MySQL：slot_speed_summary",
         "报告：worklogs/ops/speedtest-*.json",
-        "cron 日志（VPS）：/var/log/releasematch/speedtest-cron.log",
-        "增量发布日志：/var/log/releasematch/incremental-publish-cron.log",
       ],
       troubleshoot: [
         "无 Rec 槽测不出 → 先 pipeline 出推荐源",
-        "报告 ok=false → 打开 JSON 看各 page 错误",
+        "进度条与一键流程互斥 → 等当前任务完成",
         "面板数字旧 → 确认测速后自动 regenerate 是否成功",
       ],
     },
@@ -670,6 +675,96 @@
         "pipeline 仍用旧 Key → 确认保存成功且 reload",
         "JSON 语法错 → 保存会失败，看返回 error",
       ],
+    },
+
+    tracking_load: {
+      title: "加载 tracking.js",
+      api: "GET /api/tracking",
+      flow: [
+        "read_tracking_js() 读 portal/static/js/tracking.js",
+        "缺文件则写入空壳模板",
+        "填入配置页编辑器",
+      ],
+      scripts: ["portal/generator/tracking.py", "portal/static/js/tracking.js"],
+      commands: ["# 直接编辑 portal/static/js/tracking.js"],
+      dataFlow: "磁盘 tracking.js → Ops 文本框",
+      storage: ["portal/static/js/tracking.js（真相源）"],
+      troubleshoot: ["路径不对 → 确认在 releasematch/ 项目根跑 ops serve"],
+    },
+
+    tracking_generate: {
+      title: "生成 GA4 模板",
+      api: 'POST /api/tracking/generate  body: {provider:"ga4", measurement_id, save:false}',
+      flow: [
+        "build_ga4_tracking_js(measurement_id)",
+        "仅填入编辑器；需再点「保存并同步到 dist」",
+      ],
+      scripts: ["portal/generator/tracking.py"],
+      commands: ["# 也可手写任意分析脚本，不限 GA4"],
+      dataFlow: "Measurement ID → JS 模板 → 编辑器",
+      storage: ["尚未写盘（save:false）"],
+      troubleshoot: ["ID 为空 → 填 G-XXXXXXXX"],
+    },
+
+    tracking_generate_clarity: {
+      title: "生成 Clarity 模板",
+      api: 'POST /api/tracking/generate  body: {provider:"clarity", project_id, save:false}',
+      flow: [
+        "build_clarity_tracking_js(project_id)",
+        "把官网 HTML <script>…</script> 转成纯 JS（tracking.js 不能含 HTML 标签）",
+        "填入编辑器后点「保存并同步到 dist」",
+      ],
+      scripts: ["portal/generator/tracking.py"],
+      commands: ["# 项目 ID 在 Clarity 后台 → Settings → Setup"],
+      dataFlow: "Clarity project_id → JS 模板 → 编辑器 → dist/static/js/tracking.js",
+      storage: ["尚未写盘（save:false）"],
+      troubleshoot: [
+        "不要把整段 <script> HTML 贴进编辑器",
+        "ID 为空 → 填 xsjixeey9o 这类项目 ID",
+      ],
+    },
+
+    tracking_save: {
+      title: "保存 tracking.js 并同步到 dist",
+      api: "POST /api/tracking/save-sync/start → GET …/save-sync/progress",
+      flow: [
+        "validate：字节数 / 是否空壳 / 是否含 GA4",
+        "write_static → portal/static/js/tracking.js",
+        "sync_dist → portal/dist/static/js/tracking.js",
+        "verify：static ↔ dist sha 一致",
+        "scan_html：统计 dist 内 HTML 是否已引用 tracking.js",
+        "UI 进度条 + 分步明细表 + 缺失样例",
+      ],
+      scripts: [
+        "workflow/ops/tracking_flow_service.py",
+        "portal/generator/tracking.py",
+      ],
+      commands: ["# 手改 static 后也可用「仅同步到 dist」"],
+      dataFlow: "编辑器 → static → dist → HTML 引用扫描报告",
+      storage: [
+        "portal/static/js/tracking.js",
+        "portal/dist/static/js/tracking.js",
+      ],
+      troubleshoot: [
+        "HTML 大量缺引用 → 需 Generate 一次写入 script 标签",
+        "疑似空壳警告 → 编辑器仍是模板，先生成 GA4 或粘贴真实脚本",
+        "线上未生效 → 部署 dist 中的 tracking.js / 清 CDN",
+      ],
+    },
+
+    tracking_sync: {
+      title: "仅同步 tracking.js → dist",
+      api: "POST /api/tracking/sync/start → GET …/sync/progress",
+      flow: [
+        "ensure 真相源",
+        "sync_dist + verify 哈希",
+        "scan_html 引用统计",
+      ],
+      scripts: ["workflow/ops/tracking_flow_service.py"],
+      commands: ["cp portal/static/js/tracking.js portal/dist/static/js/tracking.js"],
+      dataFlow: "static → dist → HTML 扫描",
+      storage: ["portal/dist/static/js/tracking.js"],
+      troubleshoot: ["static 不存在 → 先保存一次"],
     },
 
     jackett_deploy: {

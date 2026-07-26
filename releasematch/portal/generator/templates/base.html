@@ -47,6 +47,8 @@
   {% include 'partials/ig_debug_panel.html' %}
 
   <script src="/static/js/site.js?v={{ static_asset_version }}" defer></script>
+  {# 跟踪 JS：稳定路径 /static/js/tracking.js，逻辑在 dist 内该文件，改 JS 无需重烘 HTML #}
+  {% include 'partials/tracking.html' %}
   {% block scripts %}{% endblock %}
 </body>
 </html>

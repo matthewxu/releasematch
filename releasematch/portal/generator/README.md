@@ -73,6 +73,25 @@
 | **JSON-LD** | `episode.html` / `movie.html` / `home.html` | TVEpisode · Movie · WebSite（`build_*_schema_ld`） |
 | **C2 验收** | `scripts/seo_c2_checklist.py` | 本地 §6.1～6.3；`generate all` 已含 Trust 页 + `static_shell` 同步 |
 | **i18n en/zh** | [`docs/portal/UI国际化方案.md`](../docs/portal/UI国际化方案.md) | `RM_SITE_I18N_ENABLED` · `RM_SITE_LOCALE` · dynamic 切换 |
+| **跟踪 JS** | `portal/static/js/tracking.js` → dist | 页面只引用；Ops 可编辑/生成/同步 |
+
+### 跟踪 JS（手改 + Ops）
+
+**真相源：** `portal/static/js/tracking.js`  
+**页面：** 只挂 `<script src="/static/js/tracking.js" defer>`（`base.html` / `partials/tracking.html`）  
+**更新：** 改 JS 后同步到 dist 即可，**不必重烘全部 HTML**（首次接入需 Generate 一次写入引用）。
+
+- **纯 JS only：** 勿把官网 HTML 的 `<script>…</script>` 外壳贴进编辑器
+- 手改：编辑 `portal/static/js/tracking.js`，再 `sync_static_shell` / Ops「仅同步到 dist」
+- Ops ⑤ 配置 →「跟踪 JS」：
+  - 生成 **GA4** / **Microsoft Clarity** 模板（填 Measurement ID 或 Clarity Project ID）
+  - **保存并同步**（分步进度：校验 → 写 static → sync dist → 哈希校验 → 扫描 HTML 引用）
+  - 仅同步到 dist
+- API：
+  - `POST /api/tracking/generate` `{provider:"ga4"|"clarity", …}`
+  - `POST /api/tracking/save-sync/start` + `GET …/save-sync/progress`
+  - `POST /api/tracking/sync/start` + `GET …/sync/progress`
+- 模块：`portal/generator/tracking.py` · `workflow/ops/tracking_flow_service.py`
 
 ### UI 国际化（2026-07-05 · T-SEO-06）
 

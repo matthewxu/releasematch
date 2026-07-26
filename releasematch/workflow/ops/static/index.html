@@ -411,6 +411,33 @@
       </div>
 
       <div class="ops-card" style="margin-top:16px">
+        <h3>跟踪 JS（tracking.js）</h3>
+        <p class="lead" style="margin-bottom:10px">
+          真相源：<code id="trackingJsPath">portal/static/js/tracking.js</code>；
+          页面只引用 <code>/static/js/tracking.js</code>（纯 JS，不要贴 HTML 的
+          <code>&lt;script&gt;</code> 外壳）。
+          手改或点生成模板 →「保存并同步到 dist」。
+          <span class="ops-badge" id="trackingJsBadge">…</span>
+        </p>
+        <div class="ops-row">
+          <label class="ops-field">GA4 Measurement ID
+            <input type="text" id="trackingGa4Id" placeholder="G-XXXXXXXX" autocomplete="off" />
+          </label>
+          <label class="ops-field">Clarity Project ID
+            <input type="text" id="trackingClarityId" placeholder="xsjixeey9o" autocomplete="off" />
+          </label>
+        </div>
+        <div class="ops-actions">
+          <button type="button" class="secondary" id="btnTrackingLoad" data-help="tracking_load">从磁盘加载</button>
+          <button type="button" class="secondary" id="btnTrackingGenerateGa4" data-help="tracking_generate">生成 GA4 模板</button>
+          <button type="button" class="secondary" id="btnTrackingGenerateClarity" data-help="tracking_generate_clarity">生成 Clarity 模板</button>
+          <button type="button" id="btnTrackingSave" data-help="tracking_save">保存并同步到 dist</button>
+          <button type="button" class="secondary" id="btnTrackingSync" data-help="tracking_sync">仅同步到 dist</button>
+        </div>
+        <textarea id="trackingJsRaw" rows="16" spellcheck="false" class="ops-mono-input" style="margin-top:10px"></textarea>
+      </div>
+
+      <div class="ops-card" style="margin-top:16px">
         <h3>Linode VPS 增删</h3>
         <p class="lead" style="margin-bottom:10px">
           封装 <code>workflow/torrent_sources/linode_vps.py</code>（配置

@@ -338,7 +338,7 @@
   }
 
   /**
-   * 轮询一键生成流程进度，直到 done/error。
+   * 轮询一键/单阶段生成流程进度，直到 done/error。
    * @param {string} title
    * @returns {Promise<object>} 最终 progress
    */
@@ -348,16 +348,16 @@
       const data = await api("/api/actions/generation-flow/progress");
       const prog = data.progress || {};
       finalProg = prog;
-      const phaseLabel =
-        prog.phase === "pipeline"
-          ? "1/3 Pipeline"
-          : prog.phase === "generate"
-            ? "2/3 Generate"
-            : prog.phase === "speedtest"
-              ? "3/3 Speedtest"
-              : prog.phase === "done"
-                ? "完成"
-                : prog.phase || "…";
+      // 完整注释：单阶段时 phase_total=1，标题显示 Pipeline / Generate / Speedtest
+      const phaseTotal = prog.phase_total || 3;
+      const phaseIndex = prog.phase_index || 0;
+      const phaseName = prog.phase || "…";
+      let phaseLabel = phaseName;
+      if (phaseName === "done") {
+        phaseLabel = "完成";
+      } else if (phaseIndex > 0 && phaseTotal > 0) {
+        phaseLabel = `${phaseIndex}/${phaseTotal} ${phaseName}`;
+      }
       showProgress(`${title} · ${phaseLabel}`, {
         percent: prog.percent != null ? prog.percent : null,
         message: prog.message || "",
@@ -1442,7 +1442,114 @@
       env: data.env && data.env.path,
       accounts: data.accounts && data.accounts.path,
     });
+    // 完整注释：配置页同时拉 tracking.js，避免单独点加载
+    try {
+      await loadTrackingJs();
+    } catch (_) {
+      /* ignore — 跟踪编辑器可选 */
+    }
     return data;
+  }
+
+  /**
+   * 用 /api/tracking 响应填充跟踪编辑器。
+   * @param {object} data read_tracking_js 结果
+   */
+  function applyTrackingBundle(data) {
+    const pathEl = document.getElementById("trackingJsPath");
+    const badge = document.getElementById("trackingJsBadge");
+    const raw = document.getElementById("trackingJsRaw");
+    if (pathEl) pathEl.textContent = data.path || "portal/static/js/tracking.js";
+    if (raw && typeof data.content === "string") raw.value = data.content;
+    if (badge) {
+      badge.textContent = data.dist_exists ? "dist 已有副本" : "dist 尚未同步";
+      badge.title = data.dist_path || "";
+    }
+  }
+
+  /**
+   * 从磁盘加载 tracking.js。
+   * @returns {Promise<object>}
+   */
+  async function loadTrackingJs() {
+    const data = await api("/api/tracking");
+    applyTrackingBundle(data);
+    return data;
+  }
+
+  /**
+   * 渲染跟踪 JS 保存/同步分步明细。
+   * @param {object|null} progress tracking_flow_service progress
+   */
+  function renderTrackingFlowDetail(progress) {
+    const host = document.getElementById("opsProgressDetail");
+    if (!host) return;
+    const steps = (progress && progress.steps) || [];
+    if (!steps.length) {
+      host.hidden = true;
+      host.innerHTML = "";
+      return;
+    }
+    const cur = progress.current_step_id || "";
+    const rows = steps
+      .map((s) => {
+        const cls = s.step_id === cur ? ' class="is-current"' : "";
+        const detail = s.detail || "";
+        const shown = detail.length > 120 ? detail.slice(0, 120) + "…" : detail;
+        return `<tr${cls}>
+          <td><code>${escapeHtml(s.step_id || "")}</code></td>
+          <td>${escapeHtml(s.title || "")}</td>
+          <td>${statusBadge(s.status)}</td>
+          <td class="ops-detail-cell" title="${escapeHtml(detail)}">${escapeHtml(shown || "—")}</td>
+        </tr>`;
+      })
+      .join("");
+    const scan = (progress.summary && progress.summary.html_scan) || null;
+    let foot = "";
+    if (scan && scan.ok) {
+      foot = `<p class="lead" style="margin:8px 0 0">
+        HTML 引用：<strong>${scan.html_with_ref || 0}</strong> / ${scan.html_total || 0}
+        已含 <code>/static/js/tracking.js</code>；缺
+        <strong>${scan.html_missing_ref || 0}</strong>。
+        ${escapeHtml(scan.note || "")}
+      </p>`;
+      if (scan.missing_samples && scan.missing_samples.length) {
+        foot += `<p class="lead" style="margin:4px 0 0">缺失样例：
+          <code>${escapeHtml(scan.missing_samples.slice(0, 5).join(", "))}</code>
+        </p>`;
+      }
+    }
+    host.hidden = false;
+    host.innerHTML = `<table class="ops-table">
+      <thead><tr>
+        <th>step</th><th>标题</th><th>status</th><th>detail（悬停全文）</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>${foot}`;
+  }
+
+  /**
+   * 轮询跟踪 JS 保存/同步进度。
+   * @param {string} title
+   * @param {string} progressPath 如 /api/tracking/save-sync/progress
+   * @returns {Promise<object>} 最终 progress
+   */
+  async function pollTrackingFlow(title, progressPath) {
+    let finalProg = null;
+    for (;;) {
+      const data = await api(progressPath);
+      const prog = data.progress || {};
+      finalProg = prog;
+      showProgress(`${title} · ${prog.phase || "…"}`, {
+        percent: prog.percent != null ? prog.percent : null,
+        message: prog.message || "",
+      });
+      renderTrackingFlowDetail(prog);
+      if (prog.status === "done" || prog.status === "error") {
+        return prog;
+      }
+      await new Promise((r) => setTimeout(r, 400));
+    }
   }
 
   /**
@@ -2915,25 +3022,53 @@
     });
 
     document.getElementById("btnPipeline").addEventListener("click", async () => {
+      const btn = document.getElementById("btnPipeline");
+      if (generationFlowRunning || busyDepth > 0 || (btn && btn.disabled)) {
+        log("Pipeline 已在进行中，忽略重复点击");
+        return;
+      }
+      /** @type {boolean} 是否跳过已有 ≥2 magnet */
+      const skipExisting = document.getElementById("skipExisting").checked;
+      generationFlowRunning = true;
+      if (btn) btn.disabled = true;
       try {
-        await withBusy("Pipeline（Jackett 拉源，可能较久）", async () => {
-          showProgress("Pipeline 运行中", {
-            percent: null,
-            message: "拉取 / 评分 / 写库，请勿关闭页面…",
-          });
-          const data = await api("/api/actions/pipeline", {
+        await withBusy("Pipeline（分槽进度）", async () => {
+          showProgress("Pipeline · 启动", { percent: 1, message: "提交后台任务…" });
+          const start = await api("/api/actions/pipeline/start", {
             method: "POST",
             body: {
               fetch: true,
-              skip_existing: document.getElementById("skipExisting").checked,
+              skip_existing: skipExisting,
               mode: "live",
             },
           });
-          log("Pipeline 完成", data.pipeline_report || data);
+          if (!start.ok) {
+            throw new Error(start.error || "Pipeline 启动失败");
+          }
+          if (start.already_running) {
+            log("检测到已有生成流程在跑，改为附着轮询", start.progress);
+          } else {
+            log("Pipeline 已启动（详细进度）", {
+              total: (start.progress && start.progress.total) || 0,
+              skip_existing: skipExisting,
+            });
+          }
+          const finalProg = await pollGenerationFlow("Pipeline");
+          if (finalProg.status === "error" || finalProg.ok === false) {
+            throw new Error(finalProg.error || finalProg.message || "Pipeline 失败");
+          }
+          log("Pipeline 完成", {
+            total: finalProg.total,
+            summary: finalProg.summary,
+          });
+          renderGenerationFlowDetail(finalProg);
           await refresh();
-        });
+        }, { indeterminate: false, keepProgress: true });
       } catch (e) {
         log(String(e));
+      } finally {
+        generationFlowRunning = false;
+        if (btn) btn.disabled = false;
       }
     });
 
@@ -2949,17 +3084,46 @@
     });
 
     document.getElementById("btnGeneratePages").addEventListener("click", async () => {
+      const btn = document.getElementById("btnGeneratePages");
+      if (generationFlowRunning || busyDepth > 0 || (btn && btn.disabled)) {
+        log("Generate 已在进行中，忽略重复点击");
+        return;
+      }
+      generationFlowRunning = true;
+      if (btn) btn.disabled = true;
       try {
-        await withBusy("Generate 选中页", async () => {
-          const data = await api("/api/actions/generate", {
+        await withBusy("Generate 选中页（分槽进度）", async () => {
+          showProgress("Generate · 启动", { percent: 1, message: "提交后台任务…" });
+          const start = await api("/api/actions/generate/start", {
             method: "POST",
-            body: { generate_all: false },
+            body: {},
           });
-          log("Generate 完成", { ok_count: data.ok_count, fail_count: data.fail_count });
+          if (!start.ok) {
+            throw new Error(start.error || "Generate 启动失败");
+          }
+          if (start.already_running) {
+            log("检测到已有生成流程在跑，改为附着轮询", start.progress);
+          } else {
+            log("Generate 已启动（详细进度）", {
+              total: (start.progress && start.progress.total) || 0,
+            });
+          }
+          const finalProg = await pollGenerationFlow("Generate");
+          if (finalProg.status === "error" || finalProg.ok === false) {
+            throw new Error(finalProg.error || finalProg.message || "Generate 失败");
+          }
+          log("Generate 完成", {
+            total: finalProg.total,
+            summary: finalProg.summary,
+          });
+          renderGenerationFlowDetail(finalProg);
           await refresh();
-        });
+        }, { indeterminate: false, keepProgress: true });
       } catch (e) {
         log(String(e));
+      } finally {
+        generationFlowRunning = false;
+        if (btn) btn.disabled = false;
       }
     });
 
@@ -3003,15 +3167,46 @@
     });
 
     document.getElementById("btnSpeedtest").addEventListener("click", async () => {
+      const btn = document.getElementById("btnSpeedtest");
+      if (generationFlowRunning || busyDepth > 0 || (btn && btn.disabled)) {
+        log("Speedtest 已在进行中，忽略重复点击");
+        return;
+      }
+      generationFlowRunning = true;
+      if (btn) btn.disabled = true;
       try {
-        await withBusy("测速 write", async () => {
-          showProgress("Speedtest", { percent: null, message: "批量测速进行中…" });
-          const data = await api("/api/actions/speedtest", { method: "POST", body: {} });
-          log("Speedtest 结束", { ok: data.ok, report: data.report });
+        await withBusy("测速 write（分槽进度）", async () => {
+          showProgress("Speedtest · 启动", { percent: 1, message: "提交后台任务…" });
+          const start = await api("/api/actions/speedtest/start", {
+            method: "POST",
+            body: {},
+          });
+          if (!start.ok) {
+            throw new Error(start.error || "Speedtest 启动失败");
+          }
+          if (start.already_running) {
+            log("检测到已有生成流程在跑，改为附着轮询", start.progress);
+          } else {
+            log("Speedtest 已启动（详细进度）", {
+              total: (start.progress && start.progress.total) || 0,
+            });
+          }
+          const finalProg = await pollGenerationFlow("Speedtest");
+          if (finalProg.status === "error" || finalProg.ok === false) {
+            throw new Error(finalProg.error || finalProg.message || "Speedtest 失败");
+          }
+          log("Speedtest 完成", {
+            total: finalProg.total,
+            summary: finalProg.summary,
+          });
+          renderGenerationFlowDetail(finalProg);
           await refresh();
-        });
+        }, { indeterminate: false, keepProgress: true });
       } catch (e) {
         log(String(e));
+      } finally {
+        generationFlowRunning = false;
+        if (btn) btn.disabled = false;
       }
     });
 
@@ -3211,6 +3406,142 @@
         log(String(e));
       }
     });
+
+    // ── ⑤ 跟踪 JS ──────────────────────────────────────────
+    const btnTrackingLoad = document.getElementById("btnTrackingLoad");
+    if (btnTrackingLoad) {
+      btnTrackingLoad.addEventListener("click", () => {
+        withBusy("加载 tracking.js", () => loadTrackingJs(), { indeterminate: true }).catch(
+          (e) => log(String(e))
+        );
+      });
+    }
+
+    const btnTrackingGenerateGa4 = document.getElementById("btnTrackingGenerateGa4");
+    if (btnTrackingGenerateGa4) {
+      btnTrackingGenerateGa4.addEventListener("click", async () => {
+        try {
+          await withBusy("生成 GA4 tracking.js 模板", async () => {
+            const measurementId = (document.getElementById("trackingGa4Id") || {}).value || "";
+            const data = await api("/api/tracking/generate", {
+              method: "POST",
+              body: { provider: "ga4", measurement_id: measurementId, save: false },
+            });
+            const raw = document.getElementById("trackingJsRaw");
+            if (raw && data.content) raw.value = data.content;
+            log("已生成 GA4 模板（未保存，请点「保存并同步到 dist」）", {
+              measurement_id: data.measurement_id,
+            });
+          });
+        } catch (e) {
+          log(String(e));
+        }
+      });
+    }
+
+    const btnTrackingGenerateClarity = document.getElementById("btnTrackingGenerateClarity");
+    if (btnTrackingGenerateClarity) {
+      btnTrackingGenerateClarity.addEventListener("click", async () => {
+        try {
+          await withBusy("生成 Clarity tracking.js 模板", async () => {
+            const projectId =
+              (document.getElementById("trackingClarityId") || {}).value || "";
+            const data = await api("/api/tracking/generate", {
+              method: "POST",
+              body: { provider: "clarity", project_id: projectId, save: false },
+            });
+            const raw = document.getElementById("trackingJsRaw");
+            if (raw && data.content) raw.value = data.content;
+            log("已生成 Clarity 模板（未保存，请点「保存并同步到 dist」）", {
+              project_id: data.project_id,
+            });
+          });
+        } catch (e) {
+          log(String(e));
+        }
+      });
+    }
+
+    const btnTrackingSave = document.getElementById("btnTrackingSave");
+    if (btnTrackingSave) {
+      btnTrackingSave.addEventListener("click", async () => {
+        try {
+          await withBusy("保存 tracking.js 并同步到 dist", async () => {
+            const content = (document.getElementById("trackingJsRaw") || {}).value || "";
+            showProgress("跟踪 JS · 启动", { percent: 1, message: "提交保存任务…" });
+            const start = await api("/api/tracking/save-sync/start", {
+              method: "POST",
+              body: { content: content },
+            });
+            if (!start.ok) {
+              throw new Error(start.error || "跟踪 JS 保存任务启动失败");
+            }
+            if (start.already_running) {
+              log("跟踪 JS 任务已在运行，附着轮询", start.progress);
+            }
+            const finalProg = await pollTrackingFlow(
+              "跟踪 JS 保存同步",
+              "/api/tracking/save-sync/progress"
+            );
+            renderTrackingFlowDetail(finalProg);
+            await loadTrackingJs();
+            const scan = (finalProg.summary && finalProg.summary.html_scan) || {};
+            log("跟踪 JS 保存同步结束", {
+              ok: finalProg.ok,
+              message: finalProg.message,
+              bytes: finalProg.summary && finalProg.summary.static && finalProg.summary.static.bytes,
+              html_with_ref: scan.html_with_ref,
+              html_missing_ref: scan.html_missing_ref,
+              html_total: scan.html_total,
+            });
+            if (finalProg.status === "error" || finalProg.ok === false) {
+              throw new Error(finalProg.error || finalProg.message || "保存同步失败");
+            }
+          }, { indeterminate: false, keepProgress: true });
+        } catch (e) {
+          log(String(e));
+        }
+      });
+    }
+
+    const btnTrackingSync = document.getElementById("btnTrackingSync");
+    if (btnTrackingSync) {
+      btnTrackingSync.addEventListener("click", async () => {
+        try {
+          await withBusy("同步 tracking.js → dist", async () => {
+            showProgress("跟踪 JS 同步 · 启动", { percent: 1, message: "提交同步任务…" });
+            const start = await api("/api/tracking/sync/start", {
+              method: "POST",
+              body: {},
+            });
+            if (!start.ok) {
+              throw new Error(start.error || "跟踪 JS 同步启动失败");
+            }
+            if (start.already_running) {
+              log("跟踪 JS 任务已在运行，附着轮询", start.progress);
+            }
+            const finalProg = await pollTrackingFlow(
+              "跟踪 JS 同步",
+              "/api/tracking/sync/progress"
+            );
+            renderTrackingFlowDetail(finalProg);
+            await loadTrackingJs();
+            const scan = (finalProg.summary && finalProg.summary.html_scan) || {};
+            log("跟踪 JS 同步结束", {
+              ok: finalProg.ok,
+              message: finalProg.message,
+              html_with_ref: scan.html_with_ref,
+              html_missing_ref: scan.html_missing_ref,
+            });
+            if (finalProg.status === "error" || finalProg.ok === false) {
+              throw new Error(finalProg.error || finalProg.message || "同步失败");
+            }
+          }, { indeterminate: false, keepProgress: true });
+        } catch (e) {
+          log(String(e));
+        }
+      });
+    }
 
     const btnJackettDefaults = document.getElementById("btnJackettDefaults");
     if (btnJackettDefaults) {

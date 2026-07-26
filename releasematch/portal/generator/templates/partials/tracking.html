@@ -1,0 +1,6 @@
+{# 页面跟踪：仅引用 dist 内 /static/js/tracking.js，逻辑集中在该文件 #}
+{# @partial tracking.html #}
+{% if tracking_js_href|default('/static/js/tracking.js') %}
+<!-- rm-tracking -->
+<script src="{{ tracking_js_href }}" defer></script>
+{% endif %}

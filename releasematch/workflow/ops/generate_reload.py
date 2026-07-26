@@ -25,6 +25,7 @@ _RELOAD_ORDER: List[str] = [
     "workflow.recommended.reason_i18n",
     "workflow.recommended.scorer",
     "schema.d1_models",
+    "portal.generator.tracking",
     "portal.generator.i18n",
     "portal.generator.ig_debug",
     "portal.generator.sitemap",

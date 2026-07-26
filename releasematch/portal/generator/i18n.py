@@ -902,12 +902,19 @@ def static_asset_version() -> str:
 
 def merge_render_context(context: Dict[str, Any]) -> Dict[str, Any]:
     """
-    渲染前统一注入 i18n 与静态资源版本（供 render.py / 首页等调用）。
+    渲染前统一注入 i18n、静态资源版本与跟踪 JS 引用（供 render.py / 首页等调用）。
 
     @param context: 模板变量 dict
-    @returns: 注入 i18n 后的 dict
+    @returns: 注入 i18n / tracking 后的 dict
     """
+    from portal.generator.tracking import build_tracking_context
+
     merged = build_i18n_runtime().merge_context(context)
     # 完整注释：页面 CSS/JS 链接依赖此版本号，避免旧样式（如 ellipsis）被缓存
     merged["static_asset_version"] = static_asset_version()
+    # 完整注释：只注入 /static/js/tracking.js 引用；逻辑在该文件内手改/Ops 维护
+    merged.update(build_tracking_context())
+    # 完整注释：调用方可传 tracking_js_href="" 关闭单页引用
+    if "tracking_js_href" in context:
+        merged["tracking_js_href"] = context.get("tracking_js_href") or ""
     return merged

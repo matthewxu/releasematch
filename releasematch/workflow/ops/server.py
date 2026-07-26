@@ -33,6 +33,7 @@ from workflow.ops import seo_c2_service
 from workflow.ops import deploy_flow_service
 from workflow.ops import pages_service
 from workflow.ops import source_service
+from workflow.ops import tracking_flow_service
 from workflow.ops.track_store import (
     ensure_tables,
     get_active_batch_id,
@@ -412,6 +413,7 @@ def _handle_api(
         return 200, actions.refresh_gates(body.get("batch_id"))
 
     if path == "/api/actions/pipeline" and method == "POST":
+        # 兼容同步；UI 优先 /pipeline/start + /generation-flow/progress
         return 200, actions.run_pipeline(
             batch_id=body.get("batch_id"),
             page_ids=body.get("page_ids"),
@@ -420,13 +422,38 @@ def _handle_api(
             mode=str(body.get("mode") or "live"),
         )
 
+    if path == "/api/actions/pipeline/start" and method == "POST":
+        result = generation_flow_service.start_pipeline_flow(
+            fetch=bool(body.get("fetch", True)),
+            skip_existing=bool(body.get("skip_existing", True)),
+            mode=str(body.get("mode") or "live"),
+            page_ids=body.get("page_ids"),
+        )
+        status = 200 if result.get("ok") else 400
+        return status, result
+
+    if path == "/api/actions/pipeline/progress" and method == "GET":
+        # 完整注释：与 generation-flow 共用同一进度态
+        return 200, {"ok": True, "progress": generation_flow_service.get_progress()}
+
     if path == "/api/actions/generate" and method == "POST":
-        # generate_all=true 时建议走 /generate-all/start（异步进度）；此处保留同步兼容
+        # generate_all=true 时建议走 /generate-all/start；选中页建议 /generate/start
         return 200, actions.run_generate(
             batch_id=body.get("batch_id"),
             page_ids=body.get("page_ids"),
             generate_all=bool(body.get("generate_all", False)),
         )
+
+    if path == "/api/actions/generate/start" and method == "POST":
+        # 完整注释：仅选中页 generate，分槽进度（非 generate-all）
+        result = generation_flow_service.start_generate_flow(
+            page_ids=body.get("page_ids"),
+        )
+        status = 200 if result.get("ok") else 400
+        return status, result
+
+    if path == "/api/actions/generate/progress" and method == "GET":
+        return 200, {"ok": True, "progress": generation_flow_service.get_progress()}
 
     # Generate all：后台 + 分阶段/逐页进度轮询（含模块热重载与抽样验收）
     if path == "/api/actions/generate-all/start" and method == "POST":
@@ -440,10 +467,21 @@ def _handle_api(
         return 200, {"ok": True, "progress": generate_all_flow_service.get_progress()}
 
     if path == "/api/actions/speedtest" and method == "POST":
+        # 兼容同步；UI 优先 /speedtest/start + progress
         return 200, actions.run_speedtest(
             batch_id=body.get("batch_id"),
             page_ids=body.get("page_ids"),
         )
+
+    if path == "/api/actions/speedtest/start" and method == "POST":
+        result = generation_flow_service.start_speedtest_flow(
+            page_ids=body.get("page_ids"),
+        )
+        status = 200 if result.get("ok") else 400
+        return status, result
+
+    if path == "/api/actions/speedtest/progress" and method == "GET":
+        return 200, {"ok": True, "progress": generation_flow_service.get_progress()}
 
     # 一键跑生成流程（后台 + 分槽进度轮询）
     if path == "/api/actions/generation-flow/start" and method == "POST":
@@ -452,6 +490,7 @@ def _handle_api(
             skip_existing=bool(body.get("skip_existing", True)),
             mode=str(body.get("mode") or "live"),
             page_ids=body.get("page_ids"),
+            stages=body.get("stages"),
         )
         status = 200 if result.get("ok") else 400
         return status, result
@@ -561,6 +600,87 @@ def _handle_api(
             if not out["accounts"].get("ok"):
                 return 400, {"ok": False, "error": out["accounts"].get("error"), **out}
         out["config"] = config_service.get_config_bundle()
+        return 200, out
+
+    # ── 跟踪 JS：读 / 写 / 同步 / 生成 GA4 模板 ────────
+    if path == "/api/tracking" and method == "GET":
+        from portal.generator.tracking import read_tracking_js
+
+        return 200, read_tracking_js()
+
+    if path == "/api/tracking" and method == "POST":
+        from portal.generator.tracking import write_tracking_js
+
+        # 完整注释：兼容同步写盘；UI 优先 /tracking/save-sync/start
+        if "content" not in body:
+            return 400, {"ok": False, "error": "缺少 content（tracking.js 全文）"}
+        result = write_tracking_js(
+            str(body.get("content") or ""),
+            sync_dist=bool(body.get("sync_dist", True)),
+        )
+        status = 200 if result.get("ok") else 400
+        return status, result
+
+    if path == "/api/tracking/save-sync/start" and method == "POST":
+        # 完整注释：保存 + 同步 + 扫描 HTML 引用，分步进度
+        if "content" not in body:
+            return 400, {"ok": False, "error": "缺少 content（tracking.js 全文）"}
+        result = tracking_flow_service.start_save_sync(str(body.get("content") or ""))
+        status = 200 if result.get("ok") else 400
+        return status, result
+
+    if path == "/api/tracking/save-sync/progress" and method == "GET":
+        return 200, {"ok": True, "progress": tracking_flow_service.get_progress()}
+
+    if path == "/api/tracking/sync" and method == "POST":
+        from portal.generator.tracking import sync_tracking_js_to_dist
+
+        # 完整注释：兼容同步；UI 优先 /tracking/sync/start
+        result = sync_tracking_js_to_dist()
+        status = 200 if result.get("ok") else 400
+        return status, result
+
+    if path == "/api/tracking/sync/start" and method == "POST":
+        result = tracking_flow_service.start_sync_only()
+        status = 200 if result.get("ok") else 400
+        return status, result
+
+    if path == "/api/tracking/sync/progress" and method == "GET":
+        return 200, {"ok": True, "progress": tracking_flow_service.get_progress()}
+
+    if path == "/api/tracking/generate" and method == "POST":
+        from portal.generator.tracking import (
+            build_tracking_js_for_provider,
+            write_tracking_js,
+        )
+
+        # 完整注释：provider=ga4|clarity；save=true 时直接写盘并同步 dist
+        provider = str(body.get("provider") or "ga4").strip().lower()
+        measurement_id = str(body.get("measurement_id") or "").strip()
+        project_id = str(body.get("project_id") or "").strip()
+        try:
+            content = build_tracking_js_for_provider(
+                provider,
+                measurement_id=measurement_id,
+                project_id=project_id,
+            )
+        except ValueError as exc:
+            return 400, {"ok": False, "error": str(exc)}
+        out: Dict[str, Any] = {
+            "ok": True,
+            "provider": provider,
+            "measurement_id": measurement_id,
+            "project_id": project_id,
+            "content": content,
+        }
+        if bool(body.get("save", False)):
+            saved = write_tracking_js(
+                content,
+                sync_dist=bool(body.get("sync_dist", True)),
+            )
+            out["saved"] = saved
+            if not saved.get("ok"):
+                return 400, {"ok": False, "error": saved.get("error"), **out}
         return 200, out
 
     # ── Jackett + FlareSolverr 一键部署（本机 SSH → VPS）────────

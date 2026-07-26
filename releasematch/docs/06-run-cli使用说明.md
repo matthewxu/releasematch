@@ -710,9 +710,9 @@ python -m workflow.run ops tmdb-sync --full-reload   # TRUNCATE 全量重建
 | ⓪ 页面台账 | **统管表 `media_pages`**：draft/thin/published 统计、搜索、下线、加入工单 | 搜已入库页；下线=改库+删 dist（可选 wrangler） |
 | ① 清单从哪来 | TMDB 日导出 + 锚点/curated；或 **全量下载→增量入库→搜索→工作区** | 自动生成 / 加载 JSON / `ops tmdb-sync` + UI 手动选槽（候选，非台账） |
 | ② 筛选 | media / tier / pop / 排除 published·失败槽 | 筛选后 **导入跟踪表**；与 published 重叠须确认 |
-| ③ 跑生成流程 | pipeline → MySQL 门禁 → generate → 测速 | **一键跑生成流程**（后台分槽 + 进度轮询）；跟踪表 `detail` 显示失败原因（悬停看全文）；**测速 write 成功后自动 regenerate** |
+| ③ 跑生成流程 | pipeline → MySQL 门禁 → generate → 测速 | **一键跑生成流程**（后台分槽 + 进度轮询）；单独 **Pipeline / Generate 选中 / Speedtest** 亦为 start+progress 分槽；跟踪表 `detail` 显示失败原因；**测速 write 成功后自动 regenerate** |
 | ④ 上线 | seo_c2 → deploy（增量/全量/仅上传 + 可选 wrangler） | 批次级步骤 + 同一跟踪表 |
-| ⑤ 配置 | `.env`（MySQL/站点/Ops）+ `accounts.local.json`（数据源）+ **一键部署 Jackett/FlareSolverr** | 分文件加载/保存；热加载；SSH 装栈 |
+| ⑤ 配置 | `.env` + `accounts.local.json` + **跟踪 JS** + Jackett/Linode | 分文件加载/保存；**tracking.js** 编辑/生成（GA4·Clarity）/保存同步（分步进度）；热加载；SSH 装栈 |
 | ⑥ 日常运营 | 手册 **§四** 巡检：Jackett · DB · 测速覆盖 · TMDB 新鲜度 · 失败槽 | 「刷新巡检」；失败槽样例含 **error 文案**；TMDB 日同步；测速缺口补测 |
 
 **③ 一键跑生成流程（推荐）：**
@@ -725,10 +725,33 @@ python -m workflow.run ops tmdb-sync --full-reload   # TRUNCATE 全量重建
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| `POST` | `/api/actions/generation-flow/start` | `{fetch, skip_existing, mode, page_ids?}` 启动后台任务 |
+| `POST` | `/api/actions/generation-flow/start` | `{fetch, skip_existing, mode, page_ids?, stages?}`；`stages` 可只跑部分阶段 |
 | `GET` | `/api/actions/generation-flow/progress` | 分槽进度快照（含 `detail` 错误原因） |
+| `POST` | `/api/actions/pipeline/start` | 仅 Pipeline（与一键流程共用进度态） |
+| `GET` | `/api/actions/pipeline/progress` | 同上 progress |
+| `POST` | `/api/actions/generate/start` | 仅 Generate 选中页 |
+| `GET` | `/api/actions/generate/progress` | 同上 progress |
+| `POST` | `/api/actions/speedtest/start` | 仅 Speedtest（逐槽） |
+| `GET` | `/api/actions/speedtest/progress` | 同上 progress |
 
-**排障：** 跟踪表 / 进度表 `detail` 列与悬停 `title` 为完整错误；⑥「失败槽样例」列出 registry `error`。硬刷新（Cmd+Shift+R）加载最新 `ops.js`。
+**排障：** 跟踪表 / 进度表 `detail` 列与悬停 `title` 为完整错误；⑥「失败槽样例」列出 registry `error`。硬刷新（Cmd+Shift+R）加载最新 `ops.js`。改完 Python 路由后需**重启** `ops serve`（静态 `ops.js`/`index.html` 硬刷新即可）。
+
+**⑤ 跟踪 JS（站点分析脚本）：**
+
+页面 bake 时经 `base.html` 引用 `/static/js/tracking.js`；真相源为 `portal/static/js/tracking.js`，Ops ⑤ 可编辑并同步到 dist（**纯 JS，不要贴 HTML `<script>` 外壳**）。
+
+1. 填 GA4 Measurement ID 或 Clarity Project ID →「生成 … 模板」
+2. 「保存并同步到 dist」→ 分步：校验 → 写 static → sync → 哈希校验 → **扫描 dist HTML 是否已引用**
+3. 若扫描显示大量 HTML 缺引用：再跑一次 Generate（写入 script 标签）；之后只更新 `tracking.js` 即可
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `GET` | `/api/tracking` | 读真相源内容 |
+| `POST` | `/api/tracking/generate` | `{provider:"ga4"\|"clarity", measurement_id?, project_id?, save?}` |
+| `POST` | `/api/tracking/save-sync/start` | `{content}` 后台保存+同步+扫描 |
+| `GET` | `/api/tracking/save-sync/progress` | 分步进度 |
+| `POST` | `/api/tracking/sync/start` | 仅 sync + 扫描 |
+| `GET` | `/api/tracking/sync/progress` | 分步进度 |
 
 - **「无可用 items」**：Jackett/直连拉到 0 条且 Demo 回退不适用（仅少数固定槽有 Demo）。**多数不是缺 DB seed**。先 `python -m workflow.torrent_sources.run test --tmdb <ID> --force`：报错→修 Jackett；0 命中→可试补 indexer，冷门则按稀缺处理。详见 [12-日常运营执行手册](./12-日常运营执行手册.md) §7.3。
 - **加更多源**：只对「公开源覆盖不足」有效；对真稀缺 / 连通故障无效。
@@ -987,3 +1010,4 @@ bash scripts/seo_c2_checklist.sh --json | jq '.summary'
 | v0.21 | 2026-07-21 | Ops 操作旁 **?** 说明抽屉：`ops-help.js`（流程/脚本/CLI/数据流/存储/排障） |
 | v0.22 | 2026-07-25 | ③ 一键跑生成流程：`generation-flow/start`+progress 分槽；跟踪表/⑥ 失败槽展示完整错误原因；Linode VPS 生命周期文档 |
 | v0.23 | 2026-07-25 | 排障：纠正「无可用 items」语义；加源边界说明（链到手册 §7.3） |
+| v0.24 | 2026-07-26 | 站点跟踪 JS：`tracking.js` + Ops ⑤ 编辑/GA4·Clarity 模板/保存同步分步进度；Pipeline/Generate/Speedtest 单独分槽进度 |

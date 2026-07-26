@@ -5,7 +5,7 @@
 
 @module portal.generator.static_shell
 @description
-  生成的 HTML 引用 ``/static/js/site.js`` 等绝对路径。
+  生成的 HTML 引用 ``/static/js/site.js`` / ``/static/js/tracking.js`` 等绝对路径。
   ``python -m http.server`` 若以 ``portal/dist`` 为根目录启动，
   必须先同步 static，否则双语切换脚本 404、语言按钮无效。
   部署脚本 ``scripts/deploy_cf_pages.sh`` 亦依赖同一逻辑。
@@ -34,7 +34,7 @@ def sync_static_shell(
     portal_root: Optional[Path] = None,
 ) -> Dict[str, Any]:
     """
-    将静态壳（``static/``、404/410、根 ``robots.txt``）同步到 dist。
+    将静态壳（``static/``、404/410、根 ``robots.txt``、跟踪 JS）同步到 dist。
 
     @param out_root: 生成输出根目录，默认 ``portal/dist``
     @param portal_root: portal 源目录，默认 ``portal/``
@@ -42,18 +42,28 @@ def sync_static_shell(
     @description
       爬虫只认站点根 ``/robots.txt``；仅放在 ``/static/robots.txt`` 不会被遵守。
       因此在同步 ``static/`` 后，额外把 ``static/robots.txt`` 复制到 dist 根。
+      ``tracking.js`` 真相源为 ``portal/static/js/tracking.js``，随 static/ 复制进 dist。
     """
+    from portal.generator.tracking import ensure_tracking_js, sync_tracking_js_to_dist
+
     portal_root = portal_root or DEFAULT_PORTAL_ROOT
     out_root.mkdir(parents=True, exist_ok=True)
 
     copied: List[str] = []
+
+    # 完整注释：缺文件时写入空壳，避免页面引用 404
+    tracking_ensure = ensure_tracking_js(portal_root)
 
     for name in SHELL_FILES:
         src = portal_root / name
         if src.is_file():
             dst = out_root / name
             shutil.copy2(src, dst)
-            copied.append(name)
+            # 完整注释：404/410 非 Jinja，只挂 tracking.js 引用标签
+            if _inject_tracking_script_ref(dst):
+                copied.append(f"{name}+tracking")
+            else:
+                copied.append(name)
 
     static_src = portal_root / "static"
     static_dst = out_root / "static"
@@ -62,6 +72,11 @@ def sync_static_shell(
         shutil.copytree(static_src, static_dst, dirs_exist_ok=True)
         static_files = sum(1 for _ in static_dst.rglob("*") if _.is_file())
         copied.append("static/")
+
+    # 完整注释：再显式 sync 一次，确保 dist 与真相源一致
+    tracking_sync = sync_tracking_js_to_dist(portal_root=portal_root, out_root=out_root)
+    if tracking_sync.get("ok"):
+        copied.append("static/js/tracking.js")
 
     # 爬虫入口：/robots.txt（与 /static/robots.txt 内容一致）
     robots_src = static_dst / "robots.txt"
@@ -74,12 +89,38 @@ def sync_static_shell(
         robots_root = True
 
     site_js = static_dst / "js" / "site.js"
+    tracking_js = static_dst / "js" / "tracking.js"
     return {
-        "ok": site_js.is_file() and robots_root,
+        "ok": site_js.is_file() and robots_root and tracking_js.is_file(),
         "out_root": str(out_root),
         "portal_root": str(portal_root),
         "copied": copied,
         "static_file_count": static_files,
         "site_js": str(site_js),
+        "tracking_js": str(tracking_js),
+        "tracking_ensure": tracking_ensure,
+        "tracking_sync": tracking_sync,
         "robots_root": robots_root,
     }
+
+
+def _inject_tracking_script_ref(html_path: Path) -> bool:
+    """
+    向非 Jinja 壳页（404/410）的 ``</body>`` 前插入 tracking.js 引用。
+
+    @param html_path: dist 下的 HTML 文件路径
+    @returns: True 表示已写入引用；False 表示已存在而跳过
+    """
+    from portal.generator.tracking import render_tracking_script_tag
+
+    text = html_path.read_text(encoding="utf-8")
+    # 完整注释：已注入则跳过，避免 generate all 重复叠加
+    if "<!-- rm-tracking -->" in text or "/static/js/tracking.js" in text:
+        return False
+
+    snippet = render_tracking_script_tag()
+    if "</body>" not in text:
+        return False
+
+    html_path.write_text(text.replace("</body>", snippet + "</body>", 1), encoding="utf-8")
+    return True
