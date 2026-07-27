@@ -1,0 +1,18 @@
+[deploy] upload-only：跳过 prepare，使用现有 /Users/xuli/vscodeai/releasematch/releasematch/portal/dist
+[deploy] wrangler deploy (project=releasematch) ...
+
+ ⛅️ wrangler 4.53.0 (update available 4.112.0)
+──────────────────────────────────────────────
+🌀 Building list of assets...
+✨ Read 406 files from the assets directory /Users/xuli/vscodeai/releasematch/releasematch/portal/dist
+🌀 Starting asset upload...
+🌀 Found 1 new or modified static asset to upload. Proceeding with upload...
++ /index.html
+Uploaded 1 of 1 asset
+✨ Success! Uploaded 1 file (205 already uploaded) (2.18 sec)
+
+Total Upload: 0.34 KiB / gzip: 0.24 KiB
+Uploaded releasematch (13.35 sec)
+Deployed releasematch triggers (1.81 sec)
+  https://releasematch.vscodeai.workers.dev
+Current Version ID: 504d7c37-a91f-467c-9ee6-aaafe0a7d7a9

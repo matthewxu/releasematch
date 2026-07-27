@@ -8,14 +8,15 @@
   },
   "jackett": {
     "_comment": "日本测试 VPS Jackett；base_url 指向 104.105.140.95:9117",
-    "base_url": "http://104.105.140.95:9117",
-    "api_key": "pzzb6xrlr39nqtzh4yvxnyy2glip6772",
+    "base_url": "http://172.233.65.171:9117",
+    "api_key": "8cabloscr8vwd0caohp51bo1as2pvh4m",
     "indexers": {
       "tv": [
         "thepiratebay",
         "nyaasi",
         "1337x",
-        "torrentgalaxyclone"
+        "torrentgalaxyclone",
+        "eztv"
       ],
       "movie": [
         "yts",
@@ -43,6 +44,7 @@
         "dmhy",
         "mikan",
         "acgrip",
+        "bangumi-moe",
         "nyaasi",
         "thepiratebay",
         "torrentgalaxyclone",
@@ -91,7 +93,8 @@
     "jackett": [
       "dmhy",
       "mikan",
-      "acgrip"
+      "acgrip",
+      "bangumi-moe"
     ],
     "direct": [
       "dmhy",

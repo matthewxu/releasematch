@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "strategy": "A2",
+    "target_bytes": 262144,
+    "phase1_timeout_sec": 20,
+    "phase2_timeout_sec": 30,
+    "workers": 3,
+    "write_mysql": true,
+    "ttl_hours": 6,
+    "force": false,
+    "phase2_only": false,
+    "test_region": "jp-osa",
+    "started_at": "2026-07-26T02:24:05.640843+00:00",
+    "finished_at": "2026-07-26T02:24:52.302004+00:00",
+    "total_wall_sec": 46.655,
+    "slot_count": 2,
+    "estimated_serial_a2_sec": 50
+  },
+  "summary": {
+    "succeeded": 2,
+    "errors": 0,
+    "skipped_ttl": 0,
+    "phase2_only_ok": 0
+  },
+  "results": [
+    {
+      "page_id": "tv:136315:s01e01",
+      "label": "tv:136315:s01e01",
+      "status": "timeout",
+      "elapsed_sec": 46.502,
+      "phase1_elapsed_ms": 20070,
+      "phase2_elapsed_ms": 20545,
+      "peers_total": 10,
+      "avg_kbps": 17.89,
+      "max_kbps": 72.15,
+      "recommended_speed": "18 KB/s",
+      "reachability": "高",
+      "write": {
+        "page_id": "tv:136315:s01e01",
+        "phase1_result_id": "79db846b-e329-4eb2-ac5d-8ae89adc89dd",
+        "phase2_result_id": "834f1e1e-26aa-4ce6-80dc-30d7a758b94b",
+        "recommended_speed": "18 KB/s",
+        "reachability": "高",
+        "test_region": "jp-osa",
+        "slot_speed_summary_written": true,
+        "torrent_metadata_written": true
+      }
+    },
+    {
+      "page_id": "tv:65334:s01e01",
+      "label": "tv:65334:s01e01",
+      "status": "ok",
+      "elapsed_sec": 40.167,
+      "phase1_elapsed_ms": 2008,
+      "phase2_elapsed_ms": 30175,
+      "peers_total": 4,
+      "avg_kbps": 0.0,
+      "max_kbps": 0.0,
+      "recommended_speed": "",
+      "reachability": "中",
+      "write": {
+        "page_id": "tv:65334:s01e01",
+        "phase1_result_id": "d611120c-8030-4664-96d9-11d4a9af68c6",
+        "phase2_result_id": "d6591226-95f4-43fa-8f19-5276e12f6345",
+        "recommended_speed": "",
+        "reachability": "中",
+        "test_region": "jp-osa",
+        "slot_speed_summary_written": true,
+        "torrent_metadata_written": false
+      }
+    }
+  ]
+}
