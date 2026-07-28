@@ -26,7 +26,7 @@
 | [11-页面SEO分析与优化方向.md](./11-页面SEO分析与优化方向.md) → [worklog](../worklogs/2026-07-03/页面SEO分析与优化方向.md) | **全站 SEO 审计 + C2 任务清单（2026-07-03 工作日志）** |
 | [**12-日常运营执行手册.md**](./12-日常运营执行手册.md) | **日常运维**：巡检、cron、扩槽→生成→SEO 门禁、失败槽、指标看板（Ops **⑥** 一键巡检） |
 | [**15-多地多环境开发切换.md**](./15-多地多环境开发切换.md) | **两地 / Debian 12·13 开发机**：私有仓同步代码+密钥、收工/开工、§三-B apt 清单 |
-| [**17-运维机迁移到服务器.md**](./17-运维机迁移到服务器.md) | **运维机 → `8.159.152.227`**：step-by-step（Ops / cron / 验收勾选；不含 Jackett） |
+| [**17-运维机迁移到服务器.md**](./17-运维机迁移到服务器.md) | **运维机 → `8.159.152.227`**：step-by-step + `ops_host_bootstrap.sh` / `ops_host_migrate_verify.py`（不含 Jackett 整机迁移） |
 | [**checklists/**](../checklists/README.md) | **运营 Checklist**：上线门禁、每日/每周/发版前可勾选清单 |
 | [**seo/**](./seo/INDEX.md) | **SEO 迭代专项**：E-E-A-T / Info Gain 评估、跟进看板、历次迭代记录 |
 | [**portal/UI国际化方案.md**](./portal/UI国际化方案.md) | **页面 UI 国际化（en/zh）**：配置、架构、dynamic 切换、Trust 生成 |
