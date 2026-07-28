@@ -24,12 +24,12 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "zh": "ReleaseMatch — Release 导航站",
     },
     "site.meta_default": {
-        "en": "Release guide: Recommended Release, edition matching, and multi-source comparison.",
-        "zh": "影视 Release 导航：Recommended Release、对版分析与多源对比。",
+        "en": "Release guide: Recommended Release, edition matching, and multi-source torrent sources.",
+        "zh": "影视 Release 导航：Recommended Release、对版分析与多源 torrent sources。",
     },
     "site.home_meta": {
-        "en": "Release guide: 100+ verified slots, Recommended Release, edition analysis, and multi-source magnets.",
-        "zh": "影视 Release 导航：100+ 验证集槽位，Recommended Release、对版分析与多源 magnet 对比。",
+        "en": "Torrent sources guide: 100+ verified slots, Recommended Release, edition analysis, and multi-source torrent metadata.",
+        "zh": "Torrent sources 导航：100+ 验证集槽位，Recommended Release、对版分析与多源 torrent 元数据。",
     },
     # ── 导航 ──
     "nav.home": {"en": "Home", "zh": "首页"},
@@ -221,12 +221,12 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "zh": "Release 导航站 · 非下载托管",
     },
     "home.hero_title": {
-        "en": "Pick the right release, not just a magnet",
-        "zh": "选对 Release，而不只是找到 Magnet",
+        "en": "Pick the right torrent source, not just any magnet",
+        "zh": "选对 torrent source，而不只是任意 Magnet",
     },
     "home.hero_subtitle": {
-        "en": "We aggregate multi-source torrent metadata per slot with <strong>Recommended Release</strong>, edition notes, group tiers, and speed summaries.",
-        "zh": "我们为每一槽位聚合多源 torrent 元数据，给出 <strong>Recommended Release</strong>、对版说明、Group 信誉与测速摘要。",
+        "en": "We aggregate multi-source <strong>torrent sources</strong> per slot with <strong>Recommended Release</strong>, edition notes, group tiers, and speed summaries.",
+        "zh": "我们为每一槽位聚合多源 <strong>torrent sources</strong>，给出 <strong>Recommended Release</strong>、对版说明、Group 信誉与测速摘要。",
     },
     "home.cta_catalog": {
         "en": "Browse catalog ({count})",
