@@ -203,13 +203,26 @@ def _parse_json_stdout(stdout: str) -> Dict[str, Any]:
     """
     lines = [ln.strip() for ln in (stdout or "").splitlines() if ln.strip()]
     if not lines:
+        # 完整注释：旧版 CLI 失败只写 stderr；调用方应附带 stderr_tail
         return {"ok": False, "error": "CLI 无 JSON 输出"}
-    try:
-        data = json.loads(lines[-1])
-    except json.JSONDecodeError as exc:
-        return {"ok": False, "error": f"JSON 解析失败: {exc}", "raw": lines[-1][:500]}
+    # 从末行向前找第一个可解析的 JSON 对象（中间可能有杂讯行）
+    data: Any = None
+    raw_line = ""
+    for ln in reversed(lines):
+        try:
+            data = json.loads(ln)
+            raw_line = ln
+            break
+        except json.JSONDecodeError:
+            continue
+    if data is None:
+        return {
+            "ok": False,
+            "error": f"JSON 解析失败: 末行非 JSON",
+            "raw": lines[-1][:500],
+        }
     if not isinstance(data, dict):
-        return {"ok": False, "error": "CLI JSON 非对象"}
+        return {"ok": False, "error": "CLI JSON 非对象", "raw": raw_line[:500]}
     return data
 
 
@@ -840,10 +853,13 @@ def start_create(
 
             seen_running_via_list: Optional[Dict[str, Any]] = None
             list_probe_at = 0.0
+            # 完整注释：汇总 stderr，finalize 无 JSON 时回填真实错误（如缺 token / SDK）
+            stderr_chunks: List[str] = []
 
             def _drain_err() -> None:
                 """流式 stderr → 日志，并推进 wait_running。"""
                 for line in proc.stderr:
+                    stderr_chunks.append(line)
                     _append_log(line)
                     low = line.lower()
                     if "提交 api" in low or "create:" in low and "api" in low:
@@ -969,6 +985,15 @@ def start_create(
 
             _set_phase("finalize", "running", "解析结果…", percent=88)
             payload = _parse_json_stdout(stdout_data)
+            # 完整注释：stdout 空时把 stderr 拼进 error，避免只显示「CLI 无 JSON 输出」
+            if not payload.get("ok") and payload.get("error") == "CLI 无 JSON 输出":
+                err_text = "".join(stderr_chunks).strip()
+                if err_text:
+                    payload = {
+                        "ok": False,
+                        "error": err_text[-800:],
+                        "stderr_tail": err_text[-800:],
+                    }
             ok = bool(payload.get("ok")) and rc == 0
 
             # create HTTP 超时/被杀，但 list 已确认 running → 视为成功

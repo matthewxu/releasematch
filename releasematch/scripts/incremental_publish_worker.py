@@ -51,9 +51,9 @@
   python scripts/incremental_publish_worker.py --prepare-only \\
     --report /var/log/releasematch/incremental-publish.json
 
-cron（建议紧随测速 6h，错开 30 分钟）：
-  30 */6 * * * cd /opt/releasematch/releasematch && .venv/bin/python \\
-    scripts/incremental_publish_worker.py --prepare-only \\
+cron（建议紧随测速 6h，错开 30 分钟；正式期勿加 --prepare-only）：
+  30 */6 * * * cd /opt/releasematch/releasematch/releasematch && .venv/bin/python \\
+    scripts/incremental_publish_worker.py \\
     --report /var/log/releasematch/incremental-publish.json \\
     >> /var/log/releasematch/incremental-publish-cron.log 2>&1
 """

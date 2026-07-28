@@ -3,7 +3,7 @@
   "jackett_vps_japan": {
     "_comment": "日本测试服务器 — Jackett + FlareSolverr Docker 部署（2026-07-20 当前 104.105.140.95）",
     "label": "日本测试服务器",
-    "host": "172.233.65.171",
+    "host": "172.234.89.120",
     "ssh": {
       "user": "root",
       "password": "Release@2026&acb",
@@ -16,12 +16,12 @@
         "docker_name": "jackett",
         "image": "linuxserver/jackett:latest",
         "port": 9117,
-        "public_url": "http://172.233.65.171:9117",
-        "dashboard_url": "http://172.233.65.171:9117/UI/Dashboard",
+        "public_url": "http://172.234.89.120:9117",
+        "dashboard_url": "http://172.234.89.120:9117/UI/Dashboard",
         "config_path": "/opt/jackett/config",
         "server_config": "/opt/jackett/config/Jackett/ServerConfig.json",
         "network": "jackett-net",
-        "api_key": "pzzb6xrlr39nqtzh4yvxnyy2glip6772",
+        "api_key": "yg4pcbdvqsla102c2i9vr4vyspyvju39",
         "admin_password": "345621",
         "admin_password_note": "Dashboard 登录密码；由 install_jackett_stack.sh 默认写入（JACKETT_ADMIN_PASSWORD）"
       },
@@ -37,7 +37,7 @@
       },
       "ssh_socks_tunnel": {
         "_comment": "本机 ssh -D SOCKS5，Nyaa 直连失败时回退；VPS 无需额外代理服务",
-        "command": "ssh -N -D 127.0.0.1:1080 root@172.233.65.171",
+        "command": "ssh -N -D 127.0.0.1:1080 root@172.234.89.120",
         "script": "scripts/start_ssh_socks_tunnel.sh",
         "local_proxy_url": "socks5h://127.0.0.1:1080",
         "env_var": "TORRENT_PROXY"

@@ -224,7 +224,8 @@ def require_token(config: dict[str, Any], config_path: Path | None) -> str:
 
     example = _EXAMPLE_CONFIG
     local = _DEFAULT_LOCAL_CONFIG
-    _err(
+    # 完整注释：抛 RuntimeError，由 main 在 --json 时写一行 JSON（供 Ops 解析）
+    msg = (
         "未找到 Linode Token。请任选其一：\n"
         "  1) export LINODE_TOKEN=...\n"
         f"  2) cp {example} {local}\n"
@@ -232,8 +233,8 @@ def require_token(config: dict[str, Any], config_path: Path | None) -> str:
         "  3) python workflow/torrent_sources/linode_vps.py --config /path/to/linode.local.json ..."
     )
     if config_path and extract_token(config):
-        _err(f"提示: 已读到 {config_path}，但 token 仍是占位符，请替换为真实值")
-    raise SystemExit(EXIT_USAGE)
+        msg += f"\n提示: 已读到 {config_path}，但 token 仍是占位符，请替换为真实值"
+    raise RuntimeError(msg)
 
 
 def _import_sdk():
@@ -241,16 +242,16 @@ def _import_sdk():
     延迟导入 linode_api4，给出可操作的安装提示。
 
     @return: (LinodeClient 类, Instance 类)
+    @raises RuntimeError: 未安装 SDK（main 会按 --json 输出）
     """
     try:
         from linode_api4 import Instance, LinodeClient
-    except ImportError:
-        _err(
+    except ImportError as exc:
+        raise RuntimeError(
             "未安装 linode_api4。请执行：\n"
             f"  pip install -r {_REQUIREMENTS}\n"
             "  或：pip install 'linode_api4>=5.0.0'"
-        )
-        raise SystemExit(EXIT_USAGE) from None
+        ) from exc
     return LinodeClient, Instance
 
 
@@ -1275,10 +1276,16 @@ def main(argv: list[str] | None = None) -> int:
         _err(f"{args.cmd}: 请指定 --id 或 --label")
         return EXIT_USAGE
 
+    want_json = bool(getattr(args, "json", False))
+
     try:
         config, config_path = resolve_config(args.config)
     except RuntimeError as exc:
-        _err(str(exc))
+        # 完整注释：配置文件无效时同样保证 --json 有一行可解析输出
+        if want_json:
+            _emit({"ok": False, "action": getattr(args, "cmd", ""), "error": str(exc)}, as_json=True)
+        else:
+            _err(str(exc))
         return EXIT_USAGE
 
     args.linode_config = config
@@ -1286,8 +1293,17 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         return int(args.func(args))
+    except RuntimeError as exc:
+        # require_token / _import_sdk / 其它前置失败 → Ops 可见真实原因
+        if want_json:
+            _emit(
+                {"ok": False, "action": getattr(args, "cmd", ""), "error": str(exc)},
+                as_json=True,
+            )
+        else:
+            _err(str(exc))
+        return EXIT_USAGE
     except SystemExit as exc:
-        # require_token / _import_sdk 可能以 SystemExit(EXIT_USAGE) 抛出
         code = exc.code
         if code is None:
             return EXIT_OK

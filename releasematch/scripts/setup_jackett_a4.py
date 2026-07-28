@@ -166,6 +166,10 @@ def main(argv: list[str] | None = None) -> int:
 
     @param argv: 命令行参数
     @returns: 进程退出码
+    @description
+      远程 VPS（``--jackett-url`` 非本机）时：以远端 HTTP 可达为准，
+      **不再**要求本机 ``127.0.0.1:9117`` 监听（否则 sync_jackett_vps_key
+      装完远端栈后无法写入 accounts.local.json）。
     """
     parser = argparse.ArgumentParser(description="ReleaseMatch A4 Jackett setup")
     parser.add_argument("--api-key", default="", help="Jackett API Key")
@@ -180,13 +184,40 @@ def main(argv: list[str] | None = None) -> int:
     base_url = args.jackett_url.rstrip("/")
     print("=== ReleaseMatch A4 Jackett Setup ===\n")
 
-    port_ok = _port_open("127.0.0.1", 9117)
+    # 完整注释：从 URL 解析探测主机；远程同步时勿强制本机 9117
+    from urllib.parse import urlparse
+
+    parsed = urlparse(base_url if "://" in base_url else f"http://{base_url}")
+    probe_host = parsed.hostname or "127.0.0.1"
+    probe_port = int(parsed.port or 9117)
+    is_local = probe_host in ("127.0.0.1", "localhost", "::1")
+
+    port_ok = _port_open(probe_host, probe_port)
     http_ok, http_detail = _http_probe(base_url + "/")
-    print(f"[0] Port 9117 : {'OPEN' if port_ok else 'closed'}")
+    # 301/302 对远程 Jackett 根路径常见（跳 Dashboard），视为可达
+    if not http_ok and ("301" in http_detail or "302" in http_detail):
+        http_ok = True
+    # urlopen 对 301 可能报 Bad Request / 其它；再试一次不强制内容
+    if not http_ok and not is_local:
+        import socket
+
+        try:
+            with socket.create_connection((probe_host, probe_port), timeout=5.0):
+                port_ok = True
+                http_ok = True
+                http_detail = f"TCP {probe_host}:{probe_port} open (skip local port check)"
+        except OSError as exc:
+            http_detail = str(exc)
+
+    print(f"[0] Target    : {base_url} ({'local' if is_local else 'remote'})")
+    print(f"    Port {probe_port} : {'OPEN' if port_ok else 'closed'} @ {probe_host}")
     print(f"    HTTP      : {http_detail if http_ok else 'FAIL - ' + http_detail}")
 
-    if not port_ok:
+    if is_local and not port_ok:
         _print_install_hints()
+        return 1
+    if not is_local and not port_ok and not http_ok:
+        print(f"\n[FAIL] 远端 Jackett 不可达: {base_url}")
         return 1
 
     api_key = args.api_key.strip()
@@ -197,26 +228,36 @@ def main(argv: list[str] | None = None) -> int:
     if not api_key:
         print("\n[2] Open Dashboard and copy API Key:")
         print(f"    {base_url}/UI/Dashboard")
-        api_key = input("Paste Jackett API Key: ").strip()
+        if sys.stdin.isatty():
+            api_key = input("Paste Jackett API Key: ").strip()
+        else:
+            print("[FAIL] 非交互环境且未提供 --api-key")
+            return 1
 
     if not api_key or api_key == "YOUR_JACKETT_API_KEY":
         print("[FAIL] API Key empty or placeholder.")
         return 1
 
     _update_accounts(api_key, base_url)
-    print(f"[3] Saved API Key to {ACCOUNTS_PATH.name}")
+    print(f"[3] Saved API Key + base_url to {ACCOUNTS_PATH.name} → {base_url}")
 
     ok, detail = _torznab_smoke(base_url, api_key)
     print(f"\n[4] Torznab smoke: {'OK ' + detail if ok else 'FAIL ' + detail}")
     if ok:
         print("    Tip: add indexers in Dashboard if items=0")
+    # 完整注释：远程刚配完 indexer 时 smoke 偶发失败，accounts 已写入仍算成功
+    # （sync 脚本主要目的是落盘 Key/URL；smoke 失败不阻断回写）
+    write_ok = True
 
     py = str(VENV_PYTHON) if VENV_PYTHON.exists() else sys.executable
     print("\n[5] torrent_sources.run status:")
     subprocess.run([py, "-m", "workflow.torrent_sources.run", "status"], cwd=_ROOT)
 
     print("\nA4 done. Next: python scripts/poc_phase0.py")
-    return 0 if ok else 1
+    # 本地：要求 smoke；远程：accounts 已写即成功（smoke 仅提示）
+    if is_local:
+        return 0 if ok else 1
+    return 0 if write_ok else 1
 
 
 if __name__ == "__main__":

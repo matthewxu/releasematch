@@ -10,13 +10,10 @@ Ops ④「执行 Deploy」后台任务：prepare + 可选 wrangler，分阶段�
 
 from __future__ import annotations
 
-import shutil
-import subprocess
 import threading
 import time
 from typing import Any, Dict, List, Optional
 
-from workflow.config import PROJECT_ROOT
 from workflow.ops.track_store import (
     load_active_batch,
     save_batch,
@@ -262,7 +259,25 @@ def start_deploy(
                     steps=list(steps),
                     log_tail="",
                 )
-                wrangler_result = _run_wrangler_streaming(steps)
+                line_count = {"n": 0}
+
+                def _on_wrangler_line(line: str) -> None:
+                    """刷新 Ops 进度区日志尾。"""
+                    line_count["n"] += 1
+                    n = line_count["n"]
+                    # 复用 progress 中已有 tail：从 steps 外层读 log 不够，拼最近行
+                    prev = get_progress().get("log_tail") or ""
+                    merged = (prev + "\n" + line).strip() if prev else line
+                    tail = "\n".join(merged.splitlines()[-40:])
+                    _set_progress(
+                        phase="wrangler",
+                        percent=min(98, 80 + min(18, n // 2)),
+                        message=(line.strip()[:120] or "wrangler…"),
+                        log_tail=tail[-1200:],
+                        steps=list(steps),
+                    )
+
+                wrangler_result = actions._run_wrangler_upload(on_line=_on_wrangler_line)  # noqa: SLF001
                 if not wrangler_result.get("ok"):
                     raise RuntimeError(
                         wrangler_result.get("error")
@@ -319,40 +334,6 @@ def start_deploy(
                 steps=list(steps),
                 finished_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             )
-
-    def _run_wrangler_streaming(steps_ref: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """
-        流式跑 wrangler，刷新 log_tail。
-
-        @param steps_ref: 步骤表
-        @returns: ok / detail / returncode
-        """
-        if not shutil.which("wrangler"):
-            return {"ok": False, "error": "未找到 wrangler，请 npm i -g wrangler"}
-
-        proc = subprocess.Popen(
-            ["wrangler", "deploy"],
-            cwd=str(PROJECT_ROOT),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-        )
-        lines: List[str] = []
-        assert proc.stdout is not None
-        for line in proc.stdout:
-            lines.append(line.rstrip())
-            tail = "\n".join(lines[-40:])
-            _set_progress(
-                phase="wrangler",
-                percent=min(98, 80 + min(18, len(lines) // 2)),
-                message=line.strip()[:120] or "wrangler…",
-                log_tail=tail[-1200:],
-                steps=list(steps_ref),
-            )
-        code = proc.wait(timeout=1800)
-        detail = "\n".join(lines)[-1200:]
-        return {"ok": code == 0, "returncode": code, "detail": detail}
 
     _WORKER = threading.Thread(target=_worker, name="ops-deploy-flow", daemon=True)
     _WORKER.start()

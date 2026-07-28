@@ -11,13 +11,14 @@ Ops 第三/四段动作：生成流程与上线。
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
-from workflow.config import PROJECT_ROOT
+from workflow.config import PROJECT_ROOT, load_dotenv_file
 from workflow.ops.track_store import (
     load_active_batch,
     load_batch,
@@ -27,6 +28,61 @@ from workflow.ops.track_store import (
     update_slot_gate,
     update_slot_stage,
 )
+
+# 完整注释：systemd / cron 下 PATH 可能缺 npm 全局 bin
+_WRANGLER_PATH_EXTRAS: tuple[str, ...] = (
+    "/usr/local/bin",
+    "/opt/homebrew/bin",
+    str(Path.home() / ".npm-global" / "bin"),
+)
+
+
+def ensure_cloudflare_deploy_env() -> Dict[str, str]:
+    """
+    确保 wrangler deploy 可用的环境变量。
+
+    @description
+      从项目 ``.env`` 填充尚未存在的 ``CLOUDFLARE_*``；补齐常见 wrangler 路径。
+      供 Ops / cron / CLI 子进程共用，避免「本机 whoami 通、Ops 子进程无 Token」。
+    @returns: 可传给 ``subprocess`` 的 ``env`` 副本
+    """
+    load_dotenv_file(overwrite=False)
+    env = os.environ.copy()
+    path_parts = [p for p in str(env.get("PATH") or "").split(":") if p]
+    for extra in _WRANGLER_PATH_EXTRAS:
+        if extra and extra not in path_parts:
+            path_parts.insert(0, extra)
+    env["PATH"] = ":".join(path_parts)
+    return env
+
+
+def resolve_wrangler_bin(env: Optional[Dict[str, str]] = None) -> Optional[str]:
+    """
+    解析 ``wrangler`` 可执行文件路径。
+
+    @param env: 可选环境（含 PATH）；默认调用 ``ensure_cloudflare_deploy_env``
+    @returns: 绝对路径；找不到则为 None
+    """
+    use_env = env if env is not None else ensure_cloudflare_deploy_env()
+    found = shutil.which("wrangler", path=use_env.get("PATH"))
+    if found:
+        return found
+    for candidate in _WRANGLER_PATH_EXTRAS:
+        binary = Path(candidate) / "wrangler"
+        if binary.is_file() and os.access(binary, os.X_OK):
+            return str(binary)
+    return None
+
+
+def cloudflare_token_ready(env: Optional[Dict[str, str]] = None) -> bool:
+    """
+    判断是否具备非交互 wrangler 认证。
+
+    @param env: 可选环境副本
+    @returns: 已设置 ``CLOUDFLARE_API_TOKEN`` 则为 True
+    """
+    use_env = env if env is not None else ensure_cloudflare_deploy_env()
+    return bool(str(use_env.get("CLOUDFLARE_API_TOKEN") or "").strip())
 
 
 def _get_batch(batch_id: Optional[str] = None) -> Dict[str, Any]:
@@ -726,29 +782,81 @@ def _prepare_dist_incremental(
     }
 
 
-def _run_wrangler_upload() -> Dict[str, Any]:
+def _run_wrangler_upload(
+    *,
+    on_line: Optional[Callable[[str], None]] = None,
+    timeout_sec: int = 1800,
+) -> Dict[str, Any]:
     """
     仅执行 wrangler deploy（上传当前 portal/dist，CF 侧按 hash 增量）。
 
-    @returns: returncode / detail / ok
+    @param on_line: 可选；流式模式下每行日志回调（Ops 进度 log_tail）
+    @param timeout_sec: 子进程最长等待秒数
+    @returns: returncode / detail / ok；失败时含 error
+    @description
+      自动 ``load_dotenv`` 注入 ``CLOUDFLARE_API_TOKEN``；流式与阻塞共用同一解析逻辑。
     """
-    if not shutil.which("wrangler"):
+    env = ensure_cloudflare_deploy_env()
+    wrangler_bin = resolve_wrangler_bin(env)
+    if not wrangler_bin:
         return {"ok": False, "error": "未找到 wrangler，请 npm i -g wrangler"}
+    if not cloudflare_token_ready(env):
+        return {
+            "ok": False,
+            "error": "缺少 CLOUDFLARE_API_TOKEN：请写入项目根 .env 后重启 Ops / 重跑脚本",
+        }
 
-    proc = subprocess.run(
-        ["wrangler", "deploy"],
+    dist_dir = PROJECT_ROOT / "portal" / "dist"
+    if not dist_dir.is_dir():
+        return {"ok": False, "error": f"dist 不存在：{dist_dir}（请先 prepare）"}
+
+    cmd = [wrangler_bin, "deploy"]
+    if on_line is None:
+        proc = subprocess.run(
+            cmd,
+            cwd=str(PROJECT_ROOT),
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=timeout_sec,
+            check=False,
+        )
+        detail = (proc.stdout or "")[-800:] + (("\n" + proc.stderr) if proc.stderr else "")
+        detail = detail[-1200:]
+        return {
+            "ok": proc.returncode == 0,
+            "returncode": proc.returncode,
+            "detail": detail.strip(),
+            "error": None if proc.returncode == 0 else (detail.strip() or "wrangler deploy 失败"),
+        }
+
+    # 流式：合并 stdout/stderr，逐行回调
+    proc = subprocess.Popen(
+        cmd,
         cwd=str(PROJECT_ROOT),
-        capture_output=True,
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
         text=True,
-        timeout=1800,
-        check=False,
+        bufsize=1,
     )
-    detail = (proc.stdout or "")[-800:] + (("\n" + proc.stderr) if proc.stderr else "")
-    detail = detail[-1200:]
+    lines: List[str] = []
+    assert proc.stdout is not None
+    try:
+        for line in proc.stdout:
+            text = line.rstrip()
+            lines.append(text)
+            on_line(text)
+        code = proc.wait(timeout=timeout_sec)
+    except Exception:
+        proc.kill()
+        raise
+    detail = "\n".join(lines)[-1200:]
     return {
-        "ok": proc.returncode == 0,
-        "returncode": proc.returncode,
-        "detail": detail.strip(),
+        "ok": code == 0,
+        "returncode": code,
+        "detail": detail,
+        "error": None if code == 0 else (detail or "wrangler deploy 失败"),
     }
 
 

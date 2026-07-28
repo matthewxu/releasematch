@@ -8,8 +8,8 @@
   },
   "jackett": {
     "_comment": "日本测试 VPS Jackett；base_url 指向 104.105.140.95:9117",
-    "base_url": "http://172.233.65.171:9117",
-    "api_key": "8cabloscr8vwd0caohp51bo1as2pvh4m",
+    "base_url": "http://172.234.89.120:9117",
+    "api_key": "yg4pcbdvqsla102c2i9vr4vyspyvju39",
     "indexers": {
       "tv": [
         "thepiratebay",

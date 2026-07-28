@@ -17,7 +17,7 @@
 #   bash scripts/deploy_cf_pages.sh --mode upload-only
 #       # 仅 wrangler（假定 dist 已就绪）
 #
-# 依赖：项目 .venv、wrangler、CLOUDFLARE_API_TOKEN 或 wrangler login
+# 依赖：项目 .venv、wrangler、CLOUDFLARE_API_TOKEN（.env）或 wrangler login
 # =============================================================================
 
 set -euo pipefail
@@ -44,7 +44,8 @@ usage() {
 
 环境变量:
   CF_PROJECT           Cloudflare 项目名，默认 releasematch
-  CLOUDFLARE_API_TOKEN API Token（替代 wrangler login）
+  CLOUDFLARE_API_TOKEN API Token（可写在项目根 .env；本脚本会自动加载）
+  CLOUDFLARE_ACCOUNT_ID 账号 ID（可选，写在 .env）
 EOF
 }
 
@@ -79,6 +80,45 @@ resolve_python() {
   else
     echo "python3"
   fi
+}
+
+load_cloudflare_env() {
+  # 完整注释：用 Python 安全解析 .env（避免 bash source 遇「= 后空格」把值当命令执行）
+  local py
+  py="$(resolve_python)"
+  # shellcheck disable=SC1090
+  eval "$(
+    cd "${PROJECT_ROOT}" && "${py}" - <<'PY'
+from __future__ import annotations
+
+import shlex
+import sys
+
+sys.path.insert(0, ".")
+from workflow.config import load_dotenv_file  # noqa: E402
+from workflow.ops.actions import (  # noqa: E402
+    cloudflare_token_ready,
+    ensure_cloudflare_deploy_env,
+    resolve_wrangler_bin,
+)
+
+ensure_cloudflare_deploy_env()
+load_dotenv_file(overwrite=False)
+env = ensure_cloudflare_deploy_env()
+for key in (
+    "CLOUDFLARE_API_TOKEN",
+    "CLOUDFLARE_ACCOUNT_ID",
+    "PATH",
+):
+    val = env.get(key)
+    if val:
+        print(f"export {key}={shlex.quote(val)}")
+wrangler = resolve_wrangler_bin(env)
+if wrangler:
+    print(f"export RM_WRANGLER_BIN={shlex.quote(wrangler)}")
+print(f"export RM_CF_TOKEN_READY={'1' if cloudflare_token_ready(env) else '0'}")
+PY
+  )"
 }
 
 sync_static_shell() {
@@ -123,13 +163,28 @@ PY
 }
 
 deploy_wrangler() {
+  # 正式上传：依赖 .env 中 CLOUDFLARE_API_TOKEN
   cd "${PROJECT_ROOT}"
-  if ! command -v wrangler >/dev/null 2>&1; then
-    echo "错误: 未找到 wrangler。请 npm i -g wrangler 或 brew install wrangler" >&2
+  load_cloudflare_env
+  local wrangler_bin="${RM_WRANGLER_BIN:-}"
+  if [[ -z "${wrangler_bin}" ]]; then
+    if command -v wrangler >/dev/null 2>&1; then
+      wrangler_bin="$(command -v wrangler)"
+    else
+      echo "错误: 未找到 wrangler。请 npm i -g wrangler" >&2
+      exit 1
+    fi
+  fi
+  if [[ "${RM_CF_TOKEN_READY:-0}" != "1" && -z "${CLOUDFLARE_API_TOKEN:-}" ]]; then
+    echo "错误: 缺少 CLOUDFLARE_API_TOKEN。请写入 ${PROJECT_ROOT}/.env 后重试" >&2
     exit 1
   fi
-  echo "[deploy] wrangler deploy (project=${CF_PROJECT}) ..."
-  wrangler deploy
+  if [[ ! -d "${DIST}" ]]; then
+    echo "错误: dist 不存在，请先 prepare" >&2
+    exit 1
+  fi
+  echo "[deploy] wrangler deploy (project=${CF_PROJECT} bin=${wrangler_bin}) ..."
+  "${wrangler_bin}" deploy
 }
 
 main() {
