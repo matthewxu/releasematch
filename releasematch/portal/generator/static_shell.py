@@ -25,8 +25,59 @@ DEFAULT_PORTAL_ROOT = PROJECT_ROOT / "portal"
 # 默认 dist 输出目录
 DEFAULT_OUT_ROOT = DEFAULT_PORTAL_ROOT / "dist"
 
-# 需要从 portal 根复制到 dist 根的单文件列表
+# 需要从 portal 根复制到 dist 根的单文件列表（错误页壳）
 SHELL_FILES = ("404.html", "410.html")
+
+# Bing Webmaster Tools 站点所有权验证文件名（须位于站点根 /BingSiteAuth.xml）
+BING_SITE_AUTH_FILENAME = "BingSiteAuth.xml"
+
+
+def _sync_google_site_verification_files(
+    portal_root: Path,
+    out_root: Path,
+) -> List[str]:
+    """
+    将 Google Search Console 所有权验证 HTML 复制到 dist 根。
+
+    @param portal_root: portal 源目录
+    @param out_root: dist 输出根
+    @returns: 已复制文件名列表
+    @description
+      GSC「HTML 文件」验证要求站点根可访问 ``/googleXXXX.html``。
+      真相源放在 ``portal/google*.html``，随 static_shell 同步，避免仅手拷 dist 后被 generate 冲掉。
+    """
+    copied: List[str] = []
+    for src in sorted(portal_root.glob("google*.html")):
+        if not src.is_file():
+            continue
+        # 完整注释：仅复制标准验证文件名（google + 十六进制/字母数字 + .html）
+        name = src.name
+        if not name.startswith("google") or not name.endswith(".html"):
+            continue
+        shutil.copy2(src, out_root / name)
+        copied.append(name)
+    return copied
+
+
+def _sync_bing_site_auth_file(
+    portal_root: Path,
+    out_root: Path,
+) -> List[str]:
+    """
+    将 Bing Webmaster Tools 验证文件复制到 dist 根。
+
+    @param portal_root: portal 源目录
+    @param out_root: dist 输出根
+    @returns: 已复制文件名列表（0 或 1 项）
+    @description
+      Bing「XML 文件」验证要求站点根可访问 ``/BingSiteAuth.xml``。
+      真相源放在 ``portal/BingSiteAuth.xml``，随 static_shell 同步。
+    """
+    src = portal_root / BING_SITE_AUTH_FILENAME
+    if not src.is_file():
+        return []
+    shutil.copy2(src, out_root / BING_SITE_AUTH_FILENAME)
+    return [BING_SITE_AUTH_FILENAME]
 
 
 def sync_static_shell(
@@ -34,7 +85,7 @@ def sync_static_shell(
     portal_root: Optional[Path] = None,
 ) -> Dict[str, Any]:
     """
-    将静态壳（``static/``、404/410、根 ``robots.txt``、跟踪 JS）同步到 dist。
+    将静态壳（``static/``、404/410、根 ``robots.txt``、搜索引擎验证、跟踪 JS）同步到 dist。
 
     @param out_root: 生成输出根目录，默认 ``portal/dist``
     @param portal_root: portal 源目录，默认 ``portal/``
@@ -43,6 +94,7 @@ def sync_static_shell(
       爬虫只认站点根 ``/robots.txt``；仅放在 ``/static/robots.txt`` 不会被遵守。
       因此在同步 ``static/`` 后，额外把 ``static/robots.txt`` 复制到 dist 根。
       ``tracking.js`` 真相源为 ``portal/static/js/tracking.js``，随 static/ 复制进 dist。
+      Google 验证 ``portal/google*.html``、Bing 验证 ``portal/BingSiteAuth.xml`` → dist 根。
     """
     from portal.generator.tracking import ensure_tracking_js, sync_tracking_js_to_dist
 
@@ -64,6 +116,14 @@ def sync_static_shell(
                 copied.append(f"{name}+tracking")
             else:
                 copied.append(name)
+
+    # 完整注释：GSC 所有权验证文件 → 站点根路径
+    for name in _sync_google_site_verification_files(portal_root, out_root):
+        copied.append(name)
+
+    # 完整注释：Bing Webmaster 所有权验证 → /BingSiteAuth.xml
+    for name in _sync_bing_site_auth_file(portal_root, out_root):
+        copied.append(name)
 
     static_src = portal_root / "static"
     static_dst = out_root / "static"

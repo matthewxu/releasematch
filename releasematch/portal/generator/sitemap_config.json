@@ -1,0 +1,5 @@
+{
+  "max_content_urls": 30,
+  "use_validation_priority": true,
+  "validation_json": "worklogs/2026-07-03/validation-pages.json"
+}

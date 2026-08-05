@@ -591,6 +591,69 @@
       ],
     },
 
+    sitemap_load: {
+      title: "加载 sitemap 配置/预览",
+      api: "GET /api/sitemap",
+      flow: [
+        "读 portal/generator/sitemap_config.json",
+        "查 DB 合格内容页 + 按配置模拟将写入条目",
+        "回填上限 / 验证集路径 / 预览列表",
+      ],
+      scripts: ["portal/generator/sitemap.py"],
+      commands: ["GET /api/sitemap"],
+      dataFlow: "配置 JSON + MySQL media_pages → Ops 预览（不写盘）",
+      storage: [
+        "portal/generator/sitemap_config.json",
+        "worklogs/…/validation-pages.json（可选优先）",
+      ],
+      troubleshoot: [
+        "合格页为 0 → 检查 published + magnet≥2 + Recommended",
+        "验证集缺失 → 仍可按 page_id 排序补齐",
+      ],
+    },
+
+    sitemap_save: {
+      title: "保存 sitemap 配置",
+      api: "POST /api/sitemap/config",
+      flow: [
+        "normalize：上限夹紧到 1..5000",
+        "写入 sitemap_config.json",
+        "返回最新预览统计",
+      ],
+      scripts: ["portal/generator/sitemap.py"],
+      commands: ['POST /api/sitemap/config  body: {config:{max_content_urls, use_validation_priority, validation_json}}'],
+      dataFlow: "Ops 表单 → sitemap_config.json",
+      storage: ["portal/generator/sitemap_config.json"],
+      troubleshoot: [
+        "保存后 Generate all / Deploy 增量也会读此配置",
+        "validation_json 须相对仓库根，禁止越出 PROJECT_ROOT",
+      ],
+    },
+
+    sitemap_generate: {
+      title: "生成 sitemap",
+      api: "POST /api/sitemap/generate",
+      flow: [
+        "默认先 save_config=true 落盘表单",
+        "write_sitemap → portal/dist/sitemap.xml",
+        "不 bake 单页 / Hub / home",
+      ],
+      scripts: ["portal/generator/sitemap.py"],
+      commands: [
+        'POST /api/sitemap/generate  body: {config, save_config:true}',
+        "# CLI 等价：python -c \"from portal.generator.sitemap import write_sitemap; ...\"",
+      ],
+      dataFlow: "配置 + MySQL indexable → dist/sitemap.xml",
+      storage: [
+        "portal/generator/sitemap_config.json",
+        "portal/dist/sitemap.xml",
+      ],
+      troubleshoot: [
+        "只改 sitemap、公网未变 → 还需 Deploy 上传",
+        "URL 数未涨 → 看上限截断 / 合格页统计",
+      ],
+    },
+
     config_load: {
       title: "从磁盘加载配置",
       api: "GET /api/config",

@@ -1448,6 +1448,102 @@
     } catch (_) {
       /* ignore — 跟踪编辑器可选 */
     }
+    // 完整注释：④ Sitemap 卡片随配置首屏静默刷新
+    try {
+      await loadSitemapBundle();
+    } catch (_) {
+      /* ignore — MySQL 未就绪时预览可失败 */
+    }
+    return data;
+  }
+
+  /**
+   * 从 UI 表单收集 sitemap 配置。
+   * @returns {{max_content_urls:number, use_validation_priority:boolean, validation_json:string}}
+   */
+  function collectSitemapFormConfig() {
+    const maxEl = document.getElementById("sitemapMaxContent");
+    const vjEl = document.getElementById("sitemapValidationJson");
+    const priEl = document.getElementById("sitemapUseValidation");
+    const maxRaw = maxEl ? Number(maxEl.value) : 30;
+    return {
+      max_content_urls: Number.isFinite(maxRaw) && maxRaw > 0 ? Math.floor(maxRaw) : 30,
+      use_validation_priority: !!(priEl && priEl.checked),
+      validation_json: ((vjEl && vjEl.value) || "").trim(),
+    };
+  }
+
+  /**
+   * 用 /api/sitemap 响应填充 Sitemap 卡片。
+   * @param {object} data get_sitemap_bundle 结果
+   */
+  function applySitemapBundle(data) {
+    const cfg = (data && data.config) || {};
+    const stats = (data && data.stats) || {};
+    const pathEl = document.getElementById("sitemapConfigPath");
+    const badge = document.getElementById("sitemapBadge");
+    const maxEl = document.getElementById("sitemapMaxContent");
+    const vjEl = document.getElementById("sitemapValidationJson");
+    const priEl = document.getElementById("sitemapUseValidation");
+    const previewEl = document.getElementById("sitemapPreview");
+    const metricsEl = document.getElementById("sitemapMetrics");
+
+    if (pathEl) pathEl.textContent = data.config_rel || data.config_path || "portal/generator/sitemap_config.json";
+    if (maxEl && cfg.max_content_urls != null) maxEl.value = String(cfg.max_content_urls);
+    if (vjEl && cfg.validation_json != null) vjEl.value = String(cfg.validation_json);
+    if (priEl) priEl.checked = !!cfg.use_validation_priority;
+
+    if (badge) {
+      if (stats.sitemap_exists) {
+        badge.textContent =
+          "dist 已有 · " + (stats.existing_sitemap_urls != null ? stats.existing_sitemap_urls + " URL" : "—");
+      } else {
+        badge.textContent = "dist 尚无 sitemap";
+      }
+      badge.title = (data.out_root || "") + "/sitemap.xml";
+    }
+
+    if (metricsEl) {
+      renderMetrics(metricsEl, [
+        ["合格内容页", stats.eligible_content != null ? String(stats.eligible_content) : "—"],
+        [
+          "将写入总 URL",
+          stats.would_include_total != null ? String(stats.would_include_total) : "—",
+        ],
+        [
+          "将写入内容页",
+          stats.would_include_content != null ? String(stats.would_include_content) : "—",
+        ],
+        ["上限截断", stats.capped_out != null ? String(stats.capped_out) : "—"],
+        [
+          "验证集文件",
+          data.validation_json_exists ? "存在" : "缺失",
+        ],
+        ["现有 sitemap", stats.existing_sitemap_urls != null ? String(stats.existing_sitemap_urls) : "无"],
+      ]);
+    }
+
+    if (previewEl) {
+      const lines = (data.preview || []).map((e) => {
+        const pid = e.page_id ? "  (" + e.page_id + ")" : "";
+        return (e.loc_path || "") + pid;
+      });
+      if (data.preview_truncated) {
+        lines.push("…（预览已截断）");
+      }
+      previewEl.textContent = lines.length
+        ? lines.join("\n")
+        : "（无预览条目）";
+    }
+  }
+
+  /**
+   * 拉取 sitemap 配置与预览。
+   * @returns {Promise<object>}
+   */
+  async function loadSitemapBundle() {
+    const data = await api("/api/sitemap");
+    applySitemapBundle(data);
     return data;
   }
 
@@ -3315,6 +3411,60 @@
         if (btn) btn.disabled = false;
       }
     });
+
+    // ── ④ Sitemap ──────────────────────────────────────────
+    const btnSitemapLoad = document.getElementById("btnSitemapLoad");
+    if (btnSitemapLoad) {
+      btnSitemapLoad.addEventListener("click", () => {
+        withBusy("加载 sitemap 配置/预览", () => loadSitemapBundle(), {
+          indeterminate: true,
+        }).catch((e) => log(String(e)));
+      });
+    }
+
+    const btnSitemapSave = document.getElementById("btnSitemapSave");
+    if (btnSitemapSave) {
+      btnSitemapSave.addEventListener("click", async () => {
+        try {
+          await withBusy("保存 sitemap 配置", async () => {
+            const config = collectSitemapFormConfig();
+            const data = await api("/api/sitemap/config", {
+              method: "POST",
+              body: { config },
+            });
+            applySitemapBundle(data);
+            log("sitemap 配置已保存", data.config || config);
+          });
+        } catch (e) {
+          log(String(e));
+        }
+      });
+    }
+
+    const btnSitemapGenerate = document.getElementById("btnSitemapGenerate");
+    if (btnSitemapGenerate) {
+      btnSitemapGenerate.addEventListener("click", async () => {
+        try {
+          await withBusy("生成 sitemap.xml", async () => {
+            const config = collectSitemapFormConfig();
+            const data = await api("/api/sitemap/generate", {
+              method: "POST",
+              body: { config, save_config: true },
+            });
+            applySitemapBundle(data);
+            const gen = data.generate || {};
+            log("sitemap 已生成", {
+              url_count: gen.url_count,
+              content_url_count: gen.content_url_count,
+              max_content_urls: gen.max_content_urls,
+              output_file: gen.output_file,
+            });
+          });
+        } catch (e) {
+          log(String(e));
+        }
+      });
+    }
 
     // ── ⑤ 配置 ──────────────────────────────────────────
     document.getElementById("btnConfigLoad").addEventListener("click", () => {

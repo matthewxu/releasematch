@@ -36,6 +36,7 @@
 | [**12-日常运营执行手册.md**](./12-日常运营执行手册.md) | **日常运维**：巡检、cron、扩槽→生成→SEO 门禁 |
 | [**13-用户互动方案.md**](./13-用户互动方案.md) | **用户互动**：X-09 结构化 tag · S-Community · 分期（规划稿） |
 | [**14-各国合法平台与上线节奏清单.md**](./14-各国合法平台与上线节奏清单.md) | **行业基线**：各国合法 OTT / catch-up、PVOD 与 BT 生态上线节奏、RM 区域路由对照 |
+| [**18-竞品击败方案.md**](./18-竞品击败方案.md) | **竞品战略**：对标 YTS / 1337x / TPB / Lime / EXT；不拼链接农场、Release 决策站打法、90 天清单 |
 | [../releasematch/README.md](../releasematch/README.md) | **独立代码库**：workflow / portal / extension |
 
 ---

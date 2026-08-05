@@ -602,6 +602,60 @@ def _handle_api(
         out["config"] = config_service.get_config_bundle()
         return 200, out
 
+    # ── Sitemap：配置读写 + 单独生成 ──────────────────
+    if path == "/api/sitemap" and method == "GET":
+        from portal.generator.sitemap import get_sitemap_bundle
+
+        # 完整注释：返回配置、候选统计、将写入预览（不写盘）
+        return 200, get_sitemap_bundle()
+
+    if path == "/api/sitemap/config" and method == "POST":
+        from portal.generator.sitemap import get_sitemap_bundle, save_sitemap_config
+
+        # 完整注释：保存 max_content_urls / 验证集优先等；再回传最新 bundle
+        raw_cfg = body.get("config") if isinstance(body.get("config"), dict) else body
+        saved = save_sitemap_config(raw_cfg if isinstance(raw_cfg, dict) else {})
+        if not saved.get("ok"):
+            return 400, saved
+        bundle = get_sitemap_bundle()
+        return 200, {"ok": True, "saved": saved, **bundle}
+
+    if path == "/api/sitemap/generate" and method == "POST":
+        from portal.generator.sitemap import (
+            DEFAULT_DIST_ROOT,
+            get_sitemap_bundle,
+            save_sitemap_config,
+            write_sitemap,
+        )
+        from workflow.config import SITE_ORIGIN
+
+        # 完整注释：可选先落盘表单配置，再只写 dist/sitemap.xml（不 bake 页面）
+        cfg_body = body.get("config") if isinstance(body.get("config"), dict) else None
+        if cfg_body is None:
+            # 完整注释：也接受扁平字段，便于前端一次提交
+            flat = {
+                k: body[k]
+                for k in (
+                    "max_content_urls",
+                    "use_validation_priority",
+                    "validation_json",
+                )
+                if k in body
+            }
+            cfg_body = flat or None
+        if bool(body.get("save_config", True)) and cfg_body:
+            saved = save_sitemap_config(cfg_body)
+            if not saved.get("ok"):
+                return 400, saved
+
+        try:
+            result = write_sitemap(DEFAULT_DIST_ROOT, site_origin=SITE_ORIGIN)
+        except Exception as exc:  # noqa: BLE001 — Ops API 统一错误包装
+            return 400, {"ok": False, "error": str(exc)}
+
+        bundle = get_sitemap_bundle()
+        return 200, {"ok": True, "generate": result, **bundle}
+
     # ── 跟踪 JS：读 / 写 / 同步 / 生成 GA4 模板 ────────
     if path == "/api/tracking" and method == "GET":
         from portal.generator.tracking import read_tracking_js

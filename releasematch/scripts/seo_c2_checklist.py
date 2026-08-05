@@ -35,6 +35,7 @@ if str(_ROOT) not in sys.path:
 from portal.generator.sitemap import (  # noqa: E402
     DEFAULT_MAX_CONTENT_URLS,
     TRUST_PATHS,
+    load_sitemap_config,
 )
 from workflow.config import (  # noqa: E402
     BLOCK_CRAWLERS,
@@ -493,9 +494,11 @@ def check_6_1_technical(report: CheckReport, dist_root: Path, site_origin: str) 
         for tp in TRUST_PATHS:
             if tp not in sitemap_paths:
                 issues.append(f"缺少 Trust 页 {tp}")
-        if len(content_paths) > DEFAULT_MAX_CONTENT_URLS:
+        # 完整注释：上限以 Ops sitemap_config.json 为准（默认仍为 D3=30）
+        max_content = int(load_sitemap_config().get("max_content_urls") or DEFAULT_MAX_CONTENT_URLS)
+        if len(content_paths) > max_content:
             issues.append(
-                f"内容页 {len(content_paths)} 超过上限 {DEFAULT_MAX_CONTENT_URLS}"
+                f"内容页 {len(content_paths)} 超过上限 {max_content}"
             )
 
         status: CheckStatus = "fail" if issues else "pass"
