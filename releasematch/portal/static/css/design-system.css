@@ -882,12 +882,56 @@ dd:last-child {
   color: var(--rm-accent-blue, #5b9cf6);
   background: rgba(91, 156, 246, 0.12);
   margin-left: 0.35rem;
+  text-decoration: none;
+}
+
+/* 本组最佳徽章可跳转 magnet，需保留按钮手势但避免像纯装饰 chip */
+a.rm-badge--edition-pick:hover,
+a.rm-badge--edition-pick:focus-visible {
+  outline: 2px solid rgba(91, 156, 246, 0.55);
+  outline-offset: 2px;
+}
+
+/* All Versions 顶部版本跳转：把「像 Tab 的 REMUX」变成可滚动锚点 */
+.rm-edition-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 var(--rm-space-md, 1rem);
+}
+
+.rm-edition-jump__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--rm-radius-md);
+  border: 1px solid var(--rm-border);
+  background: var(--rm-bg-elevated);
+  color: var(--rm-text-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  min-height: 44px;
+}
+
+.rm-edition-jump__item:hover,
+.rm-edition-jump__item:focus-visible {
+  border-color: var(--rm-accent-blue, #5b9cf6);
+  color: var(--rm-accent-blue, #5b9cf6);
+}
+
+.rm-edition-jump__count {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--rm-text-muted);
 }
 
 .rm-edition-group {
   margin-bottom: var(--rm-space-lg, 1.5rem);
   padding-bottom: var(--rm-space-md, 1rem);
   border-bottom: 1px solid var(--rm-border-subtle);
+  scroll-margin-top: 4.5rem;
 }
 
 .rm-edition-group:last-child {
@@ -908,26 +952,37 @@ dd:last-child {
   font-size: 1rem;
   font-weight: 600;
   margin: 0 0 0.25rem;
+  /* 分组标题本身不可点，避免被当成筛选按钮 */
+  cursor: default;
 }
 
 .rm-edition-group__count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.5rem;
-  padding: 0 0.4rem;
   margin-left: 0.35rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--rm-text-secondary);
-  background: var(--rm-bg-elevated);
-  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--rm-text-muted);
+  /* 用纯文本计数，去掉 pill 以免像可点控件 */
 }
 
 .rm-edition-group__pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
   margin: 0;
   font-size: 0.85rem;
   color: var(--rm-text-secondary);
+}
+
+.rm-edition-group__pick-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.rm-edition-group__actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .rm-table__release {
@@ -938,9 +993,36 @@ dd:last-child {
   word-break: break-word;
 }
 
+.rm-table__actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .rm-table__magnet {
   font-size: 0.8rem;
   font-weight: 600;
+}
+
+.rm-table__copy,
+.rm-edition-group__copy {
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--rm-text-primary);
+  background: var(--rm-bg-hover);
+  border: 1px solid var(--rm-border);
+  border-radius: var(--rm-radius-md);
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+}
+
+.rm-table__copy:hover,
+.rm-edition-group__copy:hover,
+.rm-table__copy:focus-visible,
+.rm-edition-group__copy:focus-visible {
+  border-color: var(--rm-accent-blue, #5b9cf6);
 }
 
 .rm-table .rm-badge {
@@ -948,24 +1030,56 @@ dd:last-child {
   white-space: nowrap;
 }
 
-/* 移动端：表格行转为卡片（由 JS 添加 data-label 或纯 CSS 可选） */
+/* 移动端：表格行转为卡片；必须清掉桌面固定列宽，否则会出现「数据错乱」阶梯布局 */
 @media (max-width: 640px) {
+  .rm-table--responsive {
+    table-layout: auto;
+    width: 100%;
+  }
+
   .rm-table--responsive thead {
     display: none;
   }
 
   .rm-table--responsive tr {
     display: block;
+    width: 100%;
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--rm-border-subtle);
   }
 
-  .rm-table--responsive td {
+  .rm-table--responsive td,
+  .rm-table--responsive th,
+  .rm-table--responsive .rm-col-release,
+  .rm-table--responsive .rm-col-spec,
+  .rm-table--responsive .rm-col-source,
+  .rm-table--responsive .rm-col-quality,
+  .rm-table--responsive .rm-col-group,
+  .rm-table--responsive .rm-col-size,
+  .rm-table--responsive .rm-col-seed,
+  .rm-table--responsive .rm-col-action {
     display: flex;
+    width: 100% !important;
+    max-width: none;
     justify-content: space-between;
+    align-items: flex-start;
     gap: 1rem;
     padding: 0.35rem 0;
     border: none;
+  }
+
+  /* Release 列：标签置顶、长标题与徽章纵向排布，避免挤压错位 */
+  .rm-table--responsive td.rm-col-release,
+  .rm-table--responsive td.rm-table__release {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.35rem;
+  }
+
+  .rm-table--responsive td.rm-col-action {
+    flex-direction: column;
+    align-items: stretch;
+    padding-top: 0.65rem;
   }
 
   .rm-table--responsive td::before {
@@ -975,6 +1089,48 @@ dd:last-child {
     text-transform: uppercase;
     color: var(--rm-text-muted);
     flex-shrink: 0;
+  }
+
+  .rm-table--responsive .rm-table__actions {
+    width: 100%;
+  }
+
+  .rm-table--responsive .rm-table__magnet,
+  .rm-table--responsive .rm-table__copy,
+  .rm-edition-group__magnet,
+  .rm-edition-group__copy {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.65rem 1rem;
+    border-radius: var(--rm-radius-md);
+  }
+
+  .rm-table--responsive .rm-table__magnet,
+  .rm-edition-group__magnet {
+    flex: 1 1 auto;
+    background: var(--rm-recommended);
+    color: var(--rm-bg-base);
+    text-decoration: none;
+  }
+
+  .rm-table--responsive .rm-table__copy,
+  .rm-edition-group__copy {
+    flex: 0 0 auto;
+  }
+
+  .rm-edition-group__pick {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rm-edition-group__actions {
+    width: 100%;
+  }
+
+  .rm-edition-group__magnet {
+    flex: 1 1 auto;
   }
 }
 

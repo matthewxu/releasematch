@@ -74,6 +74,10 @@ MESSAGES: Dict[str, Dict[str, str]] = {
     # ── Badge ──
     "badge.recommended": {"en": "Site pick", "zh": "本站推荐"},
     "badge.edition_pick": {"en": "Best in edition", "zh": "本组最佳"},
+    "badge.edition_pick_title": {
+        "en": "Open magnet for the best release in this edition",
+        "zh": "打开本组最佳 release 的 Magnet",
+    },
     "badge.cross_page": {
         "en": "{count}/{total} sources with results",
         "zh": "{count}/{total} 源有结果",
@@ -299,6 +303,7 @@ MESSAGES: Dict[str, Dict[str, str]] = {
     "home.pagination_next": {"en": "Next", "zh": "下一页"},
     # ── 通用 / JS toast ──
     "common.magnet": {"en": "Magnet", "zh": "Magnet"},
+    "common.copy_magnet": {"en": "Copy", "zh": "复制"},
     "toast.no_magnet": {"en": "No magnet link to copy", "zh": "无 Magnet 链接可复制"},
     "toast.copied": {"en": "Magnet copied to clipboard", "zh": "Magnet 已复制到剪贴板"},
     "toast.copy_failed": {
@@ -500,6 +505,10 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "zh": "以下数据绑定 {title}（infohash …{hash}），libtorrent 片段实测 {speed}，Peer 可达性 {reach}。{region}{time}",
     },
     "movie.edition_pick": {"en": "Best in group:", "zh": "本组推荐："},
+    "movie.edition_jump": {
+        "en": "Jump to edition group",
+        "zh": "跳转到版本分组",
+    },
     # ── Trust 五页 ──
     "trust.about.title": {"en": "About — ReleaseMatch", "zh": "关于 — ReleaseMatch"},
     "trust.about.meta": {

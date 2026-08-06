@@ -6,12 +6,15 @@
   - episode：+ Quality（resolution）
   - movie：+ Spec（resolution · video）· Source（source · audio）
 #}
-<tr{% if item.is_recommended %} class="is-recommended"{% elif item.is_edition_pick %} class="is-edition-pick"{% endif %}>
+<tr{% if item.is_recommended %} class="is-recommended"{% elif item.is_edition_pick %} class="is-edition-pick"{% endif %}{% if item.is_edition_pick and item.infohash %} id="edition-pick-{{ item.infohash }}"{% endif %}>
   {# Release：标题 + 推荐/版本徽章；跨源验证并入本列（去掉独立 Verify 列） #}
   <td class="rm-table__release rm-col-release" data-label="{{ t('table.release') }}">
     {{ item.title_raw }}
     {% if item.is_recommended %}
     <span class="rm-badge rm-badge--recommended"{% if i18n_enabled %} data-i18n="badge.recommended"{% endif %}>{{ t('badge.recommended') }}</span>
+    {% elif item.is_edition_pick and item.magnet_uri %}
+    {# 徽章可点 → 打开本组最佳 magnet，消除「Best in edition」dead click #}
+    <a class="rm-badge rm-badge--edition-pick" href="{{ item.magnet_uri }}" target="{{ outbound_link_target }}" rel="{{ outbound_link_rel }}" title="{{ t('badge.edition_pick_title') }}"{% if i18n_enabled %} data-i18n="badge.edition_pick"{% endif %}>{{ t('badge.edition_pick') }}</a>
     {% elif item.is_edition_pick %}
     <span class="rm-badge rm-badge--edition-pick"{% if i18n_enabled %} data-i18n="badge.edition_pick"{% endif %}>{{ t('badge.edition_pick') }}</span>
     {% endif %}
@@ -51,5 +54,11 @@
   </td>
   <td class="rm-col-size" data-label="{{ t('table.size') }}" data-sort-value="{{ item.size_bytes }}">{{ item.size_human }}</td>
   <td class="rm-col-seed" data-label="{{ t('table.seed') }}" data-sort-value="{{ item.seeders }}">{{ item.seeders }}</td>
-  <td class="rm-col-action" data-label="{{ t('table.action') }}"><a class="rm-table__magnet" href="{{ item.magnet_uri }}" target="{{ outbound_link_target }}" rel="{{ outbound_link_rel }}"{% if i18n_enabled %} data-i18n="common.magnet"{% endif %}>{{ t('common.magnet') }}</a></td>
+  <td class="rm-col-action" data-label="{{ t('table.action') }}">
+    {# Magnet 打开协议；Copy 供无协议处理器的移动端降级（site.js data-copy-magnet） #}
+    <div class="rm-table__actions">
+      <a class="rm-table__magnet" href="{{ item.magnet_uri }}" target="{{ outbound_link_target }}" rel="{{ outbound_link_rel }}"{% if i18n_enabled %} data-i18n="common.magnet"{% endif %}>{{ t('common.magnet') }}</a>
+      <button type="button" class="rm-table__copy" data-copy-magnet="{{ item.magnet_uri }}"{% if i18n_enabled %} data-i18n="common.copy_magnet"{% endif %}>{{ t('common.copy_magnet') }}</button>
+    </div>
+  </td>
 </tr>

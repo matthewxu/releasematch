@@ -1,18 +1,37 @@
-{# 电影页 — 按版本类型分组展示 #}
+{# 电影页 — 按版本类型分组展示；顶部跳转锚点消除「REMUX」类 dead click #}
 {# @partial movie_edition_groups.html #}
+{% if source_editions|length > 1 %}
+<nav class="rm-edition-jump" aria-label="{{ t('movie.edition_jump') }}">
+  {% for group in source_editions %}
+  <a class="rm-edition-jump__item" href="#edition-{{ group.edition_type }}">
+    {{ group.edition_label }}
+    <span class="rm-edition-jump__count">{{ group.count }}</span>
+  </a>
+  {% endfor %}
+</nav>
+{% endif %}
+
 {% for group in source_editions %}
 <section class="rm-edition-group{% if group.edition_type == 'cam' %} rm-edition-group--cam{% endif %}" aria-labelledby="edition-{{ group.edition_type }}">
   <div class="rm-edition-group__header">
     <h3 class="rm-edition-group__title" id="edition-{{ group.edition_type }}">
       {{ group.edition_label }}
-      <span class="rm-edition-group__count">{{ group.count }}</span>
+      {# 纯文本计数，避免 pill 被当成可点筛选 #}
+      <span class="rm-edition-group__count">({{ group.count }})</span>
     </h3>
     {% if group.best %}
     <p class="rm-edition-group__pick">
-      <span{% if i18n_enabled %} data-i18n="movie.edition_pick"{% endif %}>{{ t('movie.edition_pick') }}</span>
-      <strong>{{ group.best.video_spec or group.best.resolution }}</strong>
-      {% if group.best.audio_spec %} · {{ group.best.audio_spec }}{% endif %}
-      · {{ group.best.seeders }} seeders
+      <span class="rm-edition-group__pick-meta">
+        <span{% if i18n_enabled %} data-i18n="movie.edition_pick"{% endif %}>{{ t('movie.edition_pick') }}</span>
+        <strong>{{ group.best.video_spec or group.best.resolution }}</strong>
+        {% if group.best.audio_spec %} · {{ group.best.audio_spec }}{% endif %}
+        · {{ group.best.seeders }} seeders
+      </span>
+      {# 组头直接给出 Magnet / Copy，承接「Best in edition」意图 #}
+      <span class="rm-edition-group__actions">
+        <a class="rm-edition-group__magnet rm-table__magnet" href="{{ group.best.magnet_uri }}" target="{{ outbound_link_target }}" rel="{{ outbound_link_rel }}"{% if i18n_enabled %} data-i18n="common.magnet"{% endif %}>{{ t('common.magnet') }}</a>
+        <button type="button" class="rm-edition-group__copy" data-copy-magnet="{{ group.best.magnet_uri }}"{% if i18n_enabled %} data-i18n="common.copy_magnet"{% endif %}>{{ t('common.copy_magnet') }}</button>
+      </span>
     </p>
     {% endif %}
   </div>
