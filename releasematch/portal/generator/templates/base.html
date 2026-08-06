@@ -22,9 +22,7 @@
   <meta name="twitter:title" content="{{ self.og_title() }}">
   <meta name="twitter:description" content="{{ self.og_description() }}">
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  {# 字体：系统栈（无 Google Fonts），避免国内首屏被 fonts.googleapis / gstatic 阻塞 #}
   {# static_asset_version：CSS 变更时强制浏览器/CDN 换新，避免 ellipsis 等旧规则残留 #}
   <link rel="stylesheet" href="/static/css/design-system.css?v={{ static_asset_version }}">
 

@@ -401,8 +401,8 @@
   }
 
   /**
-   * 海报视口懒加载：多屏列表仅在滚入视口（含少量预取边距）时才设置 src 发起请求。
-   * 使用 data-rm-lazy-src；无 IntersectionObserver 时回退为立即加载。
+   * 海报视口懒加载：滚入视口后再请求；全局限并发，避免首页 50 张 TMDB 同时打爆弱网。
+   * 使用 data-rm-lazy-src；无 IntersectionObserver 时仍走同一并发队列（非一次全开）。
    */
   function initLazyPosters() {
     var nodes = document.querySelectorAll("img[data-rm-lazy-src]");
@@ -410,35 +410,92 @@
       return;
     }
 
+    /** 同时进行中的 TMDB / 海报请求上限（国内单张常 >5s，并发过高会假死） */
+    var MAX_CONCURRENT = 3;
+    /** 视口外预取边距：收紧到约半屏，减少首屏外批量排队 */
+    var ROOT_MARGIN = "80px 0px";
+
+    var queue = [];
+    var inflight = 0;
+
     /**
-     * 将 data-rm-lazy-src 写入 img.src 并标记加载完成样式。
+     * 将 data-rm-lazy-src 写入 img.src；完成后回调以释放并发槽。
      * @param {HTMLImageElement} img - 目标图片元素
+     * @param {function(): void} onDone - load / error 后调用
      */
-    function loadImg(img) {
+    function loadImg(img, onDone) {
       var url = img.getAttribute("data-rm-lazy-src");
       if (!url) {
+        if (onDone) {
+          onDone();
+        }
         return;
       }
       img.removeAttribute("data-rm-lazy-src");
+
+      /**
+       * 统一结束处理：样式标记 + 释放队列槽位。
+       * @param {boolean} ok - 是否加载成功
+       */
+      function finish(ok) {
+        img.classList.add(ok ? "is-loaded" : "is-error");
+        if (onDone) {
+          onDone();
+        }
+      }
+
       img.addEventListener(
         "load",
         function () {
-          img.classList.add("is-loaded");
+          finish(true);
         },
         { once: true }
       );
       img.addEventListener(
         "error",
         function () {
-          img.classList.add("is-error");
+          finish(false);
         },
         { once: true }
       );
       img.src = url;
     }
 
+    /**
+     * 从队列取出海报，直到达到 MAX_CONCURRENT。
+     */
+    function pump() {
+      while (inflight < MAX_CONCURRENT && queue.length > 0) {
+        var next = queue.shift();
+        if (!next || !next.getAttribute("data-rm-lazy-src")) {
+          continue;
+        }
+        inflight += 1;
+        loadImg(next, function () {
+          inflight -= 1;
+          pump();
+        });
+      }
+    }
+
+    /**
+     * 将可见海报加入有限并发队列（去重：已入队或已开始加载的不再入队）。
+     * @param {HTMLImageElement} img - 海报元素
+     */
+    function enqueue(img) {
+      if (!img || !img.getAttribute("data-rm-lazy-src")) {
+        return;
+      }
+      if (img.getAttribute("data-rm-lazy-queued") === "1") {
+        return;
+      }
+      img.setAttribute("data-rm-lazy-queued", "1");
+      queue.push(img);
+      pump();
+    }
+
     if (!("IntersectionObserver" in window)) {
-      nodes.forEach(loadImg);
+      nodes.forEach(enqueue);
       return;
     }
 
@@ -450,13 +507,12 @@
           }
           var img = entry.target;
           observer.unobserve(img);
-          loadImg(img);
+          enqueue(img);
         });
       },
       {
         root: null,
-        /* 提前约一屏边距开始加载，避免刚滑入才空白过久 */
-        rootMargin: "200px 0px",
+        rootMargin: ROOT_MARGIN,
         threshold: 0.01,
       }
     );

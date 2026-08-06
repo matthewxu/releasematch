@@ -45,9 +45,10 @@
   --rm-danger: #f07178;
   --rm-info: #4d9fff;
 
-  /* 排版 */
-  --rm-font-sans: "Outfit", system-ui, -apple-system, sans-serif;
-  --rm-font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  /* 排版：系统字体栈（不依赖 Google Fonts，国内首屏不被外链字体拖死） */
+  --rm-font-sans: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "Noto Sans SC", "Helvetica Neue", sans-serif;
+  --rm-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Cascadia Mono", monospace;
 
   /* 间距与圆角 */
   --rm-radius-sm: 6px;
