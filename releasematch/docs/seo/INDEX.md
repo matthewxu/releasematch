@@ -19,6 +19,7 @@
 1. **评估文档**（`assessments/`）— 某时点的快照，**只增不改**（修订发新版文件）。
 2. **跟进看板**（`TRACKER-*.md`）— **Living doc**，随迭代更新当前状态。
 3. **迭代记录**（`iterations/`）— 每次 SEO 专项改动的摘要（做了什么、测了什么、结论）。
+4. **周期复盘**（`reviews/`）— 按日期归档 GSC 原始数据、索引/效果复盘、策略与 TODO。
 
 ---
 
@@ -46,11 +47,19 @@
 | [2026-07-06-宽松fuzzy与groups补档.md](./iterations/2026-07-06-宽松fuzzy与groups补档.md) | 2026-07-06 | 三档 fuzzy · groups +12 |
 | [2026-07-05-跨源扩展与全站重拉.md](./iterations/2026-07-05-跨源扩展与全站重拉.md) | 2026-07-05 | per-indexer · noindex · refetch-all |
 
-### 2.4 专项方案（与 SEO/IG 交叉）
+### 2.4 周期复盘（Reviews）
+
+| 文档 | 日期 | 说明 |
+|------|------|------|
+| [reviews/README.md](./reviews/README.md) | 2026-08-08 | 复盘目录规范与清单 |
+| [reviews/2026-08-08/](./reviews/2026-08-08/) | 2026-08-08 | **首次 GSC 复盘**：索引 58 · 点击 25 · 排名 14.6 · Minions 单页 72% 流量 |
+
+### 2.5 专项方案（与 SEO/IG 交叉）
 
 | 文档 | 说明 |
 |------|------|
 | [可覆盖关键词落地方案.md](./可覆盖关键词落地方案.md) | **v1.2 已落地代码**：剧集/电影分套 desc + Hero lead；软件/游戏/音乐域外 |
+| [infra-www-to-apex-301.md](./infra-www-to-apex-301.md) | **2026-08-08**：Cloudflare www → apex 301 · 与 `RM_SITE_ORIGIN` 一致 |
 | [13-用户互动方案.md](../13-用户互动方案.md) | **X-09 / S-Community**：结构化 tag · edition_notes · Worker API · 分期 |
 
 ---
@@ -99,7 +108,7 @@ iterations/YYYY-MM-DD-<简短主题>.md
 
 | 工具 | 路径 | 用途 |
 |------|------|------|
-| SEO C2 门禁 | `scripts/seo_c2_checklist.py` | 技术 SEO 发版前检查 |
+| SEO C2 门禁 | `scripts/seo_c2_checklist.py` | 技术 SEO 发版前检查；`--check-live-www` 验收 www→apex 301 |
 | IG Debug 面板 | `RM_SHOW_IG_DEBUG=1` + 生成器 | 单页 IG 字段对照登记册 |
 | 全站 force 重拉 | `python -m workflow.run pipeline refetch-all` | 更新跨源分母与 magnet |
 | fuzzy 跨源重算 | `scripts/recompute_cross_source_fuzzy.py --all-published` | 不重拉，提升 cross 分子 |
@@ -116,3 +125,5 @@ iterations/YYYY-MM-DD-<简短主题>.md
 | v1.1 | 2026-07-05 | 迭代记录 · refetch-all / fuzzy 工具索引 |
 | v1.2 | 2026-07-06 | 2026-07-06 宽松 fuzzy 迭代记录 |
 | v1.3 | 2026-07-06 | torrent metadata 回填迭代 · A-11 |
+| v1.4 | 2026-08-08 | 新增 `reviews/` 周期复盘目录 · 首次 GSC 复盘 2026-08-08 |
+| v1.5 | 2026-08-08 | `infra-www-to-apex-301.md` · 上线清单 / TRACKER www 301 |

@@ -179,8 +179,8 @@ MESSAGES: Dict[str, Dict[str, str]] = {
     # ── 电影页 ──
     # SEO desc 由 build_movie_meta_description 组装；下列 key 作文档/回退
     "movie.meta_description": {
-        "en": "{title} ({year}) torrent sources: {recommended_clause} and {count} edition comparisons (WEB-DL / BluRay / REMUX).",
-        "zh": "{title} ({year}) torrent sources：{recommended_clause}，共 {count} 条 edition 对比（WEB-DL / BluRay / REMUX）。",
+        "en": "{title} ({year}) torrent sources: {recommended_clause} — {edition_phrase} (WEB-DL / BluRay / REMUX).",
+        "zh": "{title} ({year}) torrent sources：{recommended_clause} — {edition_phrase}（WEB-DL / BluRay / REMUX）。",
     },
     "movie.hero_title": {
         "en": "{title} ({year}) — Release-Matched Sources",
@@ -710,12 +710,42 @@ def build_episode_meta_description(
     return _clamp_meta_description(text)
 
 
+def _movie_edition_phrase(locale: str, edition_count: int) -> str:
+    """
+    电影 meta description 中的 edition 数量短语（单复数）。
+
+    @param locale: en | zh
+    @param edition_count: WEB-DL/BluRay/REMUX 分组数
+    @returns: 如 ``3 edition downloads compared``
+    """
+    n = max(0, int(edition_count or 0))
+    loc = normalize_locale(locale)
+    if loc == "zh":
+        return f"{n} 种 edition 下载对比" if n else "edition 下载对比"
+    if n == 1:
+        return "1 edition download compared"
+    return f"{n} edition downloads compared"
+
+
+def build_movie_title_quality(*, resolution: str = "", source: str = "") -> str:
+    """
+    电影页 Title 中 ``Sources — {quality}`` 的 L4 槽（T-04：补 source，不加 Download）。
+
+    @param resolution: Recommended 分辨率，如 1080p
+    @param source: Recommended 版本源，如 BluRay / WEB-DL
+    @returns: 如 ``1080p BluRay``；皆空时回退 ``Release``
+    """
+    parts = [p.strip() for p in (resolution, source) if (p or "").strip()]
+    return " ".join(parts) if parts else "Release"
+
+
 def build_movie_meta_description(
     locale: str,
     *,
     title: str,
     year: Any,
     count: int,
+    edition_count: int = 0,
     resolution: str = "",
     source: str = "",
     group: str = "",
@@ -726,7 +756,8 @@ def build_movie_meta_description(
     @param locale: en | zh
     @param title: 片名
     @param year: 上映年
-    @param count: versions 条数
+    @param count: sources 条数（回退用）
+    @param edition_count: edition 分组数（优先写入 desc）
     @param resolution: Recommended 分辨率
     @param source: Recommended 版本源
     @param group: Recommended release group（电影一般可空）
@@ -735,6 +766,8 @@ def build_movie_meta_description(
     clause = _seo_recommended_clause(
         locale, resolution=resolution, source=source, group=group
     )
+    editions_n = int(edition_count or 0) or int(count or 0)
+    edition_phrase = _movie_edition_phrase(locale, editions_n)
     text = translate(
         "movie.meta_description",
         locale,
@@ -742,13 +775,15 @@ def build_movie_meta_description(
         year=year if year not in (None, "") else "—",
         recommended_clause=clause,
         count=int(count or 0),
+        edition_count=editions_n,
+        edition_phrase=edition_phrase,
     )
     return _clamp_meta_description(text)
 
 
 def attach_seo_meta_description(context: Dict[str, Any], locale: str) -> None:
     """
-    按页面类型向模板上下文写入 ``seo_meta_description``（就地修改）。
+    按页面类型向模板上下文写入 SEO head 字段（``seo_meta_description``、``seo_title_quality``）。
 
     剧集：有 show_title + season + episode，且无 hub 的 seasons 列表。
     电影：有 movie_title。
@@ -771,11 +806,20 @@ def attach_seo_meta_description(context: Dict[str, Any], locale: str) -> None:
         group = str(context.get("recommended_group") or "")
 
     if context.get("movie_title") is not None and "year" in context:
+        editions = context.get("source_editions")
+        edition_count = (
+            len(editions) if isinstance(editions, list) and editions else 0
+        )
+        context["seo_title_quality"] = build_movie_title_quality(
+            resolution=resolution,
+            source=source,
+        )
         context["seo_meta_description"] = build_movie_meta_description(
             locale,
             title=str(context.get("movie_title") or ""),
             year=context.get("year") or "",
             count=int(context.get("source_count") or 0),
+            edition_count=edition_count,
             resolution=resolution,
             source=source,
             group=group,

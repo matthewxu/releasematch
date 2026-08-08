@@ -114,6 +114,9 @@ def render_page_context(
 # 首页目录每页条数（按最新更新排序后分页）
 HOME_CATALOG_PER_PAGE = 50
 
+# 目录分页 SEO：第 1 页（/）可 index；第 2 页起 noindex,follow + canonical → 首页（T-02）
+HOME_CATALOG_INDEXABLE_FROM_PAGE = 1
+
 
 def home_catalog_page_href(page: int) -> str:
     """
@@ -207,9 +210,14 @@ def render_home_page(
     pagination = build_home_pagination(page=cur, per_page=per, total=total)
     page_path = home_catalog_page_href(cur)
     origin = site_origin.rstrip("/") if site_origin else "https://releasematch.com"
+    # 第 2 页起：thin 分页页 noindex，canonical 收敛到首页（与 Hub D2 同理）
+    catalog_noindex = cur > HOME_CATALOG_INDEXABLE_FROM_PAGE
+    canonical_url = f"{origin}/" if catalog_noindex else f"{origin}{page_path}"
     context = {
         "nav_active": "home",
-        "canonical_url": f"{origin}{page_path}",
+        "canonical_url": canonical_url,
+        "catalog_page": cur,
+        "catalog_noindex": catalog_noindex,
         "catalog_entries": entries,
         "catalog_count": total,
         "movie_count": movie_count,

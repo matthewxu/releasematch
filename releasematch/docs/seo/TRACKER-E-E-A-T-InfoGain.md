@@ -1,7 +1,7 @@
 # E-E-A-T · Info Gain · SEO 跟进看板
 
 > **Living Document** — 随 SEO 迭代持续更新  
-> **创建：** 2026-07-04 · **最近更新：** 2026-07-20（剧集/电影 SEO desc 落地 · Title 保持 Sources）  
+> **创建：** 2026-07-04 · **最近更新：** 2026-08-08（www→apex 301 · GSC 首次复盘）  
 > **功能性邮箱：** `ReleaseMatch@hotmail.com`（Contact · DMCA · Privacy）  
 > **基线评估：** [2026-07-04 基线评估](./assessments/2026-07-04-E-E-A-T与Info-Gain基线评估.md)  
 > **IG 字段权威：** [IG信息登记册.md](../IG信息登记册.md)  
@@ -19,9 +19,10 @@
 | **内容轨** | C2 SEO 冷启动 | C3 沙盒观察 | 🟡 |
 | **published 页** | **117**（indexable） | — | ✅ |
 | **sitemap URL 数** | ≤36（+Contact） | 维持 ≤30 内容页 + Trust | ✅ |
-| **GSC** | 未提交 | 开放爬取后再验属性 + 提交 sitemap | ⏸ 软上线 |
-| **CF / Workers 生产** | ✅ `releasematch.com` + workers.dev | 维持 deploy | ✅ deploy |
-| **禁止爬取** | `RM_BLOCK_CRAWLERS=1` · `/robots.txt` `Disallow: /` · 全站 noindex | 确认后开放 | ✅ 软上线 |
+| **GSC** | ✅ 已提交 · 首次复盘 2026-08-08（收录 ~44% · 点击 25/3天） | C3 观察 | 🟡 |
+| **CF / Workers 生产** | ✅ `releasematch.com`（apex）+ www **301** + workers.dev | 维持 deploy | ✅ deploy |
+| **www → apex** | Page Rule 301（2026-08-08） | 与 `RM_SITE_ORIGIN` 一致 | ✅ |
+| **禁止爬取** | `RM_BLOCK_CRAWLERS=0` · robots Allow + Sitemap | 已开放 | ✅ |
 | **C2 本地 SEO 门禁** | **16 pass / 0 fail**（§6.1～6.3） | 开放收录后 GSC | ✅ 本地 |
 | **页面 IG 估分（Debug 呈现）** | **8~9（109/120）** · 7~8（6）· 0~1（5） | Rec+测速页 **8~9** | ✅ |
 | **页面 IG 估分（质量向）** | 见 **§3.2.1** · 主轨 **7+：98/110** · S-04 验证 **8/110** · L4 Rec **12** | **主轨维持 · S-04 辅轨↑** | 🔶 |
@@ -85,7 +86,7 @@
 
 | # | 信号 | 要求 | 状态 | 备注 |
 |---|------|------|------|------|
-| A-01 | GSC 属性 + sitemap 提交 | 开放爬取后 | ⏸ | 软上线禁爬期间勿提交 |
+| A-01 | GSC 属性 + sitemap 提交 | 开放爬取后 | ✅ | 2026-08 首次数据 | apex 属性 + sitemap 见 T-07 |
 | A-02 | 自然外链 | 持续 | ❌ | 未启动 |
 | A-03 | Stremio 插件 | T4 | 📋 | 09 文档 |
 | A-04 | 社区/Reddit  presence | 长期 | ❌ | |
@@ -208,8 +209,10 @@
 
 | 指标 | 基线 | 目标 C3 | 数据源 |
 |------|------|---------|--------|
-| GSC 收录率 | — | >25% | GSC |
-| indexable 页 indexed 数 | 0 | ~20 | GSC |
+| GSC 收录率 | **~44%**（58 indexed / ~117 indexable） | >25% | GSC · [2026-08-08 复盘](./reviews/2026-08-08/) |
+| indexable 页 indexed 数 | **58** | ~20 | GSC |
+| 自然点击（3 天） | **25** | 跟踪 | GSC |
+| 平均排名 | **14.6** | ≤12 | GSC |
 | 品牌词 impression | 0 | >0 | GSC |
 | 长尾词 Top 50 排名 | — | 跟踪 | GSC / 第三方 |
 | 单页 IG debug 分布 | 8~9 **109** · 7~8 **6** · 0~1 **5** | Rec+测速 **≥8~9** | [批量汇总](../../worklogs/2026-07-05/ig-debug-batch-summary.md) · 2026-07-06 重算后 |
@@ -242,7 +245,7 @@
 | 2026-07-06 | 语义修订 | Hero **源有结果**（S-03）· §3.2.1 三轨 · Trust 方法论 | Trust ↑ | 消除 cross 名不副实 | [迭代](./iterations/2026-07-06-跨源语义与质量向定义.md) |
 | 2026-07-06 | metadata | Phase 2 **torrent_metadata** · 不重拉回填 **75** 槽 · 面板 + A-11 reason 句 · `generate all` | Experience ↑ | **A-11** 新登记 · S-02 补充 | [迭代](./iterations/2026-07-06-torrent-metadata回填与页面优化.md) |
 | 2026-07-20 | SEO desc | 剧集/电影分套 meta description · Hero lead · `All torrent sources` · Title 未改 | Expertise →/↑ | 意图词 torrent/download 进 head | [迭代](./iterations/2026-07-20-可覆盖关键词落地.md) |
-| | | | | | |
+| 2026-08-08 | www 301 | CF Page Rule `www.releasematch.com/*` → apex · T-01/T-03 闭环 | 技术 SEO ↑ | — | [infra](./infra-www-to-apex-301.md) · [复盘](./reviews/2026-08-08/) |
 
 **下一迭代待办（摘自基线评估 P0/P1）：**
 

@@ -668,7 +668,90 @@ def check_6_1_technical(report: CheckReport, dist_root: Path, site_origin: str) 
             "6.1.https_hsts",
             "HTTPS + HSTS",
             "skip",
-            "仅生产域名 releasematch.com 可验；本地 dist 检查不涉及",
+            "仅生产域名 releasematch.com 可验；本地 dist 检查不涉及；www 301 用 --check-live-www",
+        )
+    )
+
+
+def _curl_head_status_location(url: str, timeout_sec: int = 20) -> Tuple[int, str]:
+    """
+    对 URL 发 HEAD（curl -sI），不跟随重定向。
+
+    @param url: 完整 HTTPS URL
+    @param timeout_sec: curl 超时秒数
+    @returns: (HTTP 状态码, Location 头；无则空串)
+    """
+    try:
+        proc = subprocess.run(
+            ["curl", "-sI", url],
+            capture_output=True,
+            text=True,
+            timeout=timeout_sec,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return 0, str(exc)
+    if proc.returncode != 0 and not proc.stdout:
+        return 0, (proc.stderr or "").strip() or f"curl exit {proc.returncode}"
+    status = 0
+    location = ""
+    for line in (proc.stdout or "").splitlines():
+        lower = line.lower()
+        if lower.startswith("http/"):
+            parts = line.split()
+            if len(parts) >= 2 and parts[1].isdigit():
+                status = int(parts[1])
+        elif lower.startswith("location:"):
+            location = line.split(":", 1)[1].strip()
+    return status, location
+
+
+def check_live_www_redirect(report: CheckReport, site_origin: str) -> None:
+    """
+    公网验收：www  hostname 须 301 到 ``RM_SITE_ORIGIN``（apex）。
+
+    @param report: 报告对象
+    @param site_origin: RM_SITE_ORIGIN，如 https://releasematch.com
+    """
+    parsed = urlparse((site_origin or "").strip())
+    apex_host = (parsed.netloc or "").lower()
+    if not apex_host or apex_host.startswith("www."):
+        report.add(
+            CheckItem(
+                "6.1",
+                "6.1.live_www_redirect",
+                "公网 www → apex 301",
+                "fail",
+                f"RM_SITE_ORIGIN 须为 apex 域名，当前: {site_origin!r}",
+            )
+        )
+        return
+
+    www_host = f"www.{apex_host}"
+    tests: Tuple[str, str] = (
+        (f"https://{www_host}/", f"{site_origin.rstrip('/')}/"),
+        (
+            f"https://{www_host}/breaking-bad/s4e6/",
+            f"{site_origin.rstrip('/')}/breaking-bad/s4e6/",
+        ),
+    )
+    issues: List[str] = []
+    for src, expect_loc_prefix in tests:
+        status, location = _curl_head_status_location(src)
+        if status != 301:
+            issues.append(f"{src}: 期望 301，实际 {status or 'curl 失败'}")
+            continue
+        if not location.lower().startswith(expect_loc_prefix.lower()):
+            issues.append(f"{src}: Location={location!r} 期望前缀 {expect_loc_prefix!r}")
+
+    report.add(
+        CheckItem(
+            "6.1",
+            "6.1.live_www_redirect",
+            "公网 www → apex 301（Cloudflare Page Rule）",
+            "fail" if issues else "pass",
+            "; ".join(issues) if issues else f"www.{apex_host} → {site_origin} 已 301",
+            {"www_host": www_host, "apex": site_origin},
         )
     )
 
@@ -773,6 +856,46 @@ def check_6_2_page_head(
                 "; ".join(hub_issues) if hub_issues else f"已验 {len(hub_candidates[:3])} 个 Hub",
             )
         )
+
+    # 首页 catalog 分页（/catalog/page/N/，N≥2 须 noindex + canonical→首页）
+    catalog_dir = dist_root / "catalog" / "page"
+    catalog_issues: List[str] = []
+    home_canonical = f"{site_origin.rstrip('/')}/"
+    if catalog_dir.is_dir():
+        for page_dir in sorted(catalog_dir.iterdir()):
+            if not page_dir.is_dir() or not page_dir.name.isdigit():
+                continue
+            page_num = int(page_dir.name)
+            if page_num < 2:
+                continue
+            cat_file = page_dir / "index.html"
+            if not cat_file.is_file():
+                catalog_issues.append(f"/catalog/page/{page_num}/: 缺 index.html")
+                continue
+            fields = extract_head_fields(cat_file.read_text(encoding="utf-8"))
+            robots = (fields.get("robots") or "").lower()
+            if "noindex" not in robots:
+                catalog_issues.append(f"/catalog/page/{page_num}/: 应为 noindex,follow（T-02）")
+            canon = (fields.get("canonical") or "").strip()
+            if canon.rstrip("/") + "/" != home_canonical.rstrip("/") + "/":
+                catalog_issues.append(
+                    f"/catalog/page/{page_num}/: canonical 应指向首页 {home_canonical!r}，实际 {canon!r}"
+                )
+    report.add(
+        CheckItem(
+            "6.2",
+            "6.2.catalog_pagination",
+            "Catalog 分页（page≥2）：noindex,follow + canonical→首页",
+            "pass" if catalog_dir.is_dir() and not catalog_issues else ("fail" if catalog_issues else "pass"),
+            "; ".join(catalog_issues[:6])
+            if catalog_issues
+            else (
+                "无 catalog/page 目录（单页 catalog 可跳过）"
+                if not catalog_dir.is_dir()
+                else "已验 catalog/page/*/index.html"
+            ),
+        )
+    )
 
     # Trust 四页 description
     trust_issues: List[str] = []
@@ -972,6 +1095,7 @@ def run_checks(
     site_origin: str,
     *,
     use_db: bool = True,
+    check_live_www: bool = False,
     on_item: Optional[Any] = None,
 ) -> CheckReport:
     """
@@ -980,6 +1104,7 @@ def run_checks(
     @param dist_root: portal/dist
     @param site_origin: RM_SITE_ORIGIN
     @param use_db: 是否连接 MySQL 做交叉验证
+    @param check_live_www: 是否公网 curl 验收 www→apex 301
     @param on_item: 每完成一项时的回调 ``(CheckItem) -> None``
     @returns: CheckReport
     """
@@ -1003,6 +1128,8 @@ def run_checks(
         sitemap_paths = parse_sitemap_locs(sitemap_file, site_origin)
 
     check_6_1_technical(report, dist_root, site_origin)
+    if check_live_www:
+        check_live_www_redirect(report, site_origin)
     check_6_2_page_head(report, dist_root, site_origin, sitemap_paths)
     check_6_3_content_ig(report, dist_root, sitemap_paths, use_db=use_db)
     return report
@@ -1060,6 +1187,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="检查前先执行 deploy_cf_pages.sh --prepare-only",
     )
     parser.add_argument(
+        "--check-live-www",
+        action="store_true",
+        help="公网 curl 验收 www→RM_SITE_ORIGIN 301（T-01 · 需网络）",
+    )
+    parser.add_argument(
         "--no-db",
         action="store_true",
         help="跳过 MySQL 交叉验证（无库环境）",
@@ -1092,6 +1224,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         dist_root,
         args.site_origin,
         use_db=not args.no_db,
+        check_live_www=args.check_live_www,
     )
 
     if args.json:

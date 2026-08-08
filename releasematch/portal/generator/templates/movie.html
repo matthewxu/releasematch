@@ -2,10 +2,10 @@
 {# @template movie.html — T3 生成器电影槽位 #}
 {% extends "base.html" %}
 
-{% block title %}{{ movie_title }} ({{ year }}) Sources — {{ recommended_quality }} | ReleaseMatch{% endblock %}
+{% block title %}{{ movie_title }} ({{ year }}) Sources — {{ seo_title_quality | default(recommended_quality, true) }} | ReleaseMatch{% endblock %}
 
 {% block og_type %}video.movie{% endblock %}
-{% block og_title %}{{ movie_title }} ({{ year }}) Sources — {{ recommended_quality }} | ReleaseMatch{% endblock %}
+{% block og_title %}{{ movie_title }} ({{ year }}) Sources — {{ seo_title_quality | default(recommended_quality, true) }} | ReleaseMatch{% endblock %}
 {% block meta_description %}{{ seo_meta_description | default(t('site.meta_default'), true) }}{% endblock %}
 {% block og_description %}{{ seo_meta_description | default(t('site.meta_default'), true) }}{% endblock %}
 

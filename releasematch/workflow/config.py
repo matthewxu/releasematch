@@ -131,7 +131,7 @@ def apply_environ_to_module() -> None:
     # D1 生产绑定名
     D1_DATABASE_NAME = os.getenv("RM_D1_DATABASE_NAME", "releasematch")
     D1_BINDING = os.getenv("RM_D1_BINDING", "DB")
-    # 站点 canonical origin
+    # 站点 canonical origin（apex，非 www；www 在 Cloudflare Page Rule 301 至此）
     SITE_ORIGIN = os.getenv("RM_SITE_ORIGIN", "https://releasematch.com")
     # 页面 IG debug 面板
     SHOW_IG_DEBUG = _env_bool("RM_SHOW_IG_DEBUG", False)

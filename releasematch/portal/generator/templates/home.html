@@ -8,6 +8,13 @@
 {% block meta_description %}{{ t('site.home_meta') }}{% endblock %}
 {% block og_description %}{{ t('site.home_meta') }}{% endblock %}
 
+{# T-02：catalog 第 2 页起 noindex,follow；第 1 页（/）保持 index #}
+{% block meta_robots %}
+  {% if catalog_noindex|default(false) and not block_crawlers|default(false) %}
+  <meta name="robots" content="noindex,follow">
+  {% endif %}
+{% endblock %}
+
 {% block head_extra %}
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"ReleaseMatch","url":"{{ canonical_url }}"}</script>
 {% endblock %}
