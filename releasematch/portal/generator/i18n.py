@@ -11,10 +11,15 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 # 支持的语言代码（内部归一化为 en | zh）
 SUPPORTED_LOCALES = frozenset({"en", "zh"})
+
+# T-06：Description 专用片名（Title / H1 仍用 catalog.title · Sources 主轴不变）
+MOVIE_SEO_DESC_TITLE_BY_SLUG: Dict[str, str] = {
+    "avatar-aang-the-last-airbender": "The Legend of Aang: The Last Airbender",
+}
 
 # UI 文案表：key -> {en, zh}
 MESSAGES: Dict[str, Dict[str, str]] = {
@@ -179,8 +184,8 @@ MESSAGES: Dict[str, Dict[str, str]] = {
     # ── 电影页 ──
     # SEO desc 由 build_movie_meta_description 组装；下列 key 作文档/回退
     "movie.meta_description": {
-        "en": "{title} ({year}) torrent sources: {recommended_clause} — {edition_phrase} (WEB-DL / BluRay / REMUX).",
-        "zh": "{title} ({year}) torrent sources：{recommended_clause} — {edition_phrase}（WEB-DL / BluRay / REMUX）。",
+        "en": "{title} ({year}) torrent sources: {recommended_clause} — {edition_phrase} ({edition_suffix}).",
+        "zh": "{title} ({year}) torrent sources：{recommended_clause} — {edition_phrase}（{edition_suffix}）。",
     },
     "movie.hero_title": {
         "en": "{title} ({year}) — Release-Matched Sources",
@@ -710,6 +715,44 @@ def build_episode_meta_description(
     return _clamp_meta_description(text)
 
 
+def _movie_edition_suffix_phrase(
+    source_editions: Optional[List[Any]],
+    recommended_source: str = "",
+) -> str:
+    """
+    电影 meta description 末尾 edition 类型列举（动态反映页内分组，含 WEBRip 等 L4 词）。
+
+    @param source_editions: ``group_movie_sources`` 结果
+    @param recommended_source: Recommended 的 source 字段（如 WEBRip）
+    @returns: 如 ``WEBRip / WEB-DL / BluRay / REMUX``；无数据时回退三型默认值
+    """
+    labels: List[str] = []
+    seen: set[str] = set()
+
+    def _add(raw: str) -> None:
+        """去重追加 source 展示名。"""
+        token = (raw or "").strip()
+        if not token:
+            return
+        key = token.lower().replace(".", "-")
+        if key in seen:
+            return
+        seen.add(key)
+        labels.append(token)
+
+    _add(recommended_source)
+    if isinstance(source_editions, list):
+        for group in source_editions:
+            if not isinstance(group, dict):
+                continue
+            best = group.get("best")
+            if isinstance(best, dict):
+                _add(str(best.get("source") or ""))
+    if not labels:
+        return "WEB-DL / BluRay / REMUX"
+    return " / ".join(labels[:4])
+
+
 def _movie_edition_phrase(locale: str, edition_count: int) -> str:
     """
     电影 meta description 中的 edition 数量短语（单复数）。
@@ -746,18 +789,20 @@ def build_movie_meta_description(
     year: Any,
     count: int,
     edition_count: int = 0,
+    edition_suffix: str = "",
     resolution: str = "",
     source: str = "",
     group: str = "",
 ) -> str:
     """
-    电影页 SEO meta description（v1.1：torrent + edition 三型 + 动态 Recommended）。
+    电影页 SEO meta description（v1.1：torrent + edition 动态后缀 + 动态 Recommended）。
 
     @param locale: en | zh
-    @param title: 片名
+    @param title: Description 用片名（可与 Title/H1 的 catalog.title 不同，见 T-06 slug 表）
     @param year: 上映年
     @param count: sources 条数（回退用）
     @param edition_count: edition 分组数（优先写入 desc）
+    @param edition_suffix: edition 类型列举，如 WEBRip / WEB-DL / BluRay
     @param resolution: Recommended 分辨率
     @param source: Recommended 版本源
     @param group: Recommended release group（电影一般可空）
@@ -768,6 +813,7 @@ def build_movie_meta_description(
     )
     editions_n = int(edition_count or 0) or int(count or 0)
     edition_phrase = _movie_edition_phrase(locale, editions_n)
+    suffix = (edition_suffix or "").strip() or "WEB-DL / BluRay / REMUX"
     text = translate(
         "movie.meta_description",
         locale,
@@ -777,6 +823,7 @@ def build_movie_meta_description(
         count=int(count or 0),
         edition_count=editions_n,
         edition_phrase=edition_phrase,
+        edition_suffix=suffix,
     )
     return _clamp_meta_description(text)
 
@@ -810,16 +857,21 @@ def attach_seo_meta_description(context: Dict[str, Any], locale: str) -> None:
         edition_count = (
             len(editions) if isinstance(editions, list) and editions else 0
         )
+        slug = str(context.get("catalog_slug") or "")
+        catalog_title = str(context.get("movie_title") or "")
+        desc_title = MOVIE_SEO_DESC_TITLE_BY_SLUG.get(slug) or catalog_title
+        edition_suffix = _movie_edition_suffix_phrase(editions, source)
         context["seo_title_quality"] = build_movie_title_quality(
             resolution=resolution,
             source=source,
         )
         context["seo_meta_description"] = build_movie_meta_description(
             locale,
-            title=str(context.get("movie_title") or ""),
+            title=desc_title,
             year=context.get("year") or "",
             count=int(context.get("source_count") or 0),
             edition_count=edition_count,
+            edition_suffix=edition_suffix,
             resolution=resolution,
             source=source,
             group=group,

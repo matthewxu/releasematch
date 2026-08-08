@@ -1727,6 +1727,7 @@ class MoviePageContext:
         magnets_updated = resolve_magnets_updated_fields(self.sources)
         return {
             "movie_title": self.catalog.title,
+            "catalog_slug": self.catalog.slug,
             "tmdb_id": self.catalog.tmdb_id,
             "media_kind": self.catalog.media_kind,
             "year": year,

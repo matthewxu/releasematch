@@ -123,7 +123,7 @@ Minions & Monsters (2026) torrent sources: Recommended 1080p BluRay (FLAME) — 
 
 | ID | 任务 | 负责 | 验收标准 | 状态 |
 |----|------|------|----------|------|
-| **T-06** | 优化 **avatar-aang**（20 展示 0 点击）**Description** | 开发 | 覆盖 `legend of aang webrip`；Title 仍 `Sources` | ⏸ |
+| **T-06** | 优化 **avatar-aang**（20 展示 0 点击）**Description** | 开发 | 覆盖 `legend of aang webrip`；Title 仍 `Sources` | ✅ 2026-08-08 |
 | **T-07** | GSC 同时验证 **非 www 属性** 或只保留主域 | 运营 | 两属性数据可对比 | ⏸ |
 | **T-08** | 更新 [TRACKER](../TRACKER-E-E-A-T-InfoGain.md) §度量：GSC 已提交、收录率 44% | 运营 | TRACKER 基线表已更新 | ⏸ |
 | **T-09** | 分析美国市场 SERP：对比 Top 3 竞品 **snippet**（非 Title 抄 Download） | 运营 | 结论：竞品 desc 里哪些 L4 词可借鉴 | ⏸ |
@@ -200,6 +200,33 @@ if (http.host eq "www.releasematch.com") {
 **T-05 已 regenerate：** `minions-monsters` · `goat` · `el-mal` · `enola-holmes-3`
 
 **发版：** `wrangler deploy` 后 2 周对照 GSC 排名/CTR（T-04 验收指标仍待观察）
+
+### T-06：avatar-aang Description（Legend of Aang + WEBRip · 已落地 2026-08-08）
+
+**GSC 问题：** 20 展示 / 0 点击；查询 `legend of aang: the last airbender webrip`（排名 20）。
+
+| 根因 | 修复 |
+|------|------|
+| Description 仍用旧模板（未纳入 T-05 regenerate） | regenerate `movie:980431` |
+| 用户搜 **Legend of Aang**，页面 Title 为 **Avatar Aang** | Description 专用片名表 `MOVIE_SEO_DESC_TITLE_BY_SLUG` |
+| 查询含 **webrip**，desc 末尾固定 `WEB-DL / BluRay / REMUX` 缺 WEBRip | `_movie_edition_suffix_phrase` 动态列举 Recommended source |
+| Title L4 仅 `1080p` | regenerate 后 `Sources — 1080p WEBRip`（仍无 Download） |
+
+**目标 snippet：**
+
+```
+Title:   Avatar Aang: The Last Airbender (2026) Sources — 1080p WEBRip | ReleaseMatch
+Desc:    The Legend of Aang: The Last Airbender (2026) torrent sources: Recommended 1080p WEBRip (YTS) — 4 edition downloads compared (WEBRip / WEB-DL / BluRay / REMUX).
+```
+
+**实现：**
+
+| 文件 | 变更 |
+|------|------|
+| `portal/generator/i18n.py` | `MOVIE_SEO_DESC_TITLE_BY_SLUG` · `_movie_edition_suffix_phrase` · desc 模板 `{edition_suffix}` |
+| `schema/d1_models.py` | 模板上下文注入 `catalog_slug` |
+
+**发版：** `generate page --page-id movie:980431` → `wrangler deploy`
 
 **Minions 零点击查询对照：**
 
@@ -278,3 +305,4 @@ if (http.host eq "www.releasematch.com") {
 |------|------|------|
 | v1.0 | 2026-08-08 | 首次策略与 TODO |
 | v1.4 | 2026-08-08 | T-04/T-05 电影 Title L4 + desc 公式；regenerate 4 页 |
+| v1.5 | 2026-08-08 | T-06 avatar-aang：Legend of Aang desc 别名 + 动态 edition 后缀（WEBRip） |
